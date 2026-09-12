@@ -16,7 +16,7 @@
 	import type { Action } from 'svelte/action';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { Plus } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
+	import { goto, beforeNavigate } from '$app/navigation';
 	import { page as appPage } from '$app/state';
 
 	type TableColumn = {
@@ -135,6 +135,16 @@
 		clearTimeout(searchDebounce);
 		searchDebounce = setTimeout(() => updateServerUrl({ search: query || null, page: 1 }), 400);
 		return () => clearTimeout(searchDebounce);
+	});
+
+	// Sans ça, un clic sur une action de ligne (edit, etc.) pendant la fenêtre
+	// de debounce se fait doubler par le rechargement de recherche : les deux
+	// navigations sont en course, et SvelteKit applique la dernière déclenchée
+	// (celle de la recherche), ramenant l'utilisateur sur la liste au lieu de
+	// la page cliquée. Annuler le timer dès qu'une navigation démarre laisse
+	// la navigation volontaire de l'utilisateur gagner systématiquement.
+	beforeNavigate(() => {
+		clearTimeout(searchDebounce);
 	});
 
 	const sortItems = (column: string) => {
