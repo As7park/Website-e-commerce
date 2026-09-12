@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
+	import { Button, buttonVariants } from '$shadcn/button';
+	import { cn } from '$lib/components/shadcn/utils.js';
 	import * as Table from '$shadcn/table';
 	import TableRow from '$shadcn/table/table-row.svelte';
 	import TableCell from '$shadcn/table/table-cell.svelte';
@@ -15,6 +16,8 @@
 	import type { Action } from 'svelte/action';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { Plus } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
+	import { page as appPage } from '$app/state';
 
 	type TableColumn = {
 		key: string;
@@ -44,15 +47,32 @@
 				condition?: (item: TableItem) => boolean;
 		  };
 
+	/**
+	 * Pagination pilotée par le serveur : `data` est déjà la bonne page,
+	 * déjà filtrée/triée par la route. Sans ce prop (défaut), la table garde
+	 * son comportement 100% client historique (recherche/tri/pagination sur
+	 * la totalité de `data`) — c'est le cas de la plupart des tables encore
+	 * aujourd'hui (blog, promo, contacts, factures du compte).
+	 */
+	interface ServerPaging {
+		page: number;
+		perPage: number;
+		total: number;
+		search: string;
+		sort?: string;
+		dir?: 'asc' | 'desc';
+	}
+
 	interface Props {
 		data: TableItem[];
 		columns: TableColumn[];
 		name: string;
 		actions?: TableAction[] | null;
 		addLink?: string | null;
+		server?: ServerPaging | null;
 	}
 
-	let { data, columns, name, actions = null, addLink = null }: Props = $props();
+	let { data, columns, name, actions = null, addLink = null, server = null }: Props = $props();
 
 	let dialogOpenId = $state<string | null>(null);
 	let searchQuery = $state('');
@@ -69,8 +89,6 @@
 	let itemsPerPageString = $state('5');
 	let sortColumn = $state('');
 	let sortDirection = $state('asc');
-	let filteredItems = $state<TableItem[]>([]);
-	let paginatedItems = $state<TableItem[]>([]);
 	let columnsVisibility = $state(
 		columns.reduce<Record<string, boolean>>((acc, col) => {
 			acc[col.key] = true;
@@ -94,47 +112,39 @@
 
 			return av.localeCompare(bv) * (sortDirection === 'asc' ? 1 : -1);
 		});
-
-		updateFilteredAndPaginatedItems();
 	};
 
-	const updateFilteredAndPaginatedItems = () => {
-		filteredItems = data.filter((item) =>
+	// Dérivées, jamais réassignées à la main : deux `$effect` séparés qui
+	// écrivaient tous deux dans `filteredItems`/`paginatedItems` (l'un sur
+	// data/searchQuery/currentPage/itemsPerPage, l'autre en cascade depuis
+	// `itemsPerPageString`) se marchaient dessus et levaient `UpdatedAtError`,
+	// ce qui interrompait le cycle réactif de Svelte avant que d'autres effets
+	// (dont l'ouverture de l'AlertDialog de suppression) n'aient pu s'exécuter.
+	let filteredItems = $derived(
+		data.filter((item) =>
 			Object.values(item).some((value) =>
 				String(value).toLowerCase().includes(searchQuery.toLowerCase())
 			)
-		);
-
+		)
+	);
+	let paginatedItems = $derived.by(() => {
 		const start = (currentPage - 1) * itemsPerPage;
 		const end = start + itemsPerPage;
-		paginatedItems = filteredItems.slice(start, end);
-	};
-
-	updateFilteredAndPaginatedItems();
-
-	$effect(() => {
-		data;
-		searchQuery;
-		currentPage;
-		itemsPerPage;
-		updateFilteredAndPaginatedItems();
+		return filteredItems.slice(start, end);
 	});
 
 	const changePage = (page: number) => {
 		currentPage = page;
-		updateFilteredAndPaginatedItems();
 	};
 
 	const changeItemsPerPage = (items: number) => {
 		itemsPerPage = items;
 		currentPage = 1;
-		updateFilteredAndPaginatedItems();
 	};
 
 	const deleteItem = (id: string) => {
 		setTimeout(() => {
 			data = data.filter((item) => item.id !== id);
-			updateFilteredAndPaginatedItems();
 			dialogOpenId = null;
 		}, 10);
 	};
@@ -159,7 +169,6 @@
 						placeholder="Cherchez dans le tableau"
 						class="max-w-xs"
 						bind:value={searchQuery}
-						oninput={updateFilteredAndPaginatedItems}
 					/>
 
 					<Popover.Root>
@@ -276,12 +285,12 @@
 														dialogOpenId = open ? item.id : null;
 													}}
 												>
-													<AlertDialog.Trigger>
-														<Button variant="outline" class="m-1 p-1 text-xs">
-															{#if action.icon}
-																<action.icon class="h-4 w-4 inline" />
-															{/if}
-														</Button>
+													<AlertDialog.Trigger
+														class={cn(buttonVariants({ variant: 'outline' }), 'm-1 p-1 text-xs')}
+													>
+														{#if action.icon}
+															<action.icon class="h-4 w-4 inline" />
+														{/if}
 													</AlertDialog.Trigger>
 
 													<AlertDialog.Content>

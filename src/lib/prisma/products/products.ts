@@ -1,5 +1,8 @@
 import { prisma } from '$lib/server';
 import { bumpCacheVersion } from '$lib/server/cache';
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+
+const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
 
 /**
  * Accès Prisma aux produits.
@@ -84,18 +87,45 @@ export const connectProductToCategories = async (productId: string, categoryIds:
 	return result;
 };
 
-export const getAllProducts = async () => {
-	try {
-		const products = await prisma.product.findMany({
-			include: {
-				categories: {
-					include: {
-						category: true
-					}
-				}
+/**
+ * Liste paginée pour `/admin/products` : recherche sur nom/description, tri
+ * sur nom/prix/stock/date de création. `getProductBySlug`/`getProductById`
+ * restent des lectures unitaires, non concernées.
+ */
+export const getAllProducts = async (params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'name',
+		sortable: PRODUCT_SORTABLE
+	});
+
+	const where = search
+		? {
+				OR: [
+					{ name: { contains: search, mode: 'insensitive' as const } },
+					{ description: { contains: search, mode: 'insensitive' as const } }
+				]
 			}
-		});
-		return products;
+		: undefined;
+
+	try {
+		const [items, total] = await Promise.all([
+			prisma.product.findMany({
+				where,
+				include: {
+					categories: {
+						include: {
+							category: true
+						}
+					}
+				},
+				orderBy: { [sort]: dir },
+				skip,
+				take: perPage
+			}),
+			prisma.product.count({ where })
+		]);
+		return { items, total, page, perPage, search, sort, dir };
 	} catch (error) {
 		console.error('Error fetching products:', error);
 		throw new Error('Could not fetch products');

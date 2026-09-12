@@ -35,7 +35,7 @@ import type { SessionFlags } from '$lib/lucia/session';
 import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema';
 import { getUserMFA, updateUserMFA } from '$lib/prisma/user/user';
 
-const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30);
+const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
 
 export const load = async (event: RequestEvent) => {
 	let recoveryCode: string | null = null;

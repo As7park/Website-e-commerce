@@ -9,14 +9,18 @@ import { listCategories, listProducts } from '$lib/products/catalog';
  */
 export const load: PageServerLoad = async ({ url }) => {
 	const categoryId = url.searchParams.get('categorie') ?? undefined;
-	const [products, categories] = await Promise.all([
-		listProducts(categoryId || undefined),
+	const page = Number(url.searchParams.get('page')) || 1;
+	const [{ products, total, perPage }, categories] = await Promise.all([
+		listProducts(categoryId || undefined, page),
 		listCategories()
 	]);
 
 	return {
 		products,
 		categories,
-		activeCategoryId: categoryId ?? null
+		activeCategoryId: categoryId ?? null,
+		page,
+		perPage,
+		total
 	};
 };

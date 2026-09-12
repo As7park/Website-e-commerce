@@ -87,7 +87,7 @@
 		</ul>
 
 		<!-- Utilitaires desktop -->
-		<div class="navContainer rcb w-[260px] hidden">
+		<div class="navContainer rcb w-[260px] hidden md:flex">
 			<div>
 				<Options />
 			</div>

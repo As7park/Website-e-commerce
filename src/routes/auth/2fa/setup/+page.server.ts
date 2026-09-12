@@ -25,7 +25,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { auth } from '$lib/lucia';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
-const totpUpdateBucket = new RefillingTokenBucket<string>(3, 60 * 10);
+const totpUpdateBucket = new RefillingTokenBucket<string>(3, 60 * 10, '2fa-setup');
 
 export const load = async (event: RequestEvent) => {
 	if (event.locals.session === null || event.locals.user === null) {

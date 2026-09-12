@@ -45,7 +45,9 @@ test.describe('Commerce — ventes', () => {
 				await expect(page.getByRole('heading', { name: 'Ventes' })).toBeVisible();
 				const search = page.getByPlaceholder('Cherchez dans le tableau');
 				await search.fill(ownerEmail);
-				await expect(page.getByRole('cell', { name: ownerEmail })).toBeVisible();
+				// L'email de commande et l'email du compte sont identiques ici
+				// (`simulatePaidOrder`) : deux cellules matchent le même texte.
+				await expect(page.getByRole('cell', { name: ownerEmail }).first()).toBeVisible();
 			});
 		} finally {
 			await deleteTransaction(sale.id);

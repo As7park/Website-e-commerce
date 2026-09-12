@@ -18,7 +18,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
-const bucket = new ExpiringTokenBucket<string>(5, 60 * 30);
+const bucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'reset-password-verify-email');
 
 export const load = async (event: RequestEvent) => {
 	const { session } = await validatePasswordResetSessionRequest(event);

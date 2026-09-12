@@ -1,4 +1,5 @@
 import { Client, Receiver } from '@upstash/qstash';
+import { resolveAppUrl } from './app-url';
 import { runPostPaymentJob } from './jobs/post-payment';
 
 /**
@@ -11,16 +12,6 @@ import { runPostPaymentJob } from './jobs/post-payment';
  * directe du job — comportement synchrone actuel, sans configuration
  * supplémentaire requise en local.
  */
-
-function resolveAppUrl(): string | null {
-	if (process.env.APP_URL) {
-		return process.env.APP_URL.replace(/\/$/, '');
-	}
-	if (process.env.VERCEL_URL) {
-		return `https://${process.env.VERCEL_URL}`;
-	}
-	return null;
-}
 
 export function isQStashConfigured(): boolean {
 	return Boolean(process.env.QSTASH_TOKEN) && resolveAppUrl() !== null;

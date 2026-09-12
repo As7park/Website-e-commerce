@@ -32,7 +32,7 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { getUserByEmailPrisma } from '$lib/prisma/user/user';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
-const bucket = new ExpiringTokenBucket<string>(5, 60 * 30);
+const bucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'verify-email-code');
 
 const DEBUG = false;
 

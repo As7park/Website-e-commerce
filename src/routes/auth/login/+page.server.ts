@@ -38,8 +38,8 @@ export const load = async (event: PageServerLoadEvent) => {
 };
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
-const throttler = new Throttler<string>([0, 1, 2, 4, 8, 16, 30, 60, 180, 300]);
-const ipBucket = new RefillingTokenBucket<string>(20, 1);
+const throttler = new Throttler<string>([0, 1, 2, 4, 8, 16, 30, 60, 180, 300], 'login-throttle');
+const ipBucket = new RefillingTokenBucket<string>(20, 1, 'login-ip');
 
 export const actions: Actions = {
 	login: async (event: RequestEvent) => {

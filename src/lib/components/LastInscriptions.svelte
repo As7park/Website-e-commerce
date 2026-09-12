@@ -37,7 +37,7 @@
 
 				<p class="text-sm max-w-[110px]">
 					{#if user.createdAt}
-						<p>{formatDate(user.createdAt)}</p>
+						{formatDate(user.createdAt)}
 					{/if}
 				</p>
 			</div>

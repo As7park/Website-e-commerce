@@ -7,6 +7,16 @@
 	let activeCategoryId = $derived(data.activeCategoryId);
 	let products = $derived(data.products);
 	let categories = $derived(data.categories);
+	let page = $derived(data.page);
+	let totalPages = $derived(Math.max(1, Math.ceil(data.total / data.perPage)));
+
+	function pageHref(target: number): string {
+		const params = new URLSearchParams();
+		if (activeCategoryId) params.set('categorie', activeCategoryId);
+		if (target > 1) params.set('page', String(target));
+		const query = params.toString();
+		return query ? `/products?${query}` : '/products';
+	}
 </script>
 
 <div class="relative box-border min-h-screen w-full px-8 pt-24 pb-8">
@@ -67,5 +77,17 @@
 				</a>
 			{/each}
 		</div>
+
+		{#if totalPages > 1}
+			<nav class="mt-8 flex items-center justify-center gap-2" aria-label="Pagination">
+				{#if page > 1}
+					<Button href={pageHref(page - 1)} variant="outline" size="sm">Précédent</Button>
+				{/if}
+				<span class="text-sm text-muted-foreground">Page {page} / {totalPages}</span>
+				{#if page < totalPages}
+					<Button href={pageHref(page + 1)} variant="outline" size="sm">Suivant</Button>
+				{/if}
+			</nav>
+		{/if}
 	{/if}
 </div>

@@ -74,7 +74,7 @@ const cookieGuard: Handle = async ({ event, resolve }) => {
 };
 
 /** Plafond brut par IP : 100 requêtes par seconde. */
-const bucket = new RefillingTokenBucket<string>(100, 1);
+const bucket = new RefillingTokenBucket<string>(100, 1, 'global-ip');
 
 const rateLimit: Handle = async ({ event, resolve }) => {
 	const ip = clientIP(event);

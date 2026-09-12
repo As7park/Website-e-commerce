@@ -29,8 +29,17 @@ function redisKey(namespace: string, key: unknown): string {
 	return `${namespace}:${String(key)}`;
 }
 
-function newNamespace(prefix: string): string {
-	return `rl:${prefix}:${crypto.randomUUID()}`;
+/**
+ * Namespace Redis d'un bucket, dérivé d'un nom STABLE fourni par l'appelant —
+ * jamais d'un `crypto.randomUUID()` généré à la construction : les buckets
+ * sont des singletons de module, réévalués à chaque cold start serverless. Un
+ * nom aléatoire y change alors à chaque instance, et deux instances qui
+ * traitent la même IP finissent sur des clés Redis différentes — le quota
+ * n'est plus partagé du tout, seul le nom stable permet à toutes les
+ * instances de retomber sur la même clé.
+ */
+function namespaceFor(prefix: string, name: string): string {
+	return `rl:${prefix}:${name}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -179,12 +188,13 @@ export class RefillingTokenBucket<_Key> {
 	public max: number;
 	public refillIntervalSeconds: number;
 
-	private namespace = newNamespace('refill');
+	private namespace: string;
 	private storage = new Map<_Key, RefillBucket>();
 
-	constructor(max: number, refillIntervalSeconds: number) {
+	constructor(max: number, refillIntervalSeconds: number, name: string) {
 		this.max = max;
 		this.refillIntervalSeconds = refillIntervalSeconds;
+		this.namespace = namespaceFor('refill', name);
 	}
 
 	public async check(key: _Key, cost: number): Promise<boolean> {
@@ -248,11 +258,12 @@ export class RefillingTokenBucket<_Key> {
 export class Throttler<_Key> {
 	public timeoutSeconds: number[];
 
-	private namespace = newNamespace('throttle');
+	private namespace: string;
 	private storage = new Map<_Key, ThrottlingCounter>();
 
-	constructor(timeoutSeconds: number[]) {
+	constructor(timeoutSeconds: number[], name: string) {
 		this.timeoutSeconds = timeoutSeconds;
+		this.namespace = namespaceFor('throttle', name);
 	}
 
 	public async consume(key: _Key): Promise<boolean> {
@@ -302,12 +313,13 @@ export class ExpiringTokenBucket<_Key> {
 	public max: number;
 	public expiresInSeconds: number;
 
-	private namespace = newNamespace('expiring');
+	private namespace: string;
 	private storage = new Map<_Key, ExpiringBucket>();
 
-	constructor(max: number, expiresInSeconds: number) {
+	constructor(max: number, expiresInSeconds: number, name: string) {
 		this.max = max;
 		this.expiresInSeconds = expiresInSeconds;
+		this.namespace = namespaceFor('expiring', name);
 	}
 
 	public async check(key: _Key, cost: number): Promise<boolean> {
@@ -477,4 +489,4 @@ export function getClientIP(event: RequestEvent): string {
  * CONTACT-PLUGIN : 5 envois valides d'affilée par IP, puis 1 jeton toutes
  * les 60 s. Le quota n'est consommé que si Zod a accepté le formulaire.
  */
-export const contactFormLimiter = new RefillingTokenBucket<string>(5, 60);
+export const contactFormLimiter = new RefillingTokenBucket<string>(5, 60, 'contact-form');

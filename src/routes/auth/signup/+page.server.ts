@@ -33,7 +33,7 @@ import type { PageServerLoad, Actions } from './$types';
 /*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const ipBucket = new RefillingTokenBucket<string>(3, 10); // 3 req / 10 s
+const ipBucket = new RefillingTokenBucket<string>(3, 10, 'signup-ip'); // 3 req / 10 s
 
 const DEBUG = false;
 

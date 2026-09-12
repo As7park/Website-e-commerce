@@ -13,6 +13,9 @@
 // AUTH-PLUGIN ▼ chiffrement des secrets 2FA, fourni par le module d'auth.
 import { decrypt, encrypt } from '$lib/lucia/encryption';
 // AUTH-PLUGIN ▲
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+
+const USER_SORTABLE = ['email', 'username', 'role', 'createdAt'] as const;
 import { prisma } from '$lib/server';
 import { Role } from '@prisma/client';
 
@@ -252,21 +255,46 @@ const adminUserSelect = {
 	updatedAt: true
 } as const;
 
-export const getAllUsers = async () => {
-	try {
-		const users = await prisma.user.findMany({
-			select: {
-				...adminUserSelect,
-				addresses: true,
-				orders: {
-					include: {
-						address: true
-					}
-				}
-			}
-		});
+/**
+ * Liste paginée pour `/admin/users` : recherche sur email/pseudo/nom, tri sur
+ * email/pseudo/rôle/date de création. `userColumns` (`admin/users/+page.svelte`)
+ * n'affiche que nom/email/rôle — la jointure `orders`/`address` qu'avait cette
+ * requête était donc entièrement inutilisée ici (nécessaire seulement sur la
+ * fiche `/admin/users/[id]`) et n'est plus chargée.
+ */
+export const getAllUsers = async (params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'createdAt',
+		sortable: USER_SORTABLE
+	});
 
-		return users;
+	const where = search
+		? {
+				OR: [
+					{ email: { contains: search, mode: 'insensitive' as const } },
+					{ username: { contains: search, mode: 'insensitive' as const } },
+					{ name: { contains: search, mode: 'insensitive' as const } }
+				]
+			}
+		: undefined;
+
+	try {
+		const [items, total] = await Promise.all([
+			prisma.user.findMany({
+				where,
+				select: {
+					...adminUserSelect,
+					addresses: true
+				},
+				orderBy: { [sort]: dir },
+				skip,
+				take: perPage
+			}),
+			prisma.user.count({ where })
+		]);
+
+		return { items, total, page, perPage, search, sort, dir };
 	} catch (error: unknown) {
 		if (error instanceof Error) {
 			console.error('Error fetching users:', error);

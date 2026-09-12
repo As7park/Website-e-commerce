@@ -115,7 +115,13 @@ test.describe('Auth — adresses', () => {
 			await test.step('5. Suppression de sa propre adresse', async () => {
 				const own = (await findAddressesByUserId(user.id))[0];
 				await page.goto('/auth/settings/address');
-				await clickThroughOverlay(page.getByRole('button', { name: 'Delete address' }));
+				// Pas de `clickThroughOverlay` (force: true) ici : ce bouton n'est
+				// jamais couvert par la barre flottante, et `force` saute l'attente
+				// d'actionabilité de Playwright — un clic peut alors partir avant que
+				// l'hydratation Svelte n'ait attaché le handler, sans jamais soumettre
+				// le formulaire (confirmé : un clic normal, qui attend que l'élément
+				// soit stable, réussit systématiquement).
+				await page.getByRole('button', { name: 'Delete address' }).click();
 				await expect
 					.poll(async () => findAddressById(own.id), { timeout: 15_000 })
 					.toBeNull();

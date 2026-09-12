@@ -116,20 +116,23 @@
 <!-- ----------------------------------------------------------------- -->
 <!--  BOUTON PANIER                                                   -->
 <!-- ----------------------------------------------------------------- -->
-<div class="ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20">
+<div class="cartButton ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20">
 	<div class="absolute z-50 ccc">
 		<Sheet.Root bind:open={sidebarOpen}>
 			<Sheet.Trigger>
-				<button
-					class="m-5 ccc"
-					class:text-black={currentMode.current === 'light'}
-					class:text-white={currentMode.current === 'dark'}
-				>
-					<ShoppingCart class="w-8 h-8 absolute right-0 top-0 stroke-current transition-colors" />
-					<Badge class="bulletCart font-bold absolute z-10 left-0 bottom-0">
-						{$cart?.items?.length ?? 0}
-					</Badge>
-				</button>
+				{#snippet child({ props })}
+					<button
+						{...props}
+						class="relative m-5 h-8 w-8 ccc"
+						class:text-black={currentMode.current === 'light'}
+						class:text-white={currentMode.current === 'dark'}
+					>
+						<ShoppingCart class="w-8 h-8 absolute right-0 top-0 stroke-current transition-colors" />
+						<Badge class="bulletCart font-bold absolute z-10 left-0 bottom-0">
+							{$cart?.items?.length ?? 0}
+						</Badge>
+					</button>
+				{/snippet}
 			</Sheet.Trigger>
 
 			<!-- ----------------------------------------------------------------- -->

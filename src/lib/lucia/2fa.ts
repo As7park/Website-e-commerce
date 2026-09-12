@@ -15,8 +15,8 @@ import { ExpiringTokenBucket } from '$lib/server/rate-limit';
 import { generateRandomRecoveryCode } from './utils';
 import { isValidId } from './ids';
 
-export const totpBucket = new ExpiringTokenBucket<string>(5, 60 * 30);
-export const recoveryCodeBucket = new ExpiringTokenBucket<string>(3, 60 * 60);
+export const totpBucket = new ExpiringTokenBucket<string>(5, 60 * 30, '2fa-totp');
+export const recoveryCodeBucket = new ExpiringTokenBucket<string>(3, 60 * 60, '2fa-recovery-code');
 
 export async function resetUser2FAWithRecoveryCode(
 	userId: string,
