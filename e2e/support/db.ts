@@ -33,19 +33,27 @@ async function resilient<T>(operation: () => Promise<T>, attempts = 4): Promise<
 }
 
 /**
- * Déchiffre une charge AES-128-GCM produite par `src/lib/lucia/encryption.ts`.
- * Le module applicatif n'est pas réutilisable ici car il dépend de
- * `$env/static/private`, indisponible hors du bundle SvelteKit.
+ * Déchiffre une charge produite par `src/lib/lucia/encryption.ts`. Le module
+ * applicatif n'est pas réutilisable ici car il dépend de `$env/static/private`,
+ * indisponible hors du bundle SvelteKit — d'où cette réimplémentation.
+ *
+ * `encryptionVersion` (1 = AES-128-GCM legacy, 2 = AES-256-GCM) doit suivre
+ * exactement `$lib/lucia/encryption.ts` : sans ça, un compte encore en v1 (ou
+ * migré en v2 après une vérification 2FA réussie) échoue ici avec une taille
+ * de clé invalide, alors que l'application le déchiffre très bien.
  */
-function decryptPayload(payload: Uint8Array): Buffer {
-	const key = Buffer.from(process.env.ENCRYPTION_KEY ?? '', 'base64');
+function decryptPayload(payload: Uint8Array, encryptionVersion: number): Buffer {
+	const isLegacy = encryptionVersion === 1;
+	const keyEnv = isLegacy ? process.env.ENCRYPTION_KEY_LEGACY : process.env.ENCRYPTION_KEY;
+	const algorithm = isLegacy ? 'aes-128-gcm' : 'aes-256-gcm';
+	const key = Buffer.from(keyEnv ?? '', 'base64');
 	const bytes = Buffer.from(payload);
 
 	const iv = bytes.subarray(0, 16);
 	const tag = bytes.subarray(bytes.length - 16);
 	const ciphertext = bytes.subarray(16, bytes.length - 16);
 
-	const decipher = createDecipheriv('aes-128-gcm', key, iv);
+	const decipher = createDecipheriv(algorithm, key, iv);
 	decipher.setAuthTag(tag);
 	return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
@@ -65,14 +73,16 @@ export async function requireUser(email: string) {
 export async function getTotpKey(email: string): Promise<Uint8Array> {
 	const user = await requireUser(email);
 	if (!user.totpKey) throw new Error(`Aucune clé TOTP enregistrée pour ${email}`);
-	return new Uint8Array(decryptPayload(user.totpKey));
+	return new Uint8Array(decryptPayload(user.totpKey, user.encryptionVersion));
 }
 
 /** Code de récupération en clair, généré à la création du compte. */
 export async function getRecoveryCode(email: string): Promise<string> {
 	const user = await requireUser(email);
 	if (!user.recoveryCode) throw new Error(`Aucun code de récupération pour ${email}`);
-	return decryptPayload(Buffer.from(user.recoveryCode, 'base64')).toString('utf-8');
+	return decryptPayload(Buffer.from(user.recoveryCode, 'base64'), user.encryptionVersion).toString(
+		'utf-8'
+	);
 }
 
 /**
