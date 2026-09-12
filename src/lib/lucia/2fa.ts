@@ -10,7 +10,7 @@
 
 import { findUserWithRecoveryCode } from '$lib/prisma/user/user';
 import { prisma } from '$lib/server';
-import { decryptToString, encryptString } from './encryption';
+import { decryptToString, encryptString, type EncryptionVersion } from './encryption';
 import { ExpiringTokenBucket } from '$lib/server/rate-limit';
 import { generateRandomRecoveryCode } from './utils';
 import { isValidId } from './ids';
@@ -35,12 +35,16 @@ export async function resetUser2FAWithRecoveryCode(
 	}
 
 	// Déchiffrer le code de récupération après décodage Base64
-	const userRecoveryCode = decryptToString(Buffer.from(user.recoveryCode, 'base64'));
+	const userRecoveryCode = decryptToString(
+		Buffer.from(user.recoveryCode, 'base64'),
+		user.encryptionVersion as EncryptionVersion
+	);
 	if (recoveryCode !== userRecoveryCode) {
 		return false;
 	}
 
-	// Générer un nouveau code de récupération chiffré
+	// Générer un nouveau code de récupération chiffré (toujours en AES-256 :
+	// ce chemin régénère systématiquement le code, donc s'auto-migre).
 	const newRecoveryCode = generateRandomRecoveryCode();
 	const encryptedNewRecoveryCode = encryptString(newRecoveryCode).toString('base64');
 
@@ -57,7 +61,8 @@ export async function resetUser2FAWithRecoveryCode(
 			},
 			data: {
 				recoveryCode: encryptedNewRecoveryCode,
-				totpKey: null
+				totpKey: null,
+				encryptionVersion: 2
 			}
 		})
 	]);

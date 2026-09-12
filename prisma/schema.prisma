@@ -48,14 +48,17 @@ model User {
   username     String?
   /// Argon2id. Nul pour les comptes Google (aucun mot de passe local).
   passwordHash String?
-  /// Code de secours 2FA, chiffré (AES-128-GCM) puis encodé en base64.
+  /// Code de secours 2FA, chiffré puis encodé en base64 (algorithme selon `encryptionVersion`).
   recoveryCode String?
 
   emailVerified Boolean @default(false)
   /// La 2FA est exigée sur ce compte (distinct de « une clé TOTP existe »).
   isMfaEnabled  Boolean @default(false)
-  /// Secret TOTP chiffré (AES-128-GCM). Jamais exposé au client.
+  /// Secret TOTP chiffré (algorithme selon `encryptionVersion`). Jamais exposé au client.
   totpKey       Bytes?
+  /// 1 = AES-128-GCM (legacy), 2 = AES-256-GCM. Bascule à 2 automatiquement
+  /// à la prochaine authentification réussie qui déchiffre `totpKey`/`recoveryCode`.
+  encryptionVersion Int @default(1)
 
   /// Identifiant Google, présent uniquement pour les comptes OAuth.
   googleId String? @unique

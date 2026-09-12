@@ -23,8 +23,8 @@ export const findUserWithRecoveryCode = async (userId: string) => {
 	return await prisma.user.findUnique({
 		where: { id: userId },
 		select: {
-			recoveryCode: true
-			// Ajoutez createdAt: true si nécessaire
+			recoveryCode: true,
+			encryptionVersion: true
 		}
 	});
 };
@@ -188,31 +188,44 @@ export const updateUserRecoveryCode = async (userId: string, encryptedCode: stri
 // DAO : écrit la clé et passe isMfaEnabled à true
 // lib/lucia/user.ts
 export async function updateUserTOTPKey(userId: string, key: Uint8Array) {
+	// `encrypt()` chiffre toujours en AES-256-GCM désormais : toute clé TOTP
+	// (re)générée ici part directement en `encryptionVersion` 2.
 	const encryptedKey = encrypt(key);
 
-	const result = await prisma.user.update({
+	await prisma.user.update({
 		where: { id: userId },
 		data: {
 			totpKey: encryptedKey,
-			isMfaEnabled: true
+			isMfaEnabled: true,
+			encryptionVersion: 2
 		},
 		select: { id: true, totpKey: true }
 	});
-
-	// console.log('[updateUserTOTPKey] wrote:', result);
 }
 
 export const getUserTotpKey = async (
 	userId: string
-): Promise<{ totpKey: string | null } | null> => {
+): Promise<{ totpKey: string | null; encryptionVersion: number } | null> => {
 	return await prisma.user.findUnique({
 		where: { id: userId },
 		select: {
-			totpKey: true // Récupère uniquement la clé TOTP
-			// Ajoutez createdAt: true si nécessaire
+			totpKey: true,
+			encryptionVersion: true
 		}
 	});
 };
+
+/** Ré-encode `totpKey` en AES-256-GCM (`encryptionVersion` 2) après une vérification TOTP réussie sur un compte encore en v1. */
+export async function upgradeUserTotpKeyEncryption(userId: string, key: Uint8Array) {
+	await prisma.user.update({
+		where: { id: userId },
+		data: {
+			totpKey: Buffer.from(encrypt(key)),
+			encryptionVersion: 2
+		},
+		select: { id: true }
+	});
+}
 
 export const getUserPasswordHashPrisma = async (whereClause: {
 	id?: string;
@@ -229,13 +242,13 @@ export const getUserPasswordHashPrisma = async (whereClause: {
 
 export const getUserRecoveryAndGoogleId = async (
 	userId: string
-): Promise<{ recoveryCode: string | null; googleId: string | null } | null> => {
+): Promise<{ recoveryCode: string | null; googleId: string | null; encryptionVersion: number } | null> => {
 	return await prisma.user.findUnique({
 		where: { id: userId },
 		select: {
 			recoveryCode: true,
-			googleId: true
-			// Ajoutez createdAt: true si nécessaire
+			googleId: true,
+			encryptionVersion: true
 		}
 	});
 };

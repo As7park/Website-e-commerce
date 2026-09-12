@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------------
 
 import { verifyTOTP } from '@oslojs/otp';
-import { getUserTOTPKey } from '$lib/lucia/user';
+import { getUserTOTPKey, upgradeTotpKeyEncryption } from '$lib/lucia/user';
 import { validatePasswordResetSessionRequest } from '$lib/lucia/passwordReset';
 import { setPasswordResetSessionAs2FAVerified } from '$lib/prisma/passwordResetSession/passwordResetSession';
 import { totpBucket } from '$lib/lucia/2fa';
@@ -84,13 +84,18 @@ async function totpAction(event: RequestEvent) {
 	}
 
 	try {
-		const isValid = verifyTOTP(totpKey, 30, 6, code);
+		const isValid = verifyTOTP(totpKey.key, 30, 6, code);
 
 		if (!isValid) {
 			return message(form, 'Invalid TOTP code');
 		}
 	} catch (error) {
 		return fail(500, { message: 'Internal server error', form });
+	}
+
+	// Ré-encodage AES-256 (jamais sur un code refusé, cf. ci-dessus).
+	if (totpKey.version === 1) {
+		await upgradeTotpKeyEncryption(session.userId, totpKey.key);
 	}
 
 	await totpBucket.reset(session.userId);

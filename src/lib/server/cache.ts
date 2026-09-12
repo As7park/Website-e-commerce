@@ -41,3 +41,11 @@ export async function bumpCacheVersion(namespace: string): Promise<void> {
 	}
 	await getRedis().incr(`${namespace}:version`);
 }
+
+/** Supprime une clé précise (ex: cache de session à la déconnexion). No-op sans Redis. */
+export async function invalidateCache(key: string): Promise<void> {
+	if (!isRedisConfigured()) {
+		return;
+	}
+	await getRedis().del(key);
+}

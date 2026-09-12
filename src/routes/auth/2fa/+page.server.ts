@@ -8,7 +8,7 @@
 
 import { totpBucket } from '$lib/lucia/2fa';
 import { fail, redirect } from '@sveltejs/kit';
-import { getUserTOTPKey } from '$lib/lucia/user';
+import { getUserTOTPKey, upgradeTotpKeyEncryption } from '$lib/lucia/user';
 import { verifyTOTP } from '@oslojs/otp';
 import { setSessionAs2FAVerified } from '$lib/lucia/session';
 import { auth } from '$lib/lucia';
@@ -80,7 +80,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const isValid = verifyTOTP(totpKey, 30, 6, code);
+			const isValid = verifyTOTP(totpKey.key, 30, 6, code);
 
 			if (!isValid) {
 				// `message` et non `fail` : sinon le texte n'atteint pas le store
@@ -95,6 +95,11 @@ export const actions: Actions = {
 				console.error('Erreur inconnue lors de la vérification TOTP :', error);
 			}
 			return fail(500, { message: 'Internal server error', form });
+		}
+
+		// Ré-encodage AES-256 (jamais sur un code refusé, cf. ci-dessus).
+		if (totpKey.version === 1) {
+			await upgradeTotpKeyEncryption(locals.user.id, totpKey.key);
 		}
 
 		await totpBucket.reset(locals.user.id);

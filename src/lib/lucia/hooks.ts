@@ -21,8 +21,10 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import { auth } from '$lib/lucia';
 import type { User } from '$lib/lucia/user';
 import type { Session } from '$lib/lucia/session';
+import { sessionIdentityCacheKey, SESSION_IDENTITY_CACHE_TTL_SECONDS } from '$lib/lucia/session';
 import { getUserByIdPrisma } from '$lib/prisma/user/user';
 import { findSessionById } from '$lib/prisma/session/sessions';
+import { isRedisConfigured, getRedis } from '$lib/server/redis';
 
 /** Passe à `true` pour tracer la résolution de session dans la console. */
 const DEBUG = false;
@@ -105,6 +107,19 @@ async function resolveIdentity(event: Parameters<Handle>[0]['event']): Promise<R
 		return { session: null, user: null };
 	}
 
+	// `auth.validateSession` + `loadFreshUser` + `loadFreshSession` = 3
+	// aller-retours Postgres, sur CHAQUE requête authentifiée. Un cache court
+	// (quelques secondes) absorbe l'essentiel du trafic répété d'un même
+	// visiteur sans retarder la prise en compte d'une déconnexion/promotion
+	// au-delà de ce délai. Seules les identités positives sont mises en
+	// cache : une session invalide/absente repasse toujours par le chemin
+	// complet ci-dessous, pour ne jamais retarder un `clearSessionCookie`.
+	const cacheKey = sessionIdentityCacheKey(sessionId);
+	if (isRedisConfigured()) {
+		const cached = await getRedis().get<ResolvedIdentity>(cacheKey);
+		if (cached) return cached;
+	}
+
 	try {
 		const { session: luciaSession, user: luciaUser } = await auth.validateSession(sessionId);
 
@@ -122,7 +137,11 @@ async function resolveIdentity(event: Parameters<Handle>[0]['event']): Promise<R
 			? await loadFreshSession(luciaSession.id, luciaSession.fresh)
 			: null;
 
-		return { session, user };
+		const identity: ResolvedIdentity = { session, user };
+		if (isRedisConfigured() && session && user) {
+			await getRedis().set(cacheKey, identity, { ex: SESSION_IDENTITY_CACHE_TTL_SECONDS });
+		}
+		return identity;
 	} catch (error) {
 		log('session invalide', error);
 		clearSessionCookie(event);

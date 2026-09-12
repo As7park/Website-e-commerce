@@ -23,9 +23,16 @@ import {
 	verifyTwoFactorForSession
 } from '$lib/prisma/session/sessions';
 import { auth } from '.';
+import { invalidateCache } from '$lib/server/cache';
 
 export interface SessionFlags {
 	twoFactorVerified: boolean;
+}
+
+/** Cache court de l'identité résolue par requête (voir `$lib/lucia/hooks.ts`). */
+export const SESSION_IDENTITY_CACHE_TTL_SECONDS = 8;
+export function sessionIdentityCacheKey(sessionId: string): string {
+	return `session-identity:${sessionId}`;
 }
 
 export interface Session extends SessionFlags {
@@ -141,6 +148,9 @@ export async function invalidateSession(sessionId: string): Promise<void> {
 			console.warn("Erreur inconnue lors de l'invalidation de la session :", error);
 		}
 	}
+	// Best-effort : même si la suppression DB a échoué, ne pas laisser une
+	// identité mise en cache survivre à une déconnexion explicite.
+	await invalidateCache(sessionIdentityCacheKey(sessionId));
 }
 
 // Invalide toutes les sessions d'un utilisateur
@@ -195,6 +205,10 @@ export function deleteSessionTokenCookie(event: RequestEvent): void {
 // Marque la session comme vérifiée pour la 2FA
 export async function setSessionAs2FAVerified(sessionId: string): Promise<void> {
 	await verifyTwoFactorForSession(sessionId);
+	// Sans ça, une identité mise en cache juste avant la validation 2FA
+	// renverrait `twoFactorVerified: false` pendant toute la durée du TTL,
+	// rebasculant l'utilisateur sur /auth/2fa juste après l'avoir validée.
+	await invalidateCache(sessionIdentityCacheKey(sessionId));
 }
 
 // Gestion des sessions OAuth pour Google

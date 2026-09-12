@@ -15,6 +15,7 @@ import { generateRandomRecoveryCode } from './utils';
 import { isValidId } from './ids';
 import { decryptToString, decrypt } from './encryption';
 import { Role } from '@prisma/client';
+import type { EncryptionVersion } from './encryption';
 import {
 	createUserInDatabase,
 	createUserWithGoogleOAuth,
@@ -26,6 +27,7 @@ import {
 	updateUserEmail,
 	updateUserPasswordPrisma,
 	updateUserRecoveryCode,
+	upgradeUserTotpKeyEncryption,
 	verifyUserEmail
 } from '$lib/prisma/user/user';
 
@@ -198,13 +200,30 @@ export async function getUserRecoverCode(userId: string): Promise<string> {
 	if (!user || user.googleId || !user.recoveryCode) {
 		throw new Error('Recovery code not available for this user.');
 	}
-	return decryptToString(user.recoveryCode);
+	return decryptToString(user.recoveryCode, user.encryptionVersion as EncryptionVersion);
 }
 
-export async function getUserTOTPKey(userId: string): Promise<Uint8Array | null> {
-	const user = await getUserTotpKey(userId);
+export interface TOTPKey {
+	key: Uint8Array;
+	/** Version de chiffrement lue en base — voir `upgradeTotpKeyEncryption`. */
+	version: EncryptionVersion;
+}
 
-	return user && user.totpKey ? decrypt(user.totpKey) : null;
+export async function getUserTOTPKey(userId: string): Promise<TOTPKey | null> {
+	const user = await getUserTotpKey(userId);
+	if (!user || !user.totpKey) return null;
+
+	const version = user.encryptionVersion as EncryptionVersion;
+	return { key: decrypt(user.totpKey, version), version };
+}
+
+/**
+ * Ré-encode `totpKey` en AES-256-GCM après une vérification TOTP réussie sur
+ * un compte encore en `encryptionVersion` 1 — jamais appelé sur un code
+ * refusé (voir `src/routes/auth/2fa/+page.server.ts`).
+ */
+export async function upgradeTotpKeyEncryption(userId: string, key: Uint8Array): Promise<void> {
+	await upgradeUserTotpKeyEncryption(userId, key);
 }
 
 export async function getUserPasswordHash(userId?: string, email?: string): Promise<string | null> {

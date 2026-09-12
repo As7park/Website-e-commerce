@@ -7,11 +7,22 @@
 // l'auth au cycle de requête.
 //
 // Ordre de la chaîne (voir `handle` en bas de fichier) :
-//   devtoolsGuard → cookieGuard → rateLimit → authHandle → adminHandle → pendingOrderHandle
+//   securityHeaders → devtoolsGuard → cookieGuard → rateLimit → authHandle → adminHandle → pendingOrderHandle
+//
+// CSRF : aucune configuration `csrf` dans `svelte.config.js` → la protection
+// par défaut de SvelteKit (`checkOrigin`, qui bloque les requêtes de type
+// formulaire — multipart/form-data, x-www-form-urlencoded, text/plain — dont
+// l'origine ne correspond pas) est active, vérifié explicitement (pas juste
+// supposé). Les 6 routes `/api/*` custom ont chacune leur propre garde :
+// `webhooks`/`jobs/post-payment` vérifient une signature (Stripe/QStash),
+// `save-cart` exige une session authentifiée, et `promo/validate`,
+// `open-cage-data`, `sendcloud/*` sont des lectures/validations JSON sans
+// effet de bord — aucune n'accepte de mutation via un `<form>` HTML classique.
 // -----------------------------------------------------------------------------
 
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
+import { dev } from '$app/environment';
 
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
 import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
@@ -53,6 +64,32 @@ function clientIP(event: Parameters<Handle>[0]['event']): string {
 /* -------------------------------------------------------------------------- */
 /*  Gardes globales (indépendantes de l'authentification)                     */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * En-têtes de sécurité posés sur toute réponse, quel que soit ce que font les
+ * handles suivants. La CSP n'est pas ici : elle est posée nativement par
+ * SvelteKit (`kit.csp` dans `svelte.config.js`), qui gère les hash/nonce de
+ * ses propres scripts inline — la reproduire à la main ici casserait
+ * l'hydratation.
+ */
+const securityHeaders: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+
+	if (!dev) {
+		// Uniquement en prod (HTTPS) : sur `localhost` en HTTP, un navigateur qui
+		// respecte ce header rendrait le site inaccessible en dev.
+		response.headers.set(
+			'Strict-Transport-Security',
+			'max-age=63072000; includeSubDomains; preload'
+		);
+	}
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+	return response;
+};
 
 /** Coupe court aux sondes de Chrome DevTools, qui polluent les logs. */
 const devtoolsGuard: Handle = async ({ event, resolve }) => {
@@ -120,6 +157,7 @@ const pendingOrderHandle: Handle = async ({ event, resolve }) => {
 /* -------------------------------------------------------------------------- */
 
 export const handle: Handle = sequence(
+	securityHeaders,
 	devtoolsGuard,
 	cookieGuard,
 	rateLimit,

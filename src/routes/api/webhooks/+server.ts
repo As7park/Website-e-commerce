@@ -80,12 +80,13 @@ export async function POST({ request }: { request: Request }) {
  */
 async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 	console.log('\n🚀 === DÉBUT TRAITEMENT WEBHOOK CHECKOUT ===');
+	// Pas de `customer_details` (nom/email/téléphone/adresse) dans les logs :
+	// ils partent vers un système tiers (Vercel) qui n'a pas à recevoir de PII.
 	console.log('📋 Session Stripe reçue:', {
 		id: session.id,
 		amount_total: session.amount_total,
 		currency: session.currency,
 		payment_status: session.payment_status,
-		customer_details: session.customer_details,
 		metadata: session.metadata
 	});
 
@@ -147,12 +148,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				userId: order.userId,
 				shippingOption: order.shippingOption,
 				shippingCost: order.shippingCost,
-				itemsCount: order.items.length,
-				address: {
-					city: order.address.city,
-					zip: order.address.zip,
-					country: order.address.country
-				}
+				itemsCount: order.items.length
 			});
 
 			const weightBracket = deduceWeightBracket(order);
