@@ -75,6 +75,11 @@ export function codeInput(page: Page): Locator {
 /** Saisit un code à usage unique et soumet le formulaire correspondant. */
 export async function submitCode(page: Page, code: string, button = 'Vérifier') {
 	await fillStable(codeInput(page), code);
+	// Après une soumission précédente refusée, Superforms resynchronise `$form`
+	// depuis la réponse serveur — parfois juste après notre vérification
+	// `fillStable`, ce qui efface la saisie avant le clic. Un dernier `fill`
+	// immédiatement avant le clic referme cette fenêtre de course.
+	await codeInput(page).fill(code);
 	await page.getByRole('button', { name: button }).click();
 }
 
