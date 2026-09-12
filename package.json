@@ -33,6 +33,8 @@
 		"db:studio:e2e": "node --env-file=.env.test node_modules/prisma/build/index.js studio --port 5556",
 		"stripe:listen": "bash scripts/stripe-listen.sh",
 		"seed": "node prisma/seed.js",
+		"seed:perf": "node prisma/seed-perf.js",
+		"seed:perf:clean": "node prisma/seed-perf.js --clean",
 		"reset": "prisma migrate reset --force && node prisma/seed.js"
 	},
 	"devDependencies": {

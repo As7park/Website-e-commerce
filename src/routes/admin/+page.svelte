@@ -9,28 +9,45 @@
 
 	const transactions = $derived(Array.isArray(data.transactions) ? data.transactions : []);
 
-	const transactionPoints = $derived(
-		[...transactions]
-			.sort(
-				(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-			)
-			.map((tx) => ({
-				label: tx.createdAt
-					? new Date(tx.createdAt).toLocaleDateString('fr-FR')
-					: '—',
-				value: tx.amount ?? 0
-			}))
-	);
+	/** Le plus récent d'abord (utilisé par `monthlyData`) : un `reduce` en O(n),
+	 * plutôt qu'un second tri complet du tableau — `transactionPoints` a déjà
+	 * besoin de sa propre passe triée pour l'agrégation par jour, inutile de
+	 * trier deux fois la même donnée pour deux besoins différents. */
+	const latestTxDate = $derived.by(() => {
+		let latest: Date | null = null;
+		for (const tx of transactions) {
+			if (!tx.createdAt) continue;
+			const d = new Date(tx.createdAt);
+			if (!latest || d > latest) latest = d;
+		}
+		return latest;
+	});
+
+	/** Un point par jour (somme des montants), pas par transaction : sur une
+	 * fenêtre de 12 mois avec plusieurs milliers de transactions, un point par
+	 * transaction produirait un axe avec autant de catégories distinctes —
+	 * illisible et inutilement coûteux à tracer pour une simple tendance. */
+	const transactionPoints = $derived.by(() => {
+		const dailyTotals = new Map<string, number>();
+		for (const tx of transactions) {
+			if (!tx.createdAt) continue;
+			const day = new Date(tx.createdAt).toISOString().slice(0, 10);
+			dailyTotals.set(day, (dailyTotals.get(day) ?? 0) + (tx.amount ?? 0));
+		}
+
+		return [...dailyTotals.entries()]
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(([day, value]) => ({
+				label: new Date(day).toLocaleDateString('fr-FR'),
+				value
+			}));
+	});
 
 	const monthlyData = $derived.by(() => {
-		if (transactions.length === 0) return [];
+		if (!latestTxDate) return [];
 
-		const latestTx = [...transactions].sort(
-			(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-		)[transactions.length - 1];
-		const firstTxDate = new Date(latestTx.createdAt);
-		const year = firstTxDate.getFullYear();
-		const month = firstTxDate.getMonth();
+		const year = latestTxDate.getFullYear();
+		const month = latestTxDate.getMonth();
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 		const dailySums = new Array(daysInMonth).fill(0);
 
@@ -50,6 +67,10 @@
 		}));
 	});
 
+	/** Top 10 par quantité, pas tous les produits distincts jamais vendus :
+	 * un bar chart avec des centaines de catégories devient illisible et lent
+	 * à rendre bien avant d'apporter la moindre lecture utile. */
+	const TOP_PRODUCTS_LIMIT = 10;
 	const productSalesData = $derived.by(() => {
 		const productSales: Record<string, number> = {};
 
@@ -63,10 +84,13 @@
 			}
 		}
 
-		return Object.entries(productSales).map(([key, value]) => ({
-			x: key,
-			y: value
-		}));
+		return Object.entries(productSales)
+			.sort(([, a], [, b]) => b - a)
+			.slice(0, TOP_PRODUCTS_LIMIT)
+			.map(([key, value]) => ({
+				x: key,
+				y: value
+			}));
 	});
 </script>
 
