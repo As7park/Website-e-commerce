@@ -1,29 +1,52 @@
 import { prisma } from '$lib/server';
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 
 /**
  * BLOG-PLUGIN : DAO Prisma des articles, catégories et tags. Les lectures
  * publiques passent par `src/lib/blog/catalog.ts` (filtre `published`).
  */
 
-export const getAllPosts = async () => {
+const POST_SORTABLE = ['title', 'published', 'createdAt'] as const;
+
+/**
+ * Liste paginée pour `/admin/blog` : recherche sur le titre, tri sur
+ * titre/statut de publication/date de création. Catégories et tags restent
+ * non paginés (volumes bornés par la curation admin, pas par le trafic public).
+ */
+export const getAllPosts = async (params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'createdAt',
+		sortable: POST_SORTABLE
+	});
+
+	const where = search
+		? { title: { contains: search, mode: 'insensitive' as const } }
+		: undefined;
+
 	try {
-		const posts = await prisma.blogPost.findMany({
-			include: {
-				author: true,
-				category: true,
-				tags: {
-					include: {
-						tag: true
+		const [items, total] = await Promise.all([
+			prisma.blogPost.findMany({
+				where,
+				include: {
+					author: true,
+					category: true,
+					tags: {
+						include: {
+							tag: true
+						}
 					}
-				}
-			}
-		});
-
-		// console.log('All posts:', posts);
-
-		return posts;
+				},
+				orderBy: { [sort]: dir },
+				skip,
+				take: perPage
+			}),
+			prisma.blogPost.count({ where })
+		]);
+		return { items, total, page, perPage, search, sort, dir };
 	} catch (error) {
 		console.error('Error retrieving posts:', error);
+		return { items: [], total: 0, page, perPage, search, sort, dir };
 	}
 };
 

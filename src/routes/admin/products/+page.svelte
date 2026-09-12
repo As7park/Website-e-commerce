@@ -11,7 +11,10 @@
 	// Props
 	let { data } = $props();
 
-	let products = $state(data?.products || []);
+	// `$derived`, pas `$state` : `products` doit suivre `data.products` à
+	// chaque rechargement de `load()` (pagination, recherche, tri serveur),
+	// pas rester figé sur sa valeur au premier montage.
+	let products = $derived(data?.products ?? []);
 
 	let productsData = $derived.by(() =>
 		products.map((product) => ({
@@ -128,6 +131,14 @@
 		data={productsData ?? []}
 		actions={productActions}
 		addLink="/admin/products/create"
+		server={{
+			page: data.page,
+			perPage: data.perPage,
+			total: data.total,
+			search: data.search,
+			sort: data.sort,
+			dir: data.dir
+		}}
 	/>
 </div>
 

@@ -1,34 +1,53 @@
 import { prisma } from '$lib/server';
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 
-export const getTransactionsByUserId = async (userId: string) => {
+const USER_TRANSACTION_SORTABLE = ['amount', 'createdAt', 'status'] as const;
+
+/** Liste paginée pour `/auth/settings/factures` : historique d'achats d'un compte, recherche sur le n° de facture. */
+export const getTransactionsByUserId = async (userId: string, params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'createdAt',
+		sortable: USER_TRANSACTION_SORTABLE
+	});
+
+	const where = {
+		userId,
+		...(search
+			? { invoiceNumber: { contains: search, mode: 'insensitive' as const } }
+			: {})
+	};
+
 	try {
-		// Récupère toutes les transactions d'un utilisateur
-		const transactions = await prisma.transaction.findMany({
-			where: {
-				userId: userId
-			},
-			include: {
-				user: {
-					select: {
-						email: true,
-						name: true
+		const [rows, total] = await Promise.all([
+			prisma.transaction.findMany({
+				where,
+				include: {
+					user: {
+						select: {
+							email: true,
+							name: true
+						}
 					}
-				}
-			},
-			orderBy: {
-				createdAt: 'desc'
-			}
-		});
+				},
+				orderBy: { [sort]: dir },
+				skip,
+				take: perPage
+			}),
+			prisma.transaction.count({ where })
+		]);
 
-		return transactions.map((transaction) => ({
+		const items = rows.map((transaction) => ({
 			...transaction,
 			app_user_email: transaction.user?.email ?? '',
 			app_user_name: transaction.user?.name ?? '',
 			hasFacture: transaction.status === 'paid',
 			user: undefined
 		}));
+
+		return { items, total, page, perPage, search, sort, dir };
 	} catch (error) {
 		console.error('Error retrieving transactions: ', error);
-		return [];
+		return { items: [], total: 0, page, perPage, search, sort, dir };
 	}
 };

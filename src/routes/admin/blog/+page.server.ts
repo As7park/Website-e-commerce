@@ -24,8 +24,14 @@ import { deleteBlogCategorySchema } from '$lib/schema/BlogPost/categoriesSchema'
 import { deleteBlogTagSchema } from '$lib/schema/BlogPost/tagSchema';
 import { requireAdmin } from '$lib/admin/guards';
 
-export const load: PageServerLoad = async () => {
-	const BlogPost = await getAllPosts();
+export const load: PageServerLoad = async ({ url }) => {
+	const { items, total, page, perPage, search, sort, dir } = await getAllPosts({
+		page: Number(url.searchParams.get('page')) || undefined,
+		perPage: Number(url.searchParams.get('perPage')) || undefined,
+		search: url.searchParams.get('q') ?? undefined,
+		sort: url.searchParams.get('sort') ?? undefined,
+		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
+	});
 	const AllCategoriesPost = await getAllCategoriesPosts();
 	const AllTagsPost = await getAllTagsPosts();
 
@@ -37,7 +43,13 @@ export const load: PageServerLoad = async () => {
 		AllCategoriesPost,
 		AllTagsPost,
 		IdeleteBlogPostSchema,
-		BlogPost,
+		BlogPost: items,
+		total,
+		page,
+		perPage,
+		search,
+		sort,
+		dir,
 		IdeleteBlogTagSchema,
 		IdeleteBlogCategorySchema
 	};

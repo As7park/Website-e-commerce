@@ -13,18 +13,30 @@ import { assertAdmin, requireAdmin } from '$lib/admin/guards';
  * ils ne doivent jamais transiter vers le navigateur, même pour un admin.
  */
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	assertAdmin(locals);
 
 	const IdeleteUserSchema = await superValidate(zod(deleteUserSchema));
 
-	const UsersFetch = await getAllUsers();
+	const { items, total, page, perPage, search, sort, dir } = await getAllUsers({
+		page: Number(url.searchParams.get('page')) || undefined,
+		perPage: Number(url.searchParams.get('perPage')) || undefined,
+		search: url.searchParams.get('q') ?? undefined,
+		sort: url.searchParams.get('sort') ?? undefined,
+		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
+	});
 
-	const allUsers = serializeData(UsersFetch);
+	const allUsers = serializeData(items);
 
 	return {
 		IdeleteUserSchema,
-		allUsers
+		allUsers,
+		total,
+		page,
+		perPage,
+		search,
+		sort,
+		dir
 	};
 };
 

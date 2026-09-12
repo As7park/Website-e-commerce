@@ -27,14 +27,34 @@ import {
 } from '$lib/prisma/products/products';
 import { requireAdmin } from '$lib/admin/guards';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	const IdeleteProductSchema = await superValidate(zod(deleteProductSchema));
 	const IdeleteCategorySchema = await superValidate(zod(deleteCategorySchema));
-	const products = await getAllProducts();
+	const {
+		items: products,
+		total,
+		page,
+		perPage,
+		search,
+		sort,
+		dir
+	} = await getAllProducts({
+		page: Number(url.searchParams.get('page')) || undefined,
+		perPage: Number(url.searchParams.get('perPage')) || undefined,
+		search: url.searchParams.get('q') ?? undefined,
+		sort: url.searchParams.get('sort') ?? undefined,
+		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
+	});
 	const categories = await getAllcategories();
 
 	return {
 		products,
+		total,
+		page,
+		perPage,
+		search,
+		sort,
+		dir,
 		IdeleteCategorySchema,
 		IdeleteProductSchema,
 		categories

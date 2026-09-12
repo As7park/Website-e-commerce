@@ -45,5 +45,13 @@
 		columns={contactColumns}
 		data={data.contactSubmissions ?? []}
 		actions={contactActions}
+		server={{
+			page: data.page,
+			perPage: data.perPage,
+			total: data.total,
+			search: data.search,
+			sort: data.sort,
+			dir: data.dir
+		}}
 	/>
 </div> 

@@ -75,9 +75,9 @@
 	let { data, columns, name, actions = null, addLink = null, server = null }: Props = $props();
 
 	let dialogOpenId = $state<string | null>(null);
-	let searchQuery = $state('');
-	let currentPage = $state(1);
-	let itemsPerPage = $state(5);
+	let searchQuery = $state(server?.search ?? '');
+	let currentPage = $state(server?.page ?? 1);
+	let itemsPerPage = $state(server?.perPage ?? 5);
 
 	const optionPage = $state([
 		{ label: '5', value: 5 },
@@ -86,9 +86,9 @@
 		{ label: '20', value: 20 }
 	]);
 
-	let itemsPerPageString = $state('5');
-	let sortColumn = $state('');
-	let sortDirection = $state('asc');
+	let itemsPerPageString = $state(String(server?.perPage ?? 5));
+	let sortColumn = $state(server?.sort ?? '');
+	let sortDirection = $state(server?.dir ?? 'asc');
 	let columnsVisibility = $state(
 		columns.reduce<Record<string, boolean>>((acc, col) => {
 			acc[col.key] = true;
@@ -96,7 +96,54 @@
 		}, {})
 	);
 
+	// Recharge `currentPage`/`itemsPerPage`/`searchQuery`/tri depuis le prop
+	// `server` à chaque nouvelle réponse du `load()` (page suivante, retour
+	// navigateur, etc.) — sans ça l'état local resterait figé sur la première
+	// valeur reçue.
+	$effect(() => {
+		if (!server) return;
+		currentPage = server.page;
+		itemsPerPage = server.perPage;
+		itemsPerPageString = String(server.perPage);
+		sortColumn = server.sort ?? '';
+		sortDirection = server.dir ?? 'asc';
+		searchQuery = server.search;
+	});
+
+	/**
+	 * Fusionne des paramètres dans l'URL courante et recharge `load()` —
+	 * seul mécanisme de mise à jour en mode serveur (recherche, tri,
+	 * changement de page/taille de page).
+	 */
+	function updateServerUrl(patch: Record<string, string | number | null | undefined>) {
+		const url = new URL(appPage.url);
+		for (const [key, value] of Object.entries(patch)) {
+			if (value === null || value === undefined || value === '') url.searchParams.delete(key);
+			else url.searchParams.set(key, String(value));
+		}
+		goto(`${url.pathname}${url.search}`, { keepFocus: true, noScroll: true, invalidateAll: true });
+	}
+
+	// Recherche : debounce avant de recharger depuis le serveur. Le garde
+	// `query === server.search` évite de redéclencher une navigation quand ce
+	// même effet vient de resynchroniser `searchQuery` depuis un `server` frais.
+	let searchDebounce: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		const query = searchQuery;
+		if (!server) return;
+		if (query === server.search) return;
+		clearTimeout(searchDebounce);
+		searchDebounce = setTimeout(() => updateServerUrl({ search: query || null, page: 1 }), 400);
+		return () => clearTimeout(searchDebounce);
+	});
+
 	const sortItems = (column: string) => {
+		if (server) {
+			const nextDir = server.sort === column && server.dir === 'asc' ? 'desc' : 'asc';
+			updateServerUrl({ sort: column, dir: nextDir });
+			return;
+		}
+
 		if (sortColumn === column) {
 			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
 		} else {
@@ -127,24 +174,45 @@
 			)
 		)
 	);
+	// En mode serveur, `data` est déjà la page courante, déjà filtrée/triée :
+	// pas de nouveau filtrage/slice local.
 	let paginatedItems = $derived.by(() => {
+		if (server) return data;
 		const start = (currentPage - 1) * itemsPerPage;
 		const end = start + itemsPerPage;
 		return filteredItems.slice(start, end);
 	});
+	let totalPages = $derived(
+		server
+			? Math.max(1, Math.ceil(server.total / server.perPage))
+			: Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))
+	);
 
-	const changePage = (page: number) => {
-		currentPage = page;
+	const changePage = (targetPage: number) => {
+		if (server) {
+			updateServerUrl({ page: targetPage });
+			return;
+		}
+		currentPage = targetPage;
 	};
 
 	const changeItemsPerPage = (items: number) => {
+		if (server) {
+			updateServerUrl({ perPage: items, page: 1 });
+			return;
+		}
 		itemsPerPage = items;
 		currentPage = 1;
 	};
 
 	const deleteItem = (id: string) => {
 		setTimeout(() => {
-			data = data.filter((item) => item.id !== id);
+			// En mode serveur, `use:enhance` recharge déjà `load()` après le
+			// succès de l'action : `data` sera remplacé par une page à jour,
+			// pas besoin (et pas cohérent avec `total`) de la trancher ici.
+			if (!server) {
+				data = data.filter((item) => item.id !== id);
+			}
 			dialogOpenId = null;
 		}, 10);
 	};
@@ -332,11 +400,11 @@
 					<Button onclick={() => changePage(currentPage - 1)}>Previous</Button>
 				{/if}
 				<div class="">
-					{#each Array(Math.ceil(filteredItems.length / itemsPerPage)) as _, pageIndex}
+					{#each Array(totalPages) as _, pageIndex}
 						<Button class="mx-1" onclick={() => changePage(pageIndex + 1)}>{pageIndex + 1}</Button>
 					{/each}
 				</div>
-				{#if currentPage < Math.ceil(filteredItems.length / itemsPerPage)}
+				{#if currentPage < totalPages}
 					<Button onclick={() => changePage(currentPage + 1)}>Next</Button>
 				{/if}
 			</div>

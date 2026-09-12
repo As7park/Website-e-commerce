@@ -170,6 +170,14 @@
 		data={formattedBlogPosts}
 		actions={PostsActions}
 		addLink="/admin/blog/post/create"
+		server={{
+			page: data.page,
+			perPage: data.perPage,
+			total: data.total,
+			search: data.search,
+			sort: data.sort,
+			dir: data.dir
+		}}
 	/>
 </div>
 

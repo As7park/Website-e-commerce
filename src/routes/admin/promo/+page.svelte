@@ -74,5 +74,13 @@
 		data={formattedPromoCodes}
 		actions={PromoActions}
 		addLink="/admin/promo/create"
+		server={{
+			page: data.page,
+			perPage: data.perPage,
+			total: data.total,
+			search: data.search,
+			sort: data.sort,
+			dir: data.dir
+		}}
 	/>
 </div>

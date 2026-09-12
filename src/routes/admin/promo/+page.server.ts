@@ -7,12 +7,24 @@ import { deletePromoSchema } from '$lib/schema/promo/promoSchema';
 import { getAllPromoCodes, getPromoCodeById, deletePromoCode } from '$lib/prisma/promo/promo';
 import { requireAdmin } from '$lib/admin/guards';
 
-export const load: PageServerLoad = async () => {
-	const promoCodes = await getAllPromoCodes();
+export const load: PageServerLoad = async ({ url }) => {
+	const { items, total, page, perPage, search, sort, dir } = await getAllPromoCodes({
+		page: Number(url.searchParams.get('page')) || undefined,
+		perPage: Number(url.searchParams.get('perPage')) || undefined,
+		search: url.searchParams.get('q') ?? undefined,
+		sort: url.searchParams.get('sort') ?? undefined,
+		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
+	});
 	const IdeletePromoSchema = await superValidate(zod(deletePromoSchema));
 
 	return {
-		promoCodes,
+		promoCodes: items,
+		total,
+		page,
+		perPage,
+		search,
+		sort,
+		dir,
 		IdeletePromoSchema
 	};
 };

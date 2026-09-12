@@ -35,5 +35,13 @@
 		columns={userColumns}
 		data={data.transactions ?? []}
 		actions={transactionActions}
+		server={{
+			page: data.page,
+			perPage: data.perPage,
+			total: data.total,
+			search: data.search,
+			sort: data.sort,
+			dir: data.dir
+		}}
 	/>
 </div>

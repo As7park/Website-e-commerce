@@ -5,6 +5,7 @@
  */
 import { prisma } from '$lib/server';
 import type { PromoType } from '@prisma/client';
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 
 type PromoInput = {
 	code: string;
@@ -18,8 +19,30 @@ type PromoInput = {
 
 const normalizeCode = (code: string) => code.trim().toUpperCase();
 
-export const getAllPromoCodes = async () => {
-	return await prisma.promoCode.findMany({ orderBy: { createdAt: 'desc' } });
+const PROMO_SORTABLE = ['code', 'value', 'usageCount', 'expiresAt', 'createdAt'] as const;
+
+/** Liste paginée pour `/admin/promo` : recherche sur le code, tri sur les colonnes affichées. */
+export const getAllPromoCodes = async (params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'createdAt',
+		sortable: PROMO_SORTABLE
+	});
+
+	const where = search
+		? { code: { contains: normalizeCode(search), mode: 'insensitive' as const } }
+		: undefined;
+
+	const [items, total] = await Promise.all([
+		prisma.promoCode.findMany({
+			where,
+			orderBy: { [sort]: dir },
+			skip,
+			take: perPage
+		}),
+		prisma.promoCode.count({ where })
+	]);
+	return { items, total, page, perPage, search, sort, dir };
 };
 
 export const getPromoCodeById = async (id: string) => {
