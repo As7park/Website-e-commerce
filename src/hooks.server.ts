@@ -20,7 +20,7 @@
 // effet de bord — aucune n'accepte de mutation via un `<form>` HTML classique.
 // -----------------------------------------------------------------------------
 
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
@@ -194,6 +194,8 @@ export const handle: Handle = sequence(
  * corrélées au `requestId` de la requête), en plus remontées à Sentry
  * (no-op sans `SENTRY_DSN`).
  */
-export const handleError = Sentry.handleErrorWithSentry(({ error, event }) => {
+const reportUnhandledError: HandleServerError = ({ error, event }) => {
 	log('ERROR', 'UnhandledError', `${event.route?.id ?? event.url.pathname}`, error);
-});
+};
+
+export const handleError = Sentry.handleErrorWithSentry(reportUnhandledError);
