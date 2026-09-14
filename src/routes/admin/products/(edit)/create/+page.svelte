@@ -47,7 +47,7 @@
 	$effect(() => {
 		$createProductData.price = Number(DataPrice);
 		$createProductData.stock = Number(DataStock);
-		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? '' : Number(DataCompareAtPrice);
+		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
 	});
 
 	$effect(() => {

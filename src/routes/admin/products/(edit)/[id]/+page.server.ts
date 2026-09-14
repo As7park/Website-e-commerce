@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			colorProduct: product.colorProduct,
 			sku: product.sku ?? '',
 			material: product.material ?? '',
-			compareAtPrice: (product.compareAtPrice ?? '') as number | '',
+			compareAtPrice: product.compareAtPrice ?? 0,
 			categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
 			images: [],
 			existingImages: product.images
@@ -67,7 +67,7 @@ export const actions: Actions = {
 				return fail(400, withFiles({ form }));
 			}
 
-			if (typeof form.data.compareAtPrice === 'number' && form.data.compareAtPrice <= form.data.price) {
+			if (form.data.compareAtPrice > 0 && form.data.compareAtPrice <= form.data.price) {
 				form.errors.compareAtPrice = ['Le prix barré doit être supérieur au prix de vente'];
 				form.valid = false;
 				return fail(400, withFiles({ form }));
@@ -152,9 +152,7 @@ export const actions: Actions = {
 				return fail(500, { message: 'Product update failed' });
 			}
 		} catch (error) {
-			return fail(500, {
-				message: `DEBUG: ${error instanceof Error ? error.stack : String(error)}`
-			});
+			return fail(500, { message: 'An unexpected error occurred' });
 		}
 	}
 };

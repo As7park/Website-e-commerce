@@ -36,7 +36,7 @@ export const actions: Actions = {
 			return fail(400, withFiles({ form }));
 		}
 
-		if (typeof form.data.compareAtPrice === 'number' && form.data.compareAtPrice <= form.data.price) {
+		if (form.data.compareAtPrice > 0 && form.data.compareAtPrice <= form.data.price) {
 			form.errors.compareAtPrice = ['Le prix barré doit être supérieur au prix de vente'];
 			form.valid = false;
 			return fail(400, withFiles({ form }));

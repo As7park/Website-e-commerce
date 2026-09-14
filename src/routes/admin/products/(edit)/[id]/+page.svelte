@@ -52,7 +52,7 @@
 	$effect(() => {
 		$updateProductData.price = Number(DataPrice);
 		$updateProductData.stock = Number(DataStock);
-		$updateProductData.compareAtPrice = DataCompareAtPrice === '' ? '' : Number(DataCompareAtPrice);
+		$updateProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
 	});
 
 	$effect(() => {
