@@ -1,4 +1,5 @@
 import { prisma } from '$lib/server';
+import { recordDuration } from '$lib/server/metrics';
 
 /**
  * Purge périodique des lignes qui n'ont plus de valeur passé leur expiration.
@@ -60,6 +61,7 @@ export async function runCleanupJob(): Promise<CleanupResult> {
 		};
 
 		console.log('[cleanup] purge terminée', result);
+		await recordDuration('job.cleanup', result.durationMs);
 		return result;
 	} catch (error) {
 		console.error('[cleanup] échec de la purge', {

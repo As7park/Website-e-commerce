@@ -7,7 +7,7 @@
 // l'auth au cycle de requête.
 //
 // Ordre de la chaîne (voir `handle` en bas de fichier) :
-//   securityHeaders → devtoolsGuard → cookieGuard → rateLimit → authHandle → adminHandle → pendingOrderHandle
+//   securityHeaders → devtoolsGuard → cookieGuard → rateLimit → catalogAntiScraping → authHandle → adminHandle → pendingOrderHandle
 //
 // CSRF : aucune configuration `csrf` dans `svelte.config.js` → la protection
 // par défaut de SvelteKit (`checkOrigin`, qui bloque les requêtes de type
@@ -27,6 +27,8 @@ import { env } from '$env/dynamic/private';
 import * as Sentry from '@sentry/sveltekit';
 
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
+import { isSuspiciousUserAgent } from '$lib/server/anti-scraping';
+import { incrementMetric } from '$lib/server/metrics';
 import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
 import { log, withRequestId } from '$lib/server/log';
 import { randomUUID } from 'crypto';
@@ -136,6 +138,37 @@ const rateLimit: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * Anti-scraping du catalogue public (`/products*`) : quota dédié, plus
+ * strict que `global-ip` (un humain qui feuillette quelques fiches produit
+ * ne l'atteint jamais), et rejet heuristique des clients HTTP scriptés
+ * (`$lib/server/anti-scraping.ts`). Placé après `rateLimit` : le plafond
+ * global s'applique déjà à tout, celui-ci vient resserrer spécifiquement le
+ * catalogue.
+ */
+const catalogBucket = new RefillingTokenBucket<string>(40, 2, 'catalog-ip');
+
+const catalogAntiScraping: Handle = async ({ event, resolve }) => {
+	if (!event.url.pathname.startsWith('/products')) {
+		return resolve(event);
+	}
+
+	if (isSuspiciousUserAgent(event.request.headers.get('user-agent'))) {
+		log('WARN', 'AntiScraping', 'User-Agent suspect bloqué sur le catalogue', event.url.pathname);
+		await incrementMetric('anti-scraping.blocked-ua');
+		return new Response('Forbidden', { status: 403 });
+	}
+
+	const ip = clientIP(event);
+	if (!(await catalogBucket.consume(ip, 1))) {
+		log('WARN', 'AntiScraping', 'Quota catalogue dépassé pour', ip);
+		await incrementMetric('anti-scraping.rate-limited');
+		return new Response('Too many requests', { status: 429 });
+	}
+
+	return resolve(event);
+};
+
 /* -------------------------------------------------------------------------- */
 /*  Panier serveur (commerce)                                                 */
 /* -------------------------------------------------------------------------- */
@@ -177,6 +210,7 @@ export const handle: Handle = sequence(
 	devtoolsGuard,
 	cookieGuard,
 	rateLimit,
+	catalogAntiScraping,
 	// AUTH-PLUGIN ▼ retirer cette ligne pour désactiver l'authentification.
 	authHandle,
 	// AUTH-PLUGIN ▲

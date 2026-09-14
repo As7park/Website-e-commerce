@@ -1,4 +1,5 @@
 import { getRedis, isRedisConfigured } from './redis';
+import { incrementMetric } from './metrics';
 
 // Ne supprime le verrou que s'il nous appartient encore : après expiration,
 // une autre requête a pu déjà en poser un nouveau, qu'il ne faut pas effacer.
@@ -33,6 +34,7 @@ export async function withLock<T>(
 
 	const acquired = await redis.set(key, token, { nx: true, px: ttlSeconds * 1000 });
 	if (!acquired) {
+		await incrementMetric('lock.contention');
 		return null;
 	}
 

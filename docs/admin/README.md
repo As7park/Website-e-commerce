@@ -8,10 +8,10 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 
 ## Frontière du module
 
-| Emplacement | Contenu |
-| ----------- | ------- |
-| `src/lib/admin/` | gardes (`assertAdmin`, `requireAdmin`) et hook `adminHandle` |
-| `src/routes/admin/` | pages du back-office |
+| Emplacement         | Contenu                                                      |
+| ------------------- | ------------------------------------------------------------ |
+| `src/lib/admin/`    | gardes (`assertAdmin`, `requireAdmin`) et hook `adminHandle` |
+| `src/routes/admin/` | pages du back-office                                         |
 
 Le module s'accroche au reste du projet en **un seul point** : le hook
 `adminHandle` (`src/lib/admin/hooks.ts`), branché dans `src/hooks.server.ts`
@@ -33,11 +33,11 @@ ne supprime pas ces modèles ; il faut alors un autre outil pour les gérer
 
 Trois couches, volontairement redondantes.
 
-| Couche | Où | Comportement |
-| ------ | -- | ------------ |
-| Hook | `adminHandle` | GET **et** POST sous `/admin` : anonyme → `/auth/login`, CLIENT → `/` |
-| Layout | `src/routes/admin/+layout.server.ts` | même règle, plus une projection sûre de l'admin connecté |
-| Actions | `requireAdmin(locals)` en tête de chaque action | 403 si le rôle n'est pas `ADMIN` |
+| Couche  | Où                                              | Comportement                                                          |
+| ------- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| Hook    | `adminHandle`                                   | GET **et** POST sous `/admin` : anonyme → `/auth/login`, CLIENT → `/` |
+| Layout  | `src/routes/admin/+layout.server.ts`            | même règle, plus une projection sûre de l'admin connecté              |
+| Actions | `requireAdmin(locals)` en tête de chaque action | 403 si le rôle n'est pas `ADMIN`                                      |
 
 SvelteKit n'exécute pas le `load` du layout avant une action : sans
 `requireAdmin`, un POST `?/deleteUser` passerait même si chaque page vérifiait
@@ -51,10 +51,10 @@ nouvelle **action** doit appeler `requireAdmin(locals)` en première ligne.
 
 L'enum Prisma `Role` n'a que deux valeurs : `ADMIN` et `CLIENT` (défaut).
 
-| Mécanisme | Effet |
-| --------- | ----- |
-| Inscription / Google | toujours `CLIENT` |
-| Seed | un compte `ADMIN` de démonstration (`prisma/seed.js`) |
+| Mécanisme                 | Effet                                                  |
+| ------------------------- | ------------------------------------------------------ |
+| Inscription / Google      | toujours `CLIENT`                                      |
+| Seed                      | un compte `ADMIN` de démonstration (`prisma/seed.js`)  |
 | Fiche `/admin/users/[id]` | promotion ou rétrogradation, valeurs d'enum uniquement |
 
 Il n'existe pas de page de création de compte dans l'admin : les comptes
@@ -62,15 +62,17 @@ naissent par inscription.
 
 ## Sections
 
-| Route | Rôle |
-| ----- | ---- |
-| `/admin` | tableau de bord (ventes récentes, dernières inscriptions) |
-| `/admin/sales` | transactions, factures, bordereaux |
-| `/admin/users` | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses |
-| `/admin/products` | catalogue et catégories |
-| `/admin/blog` | articles, catégories, tags |
-| `/admin/promo` | codes promo |
-| `/admin/contacts` | messages du formulaire de contact |
+| Route             | Rôle                                                                             |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                        |
+| `/admin/sales`    | transactions, factures, bordereaux                                               |
+| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses       |
+| `/admin/products` | catalogue et catégories                                                          |
+| `/admin/blog`     | articles, catégories, tags                                                       |
+| `/admin/promo`    | codes promo                                                                      |
+| `/admin/contacts` | messages du formulaire de contact                                                |
+| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                 |
+| `/admin/exports`  | déclenche un export CSV asynchrone (ventes/utilisateurs), lien envoyé par e-mail |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -95,22 +97,22 @@ puis le code. Index commun : [../../e2e/README.md](../../e2e/README.md).
 
 Routes : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme renvoyé à la connexion | GET chaque path | `/auth/login` |
-| 2 | CLIENT renvoyé à l’accueil | inscription + GET | `/` |
-| 3 | CLIENT ne mute pas | POST `?/deleteUser`, `?/deletePromo` | lignes encore en base |
-| 4 | ADMIN entre | `promoteToAdmin` + GET `/admin`, `/admin/users` | titres visibles |
+| #   | Étape                          | Geste                                           | Preuve                |
+| --- | ------------------------------ | ----------------------------------------------- | --------------------- |
+| 1   | Anonyme renvoyé à la connexion | GET chaque path                                 | `/auth/login`         |
+| 2   | CLIENT renvoyé à l’accueil     | inscription + GET                               | `/`                   |
+| 3   | CLIENT ne mute pas             | POST `?/deleteUser`, `?/deletePromo`            | lignes encore en base |
+| 4   | ADMIN entre                    | `promoteToAdmin` + GET `/admin`, `/admin/users` | titres visibles       |
 
 ### Utilisateurs — `e2e/admin/users.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Liste sans secret | recherche emails | 3 cellules ; pas de hash / totp / recovery |
-| 2 | Promotion CLIENT → ADMIN | fiche → ADMIN → Save | `role` en base |
-| 3 | Rôle hors enum refusé | POST `SUPERUSER` | reste `CLIENT` |
-| 4 | MFA depuis la fiche | checkbox + Save | `isMfaEnabled` |
-| 5 | Suppression d’un CLIENT | dialogue Continue | disparu UI + base |
+| #   | Étape                    | Geste                | Preuve                                     |
+| --- | ------------------------ | -------------------- | ------------------------------------------ |
+| 1   | Liste sans secret        | recherche emails     | 3 cellules ; pas de hash / totp / recovery |
+| 2   | Promotion CLIENT → ADMIN | fiche → ADMIN → Save | `role` en base                             |
+| 3   | Rôle hors enum refusé    | POST `SUPERUSER`     | reste `CLIENT`                             |
+| 4   | MFA depuis la fiche      | checkbox + Save      | `isMfaEnabled`                             |
+| 5   | Suppression d’un CLIENT  | dialogue Continue    | disparu UI + base                          |
 
 À part : CLIENT GET `/admin/users/:id` d'un autre compte → `/`.
 

@@ -24,6 +24,7 @@
 
 import type { RequestEvent } from '@sveltejs/kit';
 import { getRedis, isRedisConfigured } from './redis';
+import { incrementMetric } from './metrics';
 
 function redisKey(namespace: string, key: unknown): string {
 	return `${namespace}:${String(key)}`;
@@ -189,12 +190,14 @@ export class RefillingTokenBucket<_Key> {
 	public refillIntervalSeconds: number;
 
 	private namespace: string;
+	private metricName: string;
 	private storage = new Map<_Key, RefillBucket>();
 
 	constructor(max: number, refillIntervalSeconds: number, name: string) {
 		this.max = max;
 		this.refillIntervalSeconds = refillIntervalSeconds;
 		this.namespace = namespaceFor('refill', name);
+		this.metricName = name;
 	}
 
 	public async check(key: _Key, cost: number): Promise<boolean> {
@@ -226,6 +229,7 @@ export class RefillingTokenBucket<_Key> {
 				[redisKey(this.namespace, key)],
 				[this.max, this.refillIntervalSeconds, cost, Date.now()]
 			);
+			if (allowed !== 1) await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return allowed === 1;
 		}
 
@@ -243,6 +247,7 @@ export class RefillingTokenBucket<_Key> {
 		bucket.count = Math.min(bucket.count + refill, this.max);
 		bucket.refilledAt = now;
 		if (bucket.count < cost) {
+			await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return false;
 		}
 		bucket.count -= cost;
@@ -259,11 +264,13 @@ export class Throttler<_Key> {
 	public timeoutSeconds: number[];
 
 	private namespace: string;
+	private metricName: string;
 	private storage = new Map<_Key, ThrottlingCounter>();
 
 	constructor(timeoutSeconds: number[], name: string) {
 		this.timeoutSeconds = timeoutSeconds;
 		this.namespace = namespaceFor('throttle', name);
+		this.metricName = name;
 	}
 
 	public async consume(key: _Key): Promise<boolean> {
@@ -273,6 +280,7 @@ export class Throttler<_Key> {
 				[redisKey(this.namespace, key)],
 				[JSON.stringify(this.timeoutSeconds), Date.now()]
 			);
+			if (allowed !== 1) await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return allowed === 1;
 		}
 
@@ -288,6 +296,7 @@ export class Throttler<_Key> {
 		}
 		const allowed = now - counter.updatedAt >= this.timeoutSeconds[counter.timeout] * 1000;
 		if (!allowed) {
+			await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return false;
 		}
 		counter.updatedAt = now;
@@ -314,12 +323,14 @@ export class ExpiringTokenBucket<_Key> {
 	public expiresInSeconds: number;
 
 	private namespace: string;
+	private metricName: string;
 	private storage = new Map<_Key, ExpiringBucket>();
 
 	constructor(max: number, expiresInSeconds: number, name: string) {
 		this.max = max;
 		this.expiresInSeconds = expiresInSeconds;
 		this.namespace = namespaceFor('expiring', name);
+		this.metricName = name;
 	}
 
 	public async check(key: _Key, cost: number): Promise<boolean> {
@@ -350,6 +361,7 @@ export class ExpiringTokenBucket<_Key> {
 				[redisKey(this.namespace, key)],
 				[this.max, this.expiresInSeconds, cost, Date.now()]
 			);
+			if (allowed !== 1) await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return allowed === 1;
 		}
 
@@ -372,6 +384,7 @@ export class ExpiringTokenBucket<_Key> {
 			bucket.createdAt = now;
 		}
 		if (bucket.count < cost) {
+			await incrementMetric(`rate-limit.rejected.${this.metricName}`);
 			return false;
 		}
 		bucket.count -= cost;

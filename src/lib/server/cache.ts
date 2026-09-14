@@ -1,4 +1,5 @@
 import { getRedis, isRedisConfigured } from './redis';
+import { incrementMetric } from './metrics';
 
 /**
  * Cache-aside générique : lit `key` sur Redis, sinon appelle `fn()` et écrit
@@ -13,9 +14,11 @@ export async function cached<T>(key: string, ttlSeconds: number, fn: () => Promi
 	const redis = getRedis();
 	const hit = await redis.get<T>(key);
 	if (hit !== null && hit !== undefined) {
+		await incrementMetric('cache.hit');
 		return hit;
 	}
 
+	await incrementMetric('cache.miss');
 	const value = await fn();
 	await redis.set(key, value, { ex: ttlSeconds });
 	return value;

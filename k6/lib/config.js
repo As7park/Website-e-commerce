@@ -15,3 +15,10 @@ export const PERF_PASSWORD = __ENV.PERF_PASSWORD || 'PerfSeed!2026';
 // contre un environnement autre que local/staging jetable.
 export const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || 'admin@madeindiamonds.com';
 export const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || 'DemoPass!2026';
+
+// Requis uniquement par `webhook.js` : doit être le MÊME secret que
+// `STRIPE_WEBHOOK_SECRET` côté serveur (`.env`), sinon `constructEvent`
+// rejette la signature. Pas de valeur par défaut : un secret par défaut
+// laisserait croire que le script marche « out of the box » alors qu'il
+// dépend entièrement de la config serveur ciblée.
+export const STRIPE_WEBHOOK_SECRET = __ENV.STRIPE_WEBHOOK_SECRET || '';

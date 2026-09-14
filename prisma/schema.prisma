@@ -209,6 +209,10 @@ model Order {
   // Sert la purge des paniers PENDING abandonnés ($lib/server/jobs/cleanup.ts) :
   // filtre status + updatedAt ensemble, pas juste chacun séparément.
   @@index([status, updatedAt])
+  // Anticipe un listing de commandes filtré par statut et trié par date
+  // (roadmap post-audit) : aucun `findMany` ne l'exploite encore aujourd'hui,
+  // mais c'est le composite recommandé pour ce genre de requête paginée.
+  @@index([status, createdAt])
   @@map("orders")
 }
 
@@ -364,6 +368,9 @@ model Transaction {
   @@index([orderId])
   @@index([createdAt])
   @@index([status])
+  // Sert `/auth/settings/factures` (getTransactionsByUserId.ts) : filtre
+  // userId + tri createdAt ensemble, pas juste chacun séparément.
+  @@index([userId, createdAt])
   @@map("transactions")
 }
 

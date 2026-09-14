@@ -5,21 +5,22 @@ Tunnel de commande : panier serveur (`Order` PENDING), checkout, webhook Stripe
 écriture au visiteur connecté ; `/admin/sales` au rôle `ADMIN`.
 
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
-[retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
+[retrait.md](./retrait.md) ; ce document décrit son fonctionnement. Objectifs
+de latence/erreur et scripts de charge : [slo.md](./slo.md).
 
 ## Frontière du module
 
-| Emplacement | Contenu |
-| ----------- | ------- |
-| `src/lib/commerce/` | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
-| `src/lib/prisma/order/` et `src/lib/prisma/transaction/` | DAO Prisma |
-| `src/lib/store/Data/cartStore.ts` + `cartSync.ts` | panier client |
-| `src/routes/api/save-cart/` | persistance panier |
-| `src/routes/checkout/` | tunnel + succès |
-| `src/routes/api/webhooks/` | Stripe `checkout.session.completed` |
-| `src/lib/server/jobs/post-payment.ts` | facture + Sendcloud, hors du webhook (voir plus bas) |
-| `src/routes/api/jobs/post-payment/` | endpoint appelé par la queue (QStash) |
-| `src/routes/admin/sales/` | liste, facture, bordereau (double marqueur ADMIN) |
+| Emplacement                                              | Contenu                                                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/lib/commerce/`                                      | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
+| `src/lib/prisma/order/` et `src/lib/prisma/transaction/` | DAO Prisma                                                                                        |
+| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`        | panier client                                                                                     |
+| `src/routes/api/save-cart/`                              | persistance panier                                                                                |
+| `src/routes/checkout/`                                   | tunnel + succès                                                                                   |
+| `src/routes/api/webhooks/`                               | Stripe `checkout.session.completed`                                                               |
+| `src/lib/server/jobs/post-payment.ts`                    | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
+| `src/routes/api/jobs/post-payment/`                      | endpoint appelé par la queue (QStash)                                                             |
+| `src/routes/admin/sales/`                                | liste, facture, bordereau (double marqueur ADMIN)                                                 |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -38,14 +39,14 @@ rg "COMMERCE-PLUGIN" src/ prisma/
 
 ## Ce qui n'est pas le commerce
 
-| Module | Marqueur | Pourquoi |
-| ------ | -------- | -------- |
-| Catalogue | `PRODUCT-PLUGIN` | fournit `Product` et le prix à revalider |
-| Blog | `BLOG-PLUGIN` | articles Prisma, hors tunnel |
-| Auth | `AUTH-PLUGIN` | `locals.user`, adresses, factures compte |
-| Admin | `ADMIN-PLUGIN` | gardes de `/admin/sales` |
-| Promo | `PROMO-PLUGIN` | champ checkout ; tests dans [docs/promo](../promo/README.md) |
-| Sendcloud | `SENDCLOUD` | options / points relais / étiquettes |
+| Module    | Marqueur         | Pourquoi                                                     |
+| --------- | ---------------- | ------------------------------------------------------------ |
+| Catalogue | `PRODUCT-PLUGIN` | fournit `Product` et le prix à revalider                     |
+| Blog      | `BLOG-PLUGIN`    | articles Prisma, hors tunnel                                 |
+| Auth      | `AUTH-PLUGIN`    | `locals.user`, adresses, factures compte                     |
+| Admin     | `ADMIN-PLUGIN`   | gardes de `/admin/sales`                                     |
+| Promo     | `PROMO-PLUGIN`   | champ checkout ; tests dans [docs/promo](../promo/README.md) |
+| Sendcloud | `SENDCLOUD`      | options / points relais / étiquettes                         |
 
 Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
 
@@ -91,6 +92,22 @@ verrou (`invoice-email:<transaction id>`). `runPostPaymentJob`
 commande ou une étiquette Sendcloud a un coût réel, un retry ne doit jamais
 en recréer une seconde.
 
+### Résilience Sendcloud (disjoncteur + dead-letter)
+
+Les appels `createSendcloudOrder`/`createSendcloudLabel` passent par
+`withCircuitBreaker('sendcloud', …)` (`$lib/server/circuit-breaker.ts`) : au
+5e échec en moins de 2 minutes, le disjoncteur s'ouvre et court-circuite les
+appels Sendcloud pendant 60s (sans requête réseau), pour ne pas marteler un
+fournisseur déjà en difficulté à chaque retry QStash.
+
+En parallèle, `recordJobAttempt` (`$lib/server/job-attempts.ts`) compte les
+échecs pour **cette transaction précise** (clé `sendcloud:<transaction id>`,
+TTL 24h) : après 5 tentatives infructueuses, le job arrête de relancer
+l'erreur (donc QStash arrête de retenter) et journalise en `ERROR` + Sentry
+(`tags: { deadLetter: 'sendcloud' }`) pour investigation manuelle — la
+transaction reste identifiable en base (`sendcloudOrderCreatedAt`/
+`sendcloudParcelId` toujours absents) pour un retraitement ultérieur.
+
 ## Tests
 
 Les numéros sont ceux des `test.step`. Changer la procédure ici, puis le spec,
@@ -108,38 +125,38 @@ dans `STRIPE_WEBHOOK_SECRET` du `.env`, puis relancer Vite. Une fois :
 
 ### Panier — `e2e/commerce/cart.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Fiche : ajouter au panier | bouton « Ajouter au panier » | UI panier + `OrderItem` en base |
-| 2 | `/api/save-cart` d'une autre commande | POST id d'un autre user | 403, ligne inchangée |
-| 3 | Prix posté ≠ catalogue | POST `price: 0.01` | persisté = `Product.price` |
+| #   | Étape                                 | Geste                        | Preuve                          |
+| --- | ------------------------------------- | ---------------------------- | ------------------------------- |
+| 1   | Fiche : ajouter au panier             | bouton « Ajouter au panier » | UI panier + `OrderItem` en base |
+| 2   | `/api/save-cart` d'une autre commande | POST id d'un autre user      | 403, ligne inchangée            |
+| 3   | Prix posté ≠ catalogue                | POST `price: 0.01`           | persisté = `Product.price`      |
 
 ### Panier invité — `e2e/commerce/guest.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme : ajouter puis recharger | bouton puis reload | item encore visible |
-| 2 | Anonyme puis inscription | signup après add | `OrderItem` en base, localStorage vide |
-| 3 | Compte + invité (autre produit) | login après add invité | les deux lignes en base |
+| #   | Étape                            | Geste                  | Preuve                                 |
+| --- | -------------------------------- | ---------------------- | -------------------------------------- |
+| 1   | Anonyme : ajouter puis recharger | bouton puis reload     | item encore visible                    |
+| 2   | Anonyme puis inscription         | signup après add       | `OrderItem` en base, localStorage vide |
+| 3   | Compte + invité (autre produit)  | login après add invité | les deux lignes en base                |
 
 ### Checkout — `e2e/commerce/checkout.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme GET `/checkout` | navigation | `/auth/login` |
-| 2 | CLIENT avec panier | `/checkout` | sélecteur d'adresse |
-| 3 | POST sans adresse / sans être proprio | `?/checkout` | 400 / 403 |
-| 4 | Paiement simulé | helper Prisma | l'order payée n'est plus `PENDING` |
+| #   | Étape                                 | Geste         | Preuve                             |
+| --- | ------------------------------------- | ------------- | ---------------------------------- |
+| 1   | Anonyme GET `/checkout`               | navigation    | `/auth/login`                      |
+| 2   | CLIENT avec panier                    | `/checkout`   | sélecteur d'adresse                |
+| 3   | POST sans adresse / sans être proprio | `?/checkout`  | 400 / 403                          |
+| 4   | Paiement simulé                       | helper Prisma | l'order payée n'est plus `PENDING` |
 
 ### Webhook Stripe — `e2e/commerce/stripe.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Signature invalide | POST `/api/webhooks` HMAC faux | 400, pas de `Transaction` |
-| 2 | `checkout.session.completed` | POST signé (`STRIPE_WEBHOOK_SECRET` e2e) | `Order` `PAID`, `Transaction` |
-| 3 | Facture compte | GET `/auth/settings/factures/[id]` | HTML contient l'id transaction |
-| 4 | Facture admin | GET `/admin/sales/facture/[id]` | HTML contient l'id |
-| 5 | Bordereau admin | GET `/admin/sales/bordereau/[id]` | HTML contient l'id |
+| #   | Étape                        | Geste                                    | Preuve                         |
+| --- | ---------------------------- | ---------------------------------------- | ------------------------------ |
+| 1   | Signature invalide           | POST `/api/webhooks` HMAC faux           | 400, pas de `Transaction`      |
+| 2   | `checkout.session.completed` | POST signé (`STRIPE_WEBHOOK_SECRET` e2e) | `Order` `PAID`, `Transaction`  |
+| 3   | Facture compte               | GET `/auth/settings/factures/[id]`       | HTML contient l'id transaction |
+| 4   | Facture admin                | GET `/admin/sales/facture/[id]`          | HTML contient l'id             |
+| 5   | Bordereau admin              | GET `/admin/sales/bordereau/[id]`        | HTML contient l'id             |
 
 Pas de paiement carte. Sendcloud n'est pas appelé (`PUBLIC_ENV=test`).
 `incrementUsage` n'est pas joué : il suit `stripe.checkout.sessions.create`.
@@ -148,11 +165,11 @@ s'exécute directement dans la requête webhook, sans file d'attente.
 
 ### Ventes — `e2e/commerce/sales.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | ADMIN voit la transaction | `/admin/sales`, recherche | cellule email |
-| 2 | CLIENT GET `/admin/sales` | navigation | `/` |
-| 3 | Facture user : uniquement la sienne | GET facture d'un autre | 404 |
+| #   | Étape                               | Geste                     | Preuve        |
+| --- | ----------------------------------- | ------------------------- | ------------- |
+| 1   | ADMIN voit la transaction           | `/admin/sales`, recherche | cellule email |
+| 2   | CLIENT GET `/admin/sales`           | navigation                | `/`           |
+| 3   | Facture user : uniquement la sienne | GET facture d'un autre    | 404           |
 
 ```bash
 npm run test:e2e

@@ -29,6 +29,7 @@
 		"load:catalog": "k6 run k6/catalog.js",
 		"load:login": "k6 run k6/login.js",
 		"load:admin": "k6 run k6/admin.js",
+		"load:webhook": "k6 run k6/webhook.js",
 		"postinstall": "prisma generate",
 		"db:migrate": "prisma migrate dev",
 		"db:deploy": "prisma migrate deploy",
@@ -39,6 +40,8 @@
 		"seed": "node prisma/seed.js",
 		"seed:perf": "node prisma/seed-perf.js",
 		"seed:perf:clean": "node prisma/seed-perf.js --clean",
+		"seed:webhook-fixtures": "node prisma/seed-webhook-fixtures.js",
+		"seed:webhook-fixtures:clean": "node prisma/seed-webhook-fixtures.js --clean",
 		"reset": "prisma migrate reset --force && node prisma/seed.js"
 	},
 	"devDependencies": {

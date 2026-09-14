@@ -23,3 +23,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# k6 — généré par prisma/seed-webhook-fixtures.js, jamais à committer.
+k6/webhook-fixtures.json

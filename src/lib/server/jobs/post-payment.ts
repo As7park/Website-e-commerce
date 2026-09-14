@@ -3,6 +3,13 @@ import { withLock } from '$lib/server/lock';
 import { createSendcloudOrder } from '$lib/sendcloud/order';
 import { createSendcloudLabel } from '$lib/sendcloud/label';
 import { log } from '$lib/server/log';
+import { withCircuitBreaker } from '$lib/server/circuit-breaker';
+import { recordJobAttempt, resetJobAttempts } from '$lib/server/job-attempts';
+import { withDuration } from '$lib/server/metrics';
+import * as Sentry from '@sentry/sveltekit';
+
+/** Au-delà, on arrête de retenter cette transaction (dead-letter) : voir `runPostPaymentJob`. */
+const MAX_SENDCLOUD_ATTEMPTS = 5;
 
 /**
  * Travail post-paiement : Sendcloud (commande + étiquette), sorti du chemin
@@ -136,9 +143,14 @@ export async function getShippingMethodData(
 			return dynamicMethod;
 		}
 
-		log('WARN', 'post-payment:sendcloud-method', 'Aucune méthode correspondante trouvée, fallback', {
-			shippingOption
-		});
+		log(
+			'WARN',
+			'post-payment:sendcloud-method',
+			'Aucune méthode correspondante trouvée, fallback',
+			{
+				shippingOption
+			}
+		);
 		return fallbackShippingMethod(shippingOption, weightBracket);
 	} catch (error) {
 		log(
@@ -162,75 +174,121 @@ export async function getShippingMethodData(
  * c'est ce qui déclenche le retry QStash côté appelant HTTP.
  */
 export async function runPostPaymentJob(transactionId: string): Promise<void> {
-	await withLock(`post-payment:${transactionId}`, 60, async () => {
-		let transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
-		if (!transaction) {
-			log('ERROR', 'post-payment', `Transaction introuvable pour le job post-paiement: ${transactionId}`);
-			return;
-		}
+	await withDuration('job.post-payment', () =>
+		withLock(`post-payment:${transactionId}`, 60, async () => {
+			let transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
+			if (!transaction) {
+				log(
+					'ERROR',
+					'post-payment',
+					`Transaction introuvable pour le job post-paiement: ${transactionId}`
+				);
+				return;
+			}
 
-		if (transaction.status !== 'paid') {
-			log(
-				'WARN',
-				'post-payment',
-				'Statut de paiement non "paid", job post-paiement ignoré. Statut:',
-				transaction.status
-			);
-			return;
-		}
+			if (transaction.status !== 'paid') {
+				log(
+					'WARN',
+					'post-payment',
+					'Statut de paiement non "paid", job post-paiement ignoré. Statut:',
+					transaction.status
+				);
+				return;
+			}
 
-		if (!shouldCallSendcloud()) {
-			log('DEBUG', 'post-payment', 'Sendcloud ignoré (PUBLIC_ENV=test ou clés absentes)');
-			return;
-		}
+			if (!shouldCallSendcloud()) {
+				log('DEBUG', 'post-payment', 'Sendcloud ignoré (PUBLIC_ENV=test ou clés absentes)');
+				return;
+			}
 
-		const orderForShipping = transaction.orderId
-			? await prisma.order.findUnique({
-					where: { id: transaction.orderId },
-					include: { items: { include: { product: true, custom: true } } }
-				})
-			: null;
-		const weightBracket = deduceWeightBracket(orderForShipping);
-		const shippingMethodData = await getShippingMethodData(
-			transaction.shippingOption || '',
-			weightBracket,
-			orderForShipping
-		);
+			const sendcloudAttemptsKey = `sendcloud:${transactionId}`;
 
-		if (shippingMethodData?.id && shippingMethodData.id !== transaction.shippingMethodId) {
-			transaction = await prisma.transaction.update({
-				where: { id: transaction.id },
-				data: {
-					shippingMethodId: shippingMethodData.id,
-					shippingMethodName: shippingMethodData.name,
-					package_length: shippingMethodData.length,
-					package_width: shippingMethodData.width,
-					package_height: shippingMethodData.height,
-					package_dimension_unit: shippingMethodData.unit,
-					package_weight: shippingMethodData.weight,
-					package_weight_unit: shippingMethodData.weightUnit,
-					package_volume: shippingMethodData.volume,
-					package_volume_unit: shippingMethodData.volumeUnit
+			try {
+				const orderForShipping = transaction.orderId
+					? await prisma.order.findUnique({
+							where: { id: transaction.orderId },
+							include: { items: { include: { product: true, custom: true } } }
+						})
+					: null;
+				const weightBracket = deduceWeightBracket(orderForShipping);
+				const shippingMethodData = await getShippingMethodData(
+					transaction.shippingOption || '',
+					weightBracket,
+					orderForShipping
+				);
+
+				if (shippingMethodData?.id && shippingMethodData.id !== transaction.shippingMethodId) {
+					transaction = await prisma.transaction.update({
+						where: { id: transaction.id },
+						data: {
+							shippingMethodId: shippingMethodData.id,
+							shippingMethodName: shippingMethodData.name,
+							package_length: shippingMethodData.length,
+							package_width: shippingMethodData.width,
+							package_height: shippingMethodData.height,
+							package_dimension_unit: shippingMethodData.unit,
+							package_weight: shippingMethodData.weight,
+							package_weight_unit: shippingMethodData.weightUnit,
+							package_volume: shippingMethodData.volume,
+							package_volume_unit: shippingMethodData.volumeUnit
+						}
+					});
 				}
-			});
-		}
 
-		if (!transaction.sendcloudOrderCreatedAt) {
-			await createSendcloudOrder(transaction);
-			transaction = await prisma.transaction.update({
-				where: { id: transaction.id },
-				data: { sendcloudOrderCreatedAt: new Date() }
-			});
-		} else {
-			log('DEBUG', 'post-payment', 'Commande Sendcloud déjà créée, appel ignoré');
-		}
+				if (!transaction.sendcloudOrderCreatedAt) {
+					const transactionForOrder = transaction;
+					await withCircuitBreaker('sendcloud', () => createSendcloudOrder(transactionForOrder));
+					transaction = await prisma.transaction.update({
+						where: { id: transaction.id },
+						data: { sendcloudOrderCreatedAt: new Date() }
+					});
+				} else {
+					log('DEBUG', 'post-payment', 'Commande Sendcloud déjà créée, appel ignoré');
+				}
 
-		if (!transaction.sendcloudParcelId) {
-			await createSendcloudLabel(transaction);
-		} else {
-			log('DEBUG', 'post-payment', 'Étiquette Sendcloud déjà créée, appel ignoré');
-		}
+				if (!transaction.sendcloudParcelId) {
+					const transactionForLabel = transaction;
+					await withCircuitBreaker('sendcloud', () => createSendcloudLabel(transactionForLabel));
+				} else {
+					log('DEBUG', 'post-payment', 'Étiquette Sendcloud déjà créée, appel ignoré');
+				}
 
-		log('INFO', 'post-payment', 'Job post-paiement terminé', { transactionId: transaction.id });
-	});
+				await resetJobAttempts(sendcloudAttemptsKey);
+				log('INFO', 'post-payment', 'Job post-paiement terminé', { transactionId: transaction.id });
+			} catch (error) {
+				// Le disjoncteur (`$lib/server/circuit-breaker.ts`) protège Sendcloud
+				// pendant une panne ; ce compteur protège QStash contre un retry sans
+				// fin sur LA MÊME transaction une fois le disjoncteur refermé.
+				const { attempt, exhausted } = await recordJobAttempt(
+					sendcloudAttemptsKey,
+					MAX_SENDCLOUD_ATTEMPTS
+				);
+
+				if (exhausted) {
+					log(
+						'ERROR',
+						'post-payment',
+						`Sendcloud abandonné après ${attempt} tentatives (dead-letter) pour la transaction ${transactionId}`,
+						error
+					);
+					Sentry.captureException(error, {
+						tags: { deadLetter: 'sendcloud', transactionId }
+					});
+					// Ne relance pas l'erreur : QStash arrêterait sinon de retenter, ce qui
+					// est justement le but ici — la transaction reste identifiable en base
+					// (sendcloudOrderCreatedAt/sendcloudParcelId absents) pour un
+					// retraitement manuel ultérieur, sans marteler Sendcloud indéfiniment.
+					return;
+				}
+
+				log(
+					'WARN',
+					'post-payment',
+					`Échec Sendcloud (tentative ${attempt}/${MAX_SENDCLOUD_ATTEMPTS}), nouvel essai via retry QStash`,
+					error
+				);
+				throw error;
+			}
+		})
+	);
 }
