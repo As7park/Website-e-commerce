@@ -149,7 +149,12 @@
 						<Form.Field name="material" form={updateProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
-								<Input name="material" type="text" bind:value={$updateProductData.material} />
+								<Input name="material" type="text" list="material-suggestions" bind:value={$updateProductData.material} />
+							<datalist id="material-suggestions">
+								{#each data.materials ?? [] as material (material)}
+									<option value={material}></option>
+								{/each}
+							</datalist>
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -249,9 +254,9 @@
 					</div>
 					<div class="mt-3 flex flex-wrap gap-2 flex-1 w-[300px] rts">
 						<p class="text-sm">Ces images seront suppirmées à la suite d'une modification :</p>
-						{#each $updateProductData.existingImages as imageUrl}
+						{#each (($updateProductData.existingImages as string[] | undefined) ?? []) as imageUrl}
 							<div class="relative w-[65px] h-[65px]">
-								<img src={imageUrl} alt="" class="w-full h-full object-cover rounded" />
+								<img src={String(imageUrl)} alt="" class="w-full h-full object-cover rounded" />
 							</div>
 						{/each}
 					</div>

@@ -6,16 +6,21 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import { createProductSchema } from '$lib/schema/products/productSchema';
 import { slugify } from '$lib/prisma/slugify';
-import { connectProductToCategories, createProduct } from '$lib/prisma/products/products';
+import {
+	connectProductToCategories,
+	createProduct,
+	listDistinctMaterials
+} from '$lib/prisma/products/products';
 import { getAllcategories, getCategoriesByIds } from '$lib/prisma/categories/categories';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));
-	const categories = await getAllcategories();
+	const [categories, materials] = await Promise.all([getAllcategories(), listDistinctMaterials()]);
 
 	return {
 		categories,
+		materials,
 		IcreateProductSchema
 	};
 };
@@ -28,6 +33,12 @@ export const actions: Actions = {
 		const form = await superValidate(formData, zod(createProductSchema));
 
 		if (!form.valid) {
+			return fail(400, withFiles({ form }));
+		}
+
+		if (typeof form.data.compareAtPrice === 'number' && form.data.compareAtPrice <= form.data.price) {
+			form.errors.compareAtPrice = ['Le prix barré doit être supérieur au prix de vente'];
+			form.valid = false;
 			return fail(400, withFiles({ form }));
 		}
 

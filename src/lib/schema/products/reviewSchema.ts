@@ -10,3 +10,8 @@ export const reviewSchema = z.object({
 		.optional()
 		.or(z.literal(''))
 });
+
+/** ADMIN-PLUGIN : suppression d'un avis depuis la modération (`/admin/products/reviews`). */
+export const deleteReviewSchema = z.object({
+	id: z.string()
+});

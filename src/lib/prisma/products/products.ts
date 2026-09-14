@@ -42,6 +42,22 @@ export const createProduct = async (productData: {
 	return product;
 };
 
+/**
+ * Valeurs de `material` déjà utilisées ailleurs dans le catalogue — proposées
+ * en suggestion (`<datalist>`) au formulaire admin plutôt qu'une saisie
+ * totalement libre, pour éviter que « Or », « or » et « OR » cohabitent et
+ * cassent silencieusement le filtre matière de la vitrine.
+ */
+export const listDistinctMaterials = async (): Promise<string[]> => {
+	const rows = await prisma.product.findMany({
+		where: { material: { not: null } },
+		select: { material: true },
+		distinct: ['material'],
+		orderBy: { material: 'asc' }
+	});
+	return rows.map((row) => row.material as string);
+};
+
 export const getProductById = async (productId: string) => {
 	return await prisma.product.findUnique({
 		where: { id: productId },

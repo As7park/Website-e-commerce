@@ -146,7 +146,12 @@
 						<Form.Field name="material" form={createProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
-								<Input name="material" type="text" bind:value={$createProductData.material} />
+								<Input name="material" type="text" list="material-suggestions" bind:value={$createProductData.material} />
+							<datalist id="material-suggestions">
+								{#each data.materials as material (material)}
+									<option value={material}></option>
+								{/each}
+							</datalist>
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

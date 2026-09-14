@@ -310,7 +310,7 @@
 									{:else}
 										<div class="h-full w-full bg-muted" aria-hidden="true"></div>
 									{/if}
-									{#if product.compareAtPrice}
+									{#if product.compareAtPrice && product.compareAtPrice > product.price}
 										<Badge variant="destructive" class="absolute top-2 left-2">
 											-{discountPercent(product.price, product.compareAtPrice)}%
 										</Badge>
@@ -335,7 +335,7 @@
 									</p>
 									<div class="flex items-baseline gap-2">
 										<p class="text-base">{product.price.toFixed(2)} €</p>
-										{#if product.compareAtPrice}
+										{#if product.compareAtPrice && product.compareAtPrice > product.price}
 											<p class="text-sm text-muted-foreground line-through">
 												{product.compareAtPrice.toFixed(2)} €
 											</p>

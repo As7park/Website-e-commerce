@@ -11,6 +11,7 @@
 	import StarRating from '$lib/components/reviews/StarRating.svelte';
 	import Heart from 'lucide-svelte/icons/heart';
 	import * as Card from '$shadcn/card';
+	import { Badge } from '$shadcn/badge';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -20,6 +21,12 @@
 
 	let inWishlist = $state(data.inWishlist);
 	let wishlistBusy = $state(false);
+	let hasDiscount = $derived(
+		Boolean(product.compareAtPrice) && (product.compareAtPrice as number) > product.price
+	);
+	let discountPercent = $derived(
+		hasDiscount ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100) : 0
+	);
 
 	async function toggleWishlist() {
 		if (!data.user) {
@@ -105,7 +112,15 @@
 				{/if}
 			</div>
 
-			<p class="mb-4 text-2xl">{product.price.toFixed(2)} €</p>
+			<div class="mb-4 flex items-center gap-3">
+				<p class="text-2xl">{product.price.toFixed(2)} €</p>
+				{#if hasDiscount}
+					<p class="text-lg text-muted-foreground line-through">
+						{(product.compareAtPrice as number).toFixed(2)} €
+					</p>
+					<Badge variant="destructive">-{discountPercent}%</Badge>
+				{/if}
+			</div>
 			<p class="mb-3 text-muted-foreground">Stock : {product.stock}</p>
 			<p class="mb-6 leading-normal">{product.description}</p>
 			<div class="flex items-center gap-3">

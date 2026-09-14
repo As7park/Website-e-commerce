@@ -17,6 +17,7 @@
 					{ title: 'ventes', url: '/admin/sales' }, // COMMERCE-PLUGIN
 					{ title: 'utilisateurs', url: '/admin/users' },
 					{ title: 'produits', url: '/admin/products' }, // PRODUCT-PLUGIN
+					{ title: 'avis', url: '/admin/products/reviews' }, // PRODUCT-PLUGIN
 					{ title: 'blog', url: '/admin/blog' }, // BLOG-PLUGIN
 					{ title: 'promo', url: '/admin/promo' }, // PROMO-PLUGIN
 					{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN

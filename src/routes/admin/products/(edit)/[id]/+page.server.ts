@@ -6,6 +6,7 @@ import cloudinary from '$lib/server/cloudinary';
 import {
 	connectProductToCategories,
 	getProductById,
+	listDistinctMaterials,
 	updateProductById
 } from '$lib/prisma/products/products';
 import { updateProductSchema } from '$lib/schema/products/productSchema';
@@ -25,7 +26,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			return fail(404, { message: 'Product not found' });
 		}
 
-		const categories = await getAllcategories();
+		const [categories, materials] = await Promise.all([getAllcategories(), listDistinctMaterials()]);
 
 		const initialData = {
 			_id: product.id,
@@ -46,6 +47,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 		return {
 			categories,
+			materials,
 			IupdateProductSchema
 		};
 	} catch (error) {
@@ -62,6 +64,12 @@ export const actions: Actions = {
 			const form = await superValidate(formData, zod(updateProductSchema));
 
 			if (!form.valid) {
+				return fail(400, withFiles({ form }));
+			}
+
+			if (typeof form.data.compareAtPrice === 'number' && form.data.compareAtPrice <= form.data.price) {
+				form.errors.compareAtPrice = ['Le prix barré doit être supérieur au prix de vente'];
+				form.valid = false;
 				return fail(400, withFiles({ form }));
 			}
 
@@ -144,7 +152,9 @@ export const actions: Actions = {
 				return fail(500, { message: 'Product update failed' });
 			}
 		} catch (error) {
-			return fail(500, { message: 'An unexpected error occurred' });
+			return fail(500, {
+				message: `DEBUG: ${error instanceof Error ? error.stack : String(error)}`
+			});
 		}
 	}
 };
