@@ -25,6 +25,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:report": "playwright show-report",
 		"model-pipeline:run": "node scripts/model-pipeline.js",
+		"jobs:register-cleanup-schedule": "node scripts/register-cleanup-schedule.mjs",
 		"postinstall": "prisma generate",
 		"db:migrate": "prisma migrate dev",
 		"db:deploy": "prisma migrate deploy",
