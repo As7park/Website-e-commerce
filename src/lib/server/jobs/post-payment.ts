@@ -1,14 +1,16 @@
 import { prisma } from '$lib/server';
 import { withLock } from '$lib/server/lock';
-import { sendInvoiceEmail } from '$lib/server/invoice/email';
 import { createSendcloudOrder } from '$lib/sendcloud/order';
 import { createSendcloudLabel } from '$lib/sendcloud/label';
+import { log } from '$lib/server/log';
 
 /**
- * Travail post-paiement : facture + Sendcloud, sorti du chemin synchrone du
- * webhook Stripe (`src/routes/api/webhooks/+server.ts`). Appelé soit
- * directement (repli sans QStash, `$lib/server/qstash.ts`), soit depuis
- * `src/routes/api/jobs/post-payment/+server.ts` via QStash — d'où le
+ * Travail post-paiement : Sendcloud (commande + étiquette), sorti du chemin
+ * synchrone du webhook Stripe (`src/routes/api/webhooks/+server.ts`). La
+ * facture part dans son propre job (`$lib/server/jobs/invoice-email.ts`) —
+ * les deux sont enqueue en parallèle, sans dépendance de l'un vers l'autre.
+ * Appelé soit directement (repli sans QStash, `$lib/server/qstash.ts`), soit
+ * depuis `src/routes/api/jobs/post-payment/+server.ts` via QStash — d'où le
  * rechargement de tout depuis la base par id : un job ne doit pas fermer sur
  * des objets en mémoire d'une requête HTTP déjà terminée.
  */
@@ -38,7 +40,7 @@ export function fallbackShippingMethod(shippingOption: string, weightBracket: nu
 
 export function deduceWeightBracket(order: any): number {
 	if (!order || !order.items || !Array.isArray(order.items)) {
-		console.warn("⚠️ Impossible de calculer le poids : 'order.items' est invalide.");
+		log('WARN', 'post-payment', "Impossible de calculer le poids : 'order.items' est invalide.");
 		return 3; // Valeur par défaut pour éviter que tout crashe
 	}
 
@@ -66,10 +68,7 @@ export async function getShippingMethodData(
 		return fallbackShippingMethod(shippingOption, weightBracket);
 	}
 
-	console.log(`\n🔍 === RECHERCHE MÉTHODE D'EXPÉDITION DYNAMIQUE ===`);
-	console.log(`📋 Paramètres:`, { shippingOption, weightBracket });
-
-	console.log("🚀 Récupération des méthodes d'expédition depuis Sendcloud...");
+	log('DEBUG', 'post-payment:sendcloud-method', 'Paramètres:', { shippingOption, weightBracket });
 
 	try {
 		const methodsResponse = await fetch('https://panel.sendcloud.sc/api/v2/shipping_methods', {
@@ -85,26 +84,17 @@ export async function getShippingMethodData(
 		}
 
 		const methodsData = await methodsResponse.json();
-		console.log("📥 Méthodes d'expédition reçues:", methodsData.shipping_methods?.length || 0);
-
-		console.log('🔍 Recherche de la méthode correspondante au code:', shippingOption);
+		log(
+			'DEBUG',
+			'post-payment:sendcloud-method',
+			"Méthodes d'expédition reçues:",
+			methodsData.shipping_methods?.length || 0
+		);
 
 		const baseCode = shippingOption.split('/')[0];
-		console.log('🔍 Code de base extrait:', baseCode);
 
 		let matchingMethod = null;
 		if (methodsData.shipping_methods && Array.isArray(methodsData.shipping_methods)) {
-			console.log(
-				'📋 Exemples de méthodes disponibles:',
-				methodsData.shipping_methods
-					.slice(0, 3)
-					.map((m: { id?: unknown; name?: unknown; carrier?: unknown }) => ({
-						id: m.id,
-						name: m.name,
-						carrier: m.carrier
-					}))
-			);
-
 			matchingMethod = methodsData.shipping_methods.find((method: any) => {
 				const methodName = method.name?.toLowerCase() || '';
 				const methodCarrier = method.carrier?.toLowerCase() || '';
@@ -124,14 +114,6 @@ export async function getShippingMethodData(
 		}
 
 		if (matchingMethod) {
-			console.log('✅ Méthode trouvée dans Sendcloud:', {
-				id: matchingMethod.id,
-				name: matchingMethod.name,
-				carrier: matchingMethod.carrier,
-				min_weight: matchingMethod.min_weight,
-				max_weight: matchingMethod.max_weight
-			});
-
 			const dynamicMethod = {
 				id: matchingMethod.id, // ID réel de Sendcloud !
 				name: `${matchingMethod.carrier || 'Unknown'} - ${matchingMethod.name || 'Unknown'}`,
@@ -145,29 +127,27 @@ export async function getShippingMethodData(
 				volumeUnit: 'cm3'
 			};
 
-			console.log("🎯 Méthode d'expédition dynamique créée avec ID Sendcloud:", dynamicMethod);
+			log(
+				'DEBUG',
+				'post-payment:sendcloud-method',
+				"Méthode d'expédition dynamique créée avec ID Sendcloud:",
+				dynamicMethod
+			);
 			return dynamicMethod;
 		}
 
-		console.log('❌ Aucune méthode correspondante trouvée');
-		console.log(
-			'📋 Méthodes disponibles:',
-			methodsData.shipping_methods?.map((m: any) => ({
-				id: m.id,
-				name: m.name,
-				carrier: m.carrier
-			})) || []
-		);
-
-		console.log('⚠️ Utilisation de la méthode de fallback');
+		log('WARN', 'post-payment:sendcloud-method', 'Aucune méthode correspondante trouvée, fallback', {
+			shippingOption
+		});
 		return fallbackShippingMethod(shippingOption, weightBracket);
 	} catch (error) {
-		console.error(`❌ Erreur lors de la récupération des méthodes d'expédition:`, error);
-
-		console.log('⚠️ Utilisation de la méthode de fallback après erreur');
+		log(
+			'ERROR',
+			'post-payment:sendcloud-method',
+			"Erreur lors de la récupération des méthodes d'expédition, fallback",
+			error
+		);
 		return fallbackShippingMethod(shippingOption, weightBracket);
-	} finally {
-		console.log("🏁 === FIN RECHERCHE MÉTHODE D'EXPÉDITION DYNAMIQUE ===\n");
 	}
 }
 
@@ -185,26 +165,24 @@ export async function runPostPaymentJob(transactionId: string): Promise<void> {
 	await withLock(`post-payment:${transactionId}`, 60, async () => {
 		let transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
 		if (!transaction) {
-			console.error(`❌ Transaction introuvable pour le job post-paiement: ${transactionId}`);
+			log('ERROR', 'post-payment', `Transaction introuvable pour le job post-paiement: ${transactionId}`);
 			return;
 		}
 
 		if (transaction.status !== 'paid') {
-			console.log(
-				'⚠️ Statut de paiement non "paid", job post-paiement ignoré. Statut:',
+			log(
+				'WARN',
+				'post-payment',
+				'Statut de paiement non "paid", job post-paiement ignoré. Statut:',
 				transaction.status
 			);
 			return;
 		}
 
-		await sendInvoiceEmail(transaction);
-
 		if (!shouldCallSendcloud()) {
-			console.log('📦 Sendcloud ignoré (PUBLIC_ENV=test ou clés absentes)');
+			log('DEBUG', 'post-payment', 'Sendcloud ignoré (PUBLIC_ENV=test ou clés absentes)');
 			return;
 		}
-
-		console.log('📦 Début des appels Sendcloud...');
 
 		const orderForShipping = transaction.orderId
 			? await prisma.order.findUnique({
@@ -238,23 +216,21 @@ export async function runPostPaymentJob(transactionId: string): Promise<void> {
 		}
 
 		if (!transaction.sendcloudOrderCreatedAt) {
-			console.log('🔄 Création de la commande Sendcloud...');
 			await createSendcloudOrder(transaction);
 			transaction = await prisma.transaction.update({
 				where: { id: transaction.id },
 				data: { sendcloudOrderCreatedAt: new Date() }
 			});
-			console.log('✅ Commande Sendcloud créée avec succès');
 		} else {
-			console.log('ℹ️ Commande Sendcloud déjà créée, appel ignoré');
+			log('DEBUG', 'post-payment', 'Commande Sendcloud déjà créée, appel ignoré');
 		}
 
 		if (!transaction.sendcloudParcelId) {
-			console.log("🏷️ Création de l'étiquette Sendcloud...");
 			await createSendcloudLabel(transaction);
-			console.log('✅ Étiquette Sendcloud créée avec succès');
 		} else {
-			console.log('ℹ️ Étiquette Sendcloud déjà créée, appel ignoré');
+			log('DEBUG', 'post-payment', 'Étiquette Sendcloud déjà créée, appel ignoré');
 		}
+
+		log('INFO', 'post-payment', 'Job post-paiement terminé', { transactionId: transaction.id });
 	});
 }

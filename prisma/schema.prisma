@@ -206,6 +206,9 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  // Sert la purge des paniers PENDING abandonnés ($lib/server/jobs/cleanup.ts) :
+  // filtre status + updatedAt ensemble, pas juste chacun séparément.
+  @@index([status, updatedAt])
   @@map("orders")
 }
 
@@ -501,3 +504,22 @@ model ContactSubmission {
   @@index([email])
   @@map("contact_submissions")
 }
+
+/// Trace des actions admin sensibles (suppression de compte, changement de
+/// rôle). Pas de relation FK vers `User` sur `actorId`/`targetId` : le journal
+/// doit rester lisible même après suppression de l'un des deux comptes.
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
+}
+

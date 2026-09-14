@@ -23,10 +23,13 @@
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
+import * as Sentry from '@sentry/sveltekit';
 
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
 import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
-import { log } from '$lib/server/log';
+import { log, withRequestId } from '$lib/server/log';
+import { randomUUID } from 'crypto';
 
 // AUTH-PLUGIN ▼ retirer cet import et `authHandle` de la séquence finale.
 import { authHandle } from '$lib/lucia/hooks';
@@ -35,6 +38,16 @@ import { authHandle } from '$lib/lucia/hooks';
 // ADMIN-PLUGIN ▼ retirer cet import et `adminHandle` de la séquence finale.
 import { adminHandle } from '$lib/admin/hooks';
 // ADMIN-PLUGIN ▲
+
+/**
+ * Suivi d'erreurs/traces (plan gratuit Sentry). Sans `SENTRY_DSN`, le SDK
+ * reste un no-op documenté — aucune configuration supplémentaire requise en
+ * local, même comportement que Redis/QStash absents ailleurs dans ce fichier.
+ */
+Sentry.init({
+	dsn: env.SENTRY_DSN,
+	tracesSampleRate: 0.1
+});
 
 /** Adresse du client, en tenant compte d'un éventuel proxy (Vercel). */
 function clientIP(event: Parameters<Handle>[0]['event']): string {
@@ -50,6 +63,21 @@ function clientIP(event: Parameters<Handle>[0]['event']): string {
 /* -------------------------------------------------------------------------- */
 /*  Gardes globales (indépendantes de l'authentification)                     */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Ouvre le contexte de corrélation (`$lib/server/log.ts`) pour toute la durée
+ * de la requête : réutilise `x-vercel-id` s'il existe (déjà unique bout-en-bout
+ * côté Vercel) plutôt que d'en générer un second qui ne correspondrait à rien
+ * dans les logs de la plateforme.
+ */
+const requestIdHandle: Handle = ({ event, resolve }) => {
+	const requestId = event.request.headers.get('x-vercel-id') || randomUUID();
+	return withRequestId(requestId, async () => {
+		const response = await resolve(event);
+		response.headers.set('x-request-id', requestId);
+		return response;
+	});
+};
 
 /**
  * En-têtes de sécurité posés sur toute réponse, quel que soit ce que font les
@@ -143,6 +171,8 @@ const pendingOrderHandle: Handle = async ({ event, resolve }) => {
 /* -------------------------------------------------------------------------- */
 
 export const handle: Handle = sequence(
+	Sentry.sentryHandle(),
+	requestIdHandle,
 	securityHeaders,
 	devtoolsGuard,
 	cookieGuard,
@@ -158,3 +188,12 @@ export const handle: Handle = sequence(
 	pendingOrderHandle
 	// COMMERCE-PLUGIN ▲
 );
+
+/**
+ * Erreurs non attrapées côté serveur : déjà journalisées via `log()` (donc
+ * corrélées au `requestId` de la requête), en plus remontées à Sentry
+ * (no-op sans `SENTRY_DSN`).
+ */
+export const handleError = Sentry.handleErrorWithSentry(({ error, event }) => {
+	log('ERROR', 'UnhandledError', `${event.route?.id ?? event.url.pathname}`, error);
+});

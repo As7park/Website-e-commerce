@@ -1,6 +1,7 @@
 import { Client, Receiver } from '@upstash/qstash';
 import { resolveAppUrl } from './app-url';
 import { runPostPaymentJob } from './jobs/post-payment';
+import { runInvoiceEmailJob } from './jobs/invoice-email';
 
 /**
  * Queue Upstash QStash — HTTP, sans process persistant, cohérente avec le
@@ -34,7 +35,7 @@ export function getQStashReceiver(): Receiver {
 }
 
 /**
- * Enfile le travail post-paiement (facture + Sendcloud) pour la transaction
+ * Enfile le travail Sendcloud (commande + étiquette) pour la transaction
  * donnée. Sans QStash configuré, exécute le job directement — mêmes effets,
  * juste synchrones, comme avant l'introduction de la queue.
  */
@@ -46,6 +47,23 @@ export async function enqueuePostPaymentJob(transactionId: string): Promise<void
 
 	await getClient().publishJSON({
 		url: `${resolveAppUrl()}/api/jobs/post-payment`,
+		body: { transactionId }
+	});
+}
+
+/**
+ * Enfile l'envoi de la facture, indépendamment du job Sendcloud : une file
+ * séparée pour ne pas coupler les limites de débit SMTP à Sendcloud (voir
+ * `$lib/server/jobs/invoice-email.ts`).
+ */
+export async function enqueueInvoiceEmailJob(transactionId: string): Promise<void> {
+	if (!isQStashConfigured()) {
+		await runInvoiceEmailJob(transactionId);
+		return;
+	}
+
+	await getClient().publishJSON({
+		url: `${resolveAppUrl()}/api/jobs/invoice-email`,
 		body: { transactionId }
 	});
 }

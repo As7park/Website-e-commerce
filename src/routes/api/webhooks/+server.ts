@@ -6,7 +6,7 @@ import { getUserIdByOrderId } from '$lib/prisma/order/prendingOrder';
 import { nextInvoiceNumber } from '$lib/server/invoice/number';
 import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
 import { withLock } from '$lib/server/lock';
-import { enqueuePostPaymentJob } from '$lib/server/qstash';
+import { enqueuePostPaymentJob, enqueueInvoiceEmailJob } from '$lib/server/qstash';
 import { deduceWeightBracket, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
 import { log } from '$lib/server/log';
 
@@ -14,9 +14,11 @@ import { log } from '$lib/server/log';
  * Webhook Stripe.
  *
  * COMMERCE-PLUGIN : crée la `Transaction` et passe la commande en `PAID`.
- * SENDCLOUD : facture + commande + étiquette partent en job asynchrone après
- * la transaction (`$lib/server/qstash.ts` → `$lib/server/jobs/post-payment.ts`),
- * pour ne jamais faire traîner la réponse à Stripe derrière un appel externe lent.
+ * Facture (SMTP) et SENDCLOUD (commande + étiquette) partent chacun dans leur
+ * propre job asynchrone après la transaction (`$lib/server/qstash.ts` →
+ * `$lib/server/jobs/invoice-email.ts` / `jobs/post-payment.ts`), pour ne
+ * jamais faire traîner la réponse à Stripe derrière un appel externe lent, et
+ * pour qu'un ralentissement de l'un n'affecte pas l'autre.
  * Le store panier client n'est pas réinitialisé ici (no-op hors navigateur) :
  * `/checkout/success` s'en charge.
  */
@@ -259,10 +261,15 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		amount: createdTransaction?.amount
 	});
 
-	// Facture + Sendcloud partent en job asynchrone (QStash si configuré,
-	// sinon exécution directe équivalente en dev) : voir $lib/server/jobs/post-payment.ts.
+	// Facture et Sendcloud partent en deux jobs asynchrones indépendants
+	// (QStash si configuré, sinon exécution directe équivalente en dev) : un
+	// pic SMTP ou un ralentissement Sendcloud ne doit pas bloquer l'autre.
+	// Voir $lib/server/jobs/invoice-email.ts et $lib/server/jobs/post-payment.ts.
 	if (createdTransaction) {
-		await enqueuePostPaymentJob(createdTransaction.id);
+		await Promise.all([
+			enqueueInvoiceEmailJob(createdTransaction.id),
+			enqueuePostPaymentJob(createdTransaction.id)
+		]);
 	}
 
 	log('DEBUG', 'webhook:stripe', '=== FIN TRAITEMENT WEBHOOK CHECKOUT ===');

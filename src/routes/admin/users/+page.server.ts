@@ -5,6 +5,7 @@ import { deleteUserSchema } from '$lib/schema/users/userSchema';
 import { deleteUser, getAllUsers } from '$lib/prisma/user/user';
 import { serializeData } from '$lib/utils/serializeData';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
+import { logAdminAction } from '$lib/server/audit-log';
 
 /**
  * Liste des comptes et suppression.
@@ -54,6 +55,12 @@ export const actions: Actions = {
 
 		try {
 			await deleteUser(id);
+			await logAdminAction({
+				actorId: locals.user.id,
+				action: 'user.delete',
+				targetType: 'User',
+				targetId: id
+			});
 
 			return message(form, 'User deleted successfully');
 		} catch (error) {

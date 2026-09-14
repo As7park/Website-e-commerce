@@ -59,32 +59,37 @@ Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
   200 € est accepté pour créer la session Stripe.
 - Webhook : sous verrou (`stripe:checkout:<session id>`, `src/lib/server/lock.ts`)
   pour tolérer une double livraison Stripe, crée la `Transaction` et passe
-  l'`Order` en `PAID`. Facture et Sendcloud partent ensuite dans un job
-  asynchrone (voir ci-dessous), pas dans la requête webhook. Un nouveau panier
-  PENDING peut naître ensuite (c'est voulu).
+  l'`Order` en `PAID`. Facture et Sendcloud partent ensuite chacun dans leur
+  propre job asynchrone (voir ci-dessous), pas dans la requête webhook. Un
+  nouveau panier PENDING peut naître ensuite (c'est voulu).
 
-## Job post-paiement (facture + Sendcloud)
+## Jobs post-paiement (facture, Sendcloud)
 
-Une fois la `Transaction` écrite, le webhook enfile `enqueuePostPaymentJob`
-(`src/lib/server/qstash.ts`) au lieu d'appeler directement l'e-mail de facture
-et Sendcloud : un appel Sendcloud lent ne doit jamais faire traîner la réponse
-au webhook Stripe, au risque d'un timeout perçu côté Stripe (et donc d'une
-relivraison).
+Une fois la `Transaction` écrite, le webhook enfile `enqueueInvoiceEmailJob`
+et `enqueuePostPaymentJob` (`src/lib/server/qstash.ts`) en parallèle, au lieu
+d'appeler directement l'e-mail de facture et Sendcloud : un appel Sendcloud
+lent ne doit jamais faire traîner la réponse au webhook Stripe, au risque
+d'un timeout perçu côté Stripe (et donc d'une relivraison) — et un pic
+d'envois SMTP (ses propres limites de débit) ne doit pas être couplé à la
+disponibilité de Sendcloud, ni l'inverse : ce sont deux files indépendantes,
+chacune avec son propre retry QStash.
 
 - **QStash configuré** (`QSTASH_TOKEN` + une URL publique — `APP_URL`, ou à
-  défaut `VERCEL_URL` fourni par Vercel) : le job est publié vers
-  `/api/jobs/post-payment`, dont la signature est vérifiée
-  (`QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY`) ; QStash gère les
-  retries en cas d'échec.
-- **QStash absent** (dev local, ou `.env.test`) : `runPostPaymentJob`
-  s'exécute directement, en synchrone, dans la requête webhook — mêmes
-  effets, sans file d'attente.
+  défaut `VERCEL_URL` fourni par Vercel) : chaque job est publié vers sa
+  route (`/api/jobs/invoice-email`, `/api/jobs/post-payment`), dont la
+  signature est vérifiée (`QSTASH_CURRENT_SIGNING_KEY` /
+  `QSTASH_NEXT_SIGNING_KEY`) ; QStash gère les retries en cas d'échec.
+- **QStash absent** (dev local, ou `.env.test`) : `runInvoiceEmailJob` et
+  `runPostPaymentJob` s'exécutent directement, en synchrone, dans la requête
+  webhook — mêmes effets, sans file d'attente.
 
-Dans les deux cas, `runPostPaymentJob` (`src/lib/server/jobs/post-payment.ts`)
-tourne sous verrou (`post-payment:<transaction id>`) et ne rappelle jamais
-Sendcloud si `sendcloudOrderCreatedAt` / `sendcloudParcelId` sont déjà posés :
-une commande ou une étiquette Sendcloud a un coût réel, un retry ne doit
-jamais en recréer une seconde.
+`runInvoiceEmailJob` (`src/lib/server/jobs/invoice-email.ts`) tourne sous
+verrou (`invoice-email:<transaction id>`). `runPostPaymentJob`
+(`src/lib/server/jobs/post-payment.ts`) tourne sous verrou
+(`post-payment:<transaction id>`) et ne rappelle jamais Sendcloud si
+`sendcloudOrderCreatedAt` / `sendcloudParcelId` sont déjà posés : une
+commande ou une étiquette Sendcloud a un coût réel, un retry ne doit jamais
+en recréer une seconde.
 
 ## Tests
 

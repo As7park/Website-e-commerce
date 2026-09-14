@@ -1,4 +1,19 @@
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/public';
+import * as Sentry from '@sentry/sveltekit';
+
+/**
+ * Suivi d'erreurs/traces côté navigateur (plan gratuit Sentry). Sans
+ * `PUBLIC_SENTRY_DSN`, le SDK reste un no-op documenté — pas de config
+ * supplémentaire requise en local (voir aussi src/hooks.server.ts).
+ */
+Sentry.init({
+	dsn: env.PUBLIC_SENTRY_DSN,
+	tracesSampleRate: 0.1
+});
+
+export const handleError = Sentry.handleErrorWithSentry();
+
 
 /**
  * `localhost:2000` est partagé entre plusieurs projets. Un PWA (ici Lezardoises)

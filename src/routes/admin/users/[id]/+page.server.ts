@@ -8,6 +8,7 @@ import { getUserAddresses, updateAddress } from '$lib/prisma/addresses/addresses
 import { serializeData } from '$lib/utils/serializeData';
 import { updateUserSecurity } from '$lib/prisma/user/updateUserSecurity';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
+import { logAdminAction } from '$lib/server/audit-log';
 
 /**
  * Fiche d'un utilisateur : rôle, 2FA, mot de passe, adresses.
@@ -160,7 +161,16 @@ export const actions: Actions = {
 			}
 
 			// 1. Mise à jour du rôle utilisateur
-			await updateUserRole(id, role);
+			if (user.role !== role) {
+				await updateUserRole(id, role);
+				await logAdminAction({
+					actorId: locals.user.id,
+					action: 'user.role-change',
+					targetType: 'User',
+					targetId: id,
+					metadata: { from: user.role, to: role }
+				});
+			}
 
 			// 2. Mise à jour de la sécurité (MFA & mot de passe chiffré)
 			if (passwordHash !== null && passwordHash.trim() !== '') {
