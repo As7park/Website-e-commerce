@@ -24,7 +24,6 @@
 		"test:e2e:headed": "E2E_VIDEO=1 playwright test --headed --retries=0 && node scripts/collect-videos.mjs",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:report": "playwright show-report",
-		"model-pipeline:run": "node scripts/model-pipeline.js",
 		"jobs:register-cleanup-schedule": "node scripts/register-cleanup-schedule.mjs",
 		"check:legacy-encryption": "node scripts/check-legacy-encryption.mjs",
 		"load:catalog": "k6 run k6/catalog.js",

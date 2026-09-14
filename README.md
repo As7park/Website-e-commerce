@@ -59,9 +59,18 @@ e2e/                  parcours Playwright
 npm run dev                 # Vite (:2000) + Prisma Studio (:5555) + stripe listen (webhooks)
 npm run dev:vite            # Vite seul
 npm run build               # build de production
+npm run test:unit           # tests unitaires (Vitest)
 npm run test:e2e            # parcours Playwright (auth + admin + produits + commerce + blog + promo + contact)
 npm run check               # vérification des types
+npm run lint                # prettier --check + eslint
 npm run db:studio           # Prisma Studio seul (schéma de dev, http://localhost:5555)
 npm run db:studio:e2e       # Prisma Studio (schéma e2e, http://localhost:5556)
 npm run stripe:listen       # CLI Stripe → POST http://localhost:2000/api/webhooks
 ```
+
+## CI
+
+`.github/workflows/ci.yml` (npm ci, lint, check, test:unit, audit) tourne sur
+push/PR vers `main`. `lint` et `check` sont en `continue-on-error` le temps de
+résorber la dette de formatage/typage pré-existante (voir commentaires dans le
+workflow) ; `test:unit` est bloquant.
