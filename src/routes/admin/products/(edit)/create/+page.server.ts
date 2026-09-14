@@ -81,7 +81,10 @@ export const actions: Actions = {
 				stock: form.data.stock,
 				images: uploadedImageUrls,
 				slug: slug,
-				colorProduct: form.data.colorProduct
+				colorProduct: form.data.colorProduct,
+				sku: form.data.sku || null,
+				material: form.data.material || null,
+				compareAtPrice: form.data.compareAtPrice || null
 			});
 
 			await connectProductToCategories(product.id, existingCategoryIds);

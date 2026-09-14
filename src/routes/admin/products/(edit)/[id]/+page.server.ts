@@ -34,6 +34,9 @@ export const load: PageServerLoad = async ({ params }) => {
 			price: product.price,
 			stock: product.stock,
 			colorProduct: product.colorProduct,
+			sku: product.sku ?? '',
+			material: product.material ?? '',
+			compareAtPrice: (product.compareAtPrice ?? '') as number | '',
 			categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
 			images: [],
 			existingImages: product.images
@@ -67,7 +70,7 @@ export const actions: Actions = {
 				return fail(400, { message: 'Invalid Product ID' });
 			}
 
-			const images = form.data.images;
+			const images = form.data.images ?? [];
 			const existingImages = JSON.parse(formData.get('existingImages') as string) || [];
 			const uploadedImageUrls: string[] = [];
 
@@ -126,7 +129,10 @@ export const actions: Actions = {
 					price: form.data.price,
 					stock: form.data.stock,
 					colorProduct: form.data.colorProduct,
-					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages
+					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages,
+					sku: form.data.sku || null,
+					material: form.data.material || null,
+					compareAtPrice: form.data.compareAtPrice || null
 				});
 
 				await deleteProductCategories(productId);

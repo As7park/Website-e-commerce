@@ -28,6 +28,13 @@ export const load = (async ({ params, locals }) => {
 		invoice: buildInvoiceView(transaction),
 		pdfHref: `/auth/settings/factures/${transaction.id}/pdf`,
 		backHref: '/auth/settings/factures',
-		backLabel: 'Retour aux factures'
+		backLabel: 'Retour aux factures',
+		tracking: {
+			status: transaction.status,
+			shippingMethodName: transaction.shippingMethodName,
+			trackingNumber: transaction.trackingNumber,
+			trackingUrl: transaction.trackingUrl,
+			servicePointId: transaction.servicePointId
+		}
 	};
 }) satisfies PageServerLoad;

@@ -26,6 +26,7 @@
 
 	let DataPrice: number = $state(0);
 	let DataStock: number = $state(0);
+	let DataCompareAtPrice: string = $state('');
 
 	// Chargement des données
 	let categories = $state(
@@ -46,6 +47,7 @@
 	$effect(() => {
 		$createProductData.price = Number(DataPrice);
 		$createProductData.stock = Number(DataStock);
+		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? '' : Number(DataCompareAtPrice);
 	});
 
 	$effect(() => {
@@ -124,6 +126,42 @@
 									type="color"
 									bind:value={$createProductData.colorProduct}
 									class="w-16 h-10 p-0 border border-gray-300 rounded"
+								/>
+							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+
+					<div class="w-[100%]">
+						<Form.Field name="sku" form={createProduct}>
+							<Form.Control>
+								<Form.Label>Référence (SKU)</Form.Label>
+								<Input name="sku" type="text" bind:value={$createProductData.sku} />
+							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+
+					<div class="w-[100%]">
+						<Form.Field name="material" form={createProduct}>
+							<Form.Control>
+								<Form.Label>Matière</Form.Label>
+								<Input name="material" type="text" bind:value={$createProductData.material} />
+							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+					</div>
+
+					<div class="w-[100%]">
+						<Form.Field name="compareAtPrice" form={createProduct}>
+							<Form.Control>
+								<Form.Label>Prix barré (facultatif)</Form.Label>
+								<Input
+									name="compareAtPrice"
+									type="number"
+									bind:value={DataCompareAtPrice}
+									step="0.01"
+									min="0.01"
 								/>
 							</Form.Control>
 							<Form.FieldErrors />

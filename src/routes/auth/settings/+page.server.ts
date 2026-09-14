@@ -34,6 +34,7 @@ import type { Actions, RequestEvent } from './$types';
 import type { SessionFlags } from '$lib/lucia/session';
 import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema';
 import { getUserMFA, updateUserMFA } from '$lib/prisma/user/user';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
 
@@ -68,12 +69,15 @@ export const load = async (event: RequestEvent) => {
 		zod(isMfaEnabledSchema)
 	);
 
+	const { wishlistEnabled } = await getStoreFeatureFlags();
+
 	return {
 		recoveryCode,
 		user: event.locals.user,
 		passwordForm,
 		emailForm,
-		isMfaEnabledForm
+		isMfaEnabledForm,
+		wishlistEnabled
 	};
 };
 

@@ -68,9 +68,11 @@ model User {
   role Role @default(CLIENT)
 
   // Relations commerce
-  addresses    Address[]
-  orders       Order[]
-  transactions Transaction[]
+  addresses     Address[]
+  orders        Order[]
+  transactions  Transaction[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
   // Relations d'authentification (disparaissent avec le module)
   sessions                  Session[]
@@ -259,12 +261,43 @@ model Product {
   images       String[]
   slug         String            @unique
   colorProduct String
-  categories   ProductCategory[]
-  orderItems   OrderItem[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  /// Référence interne, distincte de `id` (cuid non lisible) — affichée en
+  /// admin et sur la facture, jamais utilisée comme clé de recherche Prisma.
+  sku            String?  @unique
+  /// Filtre catalogue (facette « Matière »). Nul pour les produits qui n'en
+  /// ont pas (prestations de service, ex. les offres du studio).
+  material       String?
+  /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
+  /// prix réellement facturé — pas de logique de remise appliquée ici).
+  compareAtPrice Float?
+  categories    ProductCategory[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+  wishlistedBy  WishlistItem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
+  @@index([material])
   @@map("products")
+}
+
+model Review {
+  // PRODUCT-PLUGIN : un avis par compte et par produit (contrainte unique
+  // plutôt qu'une limite applicative — vrai même sous requêtes concurrentes).
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("reviews")
 }
 
 model Custom {
@@ -515,6 +548,39 @@ model ContactSubmission {
 /// Trace des actions admin sensibles (suppression de compte, changement de
 /// rôle). Pas de relation FK vers `User` sur `actorId`/`targetId` : le journal
 /// doit rester lisible même après suppression de l'un des deux comptes.
+/// Interrupteurs des modules e-commerce optionnels (roadmap post-audit) —
+/// ligne unique (`id = "singleton"`), gérée depuis `/admin/settings`. Un
+/// module désactivé n'apparaît nulle part côté vitrine, il n'est pas juste
+/// masqué visuellement : chaque route publique concernée vérifie le flag
+/// avant de lire/écrire ses propres données.
+model StoreSettings {
+  id                   String   @id @default("singleton")
+  wishlistEnabled      Boolean  @default(false)
+  crossSellEnabled     Boolean  @default(false)
+  returnsEnabled       Boolean  @default(false)
+  savedPaymentsEnabled Boolean  @default(false)
+  loyaltyEnabled       Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+
+  @@map("store_settings")
+}
+
+/// Liste d'envies — un produit par compte au plus une fois (contrainte
+/// unique). Activable/désactivable via `StoreSettings.wishlistEnabled`.
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("wishlist_items")
+}
+
 model AdminAuditLog {
   id         String   @id @default(cuid())
   actorId    String

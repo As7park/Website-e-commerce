@@ -21,7 +21,8 @@
 					{ title: 'promo', url: '/admin/promo' }, // PROMO-PLUGIN
 					{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN
 					{ title: 'métriques', url: '/admin/metrics' },
-					{ title: 'exports', url: '/admin/exports' }
+					{ title: 'exports', url: '/admin/exports' },
+					{ title: 'modules', url: '/admin/settings' }
 				]
 			}
 		]

@@ -4,6 +4,14 @@ Vitrine publique et CRUD admin des produits Prisma : fiches, catégories, images
 Cloudinary. Réservé en écriture au rôle `ADMIN` ; la lecture (`/products`) est
 ouverte.
 
+En plus des champs de base (nom, description, prix, stock, images,
+catégories), `Product` porte trois attributs facultatifs, éditables depuis le
+formulaire admin (`/admin/products/create`, `/admin/products/[id]`) : `sku`
+(référence interne, unique, jamais utilisée comme clé de recherche),
+`material` (facette « Matière » du filtre catalogue) et `compareAtPrice`
+(prix barré affiché à côté du prix réel — `price` reste le seul montant
+facturé, aucune logique de remise n'en découle).
+
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
@@ -12,8 +20,8 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 | Emplacement                                                | Contenu                                  |
 | ---------------------------------------------------------- | ---------------------------------------- |
 | `src/lib/products/`                                        | lecture publique et chemins de tests     |
-| `src/lib/prisma/products/` et `src/lib/prisma/categories/` | DAO Prisma                               |
-| `src/routes/products/`                                     | vitrine                                  |
+| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/reviews/` | DAO Prisma |
+| `src/routes/products/`                                     | vitrine (fiche produit inclut les avis)  |
 | `src/routes/admin/products/`                               | CRUD back-office (gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
@@ -35,12 +43,38 @@ Le bouton « Ajouter au panier » sur la fiche est un accrochage COMMERCE.
 
 ## Vitrine
 
-| Route              | Rôle                                  |
-| ------------------ | ------------------------------------- |
-| `/products`        | liste, filtre optionnel `?categorie=` |
-| `/products/[slug]` | fiche ; 404 si le slug est inconnu    |
+| Route              | Rôle                                                                   |
+| ------------------ | ----------------------------------------------------------------------- |
+| `/products`        | liste avec sidebar de filtres, tous combinables et pilotés par l'URL   |
+| `/products/[slug]` | fiche ; 404 si le slug est inconnu                                     |
 
 Les données viennent de Prisma. Contentful n'est plus utilisé pour les produits.
+
+### Filtres du catalogue
+
+Tous les filtres de `/products` sont des paramètres d'URL, combinables entre
+eux, lus par `src/routes/products/+page.server.ts` et appliqués dans
+`listProducts` (`src/lib/products/catalog.ts`) :
+
+| Paramètre     | Filtre                                        |
+| ------------- | ---------------------------------------------- |
+| `categorie`   | catégorie (sélection unique)                   |
+| `q`           | recherche texte (`contains` Prisma, nom + description, insensible à la casse) |
+| `materiau`    | matière, répétable (`?materiau=Or&materiau=Argent`) — OR entre les valeurs |
+| `prixMin`/`prixMax` | bornes de prix                           |
+| `dispo=1`     | en stock uniquement (`stock > 0`)              |
+| `tri`         | `pertinence` (défaut) / `prix-asc` / `prix-desc` / `nouveaute` |
+| `page`        | pagination                                     |
+
+`getCatalogFacets` calcule les matières disponibles (avec leur nombre de
+produits) et les bornes de prix pour la sidebar — recalculées à partir de la
+catégorie et de la recherche en cours, mais **pas** des filtres matière/prix/
+disponibilité déjà posés : sinon cocher une matière ferait disparaître sa
+propre case. C'est la simplification courante des vitrines de cette taille,
+pas un vrai faceted search par filtre croisé.
+
+Chaque combinaison de paramètres fait partie de la clé de cache au même titre
+que la page.
 
 Les trois lectures publiques (`listProducts`, `getProductBySlug`,
 `listCategories` dans `src/lib/products/catalog.ts`) passent par un cache
@@ -49,6 +83,35 @@ invalidé automatiquement à chaque écriture des DAO `src/lib/prisma/products` 
 `src/lib/prisma/categories` (un seul numéro de version pour tout le
 catalogue : `bumpCacheVersion('catalog')`). Sans Redis configuré, ces
 fonctions relisent Prisma à chaque appel, comme avant.
+
+### Avis produit
+
+Un avis (`Review`, `src/lib/prisma/reviews/reviews.ts`) est réservé aux
+comptes authentifiés, un seul par produit et par compte — contrainte unique
+en base (`@@unique([productId, userId])`), pas seulement un formulaire masqué
+côté client : une double soumission concurrente est rejetée proprement
+(`AlreadyReviewedError`, code Prisma `P2002`) plutôt que de créer un doublon
+ou de planter. La note moyenne (`getReviewSummary`) est une lecture directe,
+non passée par le cache du catalogue ci-dessus — volume modeste, fraîcheur
+after-submit plus utile ici qu'un TTL de 60 s. Supprimer un compte supprime
+ses avis (`onDelete: Cascade`) : ce ne sont pas des écritures comptables à
+conserver, contrairement aux `Transaction`.
+
+### Liste d'envies & ventes croisées
+
+Deux modules activables depuis `/admin/settings` (voir
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)) :
+
+- **Liste d'envies** (`WishlistItem`, `src/lib/prisma/wishlist/wishlist.ts`) —
+  un produit par compte au plus une fois. Basculée depuis la fiche produit
+  (`POST /api/wishlist`, authentifié) et consultée sur
+  `/auth/settings/wishlist`. Les deux routes répondent 404/401 si le module
+  est désactivé ou si le compte n'est pas connecté — jamais une page vide qui
+  laisserait deviner que la route existe.
+- **Ventes croisées** (`getRelatedProducts` dans `catalog.ts`) — jusqu'à 4
+  produits partageant une catégorie avec la fiche consultée, le produit
+  courant exclu. Affichées sous « Vous aimerez aussi » sur `/products/[slug]`
+  uniquement quand le module est actif et qu'au moins un produit correspond.
 
 ### Anti-scraping
 

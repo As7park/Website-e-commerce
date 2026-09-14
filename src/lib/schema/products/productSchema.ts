@@ -31,7 +31,10 @@ const createProductSchema = z.object({
   slug: z.string().optional(),
   colorProduct: z
     .string()
-    .regex(hexColorRegex, 'Color must be a valid hexadecimal color code') // Validate color
+    .regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
+  sku: z.string().trim().max(64).optional().or(z.literal('')),
+  material: z.string().trim().max(64).optional().or(z.literal('')),
+  compareAtPrice: z.coerce.number().positive().optional().or(z.literal(''))
 });
 
 // Schema for updating a product
@@ -60,7 +63,10 @@ const updateProductSchema = z.object({
   existingImages: z.array(z.string()),
   colorProduct: z
     .string()
-    .regex(hexColorRegex, 'Color must be a valid hexadecimal color code') // Validate color
+    .regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
+  sku: z.string().trim().max(64).optional().or(z.literal('')),
+  material: z.string().trim().max(64).optional().or(z.literal('')),
+  compareAtPrice: z.coerce.number().positive().optional().or(z.literal(''))
 });
 
 // Schema for deleting a product

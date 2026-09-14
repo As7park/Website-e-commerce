@@ -108,6 +108,17 @@ l'erreur (donc QStash arrête de retenter) et journalise en `ERROR` + Sentry
 transaction reste identifiable en base (`sendcloudOrderCreatedAt`/
 `sendcloudParcelId` toujours absents) pour un retraitement ultérieur.
 
+### Suivi de commande côté client
+
+`/auth/settings/factures/[id]` affiche, au-dessus de la facture, un panneau
+« Suivi de commande » (`$lib/components/invoice/OrderTrackingPanel.svelte`) —
+statut de paiement (`formatOrderStatus`), méthode d'expédition, et numéro +
+lien de suivi transporteur dès que `createSendcloudLabel` les a posés sur la
+`Transaction` (`trackingNumber`/`trackingUrl`, voir résilience Sendcloud
+ci-dessus). Pas de nouvel appel Sendcloud : lecture seule des champs déjà
+écrits par le job post-paiement. Tant que l'étiquette n'est pas encore créée,
+le panneau l'indique plutôt que de laisser un vide.
+
 ### Débit SMTP sous rafale (facture)
 
 `runInvoiceEmailJob` (`$lib/server/jobs/invoice-email.ts`) consomme un jeton

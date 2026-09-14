@@ -73,6 +73,7 @@ naissent par inscription.
 | `/admin/contacts` | messages du formulaire de contact                                                |
 | `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                 |
 | `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts |
+| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                    |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -96,6 +97,27 @@ que de faire échouer toute la purge.
 L'import restaure les colonnes exportées uniquement : jamais les secrets
 (`passwordHash`, `totpKey`), jamais les relations profondes (tags et
 commentaires de blog). Indisponible pour les ventes.
+
+### Modules e-commerce optionnels — `/admin/settings`
+
+Cinq modules de la roadmap post-audit sont derrière un interrupteur plutôt
+qu'activés en dur : liste d'envies, ventes croisées, espace retour/SAV,
+moyen de paiement enregistré, palier de fidélité. Réglage unique
+(`StoreSettings`, ligne `id = "singleton"`, `$lib/server/storeSettings.ts`),
+lu par chaque route publique concernée — un module désactivé ne se contente
+pas d'être masqué à l'écran, sa route reste fermée (ex. `/auth/settings/wishlist`
+répond 404, `POST /api/wishlist` répond 404) : un accès direct à l'URL ne
+contourne pas l'interrupteur.
+
+Lecture mise en cache 30 s (même mécanisme que le catalogue,
+`$lib/server/cache.ts`, `bumpCacheVersion('settings')` à chaque sauvegarde) —
+une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
+répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
+lui-même lit toujours la valeur non mise en cache.
+
+Au 15/09/2026, deux modules ont une implémentation complète derrière leur
+interrupteur (liste d'envies, ventes croisées) ; les trois autres attendent
+encore leur tour sur la roadmap.
 
 ### Alerting
 

@@ -31,6 +31,9 @@ export const createProduct = async (productData: {
 	images: string[];
 	slug: string;
 	colorProduct: string;
+	sku?: string | null;
+	material?: string | null;
+	compareAtPrice?: number | null;
 }) => {
 	const product = await prisma.product.create({
 		data: productData
@@ -141,6 +144,9 @@ export const updateProductById = async (
 		stock?: number;
 		images?: string[];
 		colorProduct?: string;
+		sku?: string | null;
+		material?: string | null;
+		compareAtPrice?: number | null;
 	}
 ) => {
 	const product = await prisma.product.update({

@@ -2,6 +2,7 @@
 	import Table from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { formatOrderStatus } from '$lib/utils/formatOrderStatus';
 	import Receipt from 'lucide-svelte/icons/receipt';
 
 	let { data } = $props();
@@ -14,7 +15,11 @@
 			formatter: (value: unknown) => formatMoney(typeof value === 'number' ? value : Number(value))
 		},
 		{ key: 'customer_details_name', label: 'Destinataire' },
-		{ key: 'status', label: 'Statut' },
+		{
+			key: 'status',
+			label: 'Statut',
+			formatter: (value: unknown) => formatOrderStatus(String(value)).label
+		},
 		{ key: 'createdAt', label: 'Date', formatter: formatDate }
 	];
 

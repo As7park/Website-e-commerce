@@ -11,7 +11,7 @@
 	import { Label } from '$shadcn/label/index.js';
 	import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema.js';
 
-	import { UserCircle, BookMarked, ReceiptText, Mail, KeyRound, ShieldCheck } from 'lucide-svelte';
+	import { UserCircle, BookMarked, ReceiptText, Heart, Mail, KeyRound, ShieldCheck } from 'lucide-svelte';
 
 	let { data } = $props();
 
@@ -117,6 +117,23 @@
 					<Button href="/auth/settings/factures" class="w-full">Mes Factures</Button>
 				</Card.Footer>
 			</Card.Root>
+
+			{#if data.wishlistEnabled}
+				<!-- Liste d'envies -->
+				<Card.Root class="flex flex-col">
+					<Card.Header>
+						<Card.Title class="flex items-center gap-2">
+							<Heart class="w-6 h-6 text-primary" />
+							<span>Liste d'envies</span>
+						</Card.Title>
+						<Card.Description>Retrouvez les produits que vous avez mis de côté.</Card.Description>
+					</Card.Header>
+					<Card.Content class="flex-grow" />
+					<Card.Footer>
+						<Button href="/auth/settings/wishlist" class="w-full">Ma liste d'envies</Button>
+					</Card.Footer>
+				</Card.Root>
+			{/if}
 		{/if}
 
 		{#if !data.user.googleId}
