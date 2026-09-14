@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { addToCart } from '$lib/store/Data/cartStore';
 	import Button from '$shadcn/button/button.svelte';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -31,7 +32,11 @@
 	<div class="grid grid-cols-1 gap-8 md:grid-cols-2">
 		<div>
 			{#if product.images[0]}
-				<img src={product.images[0]} alt={product.name} class="h-auto w-full object-cover" />
+				<img
+					src={optimizedImageUrl(product.images[0], 800)}
+					alt={product.name}
+					class="h-auto w-full object-cover"
+				/>
 			{/if}
 		</div>
 		<div>

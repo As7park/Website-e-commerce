@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Card from '$shadcn/card';
 	import { Button } from '$shadcn/button';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	let { data } = $props();
 
@@ -22,7 +23,10 @@
 <div class="relative box-border min-h-screen w-full px-8 pt-24 pb-8">
 	<h1 class="mb-6 text-center text-[1.75rem] font-light tracking-tight">Offres</h1>
 
-	<nav class="mb-8 flex flex-wrap items-center justify-center gap-3" aria-label="Filtrer par catégorie">
+	<nav
+		class="mb-8 flex flex-wrap items-center justify-center gap-3"
+		aria-label="Filtrer par catégorie"
+	>
 		<Button
 			href="/products"
 			variant={!activeCategoryId ? 'default' : 'outline'}
@@ -55,7 +59,7 @@
 						<div class="h-40 w-full shrink-0 overflow-hidden">
 							{#if product.images[0]}
 								<img
-									src={product.images[0]}
+									src={optimizedImageUrl(product.images[0], 400)}
 									alt={product.name}
 									loading="lazy"
 									class="h-full w-full object-cover"

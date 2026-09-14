@@ -66,6 +66,19 @@ volontairement SANS bloquer les crawlers de moteurs de recherche connus
 Cette heuristique reste un filet applicatif simple, pas une garantie : un
 `User-Agent` se falsifie trivialement.
 
+### Images produits (CDN)
+
+Les images uploadées via l'admin (`cloudinary.uploader.upload`) sont stockées
+en base sous forme d'URL Cloudinary complète (`Product.images`), sans
+transformation. `$lib/utils/cloudinaryUrl.ts` (`optimizedImageUrl(url,
+width?)`) insère `f_auto,q_auto[,w_<width>]` dans l'URL au moment de
+l'affichage — Cloudinary sert alors le format le plus compact supporté par le
+navigateur (AVIF/WebP) et une largeur adaptée, sans ré-upload ni migration.
+Appliqué partout où une image produit est rendue : catalogue (`/products`,
+400px), fiche produit (`/products/[slug]`, 800px), panier et récapitulatif
+checkout (100px), listing admin (80px). Fonction sans effet si l'URL n'est
+pas une URL Cloudinary `/upload/` (donnée de seed/placeholder).
+
 ## Admin
 
 `/admin/products` : liste, création, édition, suppression, catégories. Accès

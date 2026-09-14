@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Card from '$shadcn/card/index.js';
 	import { ShoppingCart, Trash } from 'lucide-svelte';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	interface Props {
 		items: any[];
@@ -20,12 +21,12 @@
 		promoCode?: string;
 	}
 
-	let { 
-		items, 
-		subtotal, 
-		tax, 
-		hasCustomItems, 
-		shippingCost, 
+	let {
+		items,
+		subtotal,
+		tax,
+		hasCustomItems,
+		shippingCost,
 		selectedShippingOption,
 		quantityOptions,
 		customQuantityOptions,
@@ -44,9 +45,7 @@
 	let localTax = $state(tax);
 
 	// Calculer le total TTC (remise déduite)
-	let totalTTC = $derived(
-		Math.max(0, localSubtotal + localTax + shippingCost - discountAmount)
-	);
+	let totalTTC = $derived(Math.max(0, localSubtotal + localTax + shippingCost - discountAmount));
 
 	// Mettre à jour l'état local quand les props changent
 	$effect(() => {
@@ -66,7 +65,7 @@
 		if (items.length > 0) {
 			// Mise à jour immédiate
 			forceUpdate();
-			
+
 			// Mise à jour après un délai pour s'assurer que le DOM est mis à jour
 			setTimeout(() => {
 				forceUpdate();
@@ -77,9 +76,7 @@
 
 <Card.Root>
 	<div class="p-6 flex flex-col space-y-1.5">
-		<h3
-			class="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2"
-		>
+		<h3 class="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2">
 			<ShoppingCart class="w-5 h-5" />
 			Votre panier
 		</h3>
@@ -90,11 +87,14 @@
 				{#each localItems as item (item.id + '-' + item.quantity)}
 					<div class="flex gap-4 p-4 rounded-lg border bg-background">
 						<img
-							src={(item.custom?.length > 0 && item.custom[0].image) ||
-								(Array.isArray(item.product.images)
-									? item.product.images[0]
-									: item.product.images) ||
-								''}
+							src={optimizedImageUrl(
+								(item.custom?.length > 0 && item.custom[0].image) ||
+									(Array.isArray(item.product.images)
+										? item.product.images[0]
+										: item.product.images) ||
+									'',
+								100
+							)}
 							alt={item.product.name}
 							class="w-24 h-24 object-cover rounded-md"
 						/>
@@ -121,10 +121,14 @@
 								<div class="flex gap-2 flex-wrap">
 									{#each customQuantityOptions as option}
 										<button
-											class="px-3 py-1 border rounded text-sm {item.quantity === option.value ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
-											onclick={() => onChangeQuantity(item.product.id, option.value, item.custom[0]?.id)}
+											class="px-3 py-1 border rounded text-sm {item.quantity === option.value
+												? 'bg-blue-500 text-white'
+												: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
+											onclick={() =>
+												onChangeQuantity(item.product.id, option.value, item.custom[0]?.id)}
 										>
-											{option.value} {item.quantity === option.value ? '✓' : ''}
+											{option.value}
+											{item.quantity === option.value ? '✓' : ''}
 										</button>
 									{/each}
 								</div>
@@ -133,8 +137,18 @@
 								<div class="flex gap-2">
 									{#each quantityOptions as option}
 										<button
-											class="px-3 py-1 border rounded text-sm {item.quantity === option ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'} {!canAddQuantity(option, item.quantity, false) ? 'opacity-50 cursor-not-allowed' : ''}"
-											onclick={() => canAddQuantity(option, item.quantity, false) && onChangeQuantity(item.product.id, option)}
+											class="px-3 py-1 border rounded text-sm {item.quantity === option
+												? 'bg-blue-500 text-white'
+												: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'} {!canAddQuantity(
+												option,
+												item.quantity,
+												false
+											)
+												? 'opacity-50 cursor-not-allowed'
+												: ''}"
+											onclick={() =>
+												canAddQuantity(option, item.quantity, false) &&
+												onChangeQuantity(item.product.id, option)}
 											disabled={!canAddQuantity(option, item.quantity, false)}
 										>
 											{option}
@@ -142,7 +156,9 @@
 									{/each}
 								</div>
 								{#if totalNonCustomQuantity > 72}
-									<p class="text-xs text-red-500 mt-1">Limite de 72 unités atteinte pour les commandes non-personnalisées</p>
+									<p class="text-xs text-red-500 mt-1">
+										Limite de 72 unités atteinte pour les commandes non-personnalisées
+									</p>
 								{/if}
 							{/if}
 
@@ -166,7 +182,7 @@
 				<div class="flex justify-between text-sm">
 					<span>Livraison</span>
 					<span>
-						{hasCustomItems 
+						{hasCustomItems
 							? 'Gratuit (commande personnalisée)'
 							: shippingCost > 0
 								? shippingCost.toFixed(2) + '€'

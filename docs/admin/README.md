@@ -77,6 +77,25 @@ naissent par inscription.
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
 
+### Alerting
+
+`$lib/server/alerting.ts` (`reportIfRepeated`) complète les compteurs de
+`/admin/metrics` : quand un signal lié à la charge dépasse un seuil dans une
+fenêtre glissante, il déclenche un `Sentry.captureMessage` (tag
+`alert:<clé>`) en plus d'un log `ERROR` — une seule alerte par fenêtre, pas à
+chaque occurrence. Deux signaux instrumentés :
+
+- `http-5xx` : 20+ réponses ≥500 en 1 minute (`errorRateTracking` dans
+  `hooks.server.ts`, compteur `http.5xx`).
+- `lock-contention` : 20+ échecs d'acquisition de verrou distribué en 5
+  minutes, tous verrous confondus (`withLock` dans `$lib/server/lock.ts`,
+  compteur `lock.contention`).
+
+Ce n'est pas un remplacement d'un outil d'alerting dédié (PagerDuty/Slack) :
+c'est ce que Sentry peut exploiter sans infrastructure supplémentaire —
+configurer une règle d'alerte Sentry sur le tag `alert:*` pour être notifié
+en dehors du dashboard `/admin/metrics`.
+
 ## Ce qui n'est pas l'admin
 
 L'authentification (`/auth`, sessions, 2FA) et le tunnel de commande

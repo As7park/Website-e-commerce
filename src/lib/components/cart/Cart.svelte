@@ -12,6 +12,7 @@
 		updateCartItemQuantity,
 		resetCart
 	} from '$lib/store/Data/cartStore';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 	import { Badge } from '$shadcn/badge';
 	import Button from '$shadcn/button/button.svelte';
 	import * as Sheet from '$shadcn/sheet/index.js';
@@ -29,9 +30,9 @@
 	function getCustomCanPrice(quantity: number): number {
 		switch (quantity) {
 			case 576:
-				return 1.60;
+				return 1.6;
 			case 720:
-				return 1.40;
+				return 1.4;
 			case 1440:
 				return 0.99;
 			case 2880:
@@ -39,7 +40,7 @@
 			case 8640:
 				return 0.69;
 			default:
-				return 1.60;
+				return 1.6;
 		}
 	}
 
@@ -74,16 +75,20 @@
 	// Calculer le total des quantités pour les commandes non-personnalisées
 	let totalNonCustomQuantity = $derived(
 		$cart.items
-			.filter(item => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
+			.filter((item) => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
 			.reduce((acc, item) => acc + item.quantity, 0)
 	);
 
 	// Fonction pour vérifier si on peut ajouter une quantité
-	function canAddQuantity(newQuantity: number, currentQuantity: number, isCustom: boolean): boolean {
+	function canAddQuantity(
+		newQuantity: number,
+		currentQuantity: number,
+		isCustom: boolean
+	): boolean {
 		if (isCustom) return true; // Pas de limite pour les personnalisées
-		
+
 		const otherItemsQuantity = totalNonCustomQuantity - currentQuantity;
-		return (otherItemsQuantity + newQuantity) <= 72;
+		return otherItemsQuantity + newQuantity <= 72;
 	}
 
 	/* ------------------------------------------------------------------
@@ -116,7 +121,9 @@
 <!-- ----------------------------------------------------------------- -->
 <!--  BOUTON PANIER                                                   -->
 <!-- ----------------------------------------------------------------- -->
-<div class="cartButton ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20">
+<div
+	class="cartButton ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20"
+>
 	<div class="absolute z-50 ccc">
 		<Sheet.Root bind:open={sidebarOpen}>
 			<Sheet.Trigger>
@@ -156,11 +163,17 @@
 										class="p-4 border rounded-lg shadow-sm flex justify-between items-center mb-2"
 									>
 										<img
-											src={(item.custom && Array.isArray(item.custom) && item.custom.length > 0 && item.custom[0].image) ||
-												(Array.isArray(item.product.images)
-													? item.product.images[0]
-													: item.product.images) ||
-												''}
+											src={optimizedImageUrl(
+												(item.custom &&
+													Array.isArray(item.custom) &&
+													item.custom.length > 0 &&
+													item.custom[0].image) ||
+													(Array.isArray(item.product.images)
+														? item.product.images[0]
+														: item.product.images) ||
+													'',
+												100
+											)}
 											alt={item.product.name}
 											class="w-20 h-20 object-cover mr-5"
 										/>
@@ -185,8 +198,12 @@
 												<div class="flex gap-2 flex-wrap">
 													{#each customQuantityOptions as option}
 														<button
-															class="px-3 py-1 border rounded text-sm {item.quantity === option.value ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
-															onclick={() => changeQuantity(item.product.id, option.value, item.custom?.[0]?.id)}
+															class="px-3 py-1 border rounded text-sm {item.quantity ===
+															option.value
+																? 'bg-blue-500 text-white'
+																: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
+															onclick={() =>
+																changeQuantity(item.product.id, option.value, item.custom?.[0]?.id)}
 														>
 															{option.value}
 														</button>
@@ -197,8 +214,18 @@
 												<div class="flex gap-2">
 													{#each quantityOptions as option}
 														<button
-															class="px-3 py-1 border rounded text-sm {item.quantity === option ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'} {!canAddQuantity(option, item.quantity, false) ? 'opacity-50 cursor-not-allowed' : ''}"
-															onclick={() => canAddQuantity(option, item.quantity, false) && changeQuantity(item.product.id, option)}
+															class="px-3 py-1 border rounded text-sm {item.quantity === option
+																? 'bg-blue-500 text-white'
+																: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'} {!canAddQuantity(
+																option,
+																item.quantity,
+																false
+															)
+																? 'opacity-50 cursor-not-allowed'
+																: ''}"
+															onclick={() =>
+																canAddQuantity(option, item.quantity, false) &&
+																changeQuantity(item.product.id, option)}
 															disabled={!canAddQuantity(option, item.quantity, false)}
 														>
 															{option}
@@ -206,7 +233,9 @@
 													{/each}
 												</div>
 												{#if totalNonCustomQuantity > 72}
-													<p class="text-xs text-red-500 mt-1">Limite de 72 unités atteinte pour les commandes non-personnalisées</p>
+													<p class="text-xs text-red-500 mt-1">
+														Limite de 72 unités atteinte pour les commandes non-personnalisées
+													</p>
 												{/if}
 											{/if}
 										</div>

@@ -1,5 +1,6 @@
 import { getRedis, isRedisConfigured } from './redis';
 import { incrementMetric } from './metrics';
+import { reportIfRepeated } from './alerting';
 
 // Ne supprime le verrou que s'il nous appartient encore : après expiration,
 // une autre requête a pu déjà en poser un nouveau, qu'il ne faut pas effacer.
@@ -35,6 +36,14 @@ export async function withLock<T>(
 	const acquired = await redis.set(key, token, { nx: true, px: ttlSeconds * 1000 });
 	if (!acquired) {
 		await incrementMetric('lock.contention');
+		// Agrégé tous verrous confondus (pas par clé) : le signal utile ici est
+		// « la contention devient anormalement fréquente dans l'app », pas
+		// laquelle des dizaines de clés de verrou est en cause.
+		await reportIfRepeated('lock-contention', {
+			threshold: 20,
+			windowSeconds: 300,
+			message: 'Contention de verrou distribué répétée (20+ en 5 min)'
+		});
 		return null;
 	}
 

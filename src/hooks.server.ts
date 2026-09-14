@@ -7,7 +7,7 @@
 // l'auth au cycle de requête.
 //
 // Ordre de la chaîne (voir `handle` en bas de fichier) :
-//   securityHeaders → devtoolsGuard → cookieGuard → rateLimit → catalogAntiScraping → authHandle → adminHandle → pendingOrderHandle
+//   securityHeaders → errorRateTracking → devtoolsGuard → cookieGuard → rateLimit → catalogAntiScraping → authHandle → adminHandle → pendingOrderHandle
 //
 // CSRF : aucune configuration `csrf` dans `svelte.config.js` → la protection
 // par défaut de SvelteKit (`checkOrigin`, qui bloque les requêtes de type
@@ -29,6 +29,7 @@ import * as Sentry from '@sentry/sveltekit';
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
 import { isSuspiciousUserAgent } from '$lib/server/anti-scraping';
 import { incrementMetric } from '$lib/server/metrics';
+import { reportIfRepeated } from '$lib/server/alerting';
 import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
 import { log, withRequestId } from '$lib/server/log';
 import { randomUUID } from 'crypto';
@@ -103,6 +104,28 @@ const securityHeaders: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+	return response;
+};
+
+/**
+ * Observabilité des erreurs serveur : compteur visible sur `/admin/metrics`
+ * (`http.5xx`) + alerte Sentry si le taux d'erreur devient anormal (20+ en 1
+ * min). Ne remplace pas `handleError` (qui capture les exceptions non
+ * attrapées) : celui-ci voit aussi les 5xx renvoyés volontairement (ex.
+ * `error(500, ...)`) sans lever d'exception.
+ */
+const errorRateTracking: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+
+	if (response.status >= 500) {
+		await incrementMetric('http.5xx');
+		await reportIfRepeated('http-5xx', {
+			threshold: 20,
+			windowSeconds: 60,
+			message: 'Taux de réponses 5xx anormalement élevé (20+ en 1 min)'
+		});
+	}
 
 	return response;
 };
@@ -207,6 +230,7 @@ export const handle: Handle = sequence(
 	Sentry.sentryHandle(),
 	requestIdHandle,
 	securityHeaders,
+	errorRateTracking,
 	devtoolsGuard,
 	cookieGuard,
 	rateLimit,

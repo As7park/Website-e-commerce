@@ -7,6 +7,7 @@
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
 	import { deleteCategorySchema } from '$lib/schema/categories/deleteCategorySchema.js';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	// Props
 	let { data } = $props();
@@ -24,7 +25,7 @@
 				product.categories?.map((cat) => cat.category?.name || 'Unknown').join(', ') ||
 				'No category',
 			// Première image ou placeholder
-			images: `<img class='w-20 h-20' src='${product.images[0]}' alt='${product.name}' />`,
+			images: `<img class='w-20 h-20' src='${optimizedImageUrl(product.images[0] ?? '', 80)}' alt='${product.name}' />`,
 			// Description tronquée
 			description:
 				product.description?.length > 20
