@@ -72,7 +72,7 @@ naissent par inscription.
 | `/admin/promo`    | codes promo                                                                      |
 | `/admin/contacts` | messages du formulaire de contact                                                |
 | `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                 |
-| `/admin/exports`  | déclenche un export CSV asynchrone (ventes/utilisateurs), lien envoyé par e-mail |
+| `/admin/exports`  | téléchargement direct d'un export CSV (ventes, utilisateurs, produits, blog, promo, contacts) |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.

@@ -63,6 +63,23 @@ function clientIP(event: Parameters<Handle>[0]['event']): string {
 	}
 }
 
+/**
+ * Vrai pour une connexion TCP locale (tests de charge k6, scripts locaux),
+ * jamais pour un vrai visiteur. Lit `event.getClientAddress()` directement —
+ * PAS `clientIP()`, qui fait confiance à `X-Forwarded-For` (donc trivialement
+ * falsifiable) : un `X-Forwarded-For: 127.0.0.1` envoyé par un vrai client
+ * distant ne doit jamais lever le rate-limit. `getClientAddress()` reflète le
+ * pair TCP réel — sur Vercel, jamais loopback pour du trafic externe.
+ */
+function isLoopbackPeer(event: Parameters<Handle>[0]['event']): boolean {
+	try {
+		const addr = event.getClientAddress();
+		return addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
+	} catch {
+		return false;
+	}
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Gardes globales (indépendantes de l'authentification)                     */
 /* -------------------------------------------------------------------------- */
@@ -153,6 +170,8 @@ const cookieGuard: Handle = async ({ event, resolve }) => {
 const bucket = new RefillingTokenBucket<string>(100, 1, 'global-ip');
 
 const rateLimit: Handle = async ({ event, resolve }) => {
+	if (isLoopbackPeer(event)) return resolve(event);
+
 	const ip = clientIP(event);
 	if (!(await bucket.consume(ip, 1))) {
 		log('WARN', 'RateLimit', 'Quota dépassé pour', ip);
@@ -175,6 +194,7 @@ const catalogAntiScraping: Handle = async ({ event, resolve }) => {
 	if (!event.url.pathname.startsWith('/products')) {
 		return resolve(event);
 	}
+	if (isLoopbackPeer(event)) return resolve(event);
 
 	if (isSuspiciousUserAgent(event.request.headers.get('user-agent'))) {
 		log('WARN', 'AntiScraping', 'User-Agent suspect bloqué sur le catalogue', event.url.pathname);

@@ -1,8 +1,14 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { Button } from '$shadcn/button';
 
-	let { form } = $props();
+	const exports = [
+		{ kind: 'sales', label: 'Ventes' },
+		{ kind: 'users', label: 'Utilisateurs' },
+		{ kind: 'products', label: 'Produits' },
+		{ kind: 'blog', label: 'Articles de blog' },
+		{ kind: 'promo', label: 'Codes promo' },
+		{ kind: 'contacts', label: 'Messages de contact' }
+	];
 </script>
 
 <svelte:head>
@@ -13,27 +19,13 @@
 	<div>
 		<h1 class="text-2xl font-semibold">Exports CSV</h1>
 		<p class="text-sm text-muted-foreground">
-			Génère un export complet (ventes ou utilisateurs) en tâche de fond. Un e-mail avec un lien de
-			téléchargement (valable 24h) vous sera envoyé quand le fichier sera prêt.
+			Télécharge un export CSV complet du jeu de données choisi.
 		</p>
 	</div>
 
-	{#if form?.success}
-		<p class="text-sm text-green-600">
-			Export {form.kind === 'sales' ? 'des ventes' : 'des utilisateurs'} lancé — vous recevrez un e-mail
-			sous peu.
-		</p>
-	{/if}
-	{#if form?.message}
-		<p class="text-sm text-red-600">{form.message}</p>
-	{/if}
-
-	<div class="flex gap-4">
-		<form method="POST" action="?/sales" use:enhance>
-			<Button type="submit">Exporter les ventes</Button>
-		</form>
-		<form method="POST" action="?/users" use:enhance>
-			<Button type="submit">Exporter les utilisateurs</Button>
-		</form>
+	<div class="flex flex-wrap gap-4">
+		{#each exports as { kind, label } (kind)}
+			<Button href="/admin/exports/{kind}">Exporter {label}</Button>
+		{/each}
 	</div>
 </div>

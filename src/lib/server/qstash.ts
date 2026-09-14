@@ -2,7 +2,6 @@ import { Client, Receiver } from '@upstash/qstash';
 import { resolveAppUrl } from './app-url';
 import { runPostPaymentJob } from './jobs/post-payment';
 import { runInvoiceEmailJob } from './jobs/invoice-email';
-import { runExportJob, type ExportKind } from './jobs/export';
 
 /**
  * Queue Upstash QStash — HTTP, sans process persistant, cohérente avec le
@@ -66,23 +65,5 @@ export async function enqueueInvoiceEmailJob(transactionId: string): Promise<voi
 	await getClient().publishJSON({
 		url: `${resolveAppUrl()}/api/jobs/invoice-email`,
 		body: { transactionId }
-	});
-}
-
-/**
- * Enfile un export CSV (ventes ou utilisateurs) demandé depuis l'admin
- * (`/admin/exports`). Génération + upload Cloudinary + e-mail peuvent
- * prendre plusieurs secondes sur un gros volume : jamais dans le chemin
- * synchrone d'une requête HTTP admin.
- */
-export async function enqueueExportJob(kind: ExportKind, requestedByEmail: string): Promise<void> {
-	if (!isQStashConfigured()) {
-		await runExportJob(kind, requestedByEmail);
-		return;
-	}
-
-	await getClient().publishJSON({
-		url: `${resolveAppUrl()}/api/jobs/export`,
-		body: { kind, requestedByEmail }
 	});
 }

@@ -1,17 +1,21 @@
 import { prisma } from '$lib/server';
-import cloudinary from '$lib/server/cloudinary';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
 import { toCsv } from '$lib/server/export/csv';
 
-export type ExportKind = 'sales' | 'users';
+export type ExportKind = 'sales' | 'users' | 'products' | 'blog' | 'promo' | 'contacts';
+
+export const EXPORT_KINDS: readonly ExportKind[] = [
+	'sales',
+	'users',
+	'products',
+	'blog',
+	'promo',
+	'contacts'
+];
 
 /** Fenêtre volontairement large pour un export (contrairement au dashboard,
  * borné à 12 mois) : un admin qui exporte veut typiquement l'historique
  * complet. Le plafond ci-dessous reste un filet contre un volume démesuré. */
 const EXPORT_MAX_ROWS = 20000;
-/** Durée de validité du lien signé Cloudinary envoyé par e-mail. */
-const DOWNLOAD_LINK_TTL_SECONDS = 60 * 60 * 24; // 24h
 
 async function buildSalesCsv(): Promise<string> {
 	const transactions = await prisma.transaction.findMany({
@@ -75,43 +79,139 @@ async function buildUsersCsv(): Promise<string> {
 	]);
 }
 
-/**
- * Génère un export CSV (ventes ou utilisateurs), l'héberge sur Cloudinary en
- * accès `authenticated` (jamais public : le CSV contient des données clients
- * — email, nom — et des montants), puis envoie un lien signé, à expiration,
- * par e-mail à l'admin qui l'a demandé.
- *
- * Volontairement PAS sous verrou (`withLock`) : contrairement aux jobs
- * Sendcloud/facture, deux exports concurrents ne se marchent pas dessus —
- * chacun génère son propre fichier, aucun état partagé à protéger.
- */
-export async function runExportJob(kind: ExportKind, requestedByEmail: string): Promise<void> {
-	const csv = kind === 'sales' ? await buildSalesCsv() : await buildUsersCsv();
-	const publicId = `exports/${kind}-${Date.now()}`;
-
-	await cloudinary.uploader.upload(
-		`data:text/csv;base64,${Buffer.from(csv, 'utf-8').toString('base64')}`,
-		{
-			public_id: publicId,
-			resource_type: 'raw',
-			type: 'authenticated'
-		}
-	);
-
-	const expiresAt = Math.floor(Date.now() / 1000) + DOWNLOAD_LINK_TTL_SECONDS;
-	const downloadUrl = cloudinary.utils.private_download_url(publicId, 'csv', {
-		resource_type: 'raw',
-		type: 'authenticated',
-		expires_at: expiresAt
+async function buildProductsCsv(): Promise<string> {
+	const products = await prisma.product.findMany({
+		select: {
+			id: true,
+			name: true,
+			slug: true,
+			price: true,
+			stock: true,
+			description: true,
+			createdAt: true,
+			categories: { select: { category: { select: { name: true } } } }
+		},
+		orderBy: { createdAt: 'desc' },
+		take: EXPORT_MAX_ROWS
 	});
 
-	const label = kind === 'sales' ? 'des ventes' : 'des utilisateurs';
-	await sendMail({
-		to: requestedByEmail,
-		subject: `Export ${label} — prêt à télécharger`,
-		text: `Votre export ${label} est prêt. Lien de téléchargement (valable 24h) : ${downloadUrl}`,
-		html: `<p>Votre export ${label} est prêt.</p><p><a href="${downloadUrl}">Télécharger le CSV</a> (lien valable 24h).</p>`
+	const rows = products.map((product) => ({
+		...product,
+		categories: product.categories.map((c) => c.category.name).join('; ')
+	}));
+
+	return toCsv(rows, [
+		{ key: 'id', header: 'ID' },
+		{ key: 'name', header: 'Nom' },
+		{ key: 'slug', header: 'Slug' },
+		{ key: 'price', header: 'Prix' },
+		{ key: 'stock', header: 'Stock' },
+		{ key: 'categories', header: 'Catégories' },
+		{ key: 'description', header: 'Description' },
+		{ key: 'createdAt', header: 'Créé le' }
+	]);
+}
+
+async function buildBlogCsv(): Promise<string> {
+	const posts = await prisma.blogPost.findMany({
+		select: {
+			id: true,
+			title: true,
+			slug: true,
+			published: true,
+			createdAt: true,
+			author: { select: { name: true } },
+			category: { select: { name: true } }
+		},
+		orderBy: { createdAt: 'desc' },
+		take: EXPORT_MAX_ROWS
 	});
 
-	log('INFO', 'export', `Export ${kind} terminé et envoyé à ${requestedByEmail}`, { publicId });
+	const rows = posts.map((post) => ({
+		...post,
+		author: post.author?.name ?? '',
+		category: post.category?.name ?? ''
+	}));
+
+	return toCsv(rows, [
+		{ key: 'id', header: 'ID' },
+		{ key: 'title', header: 'Titre' },
+		{ key: 'slug', header: 'Slug' },
+		{ key: 'author', header: 'Auteur' },
+		{ key: 'category', header: 'Catégorie' },
+		{ key: 'published', header: 'Publié' },
+		{ key: 'createdAt', header: 'Créé le' }
+	]);
+}
+
+async function buildPromoCsv(): Promise<string> {
+	const promoCodes = await prisma.promoCode.findMany({
+		select: {
+			id: true,
+			code: true,
+			type: true,
+			value: true,
+			minAmount: true,
+			usageLimit: true,
+			usageCount: true,
+			active: true,
+			expiresAt: true,
+			createdAt: true
+		},
+		orderBy: { createdAt: 'desc' },
+		take: EXPORT_MAX_ROWS
+	});
+
+	return toCsv(promoCodes, [
+		{ key: 'id', header: 'ID' },
+		{ key: 'code', header: 'Code' },
+		{ key: 'type', header: 'Type' },
+		{ key: 'value', header: 'Valeur' },
+		{ key: 'minAmount', header: 'Montant min.' },
+		{ key: 'usageLimit', header: "Limite d'utilisation" },
+		{ key: 'usageCount', header: 'Utilisations' },
+		{ key: 'active', header: 'Actif' },
+		{ key: 'expiresAt', header: 'Expire le' },
+		{ key: 'createdAt', header: 'Créé le' }
+	]);
+}
+
+async function buildContactsCsv(): Promise<string> {
+	const submissions = await prisma.contactSubmission.findMany({
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			subject: true,
+			message: true,
+			createdAt: true
+		},
+		orderBy: { createdAt: 'desc' },
+		take: EXPORT_MAX_ROWS
+	});
+
+	return toCsv(submissions, [
+		{ key: 'id', header: 'ID' },
+		{ key: 'name', header: 'Nom' },
+		{ key: 'email', header: 'Email' },
+		{ key: 'subject', header: 'Sujet' },
+		{ key: 'message', header: 'Message' },
+		{ key: 'createdAt', header: 'Reçu le' }
+	]);
+}
+
+const BUILDERS: Record<ExportKind, () => Promise<string>> = {
+	sales: buildSalesCsv,
+	users: buildUsersCsv,
+	products: buildProductsCsv,
+	blog: buildBlogCsv,
+	promo: buildPromoCsv,
+	contacts: buildContactsCsv
+};
+
+/** Génère le CSV du jeu de données demandé — lecture directe, pas de fichier
+ * intermédiaire ni d'envoi par e-mail : le résultat part directement en
+ * réponse HTTP (voir `src/routes/admin/exports/[kind]/+server.ts`). */
+export async function buildExportCsv(kind: ExportKind): Promise<string> {
+	return BUILDERS[kind]();
 }
