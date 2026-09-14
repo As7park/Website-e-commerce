@@ -72,10 +72,30 @@ naissent par inscription.
 | `/admin/promo`    | codes promo                                                                      |
 | `/admin/contacts` | messages du formulaire de contact                                                |
 | `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                 |
-| `/admin/exports`  | téléchargement direct d'un export CSV (ventes, utilisateurs, produits, blog, promo, contacts) |
+| `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
+
+### Purge depuis `/admin/exports`
+
+Purge manuelle, déclenchée par un admin, ciblée par ancienneté (`createdAt`) —
+jamais un vidage total de table. Complète, sans le remplacer, le job
+automatique `$lib/server/jobs/cleanup.ts` (qui purge déjà, sans action admin,
+les sessions expirées et les paniers `PENDING` abandonnés depuis 30 jours).
+
+Les ventes (`Transaction`) sont l'exception à la règle "jamais purgé"
+documentée dans `cleanup.ts` : purgeables ici, mais seulement avec une
+confirmation renforcée (taper `SUPPRIMER`), décision explicite assumée pour
+cette page uniquement — `cleanup.ts` continue de ne jamais y toucher
+automatiquement. Les utilisateurs ne sont purgeables que s'ils n'ont jamais
+vérifié leur email (filtre non désactivable depuis l'UI). `products`/`users`
+liés à une commande existante (contrainte FK `Restrict`) sont ignorés plutôt
+que de faire échouer toute la purge.
+
+L'import restaure les colonnes exportées uniquement : jamais les secrets
+(`passwordHash`, `totpKey`), jamais les relations profondes (tags et
+commentaires de blog). Indisponible pour les ventes.
 
 ### Alerting
 

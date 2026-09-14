@@ -14,8 +14,80 @@ export const EXPORT_KINDS: readonly ExportKind[] = [
 
 /** Fenêtre volontairement large pour un export (contrairement au dashboard,
  * borné à 12 mois) : un admin qui exporte veut typiquement l'historique
- * complet. Le plafond ci-dessous reste un filet contre un volume démesuré. */
-const EXPORT_MAX_ROWS = 20000;
+ * complet. Le plafond ci-dessous reste un filet contre un volume démesuré
+ * — et le plafond appliqué en import (`$lib/server/jobs/import.ts`). */
+export const EXPORT_MAX_ROWS = 20000;
+
+/**
+ * Colonnes par kind : `key` sert à `toCsv` (lecture depuis l'objet Prisma
+ * projeté), `header` est le libellé de colonne — source de vérité unique
+ * partagée avec `parseCsv` à l'import (`$lib/server/jobs/import.ts`), pour
+ * qu'export et import ne puissent jamais diverger sur les noms de colonnes.
+ */
+export const EXPORT_COLUMNS = {
+	sales: [
+		{ key: 'id', header: 'ID transaction' },
+		{ key: 'invoiceNumber', header: 'N° facture' },
+		{ key: 'createdAt', header: 'Date' },
+		{ key: 'status', header: 'Statut' },
+		{ key: 'amount', header: 'Montant' },
+		{ key: 'currency', header: 'Devise' },
+		{ key: 'customer_details_name', header: 'Client' },
+		{ key: 'customer_details_email', header: 'Email client' },
+		{ key: 'shippingOption', header: 'Mode de livraison' },
+		{ key: 'shippingCost', header: 'Frais de port' },
+		{ key: 'trackingNumber', header: 'N° de suivi' }
+	],
+	users: [
+		{ key: 'id', header: 'ID' },
+		{ key: 'email', header: 'Email' },
+		{ key: 'username', header: 'Pseudo' },
+		{ key: 'name', header: 'Nom' },
+		{ key: 'role', header: 'Rôle' },
+		{ key: 'emailVerified', header: 'Email vérifié' },
+		{ key: 'isMfaEnabled', header: '2FA activée' },
+		{ key: 'createdAt', header: 'Créé le' }
+	],
+	products: [
+		{ key: 'id', header: 'ID' },
+		{ key: 'name', header: 'Nom' },
+		{ key: 'slug', header: 'Slug' },
+		{ key: 'price', header: 'Prix' },
+		{ key: 'stock', header: 'Stock' },
+		{ key: 'categories', header: 'Catégories' },
+		{ key: 'description', header: 'Description' },
+		{ key: 'createdAt', header: 'Créé le' }
+	],
+	blog: [
+		{ key: 'id', header: 'ID' },
+		{ key: 'title', header: 'Titre' },
+		{ key: 'slug', header: 'Slug' },
+		{ key: 'author', header: 'Auteur' },
+		{ key: 'category', header: 'Catégorie' },
+		{ key: 'published', header: 'Publié' },
+		{ key: 'createdAt', header: 'Créé le' }
+	],
+	promo: [
+		{ key: 'id', header: 'ID' },
+		{ key: 'code', header: 'Code' },
+		{ key: 'type', header: 'Type' },
+		{ key: 'value', header: 'Valeur' },
+		{ key: 'minAmount', header: 'Montant min.' },
+		{ key: 'usageLimit', header: "Limite d'utilisation" },
+		{ key: 'usageCount', header: 'Utilisations' },
+		{ key: 'active', header: 'Actif' },
+		{ key: 'expiresAt', header: 'Expire le' },
+		{ key: 'createdAt', header: 'Créé le' }
+	],
+	contacts: [
+		{ key: 'id', header: 'ID' },
+		{ key: 'name', header: 'Nom' },
+		{ key: 'email', header: 'Email' },
+		{ key: 'subject', header: 'Sujet' },
+		{ key: 'message', header: 'Message' },
+		{ key: 'createdAt', header: 'Reçu le' }
+	]
+} as const satisfies Record<ExportKind, { key: string; header: string }[]>;
 
 async function buildSalesCsv(): Promise<string> {
 	const transactions = await prisma.transaction.findMany({
@@ -36,19 +108,7 @@ async function buildSalesCsv(): Promise<string> {
 		take: EXPORT_MAX_ROWS
 	});
 
-	return toCsv(transactions, [
-		{ key: 'id', header: 'ID transaction' },
-		{ key: 'invoiceNumber', header: 'N° facture' },
-		{ key: 'createdAt', header: 'Date' },
-		{ key: 'status', header: 'Statut' },
-		{ key: 'amount', header: 'Montant' },
-		{ key: 'currency', header: 'Devise' },
-		{ key: 'customer_details_name', header: 'Client' },
-		{ key: 'customer_details_email', header: 'Email client' },
-		{ key: 'shippingOption', header: 'Mode de livraison' },
-		{ key: 'shippingCost', header: 'Frais de port' },
-		{ key: 'trackingNumber', header: 'N° de suivi' }
-	]);
+	return toCsv(transactions, EXPORT_COLUMNS.sales);
 }
 
 async function buildUsersCsv(): Promise<string> {
@@ -67,16 +127,7 @@ async function buildUsersCsv(): Promise<string> {
 		take: EXPORT_MAX_ROWS
 	});
 
-	return toCsv(users, [
-		{ key: 'id', header: 'ID' },
-		{ key: 'email', header: 'Email' },
-		{ key: 'username', header: 'Pseudo' },
-		{ key: 'name', header: 'Nom' },
-		{ key: 'role', header: 'Rôle' },
-		{ key: 'emailVerified', header: 'Email vérifié' },
-		{ key: 'isMfaEnabled', header: '2FA activée' },
-		{ key: 'createdAt', header: 'Créé le' }
-	]);
+	return toCsv(users, EXPORT_COLUMNS.users);
 }
 
 async function buildProductsCsv(): Promise<string> {
@@ -100,16 +151,7 @@ async function buildProductsCsv(): Promise<string> {
 		categories: product.categories.map((c) => c.category.name).join('; ')
 	}));
 
-	return toCsv(rows, [
-		{ key: 'id', header: 'ID' },
-		{ key: 'name', header: 'Nom' },
-		{ key: 'slug', header: 'Slug' },
-		{ key: 'price', header: 'Prix' },
-		{ key: 'stock', header: 'Stock' },
-		{ key: 'categories', header: 'Catégories' },
-		{ key: 'description', header: 'Description' },
-		{ key: 'createdAt', header: 'Créé le' }
-	]);
+	return toCsv(rows, EXPORT_COLUMNS.products);
 }
 
 async function buildBlogCsv(): Promise<string> {
@@ -133,15 +175,7 @@ async function buildBlogCsv(): Promise<string> {
 		category: post.category?.name ?? ''
 	}));
 
-	return toCsv(rows, [
-		{ key: 'id', header: 'ID' },
-		{ key: 'title', header: 'Titre' },
-		{ key: 'slug', header: 'Slug' },
-		{ key: 'author', header: 'Auteur' },
-		{ key: 'category', header: 'Catégorie' },
-		{ key: 'published', header: 'Publié' },
-		{ key: 'createdAt', header: 'Créé le' }
-	]);
+	return toCsv(rows, EXPORT_COLUMNS.blog);
 }
 
 async function buildPromoCsv(): Promise<string> {
@@ -162,18 +196,7 @@ async function buildPromoCsv(): Promise<string> {
 		take: EXPORT_MAX_ROWS
 	});
 
-	return toCsv(promoCodes, [
-		{ key: 'id', header: 'ID' },
-		{ key: 'code', header: 'Code' },
-		{ key: 'type', header: 'Type' },
-		{ key: 'value', header: 'Valeur' },
-		{ key: 'minAmount', header: 'Montant min.' },
-		{ key: 'usageLimit', header: "Limite d'utilisation" },
-		{ key: 'usageCount', header: 'Utilisations' },
-		{ key: 'active', header: 'Actif' },
-		{ key: 'expiresAt', header: 'Expire le' },
-		{ key: 'createdAt', header: 'Créé le' }
-	]);
+	return toCsv(promoCodes, EXPORT_COLUMNS.promo);
 }
 
 async function buildContactsCsv(): Promise<string> {
@@ -190,14 +213,7 @@ async function buildContactsCsv(): Promise<string> {
 		take: EXPORT_MAX_ROWS
 	});
 
-	return toCsv(submissions, [
-		{ key: 'id', header: 'ID' },
-		{ key: 'name', header: 'Nom' },
-		{ key: 'email', header: 'Email' },
-		{ key: 'subject', header: 'Sujet' },
-		{ key: 'message', header: 'Message' },
-		{ key: 'createdAt', header: 'Reçu le' }
-	]);
+	return toCsv(submissions, EXPORT_COLUMNS.contacts);
 }
 
 const BUILDERS: Record<ExportKind, () => Promise<string>> = {
