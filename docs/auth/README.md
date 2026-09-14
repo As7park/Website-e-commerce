@@ -11,12 +11,12 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 
 Tout le code d'authentification vit dans quatre emplacements :
 
-| Emplacement                                | Contenu                                                            |
-| ------------------------------------------ | ------------------------------------------------------------------ |
-| `src/lib/lucia/`                           | logique : sessions, mots de passe, 2FA, emails, chiffrement, OAuth |
-| `src/routes/auth/`                         | pages et endpoints du parcours                                     |
-| `src/lib/schema/auth/`                     | schémas Zod des formulaires                                        |
-| `src/lib/prisma/{session,emailVerificationRequest,passwordResetSession,email}/` | accès aux tables d'authentification |
+| Emplacement                                                                     | Contenu                                                            |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/lib/lucia/`                                                                | logique : sessions, mots de passe, 2FA, emails, chiffrement, OAuth |
+| `src/routes/auth/`                                                              | pages et endpoints du parcours                                     |
+| `src/lib/schema/auth/`                                                          | schémas Zod des formulaires                                        |
+| `src/lib/prisma/{session,emailVerificationRequest,passwordResetSession,email}/` | accès aux tables d'authentification                                |
 
 Le module s'accroche au reste du projet en **un seul point** : le hook
 `authHandle` (`src/lib/lucia/hooks.ts`), branché dans `src/hooks.server.ts`.
@@ -38,12 +38,12 @@ Deux règles maintiennent cette frontière :
 
 Quatre tables, décrites dans `prisma/schema.prisma`.
 
-| Table                          | Rôle                                                                    | Durée de vie             |
-| ------------------------------ | ----------------------------------------------------------------------- | ------------------------ |
-| `users`                        | identifiants, email vérifié, secrets 2FA, identifiant Google, rôle      | permanente               |
-| `sessions`                     | sessions ouvertes, avec le drapeau 2FA validée                          | 30 jours, glissante      |
-| `email_verification_requests`  | code à 8 caractères pour valider une adresse                            | 10 minutes               |
-| `password_reset_sessions`      | progression d'une réinitialisation (code, 2FA, mot de passe)            | 10 minutes               |
+| Table                         | Rôle                                                               | Durée de vie        |
+| ----------------------------- | ------------------------------------------------------------------ | ------------------- |
+| `users`                       | identifiants, email vérifié, secrets 2FA, identifiant Google, rôle | permanente          |
+| `sessions`                    | sessions ouvertes, avec le drapeau 2FA validée                     | 30 jours, glissante |
+| `email_verification_requests` | code à 8 caractères pour valider une adresse                       | 10 minutes          |
+| `password_reset_sessions`     | progression d'une réinitialisation (code, 2FA, mot de passe)       | 10 minutes          |
 
 `users` est partagé avec le commerce : `Address`, `Order` et `Transaction` s'y
 rattachent. Les trois autres tables appartiennent exclusivement au module et
@@ -142,26 +142,26 @@ Elles sont à déplacer, pas à supprimer, en cas de retrait du module.
 Les contrôles existent à deux niveaux, et ce doublon est voulu : le hook couvre
 les routes qu'on ajoutera demain, la page protège son propre cas d'usage.
 
-| Niveau                       | Portée                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `authHandle`                 | 2FA exigée non configurée, 2FA non validée, `/auth/settings/**` anonyme  |
-| `load` de chaque page        | état précis attendu par la page (session de reset, email vérifié, etc.)  |
-| `/admin/**`                  | `adminHandle` : connexion **et** rôle `ADMIN` (voir [docs/admin](../admin/README.md)) |
-| `/checkout`                  | connexion (commande et adresses rattachées au compte)                   |
+| Niveau                | Portée                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| `authHandle`          | 2FA exigée non configurée, 2FA non validée, `/auth/settings/**` anonyme               |
+| `load` de chaque page | état précis attendu par la page (session de reset, email vérifié, etc.)               |
+| `/admin/**`           | `adminHandle` : connexion **et** rôle `ADMIN` (voir [docs/admin](../admin/README.md)) |
+| `/checkout`           | connexion (commande et adresses rattachées au compte)                                 |
 
 `authHandle` ne protège pas `/admin` : c'est `adminHandle` (`src/lib/admin/hooks.ts`),
 branché juste après, qui s'en charge.
 
 ## Sécurité
 
-| Sujet                | Choix                                                                       |
-| -------------------- | --------------------------------------------------------------------------- |
-| Mots de passe        | Argon2id (19 MiB, 2 passes), longueur minimale 8, refus des mots de passe connus de « Have I Been Pwned » (interrogé en k-anonymat : seuls 5 caractères de l'empreinte SHA-1 sortent du serveur) |
-| Sessions             | token nanoid 32 caractères (≈190 bits), cookie `httpOnly` + `sameSite=lax` + `secure` en production ; le token sert directement d'identifiant de ligne (voir limites) |
-| Secrets 2FA          | AES-128-GCM, clé `ENCRYPTION_KEY`, vecteur d'initialisation tiré à chaque écriture |
-| Codes email          | base32 sans ambiguïté, 8 caractères, 10 minutes, une demande vivante par compte |
-| Énumération          | les messages d'erreur ne distinguent pas « compte inconnu » de « mot de passe invalide » |
-| Données au client    | `locals.user` reste serveur ; `+layout.server.ts` n'expose qu'une projection explicite, sans secret |
+| Sujet             | Choix                                                                                                                                                                                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mots de passe     | Argon2id (19 MiB, 2 passes), longueur minimale 8, refus des mots de passe connus de « Have I Been Pwned » (interrogé en k-anonymat : seuls 5 caractères de l'empreinte SHA-1 sortent du serveur)                                                                 |
+| Sessions          | token nanoid 32 caractères (≈190 bits), cookie `httpOnly` + `sameSite=lax` + `secure` en production ; le token sert directement d'identifiant de ligne (voir limites)                                                                                            |
+| Secrets 2FA       | AES-256-GCM (`ENCRYPTION_KEY`, `encryptionVersion=2`, tout chiffrement neuf) ; AES-128-GCM legacy (`ENCRYPTION_KEY_LEGACY`, `encryptionVersion=1`) tant que d'anciens comptes n'ont pas encore été re-chiffrés — vecteur d'initialisation tiré à chaque écriture |
+| Codes email       | base32 sans ambiguïté, 8 caractères, 10 minutes, une demande vivante par compte                                                                                                                                                                                  |
+| Énumération       | les messages d'erreur ne distinguent pas « compte inconnu » de « mot de passe invalide »                                                                                                                                                                         |
+| Données au client | `locals.user` reste serveur ; `+layout.server.ts` n'expose qu'une projection explicite, sans secret                                                                                                                                                              |
 
 ### Quotas
 
@@ -173,36 +173,39 @@ process, comme avant : chaque instance applique alors son propre quota, réparti
 sur le nombre d'instances actives en production (voir `src/lib/server/redis.ts`,
 `src/lib/server/rate-limit.ts`).
 
-| Point d'entrée                     | Clé              | Quota                                    |
-| ---------------------------------- | ---------------- | ---------------------------------------- |
-| toutes les requêtes                | IP               | 100 par seconde                          |
-| inscription                        | IP               | 3 jetons, 1 rechargé toutes les 10 s     |
-| connexion                          | IP               | 20 jetons, 1 rechargé par seconde        |
-| connexion                          | compte           | délai croissant : 0, 1, 2, 4, 8, 16, 30, 60, 180, 300 s |
-| mot de passe oublié                | IP et compte     | 3 jetons, 1 rechargé par minute          |
-| saisie du code email               | compte           | 5 essais par 30 min                      |
-| envoi d'un code email              | compte           | 3 envois par 10 min                      |
-| saisie du code (réinitialisation)  | session de reset | 5 essais par 30 min                      |
-| changement de mot de passe         | compte           | 5 par 30 min                             |
-| configuration 2FA                  | compte           | 3 jetons, 1 rechargé toutes les 10 min   |
-| code TOTP                          | compte           | 5 essais par 30 min                      |
-| code de secours                    | compte           | 3 essais par heure                       |
+| Point d'entrée                    | Clé              | Quota                                                   |
+| --------------------------------- | ---------------- | ------------------------------------------------------- |
+| toutes les requêtes               | IP               | 100 par seconde                                         |
+| inscription                       | IP               | 3 jetons, 1 rechargé toutes les 10 s                    |
+| connexion                         | IP               | 20 jetons, 1 rechargé par seconde                       |
+| connexion                         | compte           | délai croissant : 0, 1, 2, 4, 8, 16, 30, 60, 180, 300 s |
+| mot de passe oublié               | IP et compte     | 3 jetons, 1 rechargé par minute                         |
+| saisie du code email              | compte           | 5 essais par 30 min                                     |
+| envoi d'un code email             | compte           | 3 envois par 10 min                                     |
+| saisie du code (réinitialisation) | session de reset | 5 essais par 30 min                                     |
+| changement de mot de passe        | compte           | 5 par 30 min                                            |
+| configuration 2FA                 | compte           | 3 jetons, 1 rechargé toutes les 10 min                  |
+| code TOTP                         | compte           | 5 essais par 30 min                                     |
+| code de secours                   | compte           | 3 essais par heure                                      |
 
 ## Configuration
 
-| Variable                    | Rôle                                                       | Obligatoire      |
-| --------------------------- | ---------------------------------------------------------- | ---------------- |
-| `ENCRYPTION_KEY`            | 16 octets en base64, chiffre les secrets 2FA               | oui              |
-| `SMTP_HOST`, `SMTP_PORT`    | serveur d'envoi des codes                                  | oui              |
-| `SMTP_USER`, `SMTP_PASS`    | authentification SMTP                                      | selon le serveur |
-| `GOOGLE_CLIENT_ID`          | identifiant OAuth Google                                   | si Google activé |
-| `GOOGLE_CLIENT_SECRET`      | secret OAuth Google                                        | si Google activé |
-| `VITE_GOOGLE_REDIRECT_URI`  | URI de retour, identique à la console Google Cloud         | si Google activé |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | quotas partagés entre instances (voir Quotas) | non (repli mémoire) |
+| Variable                                             | Rôle                                                                                            | Obligatoire                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `ENCRYPTION_KEY`                                     | 32 octets en base64, AES-256-GCM, tout chiffrement neuf des secrets 2FA (`encryptionVersion=2`) | oui                                                          |
+| `ENCRYPTION_KEY_LEGACY`                              | 16 octets en base64, AES-128-GCM, déchiffre les comptes encore en `encryptionVersion=1`         | tant qu'il en reste (voir `npm run check:legacy-encryption`) |
+| `SMTP_HOST`, `SMTP_PORT`                             | serveur d'envoi des codes                                                                       | oui                                                          |
+| `SMTP_USER`, `SMTP_PASS`                             | authentification SMTP                                                                           | selon le serveur                                             |
+| `GOOGLE_CLIENT_ID`                                   | identifiant OAuth Google                                                                        | si Google activé                                             |
+| `GOOGLE_CLIENT_SECRET`                               | secret OAuth Google                                                                             | si Google activé                                             |
+| `VITE_GOOGLE_REDIRECT_URI`                           | URI de retour, identique à la console Google Cloud                                              | si Google activé                                             |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | quotas partagés entre instances (voir Quotas)                                                   | non (repli mémoire)                                          |
 
-`ENCRYPTION_KEY` est à sauvegarder comme un mot de passe de base de données : la
-perdre rend inutilisables toutes les 2FA existantes, qu'il faudrait alors
-reconfigurer compte par compte.
+`ENCRYPTION_KEY` (et `ENCRYPTION_KEY_LEGACY` tant qu'elle est nécessaire) sont à
+sauvegarder comme un mot de passe de base de données : les perdre rend
+inutilisables toutes les 2FA chiffrées avec elles, qu'il faudrait alors
+reconfigurer compte par compte. Procédure de rotation :
+[docs/secrets-rotation.md](../secrets-rotation.md).
 
 Un échec d'envoi d'email n'interrompt pas l'inscription : le compte est créé et le
 code reste consultable en base pendant sa durée de validité.
@@ -214,26 +217,26 @@ Un seul scénario : `e2e/auth/journey.spec.ts`. Les numéros sont ceux des
 code sous `/auth`. Détail (limiteurs, `fillStable`, hors périmètre) :
 [../../e2e/README.md](../../e2e/README.md).
 
-| # | Étape | Refusé | Accepté |
-| - | ----- | ------ | ------- |
-| 1 | Pages protégées fermées aux anonymes | 9 routes `GUARDED_PAGES` | redirection login / forgot-password |
-| 2 | Inscription : saisies invalides | pseudo court, email HTML, 5 règles MDP | pas de session |
-| 3 | Inscription : compte créé, non vérifié | — | hash argon, `emailVerified=false` |
-| 4 | Vérif email : codes invalides | trop court, inexistant | toujours non vérifié |
-| 5 | Vérif email : renvoi invalide l'ancien code | ancien code | nouveau code → `/auth` |
-| 6 | MDP : courant erroné | trop court, courant faux | hash inchangé |
-| 7 | MDP : changement révoque les autres sessions | — | 1 session |
-| 8 | Connexion : identifiants erronés | inconnu, ancien MDP, MDP faux | pas de cookie |
-| 9 | Connexion : nouveau MDP accepté | — | `/` |
-| 10 | Email déjà pris | adresse occupée | email inchangé |
-| 11 | Email changé après le code | avant le code, encore l'ancien | code sur la **nouvelle** adresse |
-| 12 | MDP oublié : demande / code invalides | inconnu, code faux, GET reset | reste sur verify |
-| 13 | MDP oublié : bon code | MDP trop court | réinitialisé |
-| 14 | 2FA setup invalide | TOTP court / faux | `totpKey` null |
-| 15 | 2FA configurée + code de secours | — | code UI = base |
-| 16 | Session bridée sans TOTP | TOTP faux, GET settings | Verify → `/auth` |
-| 17 | Code de secours | trop court, faux | 2FA retirée, recovery renouvelé |
-| 18 | Reconfig 2FA puis déconnexion | TOTP sur clé périmée | 0 session, `/auth/` → login |
+| #   | Étape                                        | Refusé                                 | Accepté                             |
+| --- | -------------------------------------------- | -------------------------------------- | ----------------------------------- |
+| 1   | Pages protégées fermées aux anonymes         | 9 routes `GUARDED_PAGES`               | redirection login / forgot-password |
+| 2   | Inscription : saisies invalides              | pseudo court, email HTML, 5 règles MDP | pas de session                      |
+| 3   | Inscription : compte créé, non vérifié       | —                                      | hash argon, `emailVerified=false`   |
+| 4   | Vérif email : codes invalides                | trop court, inexistant                 | toujours non vérifié                |
+| 5   | Vérif email : renvoi invalide l'ancien code  | ancien code                            | nouveau code → `/auth`              |
+| 6   | MDP : courant erroné                         | trop court, courant faux               | hash inchangé                       |
+| 7   | MDP : changement révoque les autres sessions | —                                      | 1 session                           |
+| 8   | Connexion : identifiants erronés             | inconnu, ancien MDP, MDP faux          | pas de cookie                       |
+| 9   | Connexion : nouveau MDP accepté              | —                                      | `/`                                 |
+| 10  | Email déjà pris                              | adresse occupée                        | email inchangé                      |
+| 11  | Email changé après le code                   | avant le code, encore l'ancien         | code sur la **nouvelle** adresse    |
+| 12  | MDP oublié : demande / code invalides        | inconnu, code faux, GET reset          | reste sur verify                    |
+| 13  | MDP oublié : bon code                        | MDP trop court                         | réinitialisé                        |
+| 14  | 2FA setup invalide                           | TOTP court / faux                      | `totpKey` null                      |
+| 15  | 2FA configurée + code de secours             | —                                      | code UI = base                      |
+| 16  | Session bridée sans TOTP                     | TOTP faux, GET settings                | Verify → `/auth`                    |
+| 17  | Code de secours                              | trop court, faux                       | 2FA retirée, recovery renouvelé     |
+| 18  | Reconfig 2FA puis déconnexion                | TOTP sur clé périmée                   | 0 session, `/auth/` → login         |
 
 Test à part : déconnexion depuis le tiroir panier — cookie absent, 0 session,
 GET `/auth/settings` → login.
