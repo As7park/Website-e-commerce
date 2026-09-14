@@ -24,12 +24,19 @@ const config = {
 			workbox: {
 				// les options pour workbox
 				swSrc: '/sw.js',
+				// Uniquement les images produits Cloudinary : pas de règle catch-all
+				// same-origin (le cache runtime ne doit jamais contenir /api, /admin,
+				// /auth ou toute réponse porteuse de données utilisateur).
 				runtimeCaching: [
 					{
-						urlPattern: /^https?.*/,
-						handler: 'NetworkFirst',
+						urlPattern: /^https:\/\/res\.cloudinary\.com\//,
+						handler: 'CacheFirst',
 						options: {
-							cacheName: 'http-cache'
+							cacheName: 'cloudinary-images',
+							expiration: {
+								maxEntries: 200,
+								maxAgeSeconds: 30 * 24 * 60 * 60 // 30 jours
+							}
 						}
 					}
 				]

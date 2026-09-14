@@ -8,6 +8,7 @@ import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
 import { withLock } from '$lib/server/lock';
 import { enqueuePostPaymentJob } from '$lib/server/qstash';
 import { deduceWeightBracket, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
+import { log } from '$lib/server/log';
 
 /**
  * Webhook Stripe.
@@ -36,9 +37,8 @@ export async function POST({ request }: { request: Request }) {
 			sig || '',
 			process.env.STRIPE_WEBHOOK_SECRET || ''
 		);
-		// console.log('✅ Webhook verified and received:', event);
 	} catch (err: any) {
-		console.error('⚠️ Webhook signature verification failed.', err.message);
+		log('ERROR', 'webhook:stripe', '⚠️ Webhook signature verification failed.', err.message);
 		return json({ error: 'Webhook signature verification failed.' }, { status: 400 });
 	}
 
@@ -46,7 +46,6 @@ export async function POST({ request }: { request: Request }) {
 	switch (event.type) {
 		case 'checkout.session.completed': {
 			const session = event.data.object as Stripe.Checkout.Session;
-			// console.log('✅ Checkout session completed:', session);
 			// Verrou distribué : Stripe peut livrer le même webhook deux fois en
 			// parallèle, ce qui laisserait passer les deux appels au travers du
 			// `findUnique` de `handleCheckoutSession` avant que l'un des deux
@@ -55,20 +54,12 @@ export async function POST({ request }: { request: Request }) {
 			break;
 		}
 
-		case 'payment_intent.succeeded': {
-			const paymentIntent = event.data.object;
-			// console.log('✅ Payment intent succeeded:', paymentIntent);
+		case 'payment_intent.succeeded':
+		case 'charge.succeeded':
 			break;
-		}
-
-		case 'charge.succeeded': {
-			const charge = event.data.object;
-			// console.log('✅ Charge succeeded:', charge);
-			break;
-		}
 
 		default:
-			console.warn(`⚠️ Unhandled event type: ${event.type}`);
+			log('WARN', 'webhook:stripe', `⚠️ Unhandled event type: ${event.type}`);
 	}
 	return json({ received: true }, { status: 200 });
 }
@@ -79,10 +70,10 @@ export async function POST({ request }: { request: Request }) {
  * 2) On appelle Sendcloud hors transaction
  */
 async function handleCheckoutSession(session: Stripe.Checkout.Session) {
-	console.log('\n🚀 === DÉBUT TRAITEMENT WEBHOOK CHECKOUT ===');
+	log('DEBUG', 'webhook:stripe', '=== DÉBUT TRAITEMENT WEBHOOK CHECKOUT ===');
 	// Pas de `customer_details` (nom/email/téléphone/adresse) dans les logs :
 	// ils partent vers un système tiers (Vercel) qui n'a pas à recevoir de PII.
-	console.log('📋 Session Stripe reçue:', {
+	log('DEBUG', 'webhook:stripe', 'Session Stripe reçue:', {
 		id: session.id,
 		amount_total: session.amount_total,
 		currency: session.currency,
@@ -92,19 +83,15 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 
 	const orderId = session.metadata?.order_id;
 	if (!orderId) {
-		console.error('❌ Order ID manquant dans les métadonnées de la session');
+		log('ERROR', 'webhook:stripe', '❌ Order ID manquant dans les métadonnées de la session');
 		return;
 	}
-	console.log('🆔 Order ID extrait:', orderId);
 
-	// Récupération de l'utilisateur lié à la commande
-	console.log("👤 Récupération de l'utilisateur pour la commande...");
 	const user = await getUserIdByOrderId(orderId);
 	if (!user || !user.userId) {
-		console.error('❌ Utilisateur introuvable pour la commande:', orderId);
+		log('ERROR', 'webhook:stripe', '❌ Utilisateur introuvable pour la commande:', orderId);
 		return;
 	}
-	console.log('✅ Utilisateur trouvé:', { userId: user.userId });
 
 	const userId = user.userId;
 
@@ -112,18 +99,16 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		where: { stripePaymentId: session.id }
 	});
 	if (already) {
-		console.log('ℹ️ Transaction déjà enregistrée:', already.id);
+		log('DEBUG', 'webhook:stripe', 'ℹ️ Transaction déjà enregistrée:', already.id);
 		return already;
 	}
 
 	let createdTransaction;
 
 	try {
-		console.log('💾 Début de la transaction Prisma...');
 		// (1) ENREGISTREMENT EN DB via une transaction Prisma courte — aucun
 		// appel Sendcloud ici : un timeout réseau empêcherait la facture d'exister.
 		createdTransaction = await prisma.$transaction(async (prismaTx) => {
-			console.log('🔍 Récupération de la commande depuis la base...');
 			// Récupère la commande
 			const order = await prismaTx.order.findUnique({
 				where: { id: orderId },
@@ -135,21 +120,11 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 			});
 
 			if (!order) {
-				console.error('❌ Commande introuvable:', orderId);
 				throw new Error(`⚠️ Order ${orderId} not found`);
 			}
 			if (!order.address) {
-				console.error('❌ Adresse manquante pour la commande:', orderId);
 				throw new Error(`⚠️ Order ${orderId} has no associated address`);
 			}
-
-			console.log('✅ Commande récupérée:', {
-				id: order.id,
-				userId: order.userId,
-				shippingOption: order.shippingOption,
-				shippingCost: order.shippingCost,
-				itemsCount: order.items.length
-			});
 
 			const weightBracket = deduceWeightBracket(order);
 			// Dimensions de secours uniquement : aucun fetch Sendcloud ici.
@@ -256,21 +231,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				userId: userId
 			};
 
-			console.log('📝 Données de transaction préparées:', {
-				stripePaymentId: transactionData.stripePaymentId,
-				amount: transactionData.amount,
-				currency: transactionData.currency,
-				shippingOption: transactionData.shippingOption,
-				shippingCost: transactionData.shippingCost,
-				shippingMethodId: transactionData.shippingMethodId,
-				shippingMethodName: transactionData.shippingMethodName,
-				package_dimensions: `${transactionData.package_length}x${transactionData.package_width}x${transactionData.package_height}${transactionData.package_dimension_unit}`,
-				package_weight: `${transactionData.package_weight}${transactionData.package_weight_unit}`,
-				products_count: transactionData.products.length
-			});
-
 			// Crée la transaction dans la BDD
-			console.log('💾 Création de la transaction en base...');
 			const newTx = await prismaTx.transaction.create({
 				data: transactionData
 			});
@@ -280,21 +241,23 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				data: { status: 'PAID' }
 			});
 
-			console.log('✅ Transaction créée avec succès:', {
-				id: newTx.id,
-				stripePaymentId: newTx.stripePaymentId,
-				amount: newTx.amount,
-				status: newTx.status
-			});
-
 			return newTx;
 		});
 	} catch (error) {
-		console.error(`❌ Échec de la création de la transaction pour la commande ${orderId}:`, error);
+		log(
+			'ERROR',
+			'webhook:stripe',
+			`❌ Échec de la création de la transaction pour la commande ${orderId}:`,
+			error
+		);
 		return; // on arrête ici si l'enregistrement DB a échoué
 	}
 
-	console.log('🎉 Transaction en base créée avec succès:', createdTransaction?.id);
+	log('INFO', 'webhook:stripe', 'Transaction créée', {
+		transactionId: createdTransaction?.id,
+		orderId,
+		amount: createdTransaction?.amount
+	});
 
 	// Facture + Sendcloud partent en job asynchrone (QStash si configuré,
 	// sinon exécution directe équivalente en dev) : voir $lib/server/jobs/post-payment.ts.
@@ -302,5 +265,6 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		await enqueuePostPaymentJob(createdTransaction.id);
 	}
 
-	console.log('🏁 === FIN TRAITEMENT WEBHOOK CHECKOUT ===\n');
+	log('DEBUG', 'webhook:stripe', '=== FIN TRAITEMENT WEBHOOK CHECKOUT ===');
 }
+

@@ -26,6 +26,7 @@ import { dev } from '$app/environment';
 
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
 import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
+import { log } from '$lib/server/log';
 
 // AUTH-PLUGIN ▼ retirer cet import et `authHandle` de la séquence finale.
 import { authHandle } from '$lib/lucia/hooks';
@@ -34,21 +35,6 @@ import { authHandle } from '$lib/lucia/hooks';
 // ADMIN-PLUGIN ▼ retirer cet import et `adminHandle` de la séquence finale.
 import { adminHandle } from '$lib/admin/hooks';
 // ADMIN-PLUGIN ▲
-
-/** Passe à `true` pour tracer les gardes globales dans la console. */
-const DEBUG = false;
-
-type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
-
-function log(level: LogLevel, context: string, ...args: unknown[]) {
-	if (!DEBUG && level === 'DEBUG') return;
-
-	const prefix = `[${new Date().toISOString()}] [${level}] [${context}]`;
-	if (level === 'ERROR') console.error(prefix, ...args);
-	else if (level === 'WARN') console.warn(prefix, ...args);
-	else if (level === 'INFO') console.info(prefix, ...args);
-	else console.debug(prefix, ...args);
-}
 
 /** Adresse du client, en tenant compte d'un éventuel proxy (Vercel). */
 function clientIP(event: Parameters<Handle>[0]['event']): string {
