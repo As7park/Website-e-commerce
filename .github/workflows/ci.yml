@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (prettier + eslint)
+        # Non-bloquant : dette de formatage/lint pré-existante (~171 erreurs
+        # eslint, formatage à revoir sur une partie du repo). À rendre
+        # bloquant une fois résorbée.
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Type-check (svelte-check)
+        # Non-bloquant : la base compte ~130 erreurs pré-existantes (surtout
+        # des $env/static/* absents sans .env réel). À rendre bloquant une
+        # fois cette dette résorbée.
+        run: npm run check
+        continue-on-error: true
+
+      - name: Unit tests
+        run: npm run test:unit -- --run
+
+      - name: Audit (production dependencies)
+        # Non-bloquant pour l'instant : signale les vulnérabilités sans
+        # casser la CI le temps de traiter les cas nécessitant un bump majeur.
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
