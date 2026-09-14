@@ -265,13 +265,21 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 	// (QStash si configuré, sinon exécution directe équivalente en dev) : un
 	// pic SMTP ou un ralentissement Sendcloud ne doit pas bloquer l'autre.
 	// Voir $lib/server/jobs/invoice-email.ts et $lib/server/jobs/post-payment.ts.
+	// `allSettled`, pas `all` : la transaction est déjà commitée à ce stade,
+	// un rejet d'un job (ex. repli direct en dev sans QStash, débit SMTP
+	// atteint) ne doit jamais faire échouer la réponse au webhook Stripe — un
+	// job qui échoue via QStash a déjà son propre retry indépendant.
 	if (createdTransaction) {
-		await Promise.all([
+		const jobResults = await Promise.allSettled([
 			enqueueInvoiceEmailJob(createdTransaction.id),
 			enqueuePostPaymentJob(createdTransaction.id)
 		]);
+		for (const result of jobResults) {
+			if (result.status === 'rejected') {
+				log('ERROR', 'webhook:stripe', "Échec d'enfilage d'un job post-paiement", result.reason);
+			}
+		}
 	}
 
 	log('DEBUG', 'webhook:stripe', '=== FIN TRAITEMENT WEBHOOK CHECKOUT ===');
 }
-

@@ -108,6 +108,28 @@ l'erreur (donc QStash arrête de retenter) et journalise en `ERROR` + Sentry
 transaction reste identifiable en base (`sendcloudOrderCreatedAt`/
 `sendcloudParcelId` toujours absents) pour un retraitement ultérieur.
 
+### Débit SMTP sous rafale (facture)
+
+`runInvoiceEmailJob` (`$lib/server/jobs/invoice-email.ts`) consomme un jeton
+d'un `RefillingTokenBucket` global (`smtp-send`, 5 en rafale, 1/s en
+soutenu — donc environ 60 e-mails/min max) avant d'appeler `sendInvoiceEmail`.
+Volontairement conservateur : à ajuster selon le plan SMTP souscrit (Brevo)
+si un pic de commandes légitime le sature en usage normal.
+
+Un rejet lève une exception plutôt que d'attendre : le job ne doit jamais
+traîner, QStash retente déjà ce job précis avec son propre backoff
+(`/api/jobs/invoice-email`), indépendamment du job Sendcloud. Chaque rejet
+incrémente le compteur `smtp.throttled` (visible sur `/admin/metrics`) et,
+au-delà de 30 rejets en 5 minutes, déclenche une alerte Sentry via
+`reportIfRepeated` (voir [../admin/README.md](../admin/README.md#alerting)).
+
+Côté webhook (`src/routes/api/webhooks/+server.ts`), l'enfilage des deux jobs
+(facture + Sendcloud) utilise `Promise.allSettled`, pas `Promise.all` : la
+transaction est déjà commitée en base à ce stade, un rejet (repli direct sans
+QStash en dev, ou débit SMTP atteint) ne doit jamais faire échouer la réponse
+200 au webhook Stripe — chaque job géré par QStash a de toute façon son
+propre retry, découplé de la session Stripe d'origine.
+
 ## Tests
 
 Les numéros sont ceux des `test.step`. Changer la procédure ici, puis le spec,
