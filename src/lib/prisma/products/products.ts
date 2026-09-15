@@ -87,17 +87,6 @@ export const deleteProductById = async (productId: string) => {
 	return deleted;
 };
 
-export const connectProductToCategories = async (productId: string, categoryIds: string[]) => {
-	const result = await prisma.productCategory.createMany({
-		data: categoryIds.map((categoryId) => ({
-			productId,
-			categoryId
-		}))
-	});
-	await bumpCacheVersion('catalog');
-	return result;
-};
-
 export const deleteProductTaxonomyValues = async (productId: string) => {
 	const result = await prisma.productTaxonomyValue.deleteMany({ where: { productId } });
 	await bumpCacheVersion('catalog');

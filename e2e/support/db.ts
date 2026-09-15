@@ -184,12 +184,25 @@ export async function findPromoCode(id: string) {
 	return resilient(() => db.promoCode.findUnique({ where: { id } }));
 }
 
+/**
+ * Taxonomie « Catégorie » partagée par les tests de catalogue — jamais
+ * supprimée (seules les valeurs jetables `e2e-cat-*` qu'elle porte le sont).
+ * `upsert` sur le slug évite toute collision entre workers Playwright.
+ */
+async function ensureCatalogTaxonomy() {
+	return resilient(() =>
+		db.taxonomy.upsert({
+			where: { slug: 'e2e-categorie' },
+			update: {},
+			create: { name: 'E2E Catégorie', slug: 'e2e-categorie', type: 'TEXT', multiple: true }
+		})
+	);
+}
+
 /** Catalogue : produit de test isolé (image factice, pas d'upload Cloudinary). */
 export async function createCatalogProduct(overrides?: { name?: string; slug?: string }) {
 	const stamp = `${Date.now()}`;
-	const category = await resilient(() =>
-		db.category.create({ data: { name: `e2e-cat-${stamp}` } })
-	);
+	const category = await createCatalogCategory();
 	const product = await resilient(() =>
 		db.product.create({
 			data: {
@@ -200,7 +213,7 @@ export async function createCatalogProduct(overrides?: { name?: string; slug?: s
 				stock: 10,
 				images: ['https://example.test/e2e-product.jpg'],
 				colorProduct: '#112233',
-				categories: { create: { categoryId: category.id } }
+				taxonomyValues: { create: { taxonomyValueId: category.id } }
 			}
 		})
 	);
@@ -214,9 +227,7 @@ export async function createCatalogProduct(overrides?: { name?: string; slug?: s
  */
 export async function createOldCatalogProduct(daysAgo: number, overrides?: { name?: string }) {
 	const stamp = `${Date.now()}`;
-	const category = await resilient(() =>
-		db.category.create({ data: { name: `e2e-cat-${stamp}` } })
-	);
+	const category = await createCatalogCategory();
 	const product = await resilient(() =>
 		db.product.create({
 			data: {
@@ -228,7 +239,7 @@ export async function createOldCatalogProduct(daysAgo: number, overrides?: { nam
 				images: ['https://example.test/e2e-product.jpg'],
 				colorProduct: '#112233',
 				createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
-				categories: { create: { categoryId: category.id } }
+				taxonomyValues: { create: { taxonomyValueId: category.id } }
 			}
 		})
 	);
@@ -240,7 +251,12 @@ export async function getProductBySlug(slug: string) {
 }
 
 export async function getProductById(id: string) {
-	return resilient(() => db.product.findUnique({ where: { id } }));
+	return resilient(() =>
+		db.product.findUnique({
+			where: { id },
+			include: { taxonomyValues: { include: { taxonomyValue: true } } }
+		})
+	);
 }
 
 export async function getProductByName(name: string) {
@@ -345,23 +361,23 @@ export async function deleteCatalogProduct(productId: string) {
 	const product = await resilient(() =>
 		db.product.findUnique({
 			where: { id: productId },
-			include: { categories: true }
+			include: { taxonomyValues: true }
 		})
 	);
 	if (!product) return;
 
 	await resilient(() => db.orderItem.deleteMany({ where: { productId } }));
-	await resilient(() => db.productCategory.deleteMany({ where: { productId } }));
+	await resilient(() => db.productTaxonomyValue.deleteMany({ where: { productId } }));
 	await resilient(() => db.product.deleteMany({ where: { id: productId } }));
 
-	for (const link of product.categories) {
+	for (const link of product.taxonomyValues) {
 		const remaining = await resilient(() =>
-			db.productCategory.count({ where: { categoryId: link.categoryId } })
+			db.productTaxonomyValue.count({ where: { taxonomyValueId: link.taxonomyValueId } })
 		);
 		if (remaining === 0) {
 			await resilient(() =>
-				db.category.deleteMany({
-					where: { id: link.categoryId, name: { startsWith: 'e2e-cat-' } }
+				db.taxonomyValue.deleteMany({
+					where: { id: link.taxonomyValueId, value: { startsWith: 'e2e-cat-' } }
 				})
 			);
 		}
@@ -429,13 +445,23 @@ export async function findAddressById(id: string) {
 	return resilient(() => db.address.findUnique({ where: { id } }));
 }
 
+/**
+ * Valeur jetable de la taxonomie « Catégorie » de test — remplace l'ancienne
+ * `Category` legacy. Le nom (`.name`) est conservé pour ne pas faire bouger
+ * les specs qui l'utilisent comme libellé affiché dans l'UI.
+ */
 export async function createCatalogCategory() {
-	return resilient(() => db.category.create({ data: { name: `e2e-cat-${Date.now()}` } }));
+	const taxonomy = await ensureCatalogTaxonomy();
+	const name = `e2e-cat-${Date.now()}`;
+	const value = await resilient(() =>
+		db.taxonomyValue.create({ data: { taxonomyId: taxonomy.id, value: name, label: name } })
+	);
+	return { id: value.id, name: value.value };
 }
 
 export async function deleteCatalogCategory(id: string) {
 	await resilient(() =>
-		db.category.deleteMany({ where: { id, name: { startsWith: 'e2e-cat-' } } })
+		db.taxonomyValue.deleteMany({ where: { id, value: { startsWith: 'e2e-cat-' } } })
 	);
 }
 
@@ -538,24 +564,48 @@ export async function deleteUser(email: string) {
 	await resilient(() => db.user.delete({ where: { id: user.id } }));
 }
 
-/** Taxonomie « Matière » : matière de test isolée. */
-export async function createMaterial(name?: string) {
+/** Taxonomie de test isolée (CRUD admin générique — remplace l'ancienne "Matière"). */
+export async function createTaxonomy(overrides?: {
+	name?: string;
+	slug?: string;
+	multiple?: boolean;
+}) {
+	const stamp = `${Date.now()}`;
 	return resilient(() =>
-		db.material.create({ data: { name: name ?? `e2e-material-${Date.now()}` } })
+		db.taxonomy.create({
+			data: {
+				name: overrides?.name ?? `e2e-taxonomy-${stamp}`,
+				slug: overrides?.slug ?? `e2e-taxonomy-${stamp}`,
+				type: 'TEXT',
+				multiple: overrides?.multiple ?? false
+			}
+		})
 	);
 }
 
-export async function getMaterialById(id: string) {
-	return resilient(() => db.material.findUnique({ where: { id } }));
+export async function getTaxonomyById(id: string) {
+	return resilient(() => db.taxonomy.findUnique({ where: { id } }));
 }
 
-export async function getMaterialByName(name: string) {
-	return resilient(() => db.material.findUnique({ where: { name } }));
+export async function getTaxonomyByName(name: string) {
+	return resilient(() => db.taxonomy.findFirst({ where: { name } }));
 }
 
-/** Ne bloque jamais sur les produits qui l'utilisent (`onDelete: SetNull`). */
-export async function deleteMaterial(id: string) {
-	await resilient(() => db.material.deleteMany({ where: { id } }));
+/** Cascade DB (`onDelete: Cascade`) : supprime aussi ses valeurs et les liaisons produit. */
+export async function deleteTaxonomy(id: string) {
+	await resilient(() => db.taxonomy.deleteMany({ where: { id } }));
+}
+
+export async function createTaxonomyValue(taxonomyId: string, overrides?: { value?: string }) {
+	return resilient(() =>
+		db.taxonomyValue.create({
+			data: { taxonomyId, value: overrides?.value ?? `e2e-value-${Date.now()}` }
+		})
+	);
+}
+
+export async function getTaxonomyValueById(id: string) {
+	return resilient(() => db.taxonomyValue.findUnique({ where: { id } }));
 }
 
 /** Avis produit : pose un avis directement en base (sans passer par la fiche produit). */

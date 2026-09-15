@@ -70,11 +70,14 @@ export default async function globalSetup() {
 	if (staleProducts.length > 0) {
 		const ids = staleProducts.map((p) => p.id);
 		await db.orderItem.deleteMany({ where: { productId: { in: ids } } });
-		await db.productCategory.deleteMany({ where: { productId: { in: ids } } });
+		await db.productTaxonomyValue.deleteMany({ where: { productId: { in: ids } } });
 		await db.product.deleteMany({ where: { id: { in: ids } } });
-		await db.category.deleteMany({ where: { name: { startsWith: 'e2e-cat-' } } });
+		await db.taxonomyValue.deleteMany({ where: { value: { startsWith: 'e2e-cat-' } } });
 		console.log(`[e2e] ${staleProducts.length} produit(s) résiduel(s) purgé(s).`);
 	}
+
+	// Taxonomies jetables (`e2e/products/taxonomies.spec.ts`) laissées par un run interrompu.
+	await db.taxonomy.deleteMany({ where: { slug: { startsWith: 'e2e-taxonomy-' } } });
 
 	const smtpPort = Number(process.env.SMTP_PORT ?? 2525);
 	const httpPort = Number(process.env.SMTP_HTTP_PORT ?? 2526);

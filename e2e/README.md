@@ -9,8 +9,8 @@ worker) :
   (`e2e/admin/settings.spec.ts`) et export/purge/import CSV
   (`e2e/admin/exports.spec.ts`) ;
 - catalogue : vitrine (`e2e/products/catalog.spec.ts`), CRUD admin produits
-  (`e2e/products/admin.spec.ts`), taxonomie matières
-  (`e2e/products/materials.spec.ts`), avis produit (`e2e/products/reviews.spec.ts`)
+  (`e2e/products/admin.spec.ts`), taxonomies génériques
+  (`e2e/products/taxonomies.spec.ts`), avis produit (`e2e/products/reviews.spec.ts`)
   et liste d'envies (`e2e/products/wishlist.spec.ts`) ;
 - commerce : panier (connecté + invité), checkout, webhook Stripe, ventes
   (`e2e/commerce/*.spec.ts`) ;
@@ -181,12 +181,12 @@ Le blocage anonyme/CLIENT de `/admin/exports`, `/admin/exports/products` et
 
 ### Catalogue vitrine — `e2e/products/catalog.spec.ts`
 
-| #   | Étape                                   | Geste                  | Preuve                                     |
-| --- | --------------------------------------- | ---------------------- | ------------------------------------------ |
-| 1   | La liste affiche le nom Prisma          | GET `/products`        | titres Catalogue + nom, lien catégorie     |
-| 2   | La fiche s’ouvre par slug               | GET `/products/[slug]` | nom, prix, ligne en base                   |
-| 3   | Un slug inconnu renvoie 404             | GET slug absent        | statut 404                                 |
-| 4   | Pas d’UI d’édition admin sur la vitrine | HTML de `/products`    | pas de `/admin/products` ni `passwordHash` |
+| #   | Étape                                   | Geste                  | Preuve                                                    |
+| --- | --------------------------------------- | ---------------------- | --------------------------------------------------------- |
+| 1   | La liste affiche le nom Prisma          | GET `/products`        | titres Catalogue + nom, libellé de la valeur de taxonomie |
+| 2   | La fiche s’ouvre par slug               | GET `/products/[slug]` | nom, prix, ligne en base                                  |
+| 3   | Un slug inconnu renvoie 404             | GET slug absent        | statut 404                                                |
+| 4   | Pas d’UI d’édition admin sur la vitrine | HTML de `/products`    | pas de `/admin/products` ni `passwordHash`                |
 
 ### Catalogue admin — `e2e/products/admin.spec.ts`
 
@@ -204,17 +204,18 @@ seulement si `CLOUDINARY_*` n'est pas factice.
 
 Test à part : un CLIENT POST `?/deleteProduct` — le produit reste.
 
-### Catalogue matières — `e2e/products/materials.spec.ts`
+### Catalogue taxonomies — `e2e/products/taxonomies.spec.ts`
 
-| #   | Étape                                                   | Geste                         | Preuve                                                  |
-| --- | ------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
-| 1   | Création depuis `/admin/products/materials/create`      | Save changes                  | ligne du tableau Matières                               |
-| 2   | Association à un produit depuis la fiche admin          | Select matière → Save changes | `Product.materialId`, nom visible sur la fiche publique |
-| 3   | Filtre catalogue par matière                            | GET `/products?materiau=:id`  | produit présent ; id inconnu → absent                   |
-| 4   | Renommage                                               | Save changes                  | nom mis à jour en base et dans le tableau               |
-| 5   | Suppression : ne bloque pas, le produit perd sa matière | dialogue Continue             | matière absente, `Product.materialId === null`          |
+| #   | Étape                                                    | Geste                         | Preuve                                                  |
+| --- | -------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| 1   | Création depuis `/admin/products/taxonomies/create`      | Save changes                  | ligne du tableau Taxonomies                             |
+| 2   | Création d'une valeur pour cette taxonomie               | Save changes                  | ligne dans le tableau Valeurs                           |
+| 3   | Association à un produit depuis la fiche admin           | case cochée → Save changes    | `ProductTaxonomyValue` en base                          |
+| 4   | Filtre catalogue par taxonomie                           | GET `/products?<slug>=valeur` | produit présent ; valeur inconnue → absent              |
+| 5   | Renommage de la valeur                                   | Save changes                  | valeur mise à jour en base et dans le tableau           |
+| 6   | Suppression de la taxonomie : cascade sur valeur/produit | dialogue Continue             | taxonomie et valeur absentes, produit sans cette valeur |
 
-Test à part : un CLIENT POST `?/createMaterial` — aucune matière créée.
+Test à part : un CLIENT POST `?/createTaxonomy` — aucune taxonomie créée.
 
 ### Avis produit — `e2e/products/reviews.spec.ts`
 

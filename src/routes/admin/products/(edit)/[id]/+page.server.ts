@@ -4,7 +4,6 @@ import { superValidate, fail, message, withFiles } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import {
-	connectProductToCategories,
 	connectProductToTaxonomyValues,
 	deleteProductTaxonomyValues,
 	getProductById,
@@ -12,12 +11,6 @@ import {
 } from '$lib/prisma/products/products';
 import { updateProductSchema } from '$lib/schema/products/productSchema';
 import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
-import {
-	deleteProductCategories,
-	getAllcategories,
-	getCategoriesByIds
-} from '$lib/prisma/categories/categories';
-import { getAllMaterials } from '$lib/prisma/materials/materials';
 import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
 import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
@@ -29,11 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		error(404, 'Product not found');
 	}
 
-	const [categories, materials, taxonomies] = await Promise.all([
-		getAllcategories(),
-		getAllMaterials(),
-		getAllTaxonomiesWithValues()
-	]);
+	const taxonomies = await getAllTaxonomiesWithValues();
 
 	const initialData = {
 		_id: product.id,
@@ -43,9 +32,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		stock: product.stock,
 		colorProduct: product.colorProduct,
 		sku: product.sku ?? '',
-		materialId: product.materialId ?? '',
 		compareAtPrice: product.compareAtPrice ?? 0,
-		categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
 		taxonomyValueIds: product.taxonomyValues.map((tv) => tv.taxonomyValueId),
 		images: [],
 		existingImages: product.images
@@ -54,8 +41,6 @@ export const load: PageServerLoad = async ({ params }) => {
 	const IupdateProductSchema = await superValidate(initialData, zod(updateProductSchema));
 
 	return {
-		categories,
-		materials,
 		taxonomies,
 		IupdateProductSchema
 	};
@@ -123,18 +108,6 @@ export const actions: Actions = {
 				}
 			}
 
-			const categoryIds = form.data.categoryId[0].split(',').map((id) => id.trim());
-			const existingCategories = await getCategoriesByIds(categoryIds);
-
-			const existingCategoryIds = existingCategories.map((cat) => cat.id);
-			const missingCategories = categoryIds.filter((id) => !existingCategoryIds.includes(id));
-
-			if (missingCategories.length > 0) {
-				return fail(400, {
-					message: `The following categories do not exist: ${missingCategories.join(', ')}`
-				});
-			}
-
 			const taxonomyValueIds = (form.data.taxonomyValueIds[0] ?? '')
 				.split(',')
 				.map((id) => id.trim())
@@ -155,13 +128,8 @@ export const actions: Actions = {
 					colorProduct: form.data.colorProduct,
 					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages,
 					sku: form.data.sku || null,
-					materialId: form.data.materialId || null,
 					compareAtPrice: form.data.compareAtPrice || null
 				});
-
-				await deleteProductCategories(productId);
-
-				await connectProductToCategories(productId, categoryIds);
 
 				await deleteProductTaxonomyValues(productId);
 

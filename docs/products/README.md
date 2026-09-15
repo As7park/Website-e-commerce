@@ -1,49 +1,54 @@
 # Catalogue produits
 
-Vitrine publique et CRUD admin des produits Prisma : fiches, catégories, images
+Vitrine publique et CRUD admin des produits Prisma : fiches, taxonomies, images
 Cloudinary. Réservé en écriture au rôle `ADMIN` ; la lecture (`/products`) est
 ouverte.
 
 En plus des champs de base (nom, description, prix, stock, images,
-catégories), `Product` porte trois attributs facultatifs, éditables depuis le
+taxonomies), `Product` porte deux attributs facultatifs, éditables depuis le
 formulaire admin (`/admin/products/create`, `/admin/products/[id]`) : `sku`
-(référence interne, unique, jamais utilisée comme clé de recherche),
-`materialId` (facette « Matière » du filtre catalogue — voir « Taxonomies »
-ci-dessous) et `compareAtPrice` (prix barré affiché à côté du prix réel —
-`price` reste le seul montant facturé, aucune logique de remise n'en
-découle).
+(référence interne, unique, jamais utilisée comme clé de recherche) et
+`compareAtPrice` (prix barré affiché à côté du prix réel — `price` reste le
+seul montant facturé, aucune logique de remise n'en découle).
 
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
 ## Taxonomies
 
-Deux taxonomies gérées en admin, jamais en champ texte libre — évite que
-« Or »/« or »/« OR » cohabitent et cassent silencieusement un filtre :
+Un seul système générique (`Taxonomy`/`TaxonomyValue`/`ProductTaxonomyValue`),
+géré en admin, jamais en champ texte libre — évite que « Or »/« or »/« OR »
+cohabitent et cassent silencieusement un filtre. Chaque taxonomie (ex.
+« Catégorie », « Matière ») définit son `slug` (paramètre d'URL du filtre
+catalogue), son `type` (`TEXT`/`COLOR`/`NUMBER`/`BOOLEAN`/`DATE`) et si elle
+accepte plusieurs valeurs par produit (`multiple`) :
 
-| Taxonomie  | Relation                           | CRUD admin                                                                                                         |
-| ---------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Catégories | many-to-many (`ProductCategory`)   | table « Catégories » sur `/admin/products`, `/admin/products/categories/create`, `/admin/products/categories/[id]` |
-| Matière    | many-to-one (`Product.materialId`) | table « Matières » sur `/admin/products`, `/admin/products/materials/create`, `/admin/products/materials/[id]`     |
+| CRUD                 | Route                                                       |
+| -------------------- | ----------------------------------------------------------- |
+| Liste des taxonomies | table « Taxonomies » sur `/admin/products`                  |
+| Créer une taxonomie  | `/admin/products/taxonomies/create`                         |
+| Éditer une taxonomie | `/admin/products/taxonomies/[id]` (porte aussi ses valeurs) |
+| Créer une valeur     | `/admin/products/taxonomies/[id]/values/create`             |
+| Éditer une valeur    | `/admin/products/taxonomies/[id]/values/[valueId]`          |
 
-Une catégorie ou une matière se supprime même si des produits l'utilisent
-encore : `ProductCategory` est nettoyée explicitement avant de supprimer la
-catégorie (many-to-many) ; `Product.materialId` repasse simplement à `null`
-(`onDelete: SetNull`, many-to-one — pas de table de jointure à nettoyer).
+Supprimer une `Taxonomy` supprime en cascade ses `TaxonomyValue` et les
+liaisons `ProductTaxonomyValue` correspondantes (`onDelete: Cascade`) : un
+produit perd simplement les valeurs de la taxonomie effacée, pas de table à
+nettoyer manuellement.
 
-`Material` a été introduite par migration de données
-(`20260915180000_add_material_taxonomy`) : l'ancienne colonne texte libre
-`products.material` a été convertie en table `materials` + relation, une
-ligne par valeur déjà présente, sans perte.
+Ce système remplace les anciennes taxonomies dédiées `Category`/`Material`
+(tables `categories`/`materials` + `ProductCategory`/`Product.materialId`),
+retirées par migration une fois tous les produits reportés sur des
+`TaxonomyValue` équivalentes.
 
 ## Frontière du module
 
-| Emplacement                                                                                                      | Contenu                                                                   |
-| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `src/lib/products/`                                                                                              | lecture publique et chemins de tests                                      |
-| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/materials/`, `src/lib/prisma/reviews/` | DAO Prisma                                                                |
-| `src/routes/products/`                                                                                           | vitrine (fiche produit inclut les avis)                                   |
-| `src/routes/admin/products/`                                                                                     | CRUD back-office (produits, catégories, matières — gardes = module admin) |
+| Emplacement                                                                         | Contenu                                                         |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `src/lib/products/`                                                                 | lecture publique et chemins de tests                            |
+| `src/lib/prisma/products/`, `src/lib/prisma/taxonomies/`, `src/lib/prisma/reviews/` | DAO Prisma                                                      |
+| `src/routes/products/`                                                              | vitrine (fiche produit inclut les avis)                         |
+| `src/routes/admin/products/`                                                        | CRUD back-office (produits, taxonomies — gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
 qui ne s'applique qu'aux chemins `/products*` (rate-limit dédié + heuristique
@@ -77,33 +82,33 @@ Tous les filtres de `/products` sont des paramètres d'URL, combinables entre
 eux, lus par `src/routes/products/+page.server.ts` et appliqués dans
 `listProducts` (`src/lib/products/catalog.ts`) :
 
-| Paramètre           | Filtre                                                                        |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `categorie`         | catégorie (sélection unique)                                                  |
-| `q`                 | recherche texte (`contains` Prisma, nom + description, insensible à la casse) |
-| `materiau`          | matière, répétable (`?materiau=Or&materiau=Argent`) — OR entre les valeurs    |
-| `prixMin`/`prixMax` | bornes de prix                                                                |
-| `dispo=1`           | en stock uniquement (`stock > 0`)                                             |
-| `tri`               | `pertinence` (défaut) / `prix-asc` / `prix-desc` / `nouveaute`                |
-| `page`              | pagination                                                                    |
+| Paramètre           | Filtre                                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<slug-taxonomie>`  | une valeur de la taxonomie ; répétable si `multiple` (`?matiere=Or&matiere=Argent` — OR entre les valeurs), sélection unique sinon — le slug est dynamique (voir `Taxonomy.slug`) |
+| `q`                 | recherche texte (`contains` Prisma, nom + description, insensible à la casse)                                                                                                     |
+| `prixMin`/`prixMax` | bornes de prix                                                                                                                                                                    |
+| `dispo=1`           | en stock uniquement (`stock > 0`)                                                                                                                                                 |
+| `tri`               | `pertinence` (défaut) / `prix-asc` / `prix-desc` / `nouveaute`                                                                                                                    |
+| `page`              | pagination                                                                                                                                                                        |
 
-`getCatalogFacets` calcule les matières disponibles (avec leur nombre de
-produits) et les bornes de prix pour la sidebar — recalculées à partir de la
-catégorie et de la recherche en cours, mais **pas** des filtres matière/prix/
-disponibilité déjà posés : sinon cocher une matière ferait disparaître sa
-propre case. C'est la simplification courante des vitrines de cette taille,
-pas un vrai faceted search par filtre croisé.
+`getCatalogFacets` calcule, pour chaque taxonomie, les valeurs disponibles
+(avec leur nombre de produits) et les bornes de prix pour la sidebar —
+recalculées à partir de la recherche en cours et des filtres des **autres**
+taxonomies, mais pas de la taxonomie elle-même : sinon cocher une valeur
+ferait disparaître sa propre case. C'est la simplification courante des
+vitrines de cette taille, pas un vrai faceted search par filtre croisé.
 
 Chaque combinaison de paramètres fait partie de la clé de cache au même titre
 que la page.
 
-Les trois lectures publiques (`listProducts`, `getProductBySlug`,
-`listCategories` dans `src/lib/products/catalog.ts`) passent par un cache
-Redis de 60 s quand Upstash est configuré (`src/lib/server/cache.ts`),
-invalidé automatiquement à chaque écriture des DAO `src/lib/prisma/products` /
-`src/lib/prisma/categories` (un seul numéro de version pour tout le
-catalogue : `bumpCacheVersion('catalog')`). Sans Redis configuré, ces
-fonctions relisent Prisma à chaque appel, comme avant.
+Les lectures publiques (`listProducts`, `getProductBySlug`,
+`getCatalogFacets`, `getCachedTaxonomiesWithValues` dans
+`src/lib/products/catalog.ts`) passent par un cache Redis de 60 s quand
+Upstash est configuré (`src/lib/server/cache.ts`), invalidé automatiquement à
+chaque écriture des DAO `src/lib/prisma/products` / `src/lib/prisma/taxonomies`
+(un seul numéro de version pour tout le catalogue :
+`bumpCacheVersion('catalog')`). Sans Redis configuré, ces fonctions relisent
+Prisma à chaque appel, comme avant.
 
 ### Avis produit
 
@@ -130,9 +135,11 @@ Deux modules activables depuis `/admin/settings` (voir
   est désactivé ou si le compte n'est pas connecté — jamais une page vide qui
   laisserait deviner que la route existe.
 - **Ventes croisées** (`getRelatedProducts` dans `catalog.ts`) — jusqu'à 4
-  produits partageant une catégorie avec la fiche consultée, le produit
-  courant exclu. Affichées sous « Vous aimerez aussi » sur `/products/[slug]`
-  uniquement quand le module est actif et qu'au moins un produit correspond.
+  produits partageant une catégorie legacy (`ProductCategory`, non retirée
+  tant que la migration B n'est pas passée) avec la fiche consultée, le
+  produit courant exclu. Affichées sous « Vous aimerez aussi » sur
+  `/products/[slug]` uniquement quand le module est actif et qu'au moins un
+  produit correspond.
 
 ### Anti-scraping
 
@@ -165,7 +172,7 @@ pas une URL Cloudinary `/upload/` (donnée de seed/placeholder).
 
 ## Admin
 
-`/admin/products` : liste, création, édition, suppression, catégories. Accès
+`/admin/products` : liste, création, édition, suppression, taxonomies. Accès
 couvert par `adminHandle`. Un produit déjà présent dans une `OrderItem` **ne
 peut pas** être supprimé (`onDelete: Restrict`).
 
@@ -185,7 +192,7 @@ puis le code (`src/lib/products`, `/products`, `/admin/products`). Index :
 
 | #   | Étape                          | Geste                  | Preuve                                     |
 | --- | ------------------------------ | ---------------------- | ------------------------------------------ |
-| 1   | La liste affiche le nom Prisma | GET `/products`        | titres + lien catégorie                    |
+| 1   | La liste affiche le nom Prisma | GET `/products`        | titres + libellé de la valeur de taxonomie |
 | 2   | La fiche s’ouvre par slug      | GET `/products/[slug]` | nom, prix, ligne en base                   |
 | 3   | Un slug inconnu renvoie 404    | GET slug absent        | statut 404                                 |
 | 4   | Pas d’UI d’édition admin       | HTML de `/products`    | pas de `/admin/products` ni `passwordHash` |
@@ -205,17 +212,18 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 
 À part : CLIENT POST `?/deleteProduct` — le produit reste.
 
-### Matières — `e2e/products/materials.spec.ts`
+### Taxonomies — `e2e/products/taxonomies.spec.ts`
 
-| #   | Étape                        | Geste                        | Preuve                                          |
-| --- | ---------------------------- | ---------------------------- | ----------------------------------------------- |
-| 1   | Création                     | Save changes                 | ligne du tableau Matières                       |
-| 2   | Association à un produit     | Select → Save changes        | `materialId`, nom visible sur la fiche publique |
-| 3   | Filtre catalogue par matière | GET `/products?materiau=nom` | produit présent ; nom inconnu → absent          |
-| 4   | Renommage                    | Save changes                 | nom mis à jour                                  |
-| 5   | Suppression non bloquante    | dialogue Continue            | matière absente, `materialId === null`          |
+| #   | Étape                                 | Geste                         | Preuve                                                  |
+| --- | ------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| 1   | Création de la taxonomie              | Save changes                  | ligne du tableau Taxonomies                             |
+| 2   | Création d'une valeur                 | Save changes                  | ligne dans le tableau Valeurs de la taxonomie           |
+| 3   | Association à un produit              | case cochée → Save changes    | `ProductTaxonomyValue` en base                          |
+| 4   | Filtre catalogue par taxonomie        | GET `/products?<slug>=valeur` | produit présent ; valeur inconnue → absent              |
+| 5   | Renommage de la valeur                | Save changes                  | valeur mise à jour                                      |
+| 6   | Suppression de la taxonomie : cascade | dialogue Continue             | taxonomie et valeur absentes, produit sans cette valeur |
 
-À part : CLIENT POST `?/createMaterial` — aucune matière créée.
+À part : CLIENT POST `?/createTaxonomy` — aucune taxonomie créée.
 
 ### Avis produit — `e2e/products/reviews.spec.ts`
 

@@ -6,10 +6,7 @@
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
 	import { Textarea } from '$shadcn/textarea';
-	import * as Select from '$shadcn/select';
 
 	import { updateProductSchema } from '$lib/schema/products/productSchema.js';
 	import { toast } from 'svelte-sonner';
@@ -40,22 +37,7 @@
 			? String(data.IupdateProductSchema.data.compareAtPrice)
 			: ''
 	);
-	// bits-ui Select n'accepte pas la chaîne vide comme valeur d'item —
-	// `'none'` représente « aucune matière », traduit en `''` avant envoi.
-	let materialSelectValue: string = $state(data.IupdateProductSchema.data.materialId || 'none');
 	let existingImages = $state(data.IupdateProductSchema.data.existingImages);
-
-	// Chargement des données
-	let categories = $state(
-		data.categories.map((category) => ({
-			...category,
-			checked: data.IupdateProductSchema.data.categoryId.includes(category.id)
-		}))
-	);
-
-	let selectedCategories = $derived(
-		categories.filter((category) => category.checked).map((category) => category.id)
-	);
 
 	let selectedTaxonomyValueIds: string[] = $state(
 		data.IupdateProductSchema.data.taxonomyValueIds ?? []
@@ -68,14 +50,6 @@
 		$updateProductData.price = Number(DataPrice);
 		$updateProductData.stock = Number(DataStock);
 		$updateProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
-		$updateProductData.materialId = materialSelectValue === 'none' ? '' : materialSelectValue;
-	});
-
-	$effect(() => {
-		// Validation stricte pour au moins un élément
-		$updateProductData.categoryId = selectedCategories.length
-			? selectedCategories
-			: ['defaultCategoryId'];
 	});
 
 	$effect(() => {
@@ -166,42 +140,6 @@
 					</div>
 
 					<div class="w-[100%]">
-						<Form.Field name="materialId" form={updateProduct}>
-							<Form.Control>
-								<Form.Label>Matière</Form.Label>
-								<!-- `Select.Trigger` est un bouton : sans cet input cachée, sa
-								     valeur ne fait jamais partie du `FormData` natif soumis. -->
-								<input type="hidden" name="materialId" value={$updateProductData.materialId} />
-								<Select.Root
-									type="single"
-									value={materialSelectValue}
-									onValueChange={(value) => (materialSelectValue = value)}
-								>
-									<Select.Trigger class="w-full">
-										<span>
-											{(data.materials ?? []).find((m) => m.id === materialSelectValue)?.name ??
-												'Aucune'}
-										</span>
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Item value="none">Aucune</Select.Item>
-										{#each data.materials ?? [] as material (material.id)}
-											<Select.Item value={material.id}>{material.name}</Select.Item>
-										{/each}
-									</Select.Content>
-								</Select.Root>
-								<p class="text-sm text-muted-foreground">
-									Matières gérées depuis <a
-										href="/admin/products/materials/create"
-										class="underline">la liste des matières</a
-									>.
-								</p>
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-					</div>
-
-					<div class="w-[100%]">
 						<Form.Field name="compareAtPrice" form={updateProduct}>
 							<Form.Control>
 								<Form.Label>Prix barré (facultatif)</Form.Label>
@@ -212,30 +150,6 @@
 									step="0.01"
 									min="0.01"
 								/>
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-					</div>
-
-					<div class="w-[100%]">
-						<h4 class="scroll-m-20 text-xl font-semibold tracking-tight">Categories</h4>
-						<Form.Field name="categoryId" form={updateProduct}>
-							<Form.Control>
-								{#if categories.length > 0}
-									{#each categories as category (category.id)}
-										<div class="my-3 flex items-center space-x-2">
-											<Checkbox id={category.id} bind:checked={category.checked} />
-											<Label
-												for={category.id}
-												class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-											>
-												{category.name}
-											</Label>
-										</div>
-									{/each}
-								{:else}
-									<p>No categories found.</p>
-								{/if}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -314,7 +228,6 @@
 			</div>
 
 			<input type="hidden" name="_id" bind:value={$updateProductData._id} />
-			<input type="hidden" name="categoryId" bind:value={$updateProductData.categoryId} />
 			<input
 				type="hidden"
 				name="taxonomyValueIds"

@@ -48,9 +48,25 @@ const atUtc = (year, monthIndex, day, hour = 10) =>
 
 const ADMIN_EMAIL = 'admin@madeindiamonds.com'; // ADMIN-PLUGIN : compte de démonstration
 
-const CATEGORIES = ['Sites web', 'Identité', 'Applications']; // PRODUCT-PLUGIN
-
-const MATERIALS = ['Numérique', 'Papier']; // PRODUCT-PLUGIN : taxonomie « Matière »
+// PRODUCT-PLUGIN : taxonomies de démonstration (système générique, remplace Material/Category).
+// « Matière » reste mono-valeur (multiple: false), « Catégorie » multi-valeur (multiple: true) —
+// mêmes règles métier qu'avant la généralisation.
+const TAXONOMIES = [
+	{
+		name: 'Matière',
+		slug: 'matiere',
+		type: 'TEXT',
+		multiple: false,
+		values: ['Numérique', 'Papier']
+	},
+	{
+		name: 'Catégorie',
+		slug: 'categorie',
+		type: 'TEXT',
+		multiple: true,
+		values: ['Sites web', 'Identité', 'Applications']
+	}
+];
 
 const PRODUCTS = [
 	{
@@ -198,9 +214,12 @@ async function truncate() {
 		prisma.wishlistItem.deleteMany(), // PRODUCT-PLUGIN
 		prisma.review.deleteMany(), // PRODUCT-PLUGIN
 		prisma.productCategory.deleteMany(),
+		prisma.productTaxonomyValue.deleteMany(), // PRODUCT-PLUGIN
 		prisma.product.deleteMany(),
 		prisma.category.deleteMany(),
 		prisma.material.deleteMany(), // PRODUCT-PLUGIN
+		prisma.taxonomyValue.deleteMany(), // PRODUCT-PLUGIN
+		prisma.taxonomy.deleteMany(), // PRODUCT-PLUGIN
 		prisma.promoCode.deleteMany(), // PROMO-PLUGIN
 		prisma.contactSubmission.deleteMany(), // CONTACT-PLUGIN
 		prisma.adminAuditLog.deleteMany(), // ADMIN-PLUGIN
@@ -533,20 +552,35 @@ async function main() {
 
 	console.log('4 adresses créées (Léa livraison/facturation, Marc, Claire).');
 
-	const categories = new Map();
-	for (const name of CATEGORIES) {
-		const category = await prisma.category.create({ data: { name } });
-		categories.set(name, category.id);
-	}
-
-	const materials = new Map();
-	for (const name of MATERIALS) {
-		const material = await prisma.material.create({ data: { name } });
-		materials.set(name, material.id);
+	// slug de taxonomie -> Map<value, taxonomyValueId>
+	const taxonomyValueIdsBySlug = new Map();
+	let taxonomyValueCount = 0;
+	for (const taxonomy of TAXONOMIES) {
+		const created = await prisma.taxonomy.create({
+			data: {
+				name: taxonomy.name,
+				slug: taxonomy.slug,
+				type: taxonomy.type,
+				multiple: taxonomy.multiple
+			}
+		});
+		const valueIds = new Map();
+		for (const value of taxonomy.values) {
+			const createdValue = await prisma.taxonomyValue.create({
+				data: { taxonomyId: created.id, value, label: value }
+			});
+			valueIds.set(value, createdValue.id);
+		}
+		taxonomyValueIdsBySlug.set(taxonomy.slug, valueIds);
+		taxonomyValueCount += valueIds.size;
 	}
 
 	const productsBySlug = new Map();
 	for (const product of PRODUCTS) {
+		const taxonomyValueIds = [
+			taxonomyValueIdsBySlug.get('categorie').get(product.category),
+			...(product.material ? [taxonomyValueIdsBySlug.get('matiere').get(product.material)] : [])
+		];
 		const created = await prisma.product.create({
 			data: {
 				name: product.name,
@@ -556,16 +590,15 @@ async function main() {
 				images: [product.image],
 				slug: product.slug,
 				colorProduct: product.colorProduct,
-				materialId: product.material ? materials.get(product.material) : null,
-				categories: {
-					create: { categoryId: categories.get(product.category) }
+				taxonomyValues: {
+					create: taxonomyValueIds.map((taxonomyValueId) => ({ taxonomyValueId }))
 				}
 			}
 		});
 		productsBySlug.set(product.slug, created);
 	}
 	console.log(
-		`${PRODUCTS.length} produits, ${categories.size} catégories et ${materials.size} matières créés.`
+		`${PRODUCTS.length} produits, ${TAXONOMIES.length} taxonomies et ${taxonomyValueCount} valeurs créés.`
 	);
 
 	const vitrine = productsBySlug.get('site-vitrine');

@@ -2,10 +2,7 @@
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
 	import { Textarea } from '$shadcn/textarea';
-	import * as Select from '$shadcn/select';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { createProductSchema } from '$lib/schema/products/productSchema';
@@ -29,21 +26,6 @@
 	let DataPrice: number = $state(0);
 	let DataStock: number = $state(0);
 	let DataCompareAtPrice: string = $state('');
-	// bits-ui Select n'accepte pas la chaîne vide comme valeur d'item —
-	// `'none'` représente « aucune matière », traduit en `''` avant envoi.
-	let materialSelectValue: string = $state('none');
-
-	// Chargement des données
-	let categories = $state(
-		data.categories.map((category: any) => ({
-			...category,
-			checked: false // Initialisation de la propriété
-		}))
-	);
-
-	let selectedCategories = $derived(
-		categories.filter((category) => category.checked).map((category) => category.id)
-	);
 
 	let selectedTaxonomyValueIds: string[] = $state([]);
 
@@ -55,14 +37,6 @@
 		$createProductData.price = Number(DataPrice);
 		$createProductData.stock = Number(DataStock);
 		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
-		$createProductData.materialId = materialSelectValue === 'none' ? '' : materialSelectValue;
-	});
-
-	$effect(() => {
-		// Validation stricte pour au moins un élément
-		$createProductData.categoryId = selectedCategories.length
-			? selectedCategories
-			: ['defaultCategoryId'];
 	});
 
 	$effect(() => {
@@ -155,41 +129,6 @@
 					</div>
 
 					<div class="w-[100%]">
-						<Form.Field name="materialId" form={createProduct}>
-							<Form.Control>
-								<Form.Label>Matière</Form.Label>
-								<!-- `Select.Trigger` est un bouton : sans cet input cachée, sa
-								     valeur ne fait jamais partie du `FormData` natif soumis. -->
-								<input type="hidden" name="materialId" value={$createProductData.materialId} />
-								<Select.Root
-									type="single"
-									value={materialSelectValue}
-									onValueChange={(value) => (materialSelectValue = value)}
-								>
-									<Select.Trigger class="w-full">
-										<span>
-											{data.materials.find((m) => m.id === materialSelectValue)?.name ?? 'Aucune'}
-										</span>
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Item value="none">Aucune</Select.Item>
-										{#each data.materials as material (material.id)}
-											<Select.Item value={material.id}>{material.name}</Select.Item>
-										{/each}
-									</Select.Content>
-								</Select.Root>
-								<p class="text-sm text-muted-foreground">
-									Matières gérées depuis <a
-										href="/admin/products/materials/create"
-										class="underline">la liste des matières</a
-									>.
-								</p>
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-					</div>
-
-					<div class="w-[100%]">
 						<Form.Field name="compareAtPrice" form={createProduct}>
 							<Form.Control>
 								<Form.Label>Prix barré (facultatif)</Form.Label>
@@ -200,27 +139,6 @@
 									step="0.01"
 									min="0.01"
 								/>
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-					</div>
-
-					<div class="w-[100%]">
-						<h4 class="scroll-m-20 text-xl font-semibold tracking-tight">Categories</h4>
-						<Form.Field name="categoryId" form={createProduct}>
-							<Form.Control>
-								{#if categories.length > 0}
-									{#each categories as category (category.id)}
-										<div class="my-3 flex items-center space-x-2">
-											<Checkbox id={category.id} bind:checked={category.checked} />
-											<Label for={category.id} class="text-sm font-medium">
-												{category.name}
-											</Label>
-										</div>
-									{/each}
-								{:else}
-									<p>No categories found.</p>
-								{/if}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -289,7 +207,6 @@
 				</div>
 			</div>
 
-			<input type="hidden" name="categoryId" bind:value={$createProductData.categoryId} />
 			<input
 				type="hidden"
 				name="taxonomyValueIds"

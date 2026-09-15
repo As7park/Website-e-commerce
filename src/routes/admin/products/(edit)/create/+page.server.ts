@@ -6,28 +6,16 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import { createProductSchema } from '$lib/schema/products/productSchema';
 import { slugify } from '$lib/prisma/slugify';
-import {
-	connectProductToCategories,
-	connectProductToTaxonomyValues,
-	createProduct
-} from '$lib/prisma/products/products';
-import { getAllcategories, getCategoriesByIds } from '$lib/prisma/categories/categories';
-import { getAllMaterials } from '$lib/prisma/materials/materials';
+import { connectProductToTaxonomyValues, createProduct } from '$lib/prisma/products/products';
 import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
 import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));
-	const [categories, materials, taxonomies] = await Promise.all([
-		getAllcategories(),
-		getAllMaterials(),
-		getAllTaxonomiesWithValues()
-	]);
+	const taxonomies = await getAllTaxonomiesWithValues();
 
 	return {
-		categories,
-		materials,
 		taxonomies,
 		IcreateProductSchema
 	};
@@ -75,21 +63,6 @@ export const actions: Actions = {
 			}
 		}
 
-		const categoryIdsString = formData.get('categoryId') as string;
-		const categoryIds = categoryIdsString.split(',').map((id) => id.trim());
-
-		const existingCategories = await getCategoriesByIds(categoryIds);
-
-		const existingCategoryIds = existingCategories.map((cat) => cat.id);
-
-		const missingCategories = categoryIds.filter((id) => !existingCategoryIds.includes(id));
-
-		if (missingCategories.length > 0) {
-			return fail(400, {
-				message: `The following categories do not exist: ${missingCategories.join(', ')}`
-			});
-		}
-
 		const slug = slugify(form.data.name);
 
 		const taxonomyValueIdsString = formData.get('taxonomyValueIds') as string | null;
@@ -116,11 +89,9 @@ export const actions: Actions = {
 				slug: slug,
 				colorProduct: form.data.colorProduct,
 				sku: form.data.sku || null,
-				materialId: form.data.materialId || null,
 				compareAtPrice: form.data.compareAtPrice || null
 			});
 
-			await connectProductToCategories(product.id, existingCategoryIds);
 			await connectProductToTaxonomyValues(product.id, taxonomyValueIds);
 			// console.log(form);
 

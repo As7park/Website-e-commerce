@@ -16,7 +16,7 @@ test.describe('Catalogue — vitrine', () => {
 				await waitForPath(page, '/products');
 				await expect(page.getByRole('heading', { name: 'Offres' })).toBeVisible();
 				await expect(page.getByRole('heading', { name: product.name })).toBeVisible();
-				await expect(page.getByRole('link', { name: category.name })).toBeVisible();
+				await expect(page.getByText(category.name, { exact: true })).toBeVisible();
 			});
 
 			await test.step('2. La fiche s’ouvre par slug', async () => {

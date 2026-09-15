@@ -14,9 +14,6 @@ const createProductSchema = z.object({
 		.min(3, 'Description is required and should be at least 3 characters long'),
 	price: z.number().positive('Price must be a positive number'),
 	stock: z.number().int().nonnegative('Stock must be a non-negative integer'),
-	categoryId: z
-		.array(z.string().min(1, 'Category ID must be a non-empty string'))
-		.nonempty('At least one category ID is required'),
 	images: z
 		.array(z.instanceof(File))
 		.refine((files) => files.length > 0, 'At least one image is required.')
@@ -31,14 +28,12 @@ const createProductSchema = z.object({
 	slug: z.string().optional(),
 	colorProduct: z.string().regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
 	sku: z.string().trim().max(64).optional().or(z.literal('')),
-	materialId: z.string().optional().or(z.literal('')),
 	// Un seul type (jamais `number | ''`) : la validation par FormData de
 	// superforms ne supporte pas les unions hors mode `dataType: 'json'`
 	// (nécessaire ici pour les champs fichier Cloudinary). `0` vaut « pas de
 	// prix barré » — displays et conversions DB traitent déjà 0 comme absent.
 	compareAtPrice: z.coerce.number().min(0).default(0),
-	// Valeurs de taxonomie (Matière/Catégorie/... génériques) assignées au
-	// produit ; remplace à terme `materialId`/`categoryId` (voir Taxonomy).
+	// Valeurs de taxonomie (Matière/Catégorie/... génériques) assignées au produit.
 	taxonomyValueIds: z.array(z.string()).default([])
 });
 
@@ -51,9 +46,6 @@ const updateProductSchema = z.object({
 		.min(3, 'Description is required and should be at least 3 characters long'),
 	price: z.number().positive('Price must be a positive number'),
 	stock: z.number().int().nonnegative('Stock must be a non-negative integer'),
-	categoryId: z
-		.array(z.string().min(1, 'Category ID must be a non-empty string'))
-		.nonempty('At least one category ID is required'),
 	images: z
 		.array(z.instanceof(File))
 		.optional()
@@ -68,7 +60,6 @@ const updateProductSchema = z.object({
 	existingImages: z.array(z.string()),
 	colorProduct: z.string().regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
 	sku: z.string().trim().max(64).optional().or(z.literal('')),
-	materialId: z.string().optional().or(z.literal('')),
 	compareAtPrice: z.coerce.number().min(0).default(0),
 	taxonomyValueIds: z.array(z.string()).default([])
 });
