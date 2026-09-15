@@ -465,6 +465,26 @@ export async function deleteCatalogCategory(id: string) {
 	);
 }
 
+/**
+ * `Category`/`ProductCategory` legacy — non retirés tant que la migration B
+ * n'est pas passée, seul consommateur restant : `getRelatedProducts` (ventes
+ * croisées). Sans rapport avec `createCatalogCategory` ci-dessus (taxonomie).
+ */
+export async function createLegacyCategory(name?: string) {
+	return resilient(() =>
+		db.category.create({ data: { name: name ?? `e2e-legacy-cat-${Date.now()}` } })
+	);
+}
+
+export async function linkProductToLegacyCategory(productId: string, categoryId: string) {
+	return resilient(() => db.productCategory.create({ data: { productId, categoryId } }));
+}
+
+/** Supprime la catégorie legacy : cascade sur ses `ProductCategory`. */
+export async function deleteLegacyCategory(id: string) {
+	await resilient(() => db.category.deleteMany({ where: { id } }));
+}
+
 export async function createUserAddress(userId: string) {
 	return resilient(() =>
 		db.address.create({

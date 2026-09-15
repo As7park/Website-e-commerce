@@ -153,14 +153,21 @@ compte est renvoyé à `/`.
 
 ### Admin modules e-commerce — `e2e/admin/settings.spec.ts`
 
-| #   | Étape                                         | Geste                 | Preuve                                      |
-| --- | --------------------------------------------- | --------------------- | ------------------------------------------- |
-| 1   | Les modules apparaissent désactivés au départ | GET `/admin/settings` | `data-state="unchecked"` sur les 5 switches |
-| 2   | Activer la liste d'envies et enregistrer      | switch + Enregistrer  | `StoreSettings.wishlistEnabled === true`    |
-| 3   | Rechargée, la page reflète l'état enregistré  | reload                | `data-state="checked"` sur le bon switch    |
+| #   | Étape                                                                | Geste                 | Preuve                                      |
+| --- | -------------------------------------------------------------------- | --------------------- | ------------------------------------------- |
+| 1   | Les modules apparaissent désactivés au départ                        | GET `/admin/settings` | `data-state="unchecked"` sur les 5 switches |
+| 2   | Activer la liste d'envies — enregistré immédiatement (pas de bouton) | switch                | `StoreSettings.wishlistEnabled === true`    |
+| 3   | Rechargée, la page reflète l'état enregistré                         | reload                | `data-state="checked"` sur le bon switch    |
 
 Test à part : un CLIENT POST sur `/admin/settings` — les réglages en base ne
 changent pas.
+
+### Ventes croisées — `e2e/products/cross-sell.spec.ts`
+
+| #   | Étape                                                       | Geste             | Preuve                              |
+| --- | ----------------------------------------------------------- | ----------------- | ----------------------------------- |
+| 1   | Module désactivé : bloc absent malgré la catégorie partagée | GET fiche produit | pas de titre « Vous aimerez aussi » |
+| 2   | Module activé : produit de la même catégorie affiché        | GET fiche produit | lien vers le produit lié visible    |
 
 ### Admin exports — `e2e/admin/exports.spec.ts`
 

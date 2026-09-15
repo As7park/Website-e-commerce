@@ -109,6 +109,11 @@ pas d'être masqué à l'écran, sa route reste fermée (ex. `/auth/settings/wis
 répond 404, `POST /api/wishlist` répond 404) : un accès direct à l'URL ne
 contourne pas l'interrupteur.
 
+Chaque interrupteur s'enregistre immédiatement au clic (pas de bouton
+« Enregistrer ») : `onCheckedChange` bascule l'état local puis soumet aussitôt
+le formulaire (`requestSubmit`), désactivé le temps de la requête pour éviter
+un double clic pendant la sauvegarde.
+
 Lecture mise en cache 30 s (même mécanisme que le catalogue,
 `$lib/server/cache.ts`, `bumpCacheVersion('settings')` à chaque sauvegarde) —
 une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
@@ -116,8 +121,10 @@ répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
 lui-même lit toujours la valeur non mise en cache.
 
 Au 15/09/2026, deux modules ont une implémentation complète derrière leur
-interrupteur (liste d'envies, ventes croisées) ; les trois autres attendent
-encore leur tour sur la roadmap.
+interrupteur (liste d'envies, ventes croisées — chacun avec son propre test
+de bout en bout : `e2e/products/wishlist.spec.ts`,
+`e2e/products/cross-sell.spec.ts`) ; les trois autres attendent encore leur
+tour sur la roadmap.
 
 ### Alerting
 
@@ -179,11 +186,11 @@ Routes : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 
 ### Modules e-commerce — `e2e/admin/settings.spec.ts`
 
-| #   | Étape                                 | Geste                 | Preuve                   |
-| --- | ------------------------------------- | --------------------- | ------------------------ |
-| 1   | Modules désactivés au départ          | GET `/admin/settings` | 5 switches à `unchecked` |
-| 2   | Activation d'un module                | switch + Enregistrer  | `StoreSettings` en base  |
-| 3   | Rechargée, l'état enregistré persiste | reload                | switch reflète la base   |
+| #   | Étape                                  | Geste                 | Preuve                   |
+| --- | -------------------------------------- | --------------------- | ------------------------ |
+| 1   | Modules désactivés au départ           | GET `/admin/settings` | 5 switches à `unchecked` |
+| 2   | Activation d'un module (pas de bouton) | switch                | `StoreSettings` en base  |
+| 3   | Rechargée, l'état enregistré persiste  | reload                | switch reflète la base   |
 
 À part : CLIENT POST `/admin/settings` — réglages inchangés.
 

@@ -45,9 +45,8 @@ test.describe('Administration — modules e-commerce', () => {
 				}
 			});
 
-			await test.step('2. Activer la liste d’envies et enregistrer', async () => {
+			await test.step('2. Activer la liste d’envies — enregistré immédiatement (pas de bouton)', async () => {
 				await page.locator('#wishlistEnabled').click();
-				await page.getByRole('button', { name: 'Enregistrer' }).click();
 				await expect(page.getByText('Modules mis à jour')).toBeVisible();
 
 				const flags = await getStoreFeatureFlags();
