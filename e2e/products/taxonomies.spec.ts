@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import { waitForPath } from '../support/flows';
+import { waitForPath, waitForAppReady } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import { taxonomyAdminRow } from '../support/products';
 import {
@@ -36,8 +36,11 @@ test.describe('Administration — taxonomies', () => {
 			await promoteToAdmin(account.email);
 
 			await test.step('1. Création de la taxonomie depuis /admin/products/taxonomies/create', async () => {
-				await page.goto('/admin/products/taxonomies/create');
-				await page.locator('input[name="name"]').fill(taxonomyName);
+				await page.goto('/admin/products/taxonomies/create', { waitUntil: 'domcontentloaded' });
+				const nameInput = page.locator('input[name="name"]');
+				await expect(nameInput).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
+				await nameInput.fill(taxonomyName);
 				await page.getByRole('button', { name: 'Save changes' }).click();
 				await waitForPath(page, '/admin/products');
 				await expect(taxonomyAdminRow(page, taxonomyName)).toBeVisible();
@@ -48,16 +51,26 @@ test.describe('Administration — taxonomies', () => {
 			});
 
 			await test.step('2. Création d\u2019une valeur pour cette taxonomie', async () => {
-				await page.goto(`/admin/products/taxonomies/${taxonomyId}/values/create`);
-				await page.locator('input[name="value"]').fill(valueName);
+				await page.goto(`/admin/products/taxonomies/${taxonomyId}/values/create`, {
+					waitUntil: 'domcontentloaded'
+				});
+				const valueInput = page.locator('input[name="value"]');
+				await expect(valueInput).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
+				await valueInput.fill(valueName);
 				await page.getByRole('button', { name: 'Save changes' }).click();
 				await waitForPath(page, `/admin/products/taxonomies/${taxonomyId}`);
-				await expect(page.getByText(valueName, { exact: true })).toBeVisible();
+				// La Table admin duplique le rendu desktop (colonnes valeur+libellé) et
+				// mobile (cartes), d'où `.first()`.
+				await expect(page.getByText(valueName, { exact: true }).first()).toBeVisible();
 			});
 
 			await test.step('3. Association à un produit depuis la fiche admin', async () => {
-				await page.goto(`/admin/products/${created.product.id}`);
-				await page.getByText(valueName, { exact: true }).click();
+				await page.goto(`/admin/products/${created.product.id}`, { waitUntil: 'domcontentloaded' });
+				const valueLabel = page.getByText(valueName, { exact: true }).first();
+				await expect(valueLabel).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
+				await valueLabel.click();
 				await Promise.all([
 					page.waitForResponse(
 						(response) =>
@@ -82,19 +95,34 @@ test.describe('Administration — taxonomies', () => {
 			});
 
 			await test.step('5. Renommage de la valeur', async () => {
-				await page.goto(`/admin/products/taxonomies/${taxonomyId}`);
-				await page
-					.locator('tbody tr', { hasText: valueName })
-					.getByRole('link', { name: 'edit' })
-					.click();
-				await page.locator('input[name="value"]').fill(renamedValueName);
+				await page.goto(`/admin/products/taxonomies/${taxonomyId}`, {
+					waitUntil: 'domcontentloaded'
+				});
+				const valueRow = page.locator('tbody tr', { hasText: valueName });
+				await expect(valueRow).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
+				await valueRow.getByRole('link', { name: 'edit' }).click();
+				const renameInput = page.locator('input[name="value"]');
+				await expect(renameInput).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
+				await renameInput.fill(renamedValueName);
+				// L'action `updateTaxonomyValue` reste sur la page (pas de redirect) :
+				// on attend le toast de succès plutôt qu'un changement d'URL.
 				await page.getByRole('button', { name: 'Save changes' }).click();
-				await waitForPath(page, `/admin/products/taxonomies/${taxonomyId}`);
-				await expect(page.getByText(renamedValueName, { exact: true })).toBeVisible();
+				await expect(page.getByText('Valeur mise à jour')).toBeVisible({ timeout: 60_000 });
+
+				await page.goto(`/admin/products/taxonomies/${taxonomyId}`, {
+					waitUntil: 'domcontentloaded'
+				});
+				await expect(page.getByText(renamedValueName, { exact: true }).first()).toBeVisible({
+					timeout: 60_000
+				});
 			});
 
 			await test.step('6. Suppression de la taxonomie : cascade sur la valeur et le produit', async () => {
 				await page.goto('/admin/products');
+				await expect(taxonomyAdminRow(page, taxonomyName)).toBeVisible({ timeout: 60_000 });
+				await waitForAppReady(page);
 				await taxonomyAdminRow(page, taxonomyName).locator('[data-alert-dialog-trigger]').click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
 				await Promise.all([

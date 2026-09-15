@@ -32,11 +32,11 @@
 		DATE: 'Date'
 	};
 
-	let typeValue = $state(($createTaxonomyData.type ?? 'TEXT') as keyof typeof typeLabels);
+	let typeValue = $derived($createTaxonomyData.type as keyof typeof typeLabels);
 
-	$effect(() => {
-		$createTaxonomyData.type = typeValue as typeof $createTaxonomyData.type;
-	});
+	function setTypeValue(value: keyof typeof typeLabels) {
+		$createTaxonomyData.type = value as typeof $createTaxonomyData.type;
+	}
 
 	// Slug auto-dérivé du nom tant que l'utilisateur ne l'a pas modifié à la main.
 	let slugTouched = $state(false);
@@ -49,9 +49,9 @@
 			.replace(/[^a-z0-9]+/g, '-')
 			.replace(/(^-|-$)/g, '');
 	}
-	$effect(() => {
+	function onNameInput() {
 		if (!slugTouched) $createTaxonomyData.slug = slugify($createTaxonomyData.name ?? '');
-	});
+	}
 
 	$effect(() => {
 		if ($createTaxonomyMessage === 'Taxonomy created successfully') {
@@ -69,7 +69,12 @@
 					<Form.Field name="name" form={createTaxonomy}>
 						<Form.Control>
 							<Form.Label>Nom</Form.Label>
-							<Input name="name" type="text" bind:value={$createTaxonomyData.name} />
+							<Input
+								name="name"
+								type="text"
+								bind:value={$createTaxonomyData.name}
+								oninput={onNameInput}
+							/>
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -96,7 +101,7 @@
 							<Select.Root
 								type="single"
 								value={typeValue}
-								onValueChange={(v) => (typeValue = v as keyof typeof typeLabels)}
+								onValueChange={(v) => setTypeValue(v as keyof typeof typeLabels)}
 							>
 								<Select.Trigger class="w-full">
 									<span>{typeLabels[typeValue] ?? typeValue}</span>

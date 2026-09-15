@@ -20,6 +20,22 @@ export function currentPath(page: Page): string {
 }
 
 /**
+ * Attend la disparition du splash `Loader.svelte` avant d'interagir.
+ *
+ * Sur une route jamais compilée par le serveur Vite en dev, la première visite
+ * peut déclencher un full-reload une fois le module compilé (`vite:invalidate`) :
+ * l'écran de chargement, déjà passé une première fois, revient alors intercepter
+ * les clics pendant plusieurs secondes. Un champ du formulaire peut être « visible »
+ * (au sens CSS) sous ce splash sans recevoir les évènements pointeur — d'où cette
+ * attente explicite avant tout clic qui suit une navigation vers une route neuve.
+ */
+export async function waitForAppReady(page: Page) {
+	await expect(page.getByRole('status', { name: "Chargement de l'application" })).toBeHidden({
+		timeout: 60_000
+	});
+}
+
+/**
  * Champ visible d'un Superforms : le même `name` existe aussi en `hidden`.
  */
 export function visibleNamedInput(page: Page, name: string, type = 'text') {

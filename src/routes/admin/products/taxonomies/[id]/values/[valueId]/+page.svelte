@@ -26,9 +26,10 @@
 
 	let parentSelectValue: string = $state(data.IupdateTaxonomyValueSchema.data.parentId || 'none');
 
-	$effect(() => {
-		$updateTaxonomyValueData.parentId = parentSelectValue === 'none' ? '' : parentSelectValue;
-	});
+	function setParentSelectValue(value: string) {
+		parentSelectValue = value;
+		$updateTaxonomyValueData.parentId = value === 'none' ? '' : value;
+	}
 
 	$effect(() => {
 		if ($updateTaxonomyValueMessage === 'Taxonomy value updated successfully') {
@@ -121,7 +122,7 @@
 								<Select.Root
 									type="single"
 									value={parentSelectValue}
-									onValueChange={(v) => (parentSelectValue = v)}
+									onValueChange={(v) => setParentSelectValue(v)}
 								>
 									<Select.Trigger class="w-full">
 										<span>

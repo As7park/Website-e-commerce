@@ -26,9 +26,10 @@
 	// bits-ui Select n'accepte pas la chaîne vide — 'none' représente « pas de parent ».
 	let parentSelectValue: string = $state('none');
 
-	$effect(() => {
-		$createTaxonomyValueData.parentId = parentSelectValue === 'none' ? '' : parentSelectValue;
-	});
+	function setParentSelectValue(value: string) {
+		parentSelectValue = value;
+		$createTaxonomyValueData.parentId = value === 'none' ? '' : value;
+	}
 
 	$effect(() => {
 		if ($createTaxonomyValueMessage === 'Taxonomy value created successfully') {
@@ -122,7 +123,7 @@
 								<Select.Root
 									type="single"
 									value={parentSelectValue}
-									onValueChange={(v) => (parentSelectValue = v)}
+									onValueChange={(v) => setParentSelectValue(v)}
 								>
 									<Select.Trigger class="w-full">
 										<span>

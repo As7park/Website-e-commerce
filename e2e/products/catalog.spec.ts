@@ -16,7 +16,9 @@ test.describe('Catalogue — vitrine', () => {
 				await waitForPath(page, '/products');
 				await expect(page.getByRole('heading', { name: 'Offres' })).toBeVisible();
 				await expect(page.getByRole('heading', { name: product.name })).toBeVisible();
-				await expect(page.getByText(category.name, { exact: true })).toBeVisible();
+				// La sidebar de filtres est dupliquée (desktop + tiroir mobile) : deux libellés
+				// portent le même texte, d'où `.first()`.
+				await expect(page.getByText(category.name, { exact: true }).first()).toBeVisible();
 			});
 
 			await test.step('2. La fiche s’ouvre par slug', async () => {

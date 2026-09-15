@@ -38,11 +38,11 @@
 		DATE: 'Date'
 	};
 
-	let typeValue = $state($updateTaxonomyData.type as keyof typeof typeLabels);
+	let typeValue = $derived($updateTaxonomyData.type as keyof typeof typeLabels);
 
-	$effect(() => {
-		$updateTaxonomyData.type = typeValue as typeof $updateTaxonomyData.type;
-	});
+	function setTypeValue(value: keyof typeof typeLabels) {
+		$updateTaxonomyData.type = value as typeof $updateTaxonomyData.type;
+	}
 
 	$effect(() => {
 		if ($updateTaxonomyMessage === 'Taxonomy updated successfully') {
@@ -132,7 +132,7 @@
 							<Select.Root
 								type="single"
 								value={typeValue}
-								onValueChange={(v) => (typeValue = v as keyof typeof typeLabels)}
+								onValueChange={(v) => setTypeValue(v as keyof typeof typeLabels)}
 							>
 								<Select.Trigger class="w-full">
 									<span>{typeLabels[typeValue] ?? typeValue}</span>
