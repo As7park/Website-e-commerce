@@ -64,7 +64,7 @@ test.describe('Fidélité', () => {
 				expect(response.status()).toBe(200);
 			}
 
-			await test.step('1. Premi\u00e8re commande pay\u00e9e : pas encore de r\u00e9compense', async () => {
+			await test.step('1. Première commande payée : pas encore de récompense', async () => {
 				await payOrder();
 				expect(await getLoyaltyAward(user.id, promo.id)).toBeNull();
 			});
