@@ -4,6 +4,12 @@ import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 
 const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
 
+/// Legacy `categories`/`material` gardés le temps de la bascule vers les
+/// taxonomies génériques (retirés en migration B, voir docs/products/README.md).
+const taxonomyValuesInclude = {
+	taxonomyValues: { include: { taxonomyValue: { include: { taxonomy: true } } } }
+} as const;
+
 /**
  * Accès Prisma aux produits.
  *
@@ -45,7 +51,7 @@ export const createProduct = async (productData: {
 export const getProductById = async (productId: string) => {
 	return await prisma.product.findUnique({
 		where: { id: productId },
-		include: { categories: true, material: true }
+		include: { categories: true, material: true, ...taxonomyValuesInclude }
 	});
 };
 
@@ -56,7 +62,8 @@ export const getProductBySlug = async (slug: string) => {
 			categories: {
 				include: { category: true }
 			},
-			material: true
+			material: true,
+			...taxonomyValuesInclude
 		}
 	});
 };
@@ -86,6 +93,21 @@ export const connectProductToCategories = async (productId: string, categoryIds:
 			productId,
 			categoryId
 		}))
+	});
+	await bumpCacheVersion('catalog');
+	return result;
+};
+
+export const deleteProductTaxonomyValues = async (productId: string) => {
+	const result = await prisma.productTaxonomyValue.deleteMany({ where: { productId } });
+	await bumpCacheVersion('catalog');
+	return result;
+};
+
+export const connectProductToTaxonomyValues = async (productId: string, taxonomyValueIds: string[]) => {
+	if (taxonomyValueIds.length === 0) return { count: 0 };
+	const result = await prisma.productTaxonomyValue.createMany({
+		data: taxonomyValueIds.map((taxonomyValueId) => ({ productId, taxonomyValueId }))
 	});
 	await bumpCacheVersion('catalog');
 	return result;
@@ -122,7 +144,8 @@ export const getAllProducts = async (params: ListParams = {}) => {
 							category: true
 						}
 					},
-					material: true
+					material: true,
+					...taxonomyValuesInclude
 				},
 				orderBy: { [sort]: dir },
 				skip,

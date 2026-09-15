@@ -5,6 +5,8 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import {
 	connectProductToCategories,
+	connectProductToTaxonomyValues,
+	deleteProductTaxonomyValues,
 	getProductById,
 	updateProductById
 } from '$lib/prisma/products/products';
@@ -16,6 +18,8 @@ import {
 	getCategoriesByIds
 } from '$lib/prisma/categories/categories';
 import { getAllMaterials } from '$lib/prisma/materials/materials';
+import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
+import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -25,7 +29,11 @@ export const load: PageServerLoad = async ({ params }) => {
 		error(404, 'Product not found');
 	}
 
-	const [categories, materials] = await Promise.all([getAllcategories(), getAllMaterials()]);
+	const [categories, materials, taxonomies] = await Promise.all([
+		getAllcategories(),
+		getAllMaterials(),
+		getAllTaxonomiesWithValues()
+	]);
 
 	const initialData = {
 		_id: product.id,
@@ -38,6 +46,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		materialId: product.materialId ?? '',
 		compareAtPrice: product.compareAtPrice ?? 0,
 		categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
+		taxonomyValueIds: product.taxonomyValues.map((tv) => tv.taxonomyValueId),
 		images: [],
 		existingImages: product.images
 	};
@@ -47,6 +56,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		categories,
 		materials,
+		taxonomies,
 		IupdateProductSchema
 	};
 };
@@ -125,6 +135,17 @@ export const actions: Actions = {
 				});
 			}
 
+			const taxonomyValueIds = (form.data.taxonomyValueIds[0] ?? '')
+				.split(',')
+				.map((id) => id.trim())
+				.filter(Boolean);
+			if (taxonomyValueIds.length > 0) {
+				const existingValues = await getTaxonomyValuesByIds(taxonomyValueIds);
+				if (existingValues.length !== taxonomyValueIds.length) {
+					return fail(400, { message: 'Some selected taxonomy values do not exist' });
+				}
+			}
+
 			try {
 				await updateProductById(productId, {
 					name: form.data.name,
@@ -141,6 +162,10 @@ export const actions: Actions = {
 				await deleteProductCategories(productId);
 
 				await connectProductToCategories(productId, categoryIds);
+
+				await deleteProductTaxonomyValues(productId);
+
+				await connectProductToTaxonomyValues(productId, taxonomyValueIds);
 
 				return message(form, 'Product updated successfully');
 			} catch (error) {

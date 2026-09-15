@@ -24,9 +24,10 @@ const ARGON2 = {
 	parallelism: 1
 };
 
+// AES-256-GCM (`encryptionVersion` 2) — même schéma que `$lib/lucia/encryption.ts`.
 const encrypt = (data) => {
 	const iv = randomBytes(16);
-	const cipher = createCipheriv('aes-128-gcm', key, iv);
+	const cipher = createCipheriv('aes-256-gcm', key, iv);
 	const ciphertext = Buffer.concat([cipher.update(data), cipher.final()]);
 	const tag = cipher.getAuthTag();
 	return Buffer.concat([iv, ciphertext, tag]);
@@ -49,12 +50,15 @@ const ADMIN_EMAIL = 'admin@madeindiamonds.com'; // ADMIN-PLUGIN : compte de dém
 
 const CATEGORIES = ['Sites web', 'Identité', 'Applications']; // PRODUCT-PLUGIN
 
+const MATERIALS = ['Numérique', 'Papier']; // PRODUCT-PLUGIN : taxonomie « Matière »
+
 const PRODUCTS = [
 	{
 		name: 'Site vitrine',
 		slug: 'site-vitrine',
 		colorProduct: '#844c6d',
 		category: 'Sites web',
+		material: 'Numérique',
 		price: 2900,
 		stock: 24,
 		image:
@@ -67,6 +71,7 @@ const PRODUCTS = [
 		slug: 'e-commerce',
 		colorProduct: '#ec008c',
 		category: 'Sites web',
+		material: 'Numérique',
 		price: 5900,
 		stock: 12,
 		image:
@@ -79,6 +84,7 @@ const PRODUCTS = [
 		slug: 'identite-visuelle',
 		colorProduct: '#74c92b',
 		category: 'Identité',
+		material: 'Papier',
 		price: 1800,
 		stock: 30,
 		image:
@@ -91,6 +97,7 @@ const PRODUCTS = [
 		slug: 'application-web',
 		colorProduct: '#f68712',
 		category: 'Applications',
+		material: 'Numérique',
 		price: 12000,
 		stock: 6,
 		image:
@@ -103,6 +110,7 @@ const PRODUCTS = [
 		slug: 'maintenance',
 		colorProduct: '#00adef',
 		category: 'Applications',
+		material: null,
 		price: 960,
 		stock: 40,
 		image:
@@ -187,11 +195,16 @@ async function truncate() {
 		prisma.transaction.deleteMany(), // COMMERCE-PLUGIN
 		prisma.order.deleteMany(), // COMMERCE-PLUGIN
 		prisma.address.deleteMany(),
+		prisma.wishlistItem.deleteMany(), // PRODUCT-PLUGIN
+		prisma.review.deleteMany(), // PRODUCT-PLUGIN
 		prisma.productCategory.deleteMany(),
 		prisma.product.deleteMany(),
 		prisma.category.deleteMany(),
+		prisma.material.deleteMany(), // PRODUCT-PLUGIN
 		prisma.promoCode.deleteMany(), // PROMO-PLUGIN
 		prisma.contactSubmission.deleteMany(), // CONTACT-PLUGIN
+		prisma.adminAuditLog.deleteMany(), // ADMIN-PLUGIN
+		prisma.storeSettings.deleteMany(), // ADMIN-PLUGIN
 		prisma.session.deleteMany(),
 		prisma.emailVerificationRequest.deleteMany(),
 		prisma.passwordResetSession.deleteMany(),
@@ -225,6 +238,7 @@ async function createDemoUser({
 			passwordHash: googleId ? null : passwordHash,
 			totpKey: Buffer.from(encrypt(randomBytes(32))),
 			recoveryCode: encrypt(Buffer.from(recoveryCode, 'utf-8')).toString('base64'),
+			encryptionVersion: 2,
 			createdAt
 		}
 	});
@@ -525,6 +539,12 @@ async function main() {
 		categories.set(name, category.id);
 	}
 
+	const materials = new Map();
+	for (const name of MATERIALS) {
+		const material = await prisma.material.create({ data: { name } });
+		materials.set(name, material.id);
+	}
+
 	const productsBySlug = new Map();
 	for (const product of PRODUCTS) {
 		const created = await prisma.product.create({
@@ -536,6 +556,7 @@ async function main() {
 				images: [product.image],
 				slug: product.slug,
 				colorProduct: product.colorProduct,
+				materialId: product.material ? materials.get(product.material) : null,
 				categories: {
 					create: { categoryId: categories.get(product.category) }
 				}
@@ -543,7 +564,9 @@ async function main() {
 		});
 		productsBySlug.set(product.slug, created);
 	}
-	console.log(`${PRODUCTS.length} produits et ${categories.size} catégories créés.`);
+	console.log(
+		`${PRODUCTS.length} produits, ${categories.size} catégories et ${materials.size} matières créés.`
+	);
 
 	const vitrine = productsBySlug.get('site-vitrine');
 	const ecommerce = productsBySlug.get('e-commerce');
@@ -713,6 +736,46 @@ async function main() {
 
 	console.log('6 commandes créées (panier, payée, expédiée, annulée) + 5 transactions.');
 
+	await prisma.review.createMany({
+		data: [
+			{
+				productId: vitrine.id,
+				userId: lea.id,
+				rating: 5,
+				comment: 'Livré dans les temps, exactement le rendu qu’on voulait.',
+				createdAt: atUtc(2026, 6, 25)
+			},
+			{
+				productId: ecommerce.id,
+				userId: lea.id,
+				rating: 4,
+				comment: 'Très bon accompagnement, quelques retouches mineures après la mise en ligne.',
+				createdAt: atUtc(2026, 7, 16)
+			},
+			{
+				productId: app.id,
+				userId: marc.id,
+				rating: 5,
+				comment: 'Application robuste, l’équipe a bien cadré le besoin métier.',
+				createdAt: atUtc(2026, 7, 20)
+			}
+		]
+	});
+	console.log('3 avis produit créés.');
+
+	await prisma.wishlistItem.createMany({
+		data: [
+			{ userId: claire.id, productId: maintenance.id, createdAt: atUtc(2026, 7, 9) },
+			{ userId: nina.id, productId: ecommerce.id, createdAt: atUtc(2026, 7, 19, 12) }
+		]
+	});
+	console.log('2 lignes de liste d’envies créées.');
+
+	await prisma.storeSettings.create({
+		data: { wishlistEnabled: true, crossSellEnabled: true }
+	});
+	console.log('Réglages boutique créés (liste d’envies et ventes croisées activées).');
+
 	const studioAuthor = await prisma.blogAuthor.create({
 		data: { name: adminUser.name ?? 'Admin Studio' }
 	});
@@ -757,7 +820,10 @@ async function main() {
 				createdAt,
 				updatedAt: createdAt,
 				tags: {
-					create: [{ tagId: tagCulture.id }, ...(index % 2 === 0 ? [{ tagId: tagDesign.id }] : [{ tagId: tagTech.id }])]
+					create: [
+						{ tagId: tagCulture.id },
+						...(index % 2 === 0 ? [{ tagId: tagDesign.id }] : [{ tagId: tagTech.id }])
+					]
 				}
 			}
 		});
@@ -784,7 +850,8 @@ async function main() {
 			{
 				postId: createdPosts[0].id,
 				author: 'Léa Martin',
-				content: 'Clair et précis, exactement le niveau d’exigence qu’on cherchait pour notre vitrine.',
+				content:
+					'Clair et précis, exactement le niveau d’exigence qu’on cherchait pour notre vitrine.',
 				createdAt: atUtc(2026, 0, 8)
 			},
 			{

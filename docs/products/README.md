@@ -207,13 +207,13 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 
 ### Matières — `e2e/products/materials.spec.ts`
 
-| #   | Étape                        | Geste                       | Preuve                                          |
-| --- | ---------------------------- | --------------------------- | ----------------------------------------------- |
-| 1   | Création                     | Save changes                | ligne du tableau Matières                       |
-| 2   | Association à un produit     | Select → Save changes       | `materialId`, nom visible sur la fiche publique |
-| 3   | Filtre catalogue par matière | GET `/products?materiau=id` | produit présent ; id inconnu → absent           |
-| 4   | Renommage                    | Save changes                | nom mis à jour                                  |
-| 5   | Suppression non bloquante    | dialogue Continue           | matière absente, `materialId === null`          |
+| #   | Étape                        | Geste                        | Preuve                                          |
+| --- | ---------------------------- | ---------------------------- | ----------------------------------------------- |
+| 1   | Création                     | Save changes                 | ligne du tableau Matières                       |
+| 2   | Association à un produit     | Select → Save changes        | `materialId`, nom visible sur la fiche publique |
+| 3   | Filtre catalogue par matière | GET `/products?materiau=nom` | produit présent ; nom inconnu → absent          |
+| 4   | Renommage                    | Save changes                 | nom mis à jour                                  |
+| 5   | Suppression non bloquante    | dialogue Continue            | matière absente, `materialId === null`          |
 
 À part : CLIENT POST `?/createMaterial` — aucune matière créée.
 

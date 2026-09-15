@@ -6,18 +6,25 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import { createProductSchema } from '$lib/schema/products/productSchema';
 import { slugify } from '$lib/prisma/slugify';
-import { connectProductToCategories, createProduct } from '$lib/prisma/products/products';
+import { connectProductToCategories, connectProductToTaxonomyValues, createProduct } from '$lib/prisma/products/products';
 import { getAllcategories, getCategoriesByIds } from '$lib/prisma/categories/categories';
 import { getAllMaterials } from '$lib/prisma/materials/materials';
+import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
+import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));
-	const [categories, materials] = await Promise.all([getAllcategories(), getAllMaterials()]);
+	const [categories, materials, taxonomies] = await Promise.all([
+		getAllcategories(),
+		getAllMaterials(),
+		getAllTaxonomiesWithValues()
+	]);
 
 	return {
 		categories,
 		materials,
+		taxonomies,
 		IcreateProductSchema
 	};
 };
@@ -81,6 +88,17 @@ export const actions: Actions = {
 
 		const slug = slugify(form.data.name);
 
+		const taxonomyValueIdsString = formData.get('taxonomyValueIds') as string | null;
+		const taxonomyValueIds = taxonomyValueIdsString
+			? taxonomyValueIdsString.split(',').map((id) => id.trim()).filter(Boolean)
+			: [];
+		if (taxonomyValueIds.length > 0) {
+			const existingValues = await getTaxonomyValuesByIds(taxonomyValueIds);
+			if (existingValues.length !== taxonomyValueIds.length) {
+				return fail(400, { message: 'Some selected taxonomy values do not exist' });
+			}
+		}
+
 		try {
 			const product = await createProduct({
 				name: form.data.name,
@@ -96,6 +114,7 @@ export const actions: Actions = {
 			});
 
 			await connectProductToCategories(product.id, existingCategoryIds);
+			await connectProductToTaxonomyValues(product.id, taxonomyValueIds);
 			// console.log(form);
 
 			return message(form, 'Product created successfully');

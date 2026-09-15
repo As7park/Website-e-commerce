@@ -13,6 +13,7 @@
 
 	import { updateProductSchema } from '$lib/schema/products/productSchema.js';
 	import { toast } from 'svelte-sonner';
+	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
 
 	let { data } = $props();
 
@@ -56,6 +57,10 @@
 		categories.filter((category) => category.checked).map((category) => category.id)
 	);
 
+	let selectedTaxonomyValueIds: string[] = $state(
+		data.IupdateProductSchema.data.taxonomyValueIds ?? []
+	);
+
 	const files = filesFieldProxy(updateProduct, 'images');
 	const { values } = files;
 
@@ -71,6 +76,10 @@
 		$updateProductData.categoryId = selectedCategories.length
 			? selectedCategories
 			: ['defaultCategoryId'];
+	});
+
+	$effect(() => {
+		$updateProductData.taxonomyValueIds = selectedTaxonomyValueIds;
 	});
 
 	$effect(() => {
@@ -231,6 +240,11 @@
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
+
+					<TaxonomyValuePicker
+						taxonomies={data.taxonomies}
+						bind:selectedIds={selectedTaxonomyValueIds}
+					/>
 				</div>
 				<div class="ccc w-[300px]">
 					<div class="p-4 pb-0 flex flex-row space-x-4 ccc">
@@ -301,6 +315,11 @@
 
 			<input type="hidden" name="_id" bind:value={$updateProductData._id} />
 			<input type="hidden" name="categoryId" bind:value={$updateProductData.categoryId} />
+			<input
+				type="hidden"
+				name="taxonomyValueIds"
+				bind:value={$updateProductData.taxonomyValueIds}
+			/>
 			<input type="hidden" name="existingImages" value={JSON.stringify(existingImages)} />
 
 			<Button type="submit">Save changes</Button>

@@ -6,8 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
-	import { deleteCategorySchema } from '$lib/schema/categories/deleteCategorySchema.js';
-	import { deleteMaterialSchema } from '$lib/schema/materials/materialSchema.js';
+	import { deleteTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema.js';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	// Props
@@ -85,82 +84,54 @@
 	});
 
 	// Form handling with superForm
-	const deleteCategory = superForm(data?.IdeleteCategorySchema ?? {}, {
-		validators: zodClient(deleteCategorySchema),
-		id: 'deleteCategory'
+	const deleteTaxonomy = superForm(data?.IdeleteTaxonomySchema ?? {}, {
+		validators: zodClient(deleteTaxonomySchema),
+		id: 'deleteTaxonomy'
 	});
 
 	const {
-		form: deleteCategoryData,
-		enhance: deleteCategoryEnhance,
-		message: deleteCategoryMessage
-	} = deleteCategory;
+		form: deleteTaxonomyData,
+		enhance: deleteTaxonomyEnhance,
+		message: deleteTaxonomyMessage
+	} = deleteTaxonomy;
+
+	let taxonomiesData = $derived(
+		(data?.taxonomies ?? []).map((taxonomy: any) => ({
+			...taxonomy,
+			valuesCount: taxonomy._count?.values ?? 0
+		}))
+	);
 
 	// Table columns
-	const categoryColumns = [{ key: 'name', label: 'Nom' }];
+	const taxonomyColumns = [
+		{ key: 'name', label: 'Nom' },
+		{ key: 'slug', label: 'Slug' },
+		{ key: 'type', label: 'Type' },
+		{ key: 'valuesCount', label: 'Valeurs' }
+	];
 
 	// Table actions
-	const categoryActions = [
+	const taxonomyActions = [
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/products/categories/${item.id}`,
+			url: (item: any) => `/admin/products/taxonomies/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
-			url: '?/deleteCategory',
-			dataForm: deleteCategoryData.id,
-			enhanceAction: deleteCategoryEnhance,
+			url: '?/deleteTaxonomy',
+			dataForm: deleteTaxonomyData.id,
+			enhanceAction: deleteTaxonomyEnhance,
 			icon: Trash
 		}
 	];
 
 	// Show toast on delete message
 	$effect(() => {
-		if ($deleteCategoryMessage) {
-			toast.success($deleteCategoryMessage);
-		}
-	});
-
-	// Form handling with superForm
-	const deleteMaterial = superForm(data?.IdeleteMaterialSchema ?? {}, {
-		validators: zodClient(deleteMaterialSchema),
-		id: 'deleteMaterial'
-	});
-
-	const {
-		form: deleteMaterialData,
-		enhance: deleteMaterialEnhance,
-		message: deleteMaterialMessage
-	} = deleteMaterial;
-
-	// Table columns
-	const materialColumns = [{ key: 'name', label: 'Nom' }];
-
-	// Table actions
-	const materialActions = [
-		{
-			type: 'link',
-			name: 'edit',
-			url: (item: any) => `/admin/products/materials/${item.id}`,
-			icon: Pencil
-		},
-		{
-			type: 'form',
-			name: 'delete',
-			url: '?/deleteMaterial',
-			dataForm: deleteMaterialData.id,
-			enhanceAction: deleteMaterialEnhance,
-			icon: Trash
-		}
-	];
-
-	// Show toast on delete message
-	$effect(() => {
-		if ($deleteMaterialMessage) {
-			toast.success($deleteMaterialMessage);
+		if ($deleteTaxonomyMessage) {
+			toast.success($deleteTaxonomyMessage);
 		}
 	});
 </script>
@@ -188,20 +159,10 @@
 
 <div class="ccc w-[100%]">
 	<Table
-		name="Catégories"
-		columns={categoryColumns}
-		data={data.categories ?? []}
-		actions={categoryActions}
-		addLink="/admin/products/categories/create"
-	/>
-</div>
-
-<div class="ccc w-[100%]">
-	<Table
-		name="Matières"
-		columns={materialColumns}
-		data={data.materials ?? []}
-		actions={materialActions}
-		addLink="/admin/products/materials/create"
+		name="Taxonomies"
+		columns={taxonomyColumns}
+		data={taxonomiesData}
+		actions={taxonomyActions}
+		addLink="/admin/products/taxonomies/create"
 	/>
 </div>

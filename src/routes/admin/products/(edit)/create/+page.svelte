@@ -11,6 +11,7 @@
 	import { createProductSchema } from '$lib/schema/products/productSchema';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
+	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
 
 	let { data } = $props();
 
@@ -44,6 +45,8 @@
 		categories.filter((category) => category.checked).map((category) => category.id)
 	);
 
+	let selectedTaxonomyValueIds: string[] = $state([]);
+
 	const files = filesFieldProxy(createProduct, 'images');
 	const { values } = files;
 
@@ -60,6 +63,10 @@
 		$createProductData.categoryId = selectedCategories.length
 			? selectedCategories
 			: ['defaultCategoryId'];
+	});
+
+	$effect(() => {
+		$createProductData.taxonomyValueIds = selectedTaxonomyValueIds;
 	});
 
 	// Redirection après succès
@@ -218,6 +225,11 @@
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
+
+					<TaxonomyValuePicker
+						taxonomies={data.taxonomies}
+						bind:selectedIds={selectedTaxonomyValueIds}
+					/>
 				</div>
 				<div class="ccc w-[300px]">
 					<div class="p-4 pb-0 flex flex-row space-x-4 ccc">
@@ -278,6 +290,11 @@
 			</div>
 
 			<input type="hidden" name="categoryId" bind:value={$createProductData.categoryId} />
+			<input
+				type="hidden"
+				name="taxonomyValueIds"
+				bind:value={$createProductData.taxonomyValueIds}
+			/>
 
 			<Button type="submit">Save changes</Button>
 		</form>

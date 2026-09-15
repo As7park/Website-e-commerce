@@ -27,6 +27,16 @@ enum PromoType {
   FIXED
 }
 
+// PRODUCT-PLUGIN : type de donnée d'une taxonomie, détermine la saisie/l'affichage
+// (déduit automatiquement côté UI, jamais configuré séparément du type).
+enum TaxonomyType {
+  TEXT
+  COLOR
+  NUMBER
+  BOOLEAN
+  DATE
+}
+
 enum AddressType {
   SHIPPING
   BILLING
@@ -274,10 +284,15 @@ model Product {
   /// Facette catalogue « Matière » — taxonomie gérée depuis
   /// `/admin/products` (section Matières), pas un champ libre : évite que
   /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
+  /// Legacy : remplacé par `taxonomyValues` (voir `Taxonomy`), retiré en migration B
+  /// une fois la bascule vérifiée.
   materialId String?
   material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  /// Système générique de taxonomies (Matière, Catégorie, Couleur, ...) —
+  /// remplace à terme `materialId`/`categories` ci-dessus.
+  taxonomyValues ProductTaxonomyValue[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
 
   @@index([materialId])
   @@map("products")
@@ -290,6 +305,67 @@ model Material {
   products  Product[]
 
   @@map("materials")
+}
+
+// PRODUCT-PLUGIN : système générique de taxonomies, remplace à terme `Material`
+// et `Category`/`ProductCategory` ci-dessus (retrait prévu en migration B).
+// `Taxonomy` = le type (« Matière », « Couleur »...), `TaxonomyValue` = ses
+// valeurs possibles (avec hiérarchie optionnelle via `parentId`),
+// `ProductTaxonomyValue` = l'assignation à un produit.
+model Taxonomy {
+  id   String       @id @default(cuid())
+  name String       @unique
+  /// Utilisé comme nom de paramètre de filtre catalogue (`?<slug>=valeur`).
+  slug String       @unique
+  type TaxonomyType @default(TEXT)
+  /// true = plusieurs valeurs par produit (ex: Catégorie), false = une seule (ex: Matière).
+  multiple Boolean @default(true)
+  /// Bornes de validation à la saisie d'une valeur, utilisées seulement si `type = NUMBER`.
+  numberMin  Float?
+  numberMax  Float?
+  numberUnit String?
+  values     TaxonomyValue[]
+  createdAt  DateTime        @default(now())
+
+  @@map("taxonomies")
+}
+
+model TaxonomyValue {
+  id         String   @id @default(cuid())
+  taxonomyId String
+  taxonomy   Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+
+  /// Stockage brut interprété selon `taxonomy.type` : TEXT/COLOR -> texte libre,
+  /// NUMBER -> parsable en Float, BOOLEAN -> "true"/"false", DATE -> ISO 8601.
+  value       String
+  /// Libellé affiché si différent de `value`.
+  label       String?
+  description String?
+  image       String?
+  /// Code additionnel selon le type (hex pour COLOR, ex: #FF0000).
+  code        String?
+
+  parentId String?
+  parent   TaxonomyValue?  @relation("TaxonomyValueHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children TaxonomyValue[] @relation("TaxonomyValueHierarchy")
+
+  products ProductTaxonomyValue[]
+
+  @@unique([taxonomyId, value])
+  @@index([parentId])
+  @@map("taxonomy_values")
+}
+
+model ProductTaxonomyValue {
+  id              String        @id @default(cuid())
+  productId       String
+  taxonomyValueId String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  taxonomyValue   TaxonomyValue @relation(fields: [taxonomyValueId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, taxonomyValueId])
+  @@index([taxonomyValueId])
+  @@map("product_taxonomy_values")
 }
 
 model Review {
