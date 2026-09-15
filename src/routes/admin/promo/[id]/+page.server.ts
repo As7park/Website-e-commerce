@@ -22,7 +22,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		minAmount: promo.minAmount ?? undefined,
 		usageLimit: promo.usageLimit ?? undefined,
 		expiresAt: promo.expiresAt ? promo.expiresAt.toISOString().slice(0, 10) : undefined,
-		active: promo.active
+		active: promo.active,
+		loyaltyThreshold: promo.loyaltyThreshold ?? undefined
 	};
 
 	const updatePromoForm = await superValidate(initialData, zod(updatePromoSchema));
@@ -54,7 +55,8 @@ export const actions: Actions = {
 				minAmount: form.data.minAmount,
 				usageLimit: form.data.usageLimit,
 				expiresAt: form.data.expiresAt,
-				active: form.data.active
+				active: form.data.active,
+				loyaltyThreshold: form.data.loyaltyThreshold
 			});
 
 			return message(form, 'Code promo mis à jour avec succès');

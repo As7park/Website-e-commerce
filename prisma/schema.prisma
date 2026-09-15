@@ -42,6 +42,14 @@ enum AddressType {
   BILLING
 }
 
+/// Statut d'une demande de retour (`ReturnRequest`), voir StoreSettings.returnsEnabled.
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
 // AUTH __________________________________________________________________________________
 //
 // AUTH-PLUGIN : `Session`, `EmailVerificationRequest` et `PasswordResetSession`
@@ -61,28 +69,35 @@ model User {
   /// Code de secours 2FA, chiffré puis encodé en base64 (algorithme selon `encryptionVersion`).
   recoveryCode String?
 
-  emailVerified Boolean @default(false)
+  emailVerified     Boolean @default(false)
   /// La 2FA est exigée sur ce compte (distinct de « une clé TOTP existe »).
-  isMfaEnabled  Boolean @default(false)
+  isMfaEnabled      Boolean @default(false)
   /// Secret TOTP chiffré (algorithme selon `encryptionVersion`). Jamais exposé au client.
-  totpKey       Bytes?
+  totpKey           Bytes?
   /// 1 = AES-128-GCM (legacy), 2 = AES-256-GCM. Bascule à 2 automatiquement
   /// à la prochaine authentification réussie qui déchiffre `totpKey`/`recoveryCode`.
-  encryptionVersion Int @default(1)
+  encryptionVersion Int     @default(1)
 
   /// Identifiant Google, présent uniquement pour les comptes OAuth.
   googleId String? @unique
   name     String?
   picture  String?
 
+  /// Client Stripe créé au premier ajout d'une carte enregistrée
+  /// (`savedPaymentsEnabled`) — jamais créé pour le paiement simple.
+  stripeCustomerId String? @unique
+
   role Role @default(CLIENT)
 
   // Relations commerce
-  addresses     Address[]
-  orders        Order[]
-  transactions  Transaction[]
-  reviews       Review[]
-  wishlistItems WishlistItem[]
+  addresses           Address[]
+  orders              Order[]
+  transactions        Transaction[]
+  reviews             Review[]
+  wishlistItems       WishlistItem[]
+  savedPaymentMethods SavedPaymentMethod[]
+  returnRequests      ReturnRequest[]
+  loyaltyAwards       LoyaltyAward[]
 
   // Relations d'authentification (disparaissent avec le module)
   sessions                  Session[]
@@ -263,31 +278,31 @@ model OrderStatusHistory {
 
 model Product {
   // PRODUCT-PLUGIN : cœur du catalogue. Les OrderItem du commerce y font référence.
-  id           String            @id @default(cuid())
-  name         String
-  description  String
-  price        Float
-  stock        Int
-  images       String[]
-  slug         String            @unique
-  colorProduct String
+  id             String                 @id @default(cuid())
+  name           String
+  description    String
+  price          Float
+  stock          Int
+  images         String[]
+  slug           String                 @unique
+  colorProduct   String
   /// Référence interne, distincte de `id` (cuid non lisible) — affichée en
   /// admin et sur la facture, jamais utilisée comme clé de recherche Prisma.
-  sku            String?  @unique
+  sku            String?                @unique
   /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
   /// prix réellement facturé — pas de logique de remise appliquée ici).
   compareAtPrice Float?
-  categories    ProductCategory[]
-  orderItems    OrderItem[]
-  reviews       Review[]
-  wishlistedBy  WishlistItem[]
+  categories     ProductCategory[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+  wishlistedBy   WishlistItem[]
   /// Facette catalogue « Matière » — taxonomie gérée depuis
   /// `/admin/products` (section Matières), pas un champ libre : évite que
   /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
   /// Legacy : remplacé par `taxonomyValues` (voir `Taxonomy`), retiré en migration B
   /// une fois la bascule vérifiée.
-  materialId String?
-  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  materialId     String?
+  material       Material?              @relation(fields: [materialId], references: [id], onDelete: SetNull)
   /// Système générique de taxonomies (Matière, Catégorie, Couleur, ...) —
   /// remplace à terme `materialId`/`categories` ci-dessus.
   taxonomyValues ProductTaxonomyValue[]
@@ -313,13 +328,13 @@ model Material {
 // valeurs possibles (avec hiérarchie optionnelle via `parentId`),
 // `ProductTaxonomyValue` = l'assignation à un produit.
 model Taxonomy {
-  id   String       @id @default(cuid())
-  name String       @unique
+  id         String          @id @default(cuid())
+  name       String          @unique
   /// Utilisé comme nom de paramètre de filtre catalogue (`?<slug>=valeur`).
-  slug String       @unique
-  type TaxonomyType @default(TEXT)
+  slug       String          @unique
+  type       TaxonomyType    @default(TEXT)
   /// true = plusieurs valeurs par produit (ex: Catégorie), false = une seule (ex: Matière).
-  multiple Boolean @default(true)
+  multiple   Boolean         @default(true)
   /// Bornes de validation à la saisie d'une valeur, utilisées seulement si `type = NUMBER`.
   numberMin  Float?
   numberMax  Float?
@@ -484,9 +499,8 @@ model Transaction {
   user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
   order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
-  @@index([userId])
-  @@index([orderId])
-  @@index([createdAt])
+  returnRequest ReturnRequest?
+
   @@index([status])
   // Sert `/auth/settings/factures` (getTransactionsByUserId.ts) : filtre
   // userId + tri createdAt ensemble, pas juste chacun séparément.
@@ -527,20 +541,44 @@ model Category {
 
 // PROMO-PLUGIN : remises checkout. Hors COMMERCE (Order.promoCode reste une colonne du tunnel).
 model PromoCode {
-  id         String    @id @default(cuid())
-  code       String    @unique
-  type       PromoType
-  value      Float
-  minAmount  Float?
-  usageLimit Int?
-  usageCount Int       @default(0)
-  expiresAt  DateTime?
-  active     Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  code             String    @unique
+  type             PromoType
+  value            Float
+  minAmount        Float?
+  usageLimit       Int?
+  usageCount       Int       @default(0)
+  expiresAt        DateTime?
+  active           Boolean   @default(true)
+  /// Si renseigné, ce code est une récompense de fidélité : accordé
+  /// automatiquement quand un compte atteint ce nombre de commandes payées
+  /// (`StoreSettings.loyaltyEnabled`), voir `LoyaltyAward`. Rien à voir avec
+  /// `usageLimit`/`expiresAt` ci-dessus qui restent des garde-fous normaux.
+  loyaltyThreshold Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  loyaltyAwards LoyaltyAward[]
 
   @@index([active])
   @@map("promo_codes")
+}
+
+/// Trace qu'un compte a déjà reçu la récompense de fidélité d'un code donné —
+/// évite un double envoi si le webhook Stripe est retenté (seuil de commandes
+/// payées atteint une seule fois, mais l'événement peut être livré 2x).
+model LoyaltyAward {
+  id                String   @id @default(cuid())
+  userId            String
+  promoCodeId       String
+  orderCountAtAward Int
+  createdAt         DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoCodeId])
+  @@map("loyalty_awards")
 }
 
 // BLOG-PLUGIN ____________________________________________________________________________
@@ -683,3 +721,45 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+/// Carte enregistrée (`StoreSettings.savedPaymentsEnabled`) — jamais de PAN/CVC
+/// stocké ici, uniquement les métadonnées d'affichage. La source de vérité
+/// (carte utilisable) reste le `PaymentMethod` Stripe, attaché au
+/// `User.stripeCustomerId`.
+model SavedPaymentMethod {
+  id                    String   @id @default(cuid())
+  userId                String
+  stripePaymentMethodId String   @unique
+  brand                 String
+  last4                 String
+  expMonth              Int
+  expYear               Int
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_payment_methods")
+}
+
+/// Demande de retour (`StoreSettings.returnsEnabled`) sur une transaction déjà
+/// payée. `stripeRefundId` posé une fois le remboursement Stripe confirmé par
+/// l'admin (`?/approve`) — jamais avant, `?/reject` n'en crée pas.
+model ReturnRequest {
+  id             String       @id @default(cuid())
+  transactionId  String
+  userId         String
+  reason         String
+  status         ReturnStatus @default(REQUESTED)
+  stripeRefundId String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId])
+  @@index([userId])
+  @@index([status])
+  @@map("return_requests")
+}

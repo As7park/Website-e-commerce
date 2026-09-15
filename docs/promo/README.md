@@ -9,13 +9,13 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 
 ## Frontière du module
 
-| Emplacement | Contenu |
-| ----------- | ------- |
-| `src/lib/prisma/promo/` | DAO Prisma (`validatePromo`, CRUD, `incrementUsage`) |
-| `src/lib/schema/promo/` | schémas Zod des formulaires admin |
-| `src/routes/admin/promo/` | CRUD back-office (gardes = module admin) |
-| `src/routes/api/promo/validate/` | validation JSON pour le checkout |
-| `src/lib/components/checkout/PromoCodeInput.svelte` | champ UI du tunnel |
+| Emplacement                                         | Contenu                                              |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| `src/lib/prisma/promo/`                             | DAO Prisma (`validatePromo`, CRUD, `incrementUsage`) |
+| `src/lib/schema/promo/`                             | schémas Zod des formulaires admin                    |
+| `src/routes/admin/promo/`                           | CRUD back-office (gardes = module admin)             |
+| `src/routes/api/promo/validate/`                    | validation JSON pour le checkout                     |
+| `src/lib/components/checkout/PromoCodeInput.svelte` | champ UI du tunnel                                   |
 
 Contrairement à l'auth, le promo **n'a pas de hook** dans `hooks.server.ts` :
 les mutations passent par `requireAdmin`, la validation est une API publique.
@@ -48,6 +48,30 @@ Prisma des e2e commerce.
 `adminHandle`. Désactiver un code (`active=false`) le retire du tunnel sans
 l'effacer.
 
+## Fidélité
+
+Module activable depuis `/admin/settings` (`StoreSettings.loyaltyEnabled`,
+voir [docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)).
+Plutôt qu'un système séparé, la fidélité est un champ optionnel de
+`PromoCode` (`loyaltyThreshold`, renseigné depuis le formulaire
+création/édition existant) : dès qu'un compte atteint ce nombre de commandes
+`PAID`, le code lui est attribué automatiquement.
+
+- Après chaque paiement (`handleCheckoutSession` dans
+  `src/routes/api/webhooks/+server.ts`), si le module est actif, un job
+  (`enqueueLoyaltyCheckJob`, même mécanique QStash/repli direct que les jobs
+  facture/Sendcloud) compte les commandes payées du compte et parcourt les
+  codes actifs dont `loyaltyThreshold` est atteint.
+- `LoyaltyAward` (`userId`, `promoCodeId`, unique par paire) empêche un même
+  compte de recevoir deux fois le même code — l'attribution est définitive
+  même si le seuil est modifié ou dépassé ensuite.
+- Un e-mail est envoyé au compte avec le code à la première attribution
+  (`sendMail`). Il n'y a pas de page dédiée côté compte : le code fonctionne
+  comme n'importe quel code promo au checkout.
+
+Laisser `loyaltyThreshold` vide désactive la fidélité pour ce code
+spécifique, indépendamment de l'interrupteur global.
+
 ## Ce qui n'est pas le promo
 
 L'authentification, le back-office dans son ensemble, le panier et Stripe.
@@ -68,23 +92,36 @@ La création passe par Prisma (les champs numériques du formulaire Superforms
 sont fragiles en e2e). L'édition de la valeur et la suppression passent par
 l'UI.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste admin affiche les codes | GET `/admin/promo`, recherche | ligne du tableau |
-| 2 | Édition de la valeur | fiche → 15 → Enregistrer | `value` en base |
-| 3 | Suppression | dialogue Continue | code absent en base |
+| #   | Étape                            | Geste                         | Preuve              |
+| --- | -------------------------------- | ----------------------------- | ------------------- |
+| 1   | La liste admin affiche les codes | GET `/admin/promo`, recherche | ligne du tableau    |
+| 2   | Édition de la valeur             | fiche → 15 → Enregistrer      | `value` en base     |
+| 3   | Suppression                      | dialogue Continue             | code absent en base |
 
 À part : un CLIENT POST `?/deletePromo` — le code reste.
 
 ### Validation — `e2e/promo/validate.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Pourcentage accepté | POST `/api/promo/validate` 10 % sur 100 € | `valid`, remise 10 |
-| 2 | Code inconnu / inactif / expiré | POST | `valid: false` |
-| 3 | Montant min. et limite d'usage | POST sous le seuil / quota plein | `valid: false` |
-| 4 | Checkout : code appliqué | UI « Appliquer » | toast + remise affichée |
-| 5 | Checkout : code refusé | code inconnu | toast d'erreur, pas de remise |
+| #   | Étape                           | Geste                                     | Preuve                        |
+| --- | ------------------------------- | ----------------------------------------- | ----------------------------- |
+| 1   | Pourcentage accepté             | POST `/api/promo/validate` 10 % sur 100 € | `valid`, remise 10            |
+| 2   | Code inconnu / inactif / expiré | POST                                      | `valid: false`                |
+| 3   | Montant min. et limite d'usage  | POST sous le seuil / quota plein          | `valid: false`                |
+| 4   | Checkout : code appliqué        | UI « Appliquer »                          | toast + remise affichée       |
+| 5   | Checkout : code refusé          | code inconnu                              | toast d'erreur, pas de remise |
+
+### Fidélité — `e2e/promo/loyalty.spec.ts`
+
+Pas de système séparé : un `PromoCode` actif avec `loyaltyThreshold` est
+comparé au nombre de commandes payées du compte après chaque webhook signé
+(`src/lib/server/jobs/loyalty.ts`, fallback synchrone sans QStash configuré
+en e2e).
+
+| #   | Étape                                              | Geste            | Preuve                                   |
+| --- | -------------------------------------------------- | ---------------- | ---------------------------------------- |
+| 1   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
+| 2   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
+| 3   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
 
 ```bash
 npm run test:e2e

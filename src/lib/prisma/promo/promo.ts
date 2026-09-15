@@ -15,6 +15,7 @@ type PromoInput = {
 	usageLimit?: number | null;
 	expiresAt?: string | null;
 	active: boolean;
+	loyaltyThreshold?: number | null;
 };
 
 const normalizeCode = (code: string) => code.trim().toUpperCase();
@@ -62,7 +63,8 @@ export const createPromoCode = async (data: PromoInput) => {
 			minAmount: data.minAmount ?? null,
 			usageLimit: data.usageLimit ?? null,
 			expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-			active: data.active
+			active: data.active,
+			loyaltyThreshold: data.loyaltyThreshold ?? null
 		}
 	});
 };
@@ -77,7 +79,8 @@ export const updatePromoCode = async (id: string, data: PromoInput) => {
 			minAmount: data.minAmount ?? null,
 			usageLimit: data.usageLimit ?? null,
 			expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-			active: data.active
+			active: data.active,
+			loyaltyThreshold: data.loyaltyThreshold ?? null
 		}
 	});
 };

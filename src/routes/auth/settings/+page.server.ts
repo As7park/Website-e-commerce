@@ -69,7 +69,7 @@ export const load = async (event: RequestEvent) => {
 		zod(isMfaEnabledSchema)
 	);
 
-	const { wishlistEnabled } = await getStoreFeatureFlags();
+	const { wishlistEnabled, savedPaymentsEnabled, returnsEnabled } = await getStoreFeatureFlags();
 
 	return {
 		recoveryCode,
@@ -77,7 +77,9 @@ export const load = async (event: RequestEvent) => {
 		passwordForm,
 		emailForm,
 		isMfaEnabledForm,
-		wishlistEnabled
+		wishlistEnabled,
+		savedPaymentsEnabled,
+		returnsEnabled
 	};
 };
 

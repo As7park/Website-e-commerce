@@ -68,7 +68,13 @@
 					<Form.Label>
 						Valeur {$updatePromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
 					</Form.Label>
-					<Input name="value" type="number" step="0.01" min="0" bind:value={$updatePromoData.value} />
+					<Input
+						name="value"
+						type="number"
+						step="0.01"
+						min="0"
+						bind:value={$updatePromoData.value}
+					/>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -105,6 +111,25 @@
 				<Form.Control>
 					<Form.Label>Date d'expiration (optionnel)</Form.Label>
 					<Input name="expiresAt" type="date" bind:value={$updatePromoData.expiresAt} />
+				</Form.Control>
+				<Form.FieldErrors />
+			</Form.Field>
+
+			<Form.Field name="loyaltyThreshold" form={updatePromo}>
+				<Form.Control>
+					<Form.Label>Seuil fidélité (optionnel)</Form.Label>
+					<Input
+						name="loyaltyThreshold"
+						type="number"
+						step="1"
+						min="1"
+						placeholder="ex: 5"
+						bind:value={$updatePromoData.loyaltyThreshold}
+					/>
+					<p class="text-sm text-muted-foreground">
+						Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
+						commandes payées (module « Fidélité », voir /admin/settings).
+					</p>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

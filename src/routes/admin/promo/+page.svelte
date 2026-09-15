@@ -24,11 +24,14 @@
 			valueLabel: promo.type === 'PERCENTAGE' ? `${promo.value}%` : `${promo.value.toFixed(2)}€`,
 			minAmountLabel: promo.minAmount != null ? `${promo.minAmount.toFixed(2)}€` : '—',
 			usageLabel:
-				promo.usageLimit != null ? `${promo.usageCount} / ${promo.usageLimit}` : `${promo.usageCount} / ∞`,
+				promo.usageLimit != null
+					? `${promo.usageCount} / ${promo.usageLimit}`
+					: `${promo.usageCount} / ∞`,
 			expiresLabel: promo.expiresAt
 				? new Date(promo.expiresAt).toLocaleDateString('fr-FR')
 				: 'Jamais',
-			activeLabel: promo.active ? 'Actif' : 'Inactif'
+			activeLabel: promo.active ? 'Actif' : 'Inactif',
+			loyaltyLabel: promo.loyaltyThreshold != null ? `${promo.loyaltyThreshold} commandes` : '—'
 		}));
 	});
 
@@ -39,7 +42,8 @@
 		{ key: 'minAmountLabel', label: 'Montant min.' },
 		{ key: 'usageLabel', label: 'Utilisations' },
 		{ key: 'expiresLabel', label: 'Expiration' },
-		{ key: 'activeLabel', label: 'Statut' }
+		{ key: 'activeLabel', label: 'Statut' },
+		{ key: 'loyaltyLabel', label: 'Fidélité' }
 	]);
 
 	const PromoActions = $state([

@@ -16,6 +16,7 @@ import { getOrderById } from '$lib/prisma/order/prendingOrder';
 import { getUserAddresses } from '$lib/prisma/addresses/addresses';
 import { OrderSchema } from '$lib/schema/order/order';
 import { validatePromo, incrementUsage } from '$lib/prisma/promo/promo';
+import { prisma } from '$lib/server';
 import {
 	assertOrderOwnedBy,
 	createCheckoutSession,
@@ -112,6 +113,13 @@ export const actions: Actions = {
 		const appliedPromoCode = promoResult.valid ? (promoResult.promo?.code ?? null) : null;
 		// PROMO-PLUGIN ▲
 
+		// COMMERCE-PLUGIN : réutilise le client Stripe existant (`savedPaymentsEnabled`)
+		// s'il en existe déjà un pour ce compte — n'en crée jamais un ici.
+		const currentUser = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { stripeCustomerId: true }
+		});
+
 		const session = await createCheckoutSession({
 			order,
 			userId,
@@ -122,6 +130,7 @@ export const actions: Actions = {
 			hasCustomItems,
 			promoCode: appliedPromoCode,
 			discountAmount: appliedDiscount,
+			stripeCustomerId: currentUser?.stripeCustomerId,
 			servicePoint: {
 				id: servicePointId,
 				postNumber: servicePointPostNumber,

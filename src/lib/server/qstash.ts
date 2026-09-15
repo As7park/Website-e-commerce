@@ -2,6 +2,7 @@ import { Client, Receiver } from '@upstash/qstash';
 import { resolveAppUrl } from './app-url';
 import { runPostPaymentJob } from './jobs/post-payment';
 import { runInvoiceEmailJob } from './jobs/invoice-email';
+import { runLoyaltyCheckJob } from './jobs/loyalty';
 
 /**
  * Queue Upstash QStash — HTTP, sans process persistant, cohérente avec le
@@ -65,5 +66,22 @@ export async function enqueueInvoiceEmailJob(transactionId: string): Promise<voi
 	await getClient().publishJSON({
 		url: `${resolveAppUrl()}/api/jobs/invoice-email`,
 		body: { transactionId }
+	});
+}
+
+/**
+ * Enfile la vérification de fidélité (`$lib/server/jobs/loyalty.ts`), sortie
+ * du chemin synchrone du webhook au même titre que facture/Sendcloud —
+ * n'est appelée par le webhook que si `StoreSettings.loyaltyEnabled`.
+ */
+export async function enqueueLoyaltyCheckJob(orderId: string): Promise<void> {
+	if (!isQStashConfigured()) {
+		await runLoyaltyCheckJob(orderId);
+		return;
+	}
+
+	await getClient().publishJSON({
+		url: `${resolveAppUrl()}/api/jobs/loyalty-check`,
+		body: { orderId }
 	});
 }

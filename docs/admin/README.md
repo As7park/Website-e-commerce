@@ -62,18 +62,19 @@ naissent par inscription.
 
 ## Sections
 
-| Route             | Rôle                                                                                                                   |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                                                              |
-| `/admin/sales`    | transactions, factures, bordereaux                                                                                     |
-| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                             |
-| `/admin/products` | catalogue et catégories                                                                                                |
-| `/admin/blog`     | articles, catégories, tags                                                                                             |
-| `/admin/promo`    | codes promo                                                                                                            |
-| `/admin/contacts` | messages du formulaire de contact                                                                                      |
-| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                       |
-| `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts |
-| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                                                         |
+| Route             | Rôle                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                                                                             |
+| `/admin/sales`    | transactions, factures, bordereaux                                                                                                    |
+| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                            |
+| `/admin/products` | catalogue et catégories                                                                                                               |
+| `/admin/blog`     | articles, catégories, tags                                                                                                            |
+| `/admin/promo`    | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
+| `/admin/returns`  | approbation/refus des demandes de retour, remboursement Stripe automatique (voir [docs/commerce](../commerce/README.md#retours--sav)) |
+| `/admin/contacts` | messages du formulaire de contact                                                                                                     |
+| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
+| `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                |
+| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                                                                        |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -120,11 +121,13 @@ une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
 répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
 lui-même lit toujours la valeur non mise en cache.
 
-Au 15/09/2026, deux modules ont une implémentation complète derrière leur
-interrupteur (liste d'envies, ventes croisées — chacun avec son propre test
-de bout en bout : `e2e/products/wishlist.spec.ts`,
-`e2e/products/cross-sell.spec.ts`) ; les trois autres attendent encore leur
-tour sur la roadmap.
+Au 16/09/2026, les cinq modules ont une implémentation complète derrière leur
+interrupteur : liste d'envies, ventes croisées (`e2e/products/wishlist.spec.ts`,
+`e2e/products/cross-sell.spec.ts`), espace retour/SAV avec remboursement Stripe
+automatique, moyen de paiement enregistré (Stripe Elements) et palier de
+fidélité intégré à la section promo — voir [docs/commerce](../commerce/README.md#retours--sav)
+et [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9) pour le détail de ces
+trois derniers.
 
 ### Alerting
 

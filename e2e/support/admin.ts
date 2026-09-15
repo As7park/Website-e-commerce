@@ -40,6 +40,7 @@ export const ADMIN_PATHS = [
 	'/admin/promo',
 	'/admin/promo/create',
 	'/admin/promo/placeholder',
+	'/admin/returns',
 	'/admin/contacts',
 	'/admin/contacts/view/placeholder'
 ] as const;

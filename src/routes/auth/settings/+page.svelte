@@ -11,7 +11,17 @@
 	import { Label } from '$shadcn/label/index.js';
 	import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema.js';
 
-	import { UserCircle, BookMarked, ReceiptText, Heart, Mail, KeyRound, ShieldCheck } from 'lucide-svelte';
+	import {
+		UserCircle,
+		BookMarked,
+		ReceiptText,
+		Heart,
+		Mail,
+		KeyRound,
+		ShieldCheck,
+		CreditCard,
+		Undo2
+	} from 'lucide-svelte';
 
 	let { data } = $props();
 
@@ -131,6 +141,44 @@
 					<Card.Content class="flex-grow" />
 					<Card.Footer>
 						<Button href="/auth/settings/wishlist" class="w-full">Ma liste d'envies</Button>
+					</Card.Footer>
+				</Card.Root>
+			{/if}
+
+			{#if data.savedPaymentsEnabled}
+				<!-- Moyens de paiement enregistrés -->
+				<Card.Root class="flex flex-col">
+					<Card.Header>
+						<Card.Title class="flex items-center gap-2">
+							<CreditCard class="w-6 h-6 text-primary" />
+							<span>Moyens de paiement</span>
+						</Card.Title>
+						<Card.Description
+							>Gérez vos cartes enregistrées pour un paiement plus rapide.</Card.Description
+						>
+					</Card.Header>
+					<Card.Content class="flex-grow" />
+					<Card.Footer>
+						<Button href="/auth/settings/saved-payments" class="w-full"
+							>Mes moyens de paiement</Button
+						>
+					</Card.Footer>
+				</Card.Root>
+			{/if}
+
+			{#if data.returnsEnabled}
+				<!-- Retours / SAV -->
+				<Card.Root class="flex flex-col">
+					<Card.Header>
+						<Card.Title class="flex items-center gap-2">
+							<Undo2 class="w-6 h-6 text-primary" />
+							<span>Retours</span>
+						</Card.Title>
+						<Card.Description>Demandez le retour d'une commande déjà payée.</Card.Description>
+					</Card.Header>
+					<Card.Content class="flex-grow" />
+					<Card.Footer>
+						<Button href="/auth/settings/returns" class="w-full">Mes retours</Button>
 					</Card.Footer>
 				</Card.Root>
 			{/if}

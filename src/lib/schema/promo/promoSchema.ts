@@ -8,11 +8,24 @@ const promoTypeEnum = z.enum(['PERCENTAGE', 'FIXED']);
 const basePromoSchema = z.object({
 	code: z.string().min(1, 'Le code est requis'),
 	type: promoTypeEnum,
-	value: z.number({ invalid_type_error: 'La valeur est requise' }).min(0, 'La valeur doit être positive'),
+	value: z
+		.number({ invalid_type_error: 'La valeur est requise' })
+		.min(0, 'La valeur doit être positive'),
 	minAmount: z.number().min(0, 'Le montant minimum doit être positif').optional(),
-	usageLimit: z.number().int('Nombre entier attendu').min(0, "La limite doit être positive").optional(),
+	usageLimit: z
+		.number()
+		.int('Nombre entier attendu')
+		.min(0, 'La limite doit être positive')
+		.optional(),
 	expiresAt: z.string().optional(),
-	active: z.boolean()
+	active: z.boolean(),
+	// PROMO-PLUGIN / fidélité : ce code est accordé automatiquement au compte
+	// qui atteint ce nombre de commandes payées (voir StoreSettings.loyaltyEnabled).
+	loyaltyThreshold: z
+		.number()
+		.int('Nombre entier attendu')
+		.min(1, 'Le seuil doit être au moins 1')
+		.optional()
 });
 
 // Schéma de création

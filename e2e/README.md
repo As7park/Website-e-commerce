@@ -12,12 +12,12 @@ worker) :
   (`e2e/products/admin.spec.ts`), taxonomies génériques
   (`e2e/products/taxonomies.spec.ts`), avis produit (`e2e/products/reviews.spec.ts`)
   et liste d'envies (`e2e/products/wishlist.spec.ts`) ;
-- commerce : panier (connecté + invité), checkout, webhook Stripe, ventes
-  (`e2e/commerce/*.spec.ts`) ;
+- commerce : panier (connecté + invité), checkout, webhook Stripe, ventes,
+  retours/SAV, moyens de paiement enregistrés (`e2e/commerce/*.spec.ts`) ;
 - blog : vitrine (`e2e/blog/catalog.spec.ts`) et CRUD admin articles
   (`e2e/blog/admin.spec.ts`) ;
-- codes promo : CRUD admin (`e2e/promo/admin.spec.ts`) et validation
-  (`e2e/promo/validate.spec.ts`) ;
+- codes promo : CRUD admin (`e2e/promo/admin.spec.ts`), validation
+  (`e2e/promo/validate.spec.ts`) et fidélité (`e2e/promo/loyalty.spec.ts`) ;
 - contact : formulaire (`e2e/contact/form.spec.ts`) et lecture admin
   (`e2e/contact/admin.spec.ts`) ;
 - services live : Brevo (`e2e/live/brevo.spec.ts`), Sendcloud
@@ -348,6 +348,54 @@ Sendcloud dès que `PUBLIC_ENV=test`.
 | 1   | ADMIN voit la transaction           | `/admin/sales`         | cellule email |
 | 2   | CLIENT GET `/admin/sales`           | navigation             | `/`           |
 | 3   | Facture user : uniquement la sienne | GET facture d'un autre | 404           |
+
+### Commerce retours / SAV — `e2e/commerce/returns.spec.ts`
+
+Le remboursement Stripe réel (`?/approve`) n'est pas rejouable : les transactions
+de test viennent de `simulatePaidOrder`, sans vraie Checkout Session Stripe.
+On vérifie que l'échec est géré proprement (`fail(500)`), pas le remboursement.
+
+| #   | Étape                                                    | Geste                                  | Preuve                            |
+| --- | -------------------------------------------------------- | -------------------------------------- | --------------------------------- |
+| 1   | Module désactivé : routes compte fermées                 | GET `/auth/settings/returns[...]`      | 404                               |
+| 2   | Demande de retour envoyée                                | formulaire motif → Envoyer             | `ReturnRequest` `REQUESTED`       |
+| 3   | Une seconde demande n'est pas proposée                   | revisite de la page                    | formulaire absent, statut affiché |
+| 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer | statut `REJECTED`                 |
+| 5   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
+
+Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
+Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`
+dans `e2e/admin/security.spec.ts`.
+
+### Commerce moyens de paiement enregistrés — `e2e/commerce/saved-payments.spec.ts`
+
+L'ajout de carte (`?/attach`) passe par un `SetupIntent` Stripe réel (Stripe
+Elements côté client) : non rejouable en e2e. Les cartes sont insérées
+directement en base (`createSavedPaymentMethod`), comme si `attach` avait déjà
+réussi — seules lecture, carte par défaut et suppression sont couvertes.
+
+| #   | Étape                                          | Geste                               | Preuve                              |
+| --- | ---------------------------------------------- | ----------------------------------- | ----------------------------------- |
+| 1   | Module désactivé : route et SetupIntent fermés | GET / POST                          | 404 / 404                           |
+| 2   | Liste : les deux cartes sont affichées         | GET `/auth/settings/saved-payments` | marque + 4 derniers chiffres        |
+| 3   | Changement de carte par défaut                 | bouton étoile                       | `isDefault` bascule en base         |
+| 4   | Suppression                                    | bouton corbeille                    | carte absente de l'UI et de la base |
+
+Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre
+(POST direct, ligne toujours en base ensuite).
+
+### Fidélité — `e2e/promo/loyalty.spec.ts`
+
+Pas de système séparé : un `PromoCode` actif avec `loyaltyThreshold` est
+comparé au nombre de commandes payées du compte après chaque webhook
+(`src/lib/server/jobs/loyalty.ts`, fallback synchrone sans QStash configuré
+en e2e — signer le webhook suffit à déclencher la vérification).
+
+| #   | Étape                                              | Geste            | Preuve                                   |
+| --- | -------------------------------------------------- | ---------------- | ---------------------------------------- |
+| 1   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
+| 2   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
+| 3   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
 
 ### Blog vitrine — `e2e/blog/catalog.spec.ts`
 

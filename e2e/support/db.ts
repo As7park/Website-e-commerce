@@ -120,6 +120,7 @@ export async function createPromoCode(
 		usageCount?: number;
 		expiresAt?: Date | null;
 		active?: boolean;
+		loyaltyThreshold?: number | null;
 	}
 ) {
 	return resilient(() =>
@@ -132,7 +133,8 @@ export async function createPromoCode(
 				usageLimit: overrides?.usageLimit ?? null,
 				usageCount: overrides?.usageCount ?? 0,
 				expiresAt: overrides?.expiresAt ?? null,
-				active: overrides?.active ?? true
+				active: overrides?.active ?? true,
+				loyaltyThreshold: overrides?.loyaltyThreshold ?? null
 			}
 		})
 	);
@@ -693,4 +695,52 @@ export async function setStoreFeatureFlags(patch: {
 	loyaltyEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
+}
+
+/** Retours/SAV : lecture par transaction (unique), pour les assertions. */
+export async function getReturnRequestByTransactionId(transactionId: string) {
+	return resilient(() => db.returnRequest.findUnique({ where: { transactionId } }));
+}
+
+/**
+ * Moyens de paiement enregistrés : insertion directe, sans passer par
+ * l'action `attach` (qui appelle Stripe pour relire la carte) — cette
+ * dernière n'est pas rejouable en e2e sans une vraie `PaymentMethod` Stripe.
+ */
+export async function createSavedPaymentMethod(
+	userId: string,
+	overrides?: {
+		stripePaymentMethodId?: string;
+		brand?: string;
+		last4?: string;
+		expMonth?: number;
+		expYear?: number;
+		isDefault?: boolean;
+	}
+) {
+	const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	return resilient(() =>
+		db.savedPaymentMethod.create({
+			data: {
+				userId,
+				stripePaymentMethodId: overrides?.stripePaymentMethodId ?? `e2e-pm-${stamp}`,
+				brand: overrides?.brand ?? 'visa',
+				last4: overrides?.last4 ?? '4242',
+				expMonth: overrides?.expMonth ?? 12,
+				expYear: overrides?.expYear ?? 2099,
+				isDefault: overrides?.isDefault ?? false
+			}
+		})
+	);
+}
+
+export async function getSavedPaymentMethodsByUserId(userId: string) {
+	return resilient(() => db.savedPaymentMethod.findMany({ where: { userId } }));
+}
+
+/** Fidélité : attribution éventuelle d'un code à un compte, pour un code donné. */
+export async function getLoyaltyAward(userId: string, promoCodeId: string) {
+	return resilient(() =>
+		db.loyaltyAward.findUnique({ where: { userId_promoCodeId: { userId, promoCodeId } } })
+	);
 }

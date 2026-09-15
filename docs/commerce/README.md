@@ -10,17 +10,21 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 
 ## Frontière du module
 
-| Emplacement                                              | Contenu                                                                                           |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `src/lib/commerce/`                                      | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
-| `src/lib/prisma/order/` et `src/lib/prisma/transaction/` | DAO Prisma                                                                                        |
-| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`        | panier client                                                                                     |
-| `src/routes/api/save-cart/`                              | persistance panier                                                                                |
-| `src/routes/checkout/`                                   | tunnel + succès                                                                                   |
-| `src/routes/api/webhooks/`                               | Stripe `checkout.session.completed`                                                               |
-| `src/lib/server/jobs/post-payment.ts`                    | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
-| `src/routes/api/jobs/post-payment/`                      | endpoint appelé par la queue (QStash)                                                             |
-| `src/routes/admin/sales/`                                | liste, facture, bordereau (double marqueur ADMIN)                                                 |
+| Emplacement                                                         | Contenu                                                                                           |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --- | ------------------------- | -------------------------------------------- |
+| `src/lib/commerce/`                                                 | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
+| `src/lib/prisma/order/` et `src/lib/prisma/transaction/`            | DAO Prisma                                                                                        |
+| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`                   | panier client                                                                                     |
+| `src/routes/api/save-cart/`                                         | persistance panier                                                                                |
+| `src/routes/checkout/`                                              | tunnel + succès                                                                                   |
+| `src/routes/api/webhooks/`                                          | Stripe `checkout.session.completed`                                                               |
+| `src/lib/server/jobs/post-payment.ts`                               | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
+| `src/routes/api/jobs/post-payment/`                                 | endpoint appelé par la queue (QStash)                                                             |
+| `src/routes/admin/sales/`                                           | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
+| `src/routes/auth/settings/returns/`                                 | demande de retour côté compte                                                                     |
+| `src/routes/admin/returns/`                                         | approbation/refus + remboursement Stripe (double marqueur ADMIN)                                  |
+| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts` | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
+| `src/routes/auth/settings/saved-payments/`                          | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -141,6 +145,51 @@ QStash en dev, ou débit SMTP atteint) ne doit jamais faire échouer la réponse
 200 au webhook Stripe — chaque job géré par QStash a de toute façon son
 propre retry, découplé de la session Stripe d'origine.
 
+## Retours / SAV
+
+Module activable depuis `/admin/settings` (`StoreSettings.returnsEnabled`, voir
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)).
+Une commande payée (`Transaction`) peut faire l'objet d'une seule demande de
+retour (`ReturnRequest`, `transactionId` unique) : le compte la crée depuis
+`/auth/settings/returns` (liste ses factures) puis
+`/auth/settings/returns/[transactionId]` (motif libre). Ces deux routes
+répondent 404 si le module est désactivé, comme les autres modules optionnels.
+
+Côté admin, `/admin/returns` liste les demandes (page dédiée, pas le
+composant `Table.svelte` générique — son dialogue de confirmation est câblé
+pour une suppression, pas pour approuver/refuser) :
+
+- **Refuser** : passe `status` à `REJECTED`, aucun appel Stripe.
+- **Approuver** : émet un remboursement Stripe **intégral et immédiat**.
+  `Transaction.stripePaymentId` est l'id de la Checkout Session (pas du
+  PaymentIntent) : il faut d'abord la relire
+  (`stripe.checkout.sessions.retrieve(id, { expand: ['payment_intent'] })`)
+  pour obtenir le PaymentIntent avant `stripe.refunds.create`. Le statut passe
+  à `REFUNDED` et `stripeRefundId` est conservé.
+
+Pas de remboursement partiel, pas de ré-expédition/échange : uniquement un
+remboursement complet vers le moyen de paiement d'origine.
+
+## Moyens de paiement enregistrés
+
+Module activable depuis `/admin/settings` (`StoreSettings.savedPaymentsEnabled`).
+Un compte peut enregistrer plusieurs cartes (`SavedPaymentMethod`) depuis
+`/auth/settings/saved-payments`, via Stripe Elements + un `SetupIntent`
+(`POST /auth/settings/saved-payments/setup-intent`) — jamais de numéro de
+carte qui transite par le serveur applicatif, uniquement l'id de
+`PaymentMethod` renvoyé par Stripe après confirmation côté client.
+
+`User.stripeCustomerId` est créé **paresseusement** (`ensureStripeCustomer`,
+`$lib/server/stripeCustomer.ts`) : à l'ajout de la première carte, jamais au
+signup ni au premier passage en caisse. Au checkout suivant, si le compte a
+déjà un `stripeCustomerId`, il est passé à `stripe.checkout.sessions.create`
+(`customer`) pour que Stripe propose les cartes déjà enregistrées — sans
+changement pour un compte qui n'en a aucune.
+
+Supprimer une carte détache le `PaymentMethod` côté Stripe (best-effort : un
+`PaymentMethod` déjà détaché ailleurs ne bloque pas la suppression locale) et
+efface la ligne locale. Une seule carte par défaut à la fois.
+
 ## Tests
 
 Les numéros sont ceux des `test.step`. Changer la procédure ici, puis le spec,
@@ -203,6 +252,38 @@ s'exécute directement dans la requête webhook, sans file d'attente.
 | 1   | ADMIN voit la transaction           | `/admin/sales`, recherche | cellule email |
 | 2   | CLIENT GET `/admin/sales`           | navigation                | `/`           |
 | 3   | Facture user : uniquement la sienne | GET facture d'un autre    | 404           |
+
+### Retours / SAV — `e2e/commerce/returns.spec.ts`
+
+Le remboursement Stripe réel (`?/approve`) n'est pas rejouable : les
+transactions viennent de `simulatePaidOrder`, sans vraie Checkout Session.
+On vérifie que l'échec est géré proprement (`fail(500)`), pas le remboursement.
+
+| #   | Étape                                                    | Geste                                  | Preuve                            |
+| --- | -------------------------------------------------------- | -------------------------------------- | --------------------------------- |
+| 1   | Module désactivé : routes compte fermées                 | GET `/auth/settings/returns[...]`      | 404                               |
+| 2   | Demande de retour envoyée                                | formulaire motif → Envoyer             | `ReturnRequest` `REQUESTED`       |
+| 3   | Une seconde demande n'est pas proposée                   | revisite de la page                    | formulaire absent, statut affiché |
+| 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer | statut `REJECTED`                 |
+| 5   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
+
+Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
+Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`.
+
+### Moyens de paiement enregistrés — `e2e/commerce/saved-payments.spec.ts`
+
+L'ajout de carte (`?/attach`) passe par un `SetupIntent` Stripe réel : non
+rejouable en e2e. Les cartes sont insérées directement en base
+(`createSavedPaymentMethod`), comme si `attach` avait déjà réussi.
+
+| #   | Étape                                          | Geste                               | Preuve                              |
+| --- | ---------------------------------------------- | ----------------------------------- | ----------------------------------- |
+| 1   | Module désactivé : route et SetupIntent fermés | GET / POST                          | 404 / 404                           |
+| 2   | Liste : les deux cartes sont affichées         | GET `/auth/settings/saved-payments` | marque + 4 derniers chiffres        |
+| 3   | Changement de carte par défaut                 | bouton étoile                       | `isDefault` bascule en base         |
+| 4   | Suppression                                    | bouton corbeille                    | carte absente de l'UI et de la base |
+
+Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre.
 
 ```bash
 npm run test:e2e

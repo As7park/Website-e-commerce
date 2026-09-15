@@ -34,7 +34,8 @@ export const actions: Actions = {
 				minAmount: form.data.minAmount,
 				usageLimit: form.data.usageLimit,
 				expiresAt: form.data.expiresAt,
-				active: form.data.active
+				active: form.data.active,
+				loyaltyThreshold: form.data.loyaltyThreshold
 			});
 
 			return message(form, 'Code promo créé avec succès');

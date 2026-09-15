@@ -6,8 +6,13 @@ import { getUserIdByOrderId } from '$lib/prisma/order/prendingOrder';
 import { nextInvoiceNumber } from '$lib/server/invoice/number';
 import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
 import { withLock } from '$lib/server/lock';
-import { enqueuePostPaymentJob, enqueueInvoiceEmailJob } from '$lib/server/qstash';
+import {
+	enqueuePostPaymentJob,
+	enqueueInvoiceEmailJob,
+	enqueueLoyaltyCheckJob
+} from '$lib/server/qstash';
 import { deduceWeightBracket, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { log } from '$lib/server/log';
 
 /**
@@ -270,10 +275,19 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 	// atteint) ne doit jamais faire échouer la réponse au webhook Stripe — un
 	// job qui échoue via QStash a déjà son propre retry indépendant.
 	if (createdTransaction) {
-		const jobResults = await Promise.allSettled([
+		const jobs = [
 			enqueueInvoiceEmailJob(createdTransaction.id),
 			enqueuePostPaymentJob(createdTransaction.id)
-		]);
+		];
+
+		// PROMO-PLUGIN : la fidélité n'est vérifiée que si le module est activé
+		// (`/admin/settings`) — pas de comptage/envoi inutile sinon.
+		const flags = await getStoreFeatureFlags();
+		if (flags.loyaltyEnabled && orderId) {
+			jobs.push(enqueueLoyaltyCheckJob(orderId));
+		}
+
+		const jobResults = await Promise.allSettled(jobs);
 		for (const result of jobResults) {
 			if (result.status === 'rejected') {
 				log('ERROR', 'webhook:stripe', "Échec d'enfilage d'un job post-paiement", result.reason);

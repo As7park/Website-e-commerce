@@ -46,7 +46,12 @@
 			<Form.Field name="code" form={createPromo}>
 				<Form.Control>
 					<Form.Label>Code</Form.Label>
-					<Input name="code" type="text" placeholder="ex: BIENVENUE10" bind:value={$createPromoData.code} />
+					<Input
+						name="code"
+						type="text"
+						placeholder="ex: BIENVENUE10"
+						bind:value={$createPromoData.code}
+					/>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -71,7 +76,13 @@
 					<Form.Label>
 						Valeur {$createPromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
 					</Form.Label>
-					<Input name="value" type="number" step="0.01" min="0" bind:value={$createPromoData.value} />
+					<Input
+						name="value"
+						type="number"
+						step="0.01"
+						min="0"
+						bind:value={$createPromoData.value}
+					/>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -108,6 +119,25 @@
 				<Form.Control>
 					<Form.Label>Date d'expiration (optionnel)</Form.Label>
 					<Input name="expiresAt" type="date" bind:value={$createPromoData.expiresAt} />
+				</Form.Control>
+				<Form.FieldErrors />
+			</Form.Field>
+
+			<Form.Field name="loyaltyThreshold" form={createPromo}>
+				<Form.Control>
+					<Form.Label>Seuil fidélité (optionnel)</Form.Label>
+					<Input
+						name="loyaltyThreshold"
+						type="number"
+						step="1"
+						min="1"
+						placeholder="ex: 5"
+						bind:value={$createPromoData.loyaltyThreshold}
+					/>
+					<p class="text-sm text-muted-foreground">
+						Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
+						commandes payées (module « Fidélité », voir /admin/settings).
+					</p>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

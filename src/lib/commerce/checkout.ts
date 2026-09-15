@@ -86,6 +86,13 @@ export async function createCheckoutSession(params: {
 	hasCustomItems: boolean;
 	promoCode: string | null;
 	discountAmount: number;
+	/**
+	 * Client Stripe déjà existant (`User.stripeCustomerId`, posé au premier
+	 * ajout d'une carte enregistrée — voir `$lib/server/stripeCustomer.ts`).
+	 * Jamais créé ici : un visiteur sans carte enregistrée paie sans
+	 * `customer`, comme avant ce module.
+	 */
+	stripeCustomerId?: string | null;
 	servicePoint: {
 		id?: string;
 		postNumber?: string;
@@ -104,7 +111,8 @@ export async function createCheckoutSession(params: {
 		hasCustomItems,
 		promoCode,
 		discountAmount,
-		servicePoint
+		servicePoint,
+		stripeCustomerId
 	} = params;
 	const finalShippingOption = hasCustomItems
 		? 'no_shipping'
@@ -167,6 +175,7 @@ export async function createCheckoutSession(params: {
 		mode: 'payment',
 		success_url: `${origin}/checkout/success`,
 		cancel_url: `${origin}/auth`,
+		...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
 		metadata: {
 			order_id: order.id,
 			shipping_option: finalShippingOption,

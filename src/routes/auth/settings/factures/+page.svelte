@@ -4,6 +4,7 @@
 	import { formatMoney } from '$lib/utils/formatMoney';
 	import { formatOrderStatus } from '$lib/utils/formatOrderStatus';
 	import Receipt from 'lucide-svelte/icons/receipt';
+	import Undo2 from 'lucide-svelte/icons/undo-2';
 
 	let { data } = $props();
 
@@ -30,6 +31,13 @@
 			url: (item: { id: string }) => `/auth/settings/factures/${item.id}`,
 			icon: Receipt,
 			condition: (item: { hasFacture?: boolean }) => Boolean(item.hasFacture)
+		},
+		{
+			type: 'link' as const,
+			name: 'retour',
+			url: (item: { id: string }) => `/auth/settings/returns/${item.id}`,
+			icon: Undo2,
+			condition: (item: { hasFacture?: boolean }) => data.returnsEnabled && Boolean(item.hasFacture)
 		}
 	];
 </script>

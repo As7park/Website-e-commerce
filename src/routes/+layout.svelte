@@ -208,7 +208,7 @@
 			<div class="absolute top-0 left-0 z-[1] h-screen w-screen overflow-hidden">
 				<SmoothScrollBar>
 					<main class="max-w-[100vw] overflow-hidden">
-						<div class="ccc absolute z-[1] w-full" bind:this={contentRef}>
+						<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
 							{@render children()}
 						</div>
 					</main>
