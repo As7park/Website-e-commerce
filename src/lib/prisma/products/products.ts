@@ -104,7 +104,10 @@ export const deleteProductTaxonomyValues = async (productId: string) => {
 	return result;
 };
 
-export const connectProductToTaxonomyValues = async (productId: string, taxonomyValueIds: string[]) => {
+export const connectProductToTaxonomyValues = async (
+	productId: string,
+	taxonomyValueIds: string[]
+) => {
 	if (taxonomyValueIds.length === 0) return { count: 0 };
 	const result = await prisma.productTaxonomyValue.createMany({
 		data: taxonomyValueIds.map((taxonomyValueId) => ({ productId, taxonomyValueId }))

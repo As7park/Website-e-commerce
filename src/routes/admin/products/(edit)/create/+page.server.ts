@@ -6,7 +6,11 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import { createProductSchema } from '$lib/schema/products/productSchema';
 import { slugify } from '$lib/prisma/slugify';
-import { connectProductToCategories, connectProductToTaxonomyValues, createProduct } from '$lib/prisma/products/products';
+import {
+	connectProductToCategories,
+	connectProductToTaxonomyValues,
+	createProduct
+} from '$lib/prisma/products/products';
 import { getAllcategories, getCategoriesByIds } from '$lib/prisma/categories/categories';
 import { getAllMaterials } from '$lib/prisma/materials/materials';
 import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
@@ -90,7 +94,10 @@ export const actions: Actions = {
 
 		const taxonomyValueIdsString = formData.get('taxonomyValueIds') as string | null;
 		const taxonomyValueIds = taxonomyValueIdsString
-			? taxonomyValueIdsString.split(',').map((id) => id.trim()).filter(Boolean)
+			? taxonomyValueIdsString
+					.split(',')
+					.map((id) => id.trim())
+					.filter(Boolean)
 			: [];
 		if (taxonomyValueIds.length > 0) {
 			const existingValues = await getTaxonomyValuesByIds(taxonomyValueIds);

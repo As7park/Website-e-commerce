@@ -129,7 +129,11 @@
 						<Form.Control>
 							<Form.Label>Type de valeur</Form.Label>
 							<input type="hidden" name="type" value={typeValue} />
-							<Select.Root type="single" value={typeValue} onValueChange={(v) => (typeValue = v as keyof typeof typeLabels)}>
+							<Select.Root
+								type="single"
+								value={typeValue}
+								onValueChange={(v) => (typeValue = v as keyof typeof typeLabels)}
+							>
 								<Select.Trigger class="w-full">
 									<span>{typeLabels[typeValue] ?? typeValue}</span>
 								</Select.Trigger>

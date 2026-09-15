@@ -8,10 +8,7 @@ import { createTaxonomy } from '$lib/prisma/taxonomies/taxonomies';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
-	const IcreateTaxonomySchema = await superValidate(
-		{ multiple: true },
-		zod(createTaxonomySchema)
-	);
+	const IcreateTaxonomySchema = await superValidate({ multiple: true }, zod(createTaxonomySchema));
 	return { IcreateTaxonomySchema };
 };
 

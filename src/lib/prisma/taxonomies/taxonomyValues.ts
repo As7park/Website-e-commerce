@@ -103,7 +103,11 @@ export function resolveDescendantIds(values: TaxonomyValue[], valueId: string): 
 }
 
 /** Empêche d'assigner comme parent une valeur qui est elle-même un descendant (créerait un cycle). */
-export function wouldCreateCycle(values: TaxonomyValue[], valueId: string, candidateParentId: string): boolean {
+export function wouldCreateCycle(
+	values: TaxonomyValue[],
+	valueId: string,
+	candidateParentId: string
+): boolean {
 	if (valueId === candidateParentId) return true;
 	return resolveDescendantIds(values, valueId).includes(candidateParentId);
 }

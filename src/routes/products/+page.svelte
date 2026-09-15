@@ -17,9 +17,7 @@
 
 	let { data } = $props();
 
-	let activeCategoryId = $derived(data.activeCategoryId);
 	let products = $derived(data.products);
-	let categories = $derived(data.categories);
 	let facets = $derived(data.facets);
 	let page = $derived(data.page);
 	let search = $derived(data.search);
@@ -47,7 +45,9 @@
 	 * paramètre. Toute modification de filtre revient à la page 1, sauf si
 	 * `page` est explicitement fourni (pagination elle-même).
 	 */
-	function updateFilters(patch: Record<string, string | number | boolean | string[] | null | undefined>) {
+	function updateFilters(
+		patch: Record<string, string | number | boolean | string[] | null | undefined>
+	) {
 		const params = new URLSearchParams(appPage.url.search);
 		for (const [key, value] of Object.entries(patch)) {
 			params.delete(key);
@@ -63,20 +63,10 @@
 		goto(query ? `/products?${query}` : '/products', { keepFocus: true, noScroll: true });
 	}
 
-	function categoryHref(categoryId: string | null): string {
-		const params = new URLSearchParams(appPage.url.search);
-		params.delete('categorie');
-		params.delete('page');
-		if (categoryId) params.set('categorie', categoryId);
-		const query = params.toString();
-		return query ? `/products?${query}` : '/products';
-	}
-
-	function toggleMaterial(value: string) {
-		const next = data.materials.includes(value)
-			? data.materials.filter((m) => m !== value)
-			: [...data.materials, value];
-		updateFilters({ materiau: next });
+	function toggleTaxonomyValue(slug: string, value: string) {
+		const current = data.taxonomyFilters[slug] ?? [];
+		const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+		updateFilters({ [slug]: next });
 	}
 
 	function commitPriceRange() {
@@ -95,10 +85,16 @@
 		return query ? `/products?${query}` : '/products';
 	}
 
-	let clearSearchHref = $derived(categoryHref(activeCategoryId));
+	let clearSearchHref = $derived.by(() => {
+		const params = new URLSearchParams(appPage.url.search);
+		params.delete('q');
+		params.delete('page');
+		const query = params.toString();
+		return query ? `/products?${query}` : '/products';
+	});
 
 	let activeFilterCount = $derived(
-		data.materials.length +
+		Object.values(data.taxonomyFilters).reduce((sum, values) => sum + values.length, 0) +
 			(data.minPrice !== undefined ? 1 : 0) +
 			(data.maxPrice !== undefined ? 1 : 0) +
 			(data.inStockOnly ? 1 : 0)
@@ -110,37 +106,10 @@
 </script>
 
 {#snippet filterSections(idPrefix: string)}
-	<Accordion.Root type="multiple" value={['categories', 'materiau', 'prix', 'dispo']}>
-		<Accordion.Item value="categories">
-			<Accordion.Trigger>Catégories</Accordion.Trigger>
-			<Accordion.Content>
-				<ul class="space-y-1">
-					<li>
-						<a
-							href={categoryHref(null)}
-							class="block rounded px-2 py-1.5 text-sm {!activeCategoryId
-								? 'bg-accent font-medium'
-								: 'hover:bg-accent/50'}"
-						>
-							Toutes les catégories
-						</a>
-					</li>
-					{#each categories as category (category.id)}
-						<li>
-							<a
-								href={categoryHref(category.id)}
-								class="block rounded px-2 py-1.5 text-sm {activeCategoryId === category.id
-									? 'bg-accent font-medium'
-									: 'hover:bg-accent/50'}"
-							>
-								{category.name}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</Accordion.Content>
-		</Accordion.Item>
-
+	<Accordion.Root
+		type="multiple"
+		value={['prix', 'dispo', ...facets.taxonomies.map((t) => t.slug)]}
+	>
 		<Accordion.Item value="prix">
 			<Accordion.Trigger>Prix</Accordion.Trigger>
 			<Accordion.Content>
@@ -162,30 +131,37 @@
 			</Accordion.Content>
 		</Accordion.Item>
 
-		<Accordion.Item value="materiau">
-			<Accordion.Trigger>Matière</Accordion.Trigger>
-			<Accordion.Content>
-				{#if facets.materials.length === 0}
-					<p class="text-sm text-muted-foreground">Aucune matière disponible.</p>
-				{:else}
+		{#each facets.taxonomies as taxonomy (taxonomy.slug)}
+			<Accordion.Item value={taxonomy.slug}>
+				<Accordion.Trigger>{taxonomy.name}</Accordion.Trigger>
+				<Accordion.Content>
 					<ul class="space-y-2">
-						{#each facets.materials as material (material.value)}
+						{#each taxonomy.values as value (value.value)}
 							<li class="flex items-center gap-2">
 								<Checkbox
-									id="{idPrefix}materiau-{material.value}"
-									checked={data.materials.includes(material.value)}
-									onCheckedChange={() => toggleMaterial(material.value)}
+									id="{idPrefix}{taxonomy.slug}-{value.value}"
+									checked={(data.taxonomyFilters[taxonomy.slug] ?? []).includes(value.value)}
+									onCheckedChange={() => toggleTaxonomyValue(taxonomy.slug, value.value)}
 								/>
-								<Label for="{idPrefix}materiau-{material.value}" class="flex-1 text-sm font-normal">
-									{material.value}
+								<Label
+									for="{idPrefix}{taxonomy.slug}-{value.value}"
+									class="flex flex-1 items-center gap-2 text-sm font-normal"
+								>
+									{#if taxonomy.type === 'COLOR' && value.code}
+										<span
+											class="inline-block size-3 rounded-full border"
+											style={`background-color:${value.code}`}
+										></span>
+									{/if}
+									{value.label}
 								</Label>
-								<span class="text-xs text-muted-foreground">{material.count}</span>
+								<span class="text-xs text-muted-foreground">{value.count}</span>
 							</li>
 						{/each}
 					</ul>
-				{/if}
-			</Accordion.Content>
-		</Accordion.Item>
+				</Accordion.Content>
+			</Accordion.Item>
+		{/each}
 
 		<Accordion.Item value="dispo">
 			<Accordion.Trigger>Disponibilité</Accordion.Trigger>
@@ -207,7 +183,13 @@
 			variant="ghost"
 			size="sm"
 			class="mt-2 w-full justify-start text-muted-foreground"
-			onclick={() => updateFilters({ materiau: [], prixMin: null, prixMax: null, dispo: null })}
+			onclick={() =>
+				updateFilters({
+					...Object.fromEntries(facets.taxonomies.map((t) => [t.slug, []])),
+					prixMin: null,
+					prixMax: null,
+					dispo: null
+				})}
 		>
 			<X class="mr-2 size-4" />
 			Réinitialiser les filtres ({activeFilterCount})
@@ -219,14 +201,17 @@
 	<h1 class="mb-6 text-center text-[1.75rem] font-light tracking-tight">Offres</h1>
 
 	<form method="GET" action="/products" class="mx-auto mb-8 flex max-w-sm items-center gap-2">
-		{#if activeCategoryId}
-			<input type="hidden" name="categorie" value={activeCategoryId} />
-		{/if}
 		<div class="relative flex-1">
 			<Search
 				class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
 			/>
-			<Input type="search" name="q" value={search} placeholder="Rechercher un produit" class="pl-8" />
+			<Input
+				type="search"
+				name="q"
+				value={search}
+				placeholder="Rechercher un produit"
+				class="pl-8"
+			/>
 		</div>
 		<Button type="submit" variant="outline" size="sm">Rechercher</Button>
 		{#if search}

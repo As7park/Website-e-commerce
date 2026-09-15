@@ -63,7 +63,10 @@
 							checked={isSelected(value.id)}
 							onCheckedChange={() => toggleMultiple(value.id)}
 						/>
-						<Label for={`taxonomy-value-${value.id}`} class="flex items-center gap-2 text-sm font-medium">
+						<Label
+							for={`taxonomy-value-${value.id}`}
+							class="flex items-center gap-2 text-sm font-medium"
+						>
 							{#if taxonomy.type === 'COLOR' && value.code}
 								<span
 									class="inline-block w-4 h-4 rounded-full border"

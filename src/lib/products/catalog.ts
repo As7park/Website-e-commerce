@@ -5,11 +5,19 @@
 // à muter un produit. Les écritures restent dans les DAO Prisma, derrière les
 // gardes admin. Retirer le module, pour ce fichier-là, se résume à ne plus
 // appeler ces lecteurs depuis les routes `/products`.
+//
+// Les filtres (« Catégorie », « Matière », ...) sont tous portés par le
+// système générique de taxonomies (`$lib/prisma/taxonomies`) : chaque
+// `Taxonomy.slug` devient un paramètre d'URL (`?categorie=`, `?matiere=`...),
+// et ses `TaxonomyValue.value` les valeurs sélectionnables. Sélectionner un
+// parent inclut ses descendants (hiérarchie).
 // -----------------------------------------------------------------------------
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '$lib/server';
 import { cached, getCacheVersion } from '$lib/server/cache';
+import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
+import { resolveDescendantIds } from '$lib/prisma/taxonomies/taxonomyValues';
 
 const publicProductInclude = {
 	categories: {
@@ -17,7 +25,8 @@ const publicProductInclude = {
 			category: true
 		}
 	},
-	material: true
+	material: true,
+	taxonomyValues: { include: { taxonomyValue: { include: { taxonomy: true } } } }
 } as const;
 
 export type PublicProduct = Awaited<ReturnType<typeof listProducts>>['products'][number];
@@ -25,8 +34,8 @@ export type PublicProduct = Awaited<ReturnType<typeof listProducts>>['products']
 // Lectures publiques fréquentes, écritures rares : mises en cache Redis 60 s
 // (TTL court pour limiter le risque de données périmées). Un seul numéro de
 // version pour tout le catalogue — bumpé par les DAO d'écriture de
-// `$lib/prisma/products` et `$lib/prisma/categories` — invalide en une seule
-// opération produits et catégories, sans avoir à énumérer chaque clé filtrée.
+// `$lib/prisma/products` et `$lib/prisma/taxonomies` — invalide en une seule
+// opération produits et taxonomies, sans avoir à énumérer chaque clé filtrée.
 const CACHE_NAMESPACE = 'catalog';
 const CACHE_TTL_SECONDS = 60;
 const PRODUCTS_PER_PAGE = 24;
@@ -34,6 +43,29 @@ const PRODUCTS_PER_PAGE = 24;
 async function catalogKey(name: string): Promise<string> {
 	const version = await getCacheVersion(CACHE_NAMESPACE);
 	return `${CACHE_NAMESPACE}:v${version}:${name}`;
+}
+
+type TaxonomiesWithValues = Awaited<ReturnType<typeof getAllTaxonomiesWithValues>>;
+
+async function getCachedTaxonomiesWithValues(): Promise<TaxonomiesWithValues> {
+	const key = await catalogKey('taxonomies-with-values');
+	return cached(key, CACHE_TTL_SECONDS, () => getAllTaxonomiesWithValues());
+}
+
+/** Ids de la taxonomie `slug` correspondant aux `value` sélectionnées, descendants inclus. */
+function resolveTaxonomyValueIds(
+	taxonomies: TaxonomiesWithValues,
+	slug: string,
+	selectedValues: string[]
+): string[] {
+	const taxonomy = taxonomies.find((t) => t.slug === slug);
+	if (!taxonomy) return [];
+
+	const ids = new Set<string>();
+	for (const match of taxonomy.values.filter((v) => selectedValues.includes(v.value))) {
+		for (const id of resolveDescendantIds(taxonomy.values, match.id)) ids.add(id);
+	}
+	return [...ids];
 }
 
 export type ProductSort = 'pertinence' | 'prix-asc' | 'prix-desc' | 'nouveaute';
@@ -46,30 +78,38 @@ const SORT_ORDER_BY: Record<ProductSort, Prisma.ProductOrderByWithRelationInput>
 };
 
 export interface ListProductsOptions {
-	categoryId?: string;
 	page?: number;
 	search?: string;
-	/** Facette « Matière » — OR entre les valeurs sélectionnées. */
-	materials?: string[];
+	/** Slug de taxonomie -> valeurs sélectionnées. OR dans une taxonomie, AND entre elles. */
+	taxonomyFilters?: Record<string, string[]>;
 	minPrice?: number;
 	maxPrice?: number;
 	inStockOnly?: boolean;
 	sort?: ProductSort;
 }
 
-function buildWhere({
-	categoryId,
-	search,
-	materials,
-	minPrice,
-	maxPrice,
-	inStockOnly
-}: ListProductsOptions): Prisma.ProductWhereInput {
+/**
+ * `excludeSlug` retire le filtre de cette taxonomie du `where` — utilisé par
+ * `getCatalogFacets` pour qu'une valeur cochée ne fasse pas disparaître les
+ * autres valeurs de sa propre facette (seules les *autres* facettes + la
+ * recherche réduisent l'ensemble affiché, comme la plupart des vitrines).
+ */
+async function buildWhere(
+	{ search, taxonomyFilters, minPrice, maxPrice, inStockOnly }: ListProductsOptions,
+	excludeSlug?: string
+): Promise<Prisma.ProductWhereInput> {
 	const normalizedSearch = search?.trim() || undefined;
-	const normalizedMaterials = materials?.filter(Boolean);
+	const taxonomies = await getCachedTaxonomiesWithValues();
+
+	const taxonomyConditions: Prisma.ProductWhereInput[] = [];
+	for (const [slug, values] of Object.entries(taxonomyFilters ?? {})) {
+		if (slug === excludeSlug || !values?.length) continue;
+		const valueIds = resolveTaxonomyValueIds(taxonomies, slug, values);
+		if (valueIds.length === 0) continue;
+		taxonomyConditions.push({ taxonomyValues: { some: { taxonomyValueId: { in: valueIds } } } });
+	}
 
 	return {
-		...(categoryId ? { categories: { some: { categoryId } } } : {}),
 		...(normalizedSearch
 			? {
 					OR: [
@@ -78,17 +118,22 @@ function buildWhere({
 					]
 				}
 			: {}),
-		...(normalizedMaterials?.length ? { material: { name: { in: normalizedMaterials } } } : {}),
+		...(taxonomyConditions.length ? { AND: taxonomyConditions } : {}),
 		...(inStockOnly ? { stock: { gt: 0 } } : {}),
 		...(minPrice !== undefined || maxPrice !== undefined
-			? { price: { ...(minPrice !== undefined ? { gte: minPrice } : {}), ...(maxPrice !== undefined ? { lte: maxPrice } : {}) } }
+			? {
+					price: {
+						...(minPrice !== undefined ? { gte: minPrice } : {}),
+						...(maxPrice !== undefined ? { lte: maxPrice } : {})
+					}
+				}
 			: {})
 	};
 }
 
 /**
- * Liste les produits selon les filtres combinables de la vitrine (catégorie,
- * recherche texte, matière, prix, disponibilité) et un tri — paginée
+ * Liste les produits selon les filtres combinables de la vitrine (taxonomies,
+ * recherche texte, prix, disponibilité) et un tri — paginée
  * (`PRODUCTS_PER_PAGE` par page) pour ne jamais charger tout le catalogue en
  * mémoire. Chaque paramètre fait partie de la clé de cache : deux résultats
  * différents ne doivent jamais partager la même entrée.
@@ -96,11 +141,9 @@ function buildWhere({
 export async function listProducts(options: ListProductsOptions = {}) {
 	const safePage = Math.max(1, Math.floor(options.page ?? 1));
 	const sort = options.sort ?? 'pertinence';
-	const where = buildWhere(options);
+	const where = await buildWhere(options);
 
-	const key = await catalogKey(
-		`products:${JSON.stringify({ ...options, page: safePage, sort })}`
-	);
+	const key = await catalogKey(`products:${JSON.stringify({ ...options, page: safePage, sort })}`);
 	return cached(key, CACHE_TTL_SECONDS, async () => {
 		const [products, total] = await Promise.all([
 			prisma.product.findMany({
@@ -117,41 +160,67 @@ export async function listProducts(options: ListProductsOptions = {}) {
 	});
 }
 
+export interface TaxonomyFacet {
+	slug: string;
+	name: string;
+	type: string;
+	values: { value: string; label: string; code: string | null; count: number }[];
+}
+
 export interface CatalogFacets {
-	materials: { value: string; count: number }[];
+	taxonomies: TaxonomyFacet[];
 	priceBounds: { min: number; max: number };
 }
 
 /**
- * Options de filtre disponibles pour la catégorie/recherche courantes —
- * matières présentes et bornes de prix. Volontairement calculées sans tenir
- * compte de la matière/du prix déjà sélectionnés (sinon une case cochée
- * ferait disparaître sa propre option) : seuls catégorie et recherche
- * réduisent l'ensemble de départ, comme sur la plupart des vitrines.
+ * Options de filtre disponibles pour la recherche/les filtres courants — une
+ * facette par taxonomie (valeurs présentes + comptage) et bornes de prix.
  */
-export async function getCatalogFacets(categoryId?: string, search?: string): Promise<CatalogFacets> {
-	const where = buildWhere({ categoryId, search });
-	const key = await catalogKey(`facets:${JSON.stringify({ categoryId, search })}`);
+export async function getCatalogFacets(
+	taxonomyFilters?: Record<string, string[]>,
+	search?: string
+): Promise<CatalogFacets> {
+	const key = await catalogKey(`facets:${JSON.stringify({ taxonomyFilters, search })}`);
 
 	return cached(key, CACHE_TTL_SECONDS, async () => {
-		const [materialRows, priceAgg] = await Promise.all([
-			prisma.material.findMany({
-				where: { products: { some: where } },
-				select: { name: true, _count: { select: { products: { where } } } }
-			}),
+		const taxonomies = await getCachedTaxonomiesWithValues();
+
+		const [taxonomyFacets, priceAgg] = await Promise.all([
+			Promise.all(
+				taxonomies.map(async (taxonomy) => {
+					const where = await buildWhere({ search, taxonomyFilters }, taxonomy.slug);
+					const rows = await prisma.taxonomyValue.findMany({
+						where: { taxonomyId: taxonomy.id },
+						select: {
+							value: true,
+							label: true,
+							code: true,
+							_count: { select: { products: { where: { product: where } } } }
+						}
+					});
+
+					const values = rows
+						.map((row) => ({
+							value: row.value,
+							label: row.label || row.value,
+							code: row.code,
+							count: row._count.products
+						}))
+						.filter((v) => v.count > 0)
+						.sort((a, b) => b.count - a.count);
+
+					return { slug: taxonomy.slug, name: taxonomy.name, type: taxonomy.type, values };
+				})
+			),
 			prisma.product.aggregate({
-				where,
+				where: await buildWhere({ search, taxonomyFilters }),
 				_min: { price: true },
 				_max: { price: true }
 			})
 		]);
 
-		const materials = materialRows
-			.map((row) => ({ value: row.name, count: row._count.products }))
-			.sort((a, b) => b.count - a.count);
-
 		return {
-			materials,
+			taxonomies: taxonomyFacets.filter((t) => t.values.length > 0),
 			priceBounds: {
 				min: Math.floor(priceAgg._min.price ?? 0),
 				max: Math.ceil(priceAgg._max.price ?? 0)
@@ -192,16 +261,6 @@ export async function getRelatedProducts(productId: string, categoryIds: string[
 			include: publicProductInclude,
 			orderBy: { createdAt: 'desc' },
 			take: RELATED_PRODUCTS_LIMIT
-		})
-	);
-}
-
-/** Catégories du catalogue, pour le filtre de la vitrine. */
-export async function listCategories() {
-	const key = await catalogKey('categories');
-	return cached(key, CACHE_TTL_SECONDS, () =>
-		prisma.category.findMany({
-			orderBy: { name: 'asc' }
 		})
 	);
 }

@@ -118,11 +118,7 @@
 						<Form.Field name="parentId" form={createTaxonomyValue}>
 							<Form.Control>
 								<Form.Label>Valeur parente (facultatif)</Form.Label>
-								<input
-									type="hidden"
-									name="parentId"
-									value={$createTaxonomyValueData.parentId}
-								/>
+								<input type="hidden" name="parentId" value={$createTaxonomyValueData.parentId} />
 								<Select.Root
 									type="single"
 									value={parentSelectValue}
