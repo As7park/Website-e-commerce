@@ -266,7 +266,9 @@
 
 			<div class="flex flex-col gap-3 mb-5 w-full sm:flex-row sm:items-center sm:justify-between">
 				<div class="relative w-full sm:max-w-xs">
-					<Search class="text-muted-foreground pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2" />
+					<Search
+						class="text-muted-foreground pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2"
+					/>
 					<Input
 						type="text"
 						placeholder="Cherchez dans le tableau"
@@ -335,7 +337,8 @@
 				</div>
 			</div>
 
-			{#snippet actionButton(item: TableItem, action: TableAction)}
+			{#snippet actionButton(item: TableItem, action: TableAction, view: 'table' | 'card')}
+				{@const dialogKey = `${view}:${item.id}`}
 				{#if (!action.condition || action.condition(item)) && action.type === 'link'}
 					<Tooltip.Provider>
 						<Tooltip.Root>
@@ -360,12 +363,14 @@
 					</Tooltip.Provider>
 				{:else if (!action.condition || action.condition(item)) && action.type === 'form'}
 					<AlertDialog.Root
-						open={dialogOpenId === item.id}
+						open={dialogOpenId === dialogKey}
 						onOpenChange={(open) => {
-							dialogOpenId = open ? item.id : null;
+							dialogOpenId = open ? dialogKey : null;
 						}}
 					>
-						<AlertDialog.Trigger class={cn(buttonVariants({ variant: 'outline' }), 'm-1 p-1 text-xs')}>
+						<AlertDialog.Trigger
+							class={cn(buttonVariants({ variant: 'outline' }), 'm-1 p-1 text-xs')}
+						>
 							{#if action.icon}
 								<action.icon class="h-4 w-4 inline" />
 							{/if}
@@ -379,7 +384,8 @@
 								</AlertDialog.Description>
 							</AlertDialog.Header>
 							<AlertDialog.Footer>
-								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}>Cancel</AlertDialog.Cancel>
+								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}>Cancel</AlertDialog.Cancel
+								>
 
 								<form method="POST" action={action.url} use:action.enhanceAction>
 									<input type="hidden" name="id" value={item.id} />
@@ -394,7 +400,9 @@
 			{/snippet}
 
 			{#if paginatedItems.length === 0}
-				<div class="flex flex-col items-center justify-center gap-3 rounded border py-16 text-center">
+				<div
+					class="flex flex-col items-center justify-center gap-3 rounded border py-16 text-center"
+				>
 					<SearchX class="text-muted-foreground size-10" />
 					<div>
 						<p class="font-medium">Aucun résultat</p>
@@ -405,101 +413,102 @@
 						</p>
 					</div>
 					{#if searchQuery}
-						<Button variant="outline" onclick={() => (searchQuery = '')}>Effacer la recherche</Button>
+						<Button variant="outline" onclick={() => (searchQuery = '')}
+							>Effacer la recherche</Button
+						>
 					{/if}
 				</div>
 			{:else}
+				<div class="relative">
+					{#if isNavigating}
+						<div
+							class="bg-background/60 absolute inset-0 z-10 flex items-center justify-center rounded"
+						>
+							<LoaderCircle class="text-muted-foreground size-6 animate-spin" />
+						</div>
+					{/if}
 
-			<div class="relative">
-				{#if isNavigating}
-					<div
-						class="bg-background/60 absolute inset-0 z-10 flex items-center justify-center rounded"
-					>
-						<LoaderCircle class="text-muted-foreground size-6 animate-spin" />
-					</div>
-				{/if}
-
-				<!-- Vue tableau (écrans md et plus) -->
-				<div class="border rounded hidden overflow-x-auto md:block">
-				<Table.Root>
-					<Table.Header>
-						<Table.Row>
-							{#each visibleColumns as column}
-								<Table.Head class="border-r border-r-gray-800 pr-2">
-									<div class="rcb">
-										{column.label}
-										<button onclick={() => sortItems(column.key)}>
-											<ChevronDown class="cursor-pointer" />
-										</button>
-									</div>
-								</Table.Head>
-							{/each}
-						</Table.Row>
-					</Table.Header>
-					<Table.Body>
-						{#each paginatedItems as item (item.id)}
-							<TableRow>
-								{#each visibleColumns as column}
-									<td class="border border-gray-300 p-2">
-										{#if column.key === 'images'}
-											{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
-										{:else if column.formatter}
-											<!-- Si la colonne a un formatter, appliquez-le -->
-											{column.formatter(item[column.key])}
-										{:else}
-											<!-- Sinon, affichez la valeur brute -->
-											{item[column.key]}
-										{/if}
-									</td>
-								{/each}
-
-								{#if actions && actions.length > 0}
-									{#each actions as action}
-										<TableCell>
-											{@render actionButton(item, action)}
-										</TableCell>
+					<!-- Vue tableau (écrans md et plus) -->
+					<div class="border rounded hidden overflow-x-auto md:block">
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									{#each visibleColumns as column}
+										<Table.Head class="border-r border-r-gray-800 pr-2">
+											<div class="rcb">
+												{column.label}
+												<button onclick={() => sortItems(column.key)}>
+													<ChevronDown class="cursor-pointer" />
+												</button>
+											</div>
+										</Table.Head>
 									{/each}
-								{/if}
-							</TableRow>
-						{/each}
-					</Table.Body>
-				</Table.Root>
-				</div>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each paginatedItems as item (item.id)}
+									<TableRow>
+										{#each visibleColumns as column}
+											<td class="border border-gray-300 p-2">
+												{#if column.key === 'images'}
+													{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
+												{:else if column.formatter}
+													<!-- Si la colonne a un formatter, appliquez-le -->
+													{column.formatter(item[column.key])}
+												{:else}
+													<!-- Sinon, affichez la valeur brute -->
+													{item[column.key]}
+												{/if}
+											</td>
+										{/each}
 
-				<!-- Vue cartes (mobile, sous md) : un tableau large avec plusieurs
+										{#if actions && actions.length > 0}
+											{#each actions as action}
+												<TableCell>
+													{@render actionButton(item, action, 'table')}
+												</TableCell>
+											{/each}
+										{/if}
+									</TableRow>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					</div>
+
+					<!-- Vue cartes (mobile, sous md) : un tableau large avec plusieurs
 				     colonnes force un scroll horizontal illisible sur petit écran ;
 				     une carte par ligne (libellé/valeur empilés) reste lisible. -->
-				<div class="space-y-3 md:hidden">
-					{#each paginatedItems as item (item.id)}
-						<div class="rounded border p-3">
-							<dl class="space-y-1.5">
-								{#each visibleColumns as column}
-									<div class="flex items-baseline justify-between gap-3">
-										<dt class="text-muted-foreground text-xs shrink-0">{column.label}</dt>
-										<dd class="text-sm text-right break-words">
-											{#if column.key === 'images'}
-												{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
-											{:else if column.formatter}
-												{column.formatter(item[column.key])}
-											{:else}
-												{item[column.key]}
-											{/if}
-										</dd>
-									</div>
-								{/each}
-							</dl>
-
-							{#if actions && actions.length > 0}
-								<div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
-									{#each actions as action}
-										{@render actionButton(item, action)}
+					<div class="space-y-3 md:hidden">
+						{#each paginatedItems as item (item.id)}
+							<div class="rounded border p-3">
+								<dl class="space-y-1.5">
+									{#each visibleColumns as column}
+										<div class="flex items-baseline justify-between gap-3">
+											<dt class="text-muted-foreground text-xs shrink-0">{column.label}</dt>
+											<dd class="text-sm text-right break-words">
+												{#if column.key === 'images'}
+													{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
+												{:else if column.formatter}
+													{column.formatter(item[column.key])}
+												{:else}
+													{item[column.key]}
+												{/if}
+											</dd>
+										</div>
 									{/each}
-								</div>
-							{/if}
-						</div>
-					{/each}
+								</dl>
+
+								{#if actions && actions.length > 0}
+									<div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+										{#each actions as action}
+											{@render actionButton(item, action, 'card')}
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
 				</div>
-			</div>
 			{/if}
 
 			{#if paginatedItems.length > 0}
@@ -547,7 +556,10 @@
 
 						{#if totalPages > 9}
 							<form class="flex items-center gap-1.5" onsubmit={submitJumpToPage}>
-								<Label for="table-jump-to-page" class="text-muted-foreground text-xs whitespace-nowrap">
+								<Label
+									for="table-jump-to-page"
+									class="text-muted-foreground text-xs whitespace-nowrap"
+								>
 									Aller à la page
 								</Label>
 								<Input

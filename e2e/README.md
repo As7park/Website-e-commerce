@@ -1,12 +1,17 @@
 # Tests end-to-end
 
-La suite Playwright couvre cinq domaines, exécutés en séquence (un seul worker) :
+La suite Playwright couvre les domaines suivants, exécutés en séquence (un seul
+worker) :
 
 - authentification : un parcours unique, `e2e/auth/journey.spec.ts` ;
-- administration : accès (`e2e/admin/security.spec.ts`) et CRUD des comptes
-  (`e2e/admin/users.spec.ts`) ;
-- catalogue : vitrine (`e2e/products/catalog.spec.ts`) et CRUD admin produits
-  (`e2e/products/admin.spec.ts`) ;
+- administration : accès (`e2e/admin/security.spec.ts`), CRUD des comptes
+  (`e2e/admin/users.spec.ts`), modules e-commerce optionnels
+  (`e2e/admin/settings.spec.ts`) et export/purge/import CSV
+  (`e2e/admin/exports.spec.ts`) ;
+- catalogue : vitrine (`e2e/products/catalog.spec.ts`), CRUD admin produits
+  (`e2e/products/admin.spec.ts`), taxonomie matières
+  (`e2e/products/materials.spec.ts`), avis produit (`e2e/products/reviews.spec.ts`)
+  et liste d'envies (`e2e/products/wishlist.spec.ts`) ;
 - commerce : panier (connecté + invité), checkout, webhook Stripe, ventes
   (`e2e/commerce/*.spec.ts`) ;
 - blog : vitrine (`e2e/blog/catalog.spec.ts`) et CRUD admin articles
@@ -18,14 +23,6 @@ La suite Playwright couvre cinq domaines, exécutés en séquence (un seul worke
 - services live : Brevo (`e2e/live/brevo.spec.ts`), Sendcloud
   (`e2e/live/sendcloud.spec.ts`) et Cloudinary (`e2e/live/cloudinary.spec.ts`),
   ignorés si les clés sont factices.
-
-> **Couverture manquante (15/09/2026)** : les fonctionnalités matières
-> (`Material`), avis produit (`Review`), liste d'envies (`WishlistItem`),
-> réglages boutique (`StoreSettings`, `/admin/settings`) et import/purge CSV
-> (`/admin/exports`) n'ont pas encore de spec Playwright. Documentées dans
-> [docs/products](../docs/products/README.md#avis-produit) et
-> [docs/admin](../docs/admin/README.md#modules-e-commerce-optionnels---adminsettings),
-> mais sans preuve automatisée pour l'instant.
 
 ## Authentification
 
@@ -104,26 +101,26 @@ confirmé par l'interface **et** par l'état en base.
 
 Un seul scénario continu (les états s'enchaînent).
 
-| # | Étape | Refusé | Accepté |
-| - | ----- | ------ | ------- |
-| 1 | Les pages protégées sont fermées aux visiteurs anonymes | 9 routes `GUARDED_PAGES` | redirection login / mot de passe oublié |
-| 2 | Inscription : les saisies invalides sont refusées | pseudo court, email HTML, 5 règles MDP | reste sur `/auth/signup`, pas de session |
-| 3 | Inscription : le compte est créé, non vérifié | — | session, `emailVerified=false`, hash argon |
-| 4 | Vérification de l'adresse : les codes invalides sont rejetés | code trop court, code inexistant | `emailVerified` reste faux |
-| 5 | Vérification de l'adresse : un renvoi invalide le code précédent | ancien code après « Renvoyer » | nouveau code → `/auth`, vérifié |
-| 6 | Mot de passe : un mot de passe courant erroné ne change rien | MDP trop court, courant faux | hash inchangé |
-| 7 | Mot de passe : le changement révoque les autres sessions | — | 1 session, cookie conservé |
-| 8 | Connexion : les identifiants erronés sont refusés | compte inconnu, ancien MDP, MDP faux | pas de cookie |
-| 9 | Connexion : le nouveau mot de passe est accepté | — | redirection `/` |
-| 10 | Changement d'email : une adresse déjà prise est refusée | email occupé | email du compte inchangé |
-| 11 | Changement d'email : effectif après validation du code | avant le code, email encore l'ancien | code reçu sur la **nouvelle** adresse |
-| 12 | Mot de passe oublié : demande et code invalides | email inconnu, code faux, GET `/reset-password` | reste sur verify-email |
-| 13 | Mot de passe oublié : réinitialisation avec le bon code | MDP trop court | 1 session, `/auth` |
-| 14 | 2FA : un code de configuration invalide n’enregistre rien | TOTP court / faux | `totpKey` reste null |
-| 15 | 2FA : configuration acceptée et code de secours délivré | — | code affiché = code chiffré en base |
-| 16 | 2FA : la session reste bridée jusqu’à la saisie du code | TOTP faux, GET `/auth/settings` | après Verify → `/auth` |
-| 17 | Code de secours : refusé s’il est faux, à usage unique sinon | trop court, faux | 2FA retirée, nouveau recovery |
-| 18 | Reconfiguration de la 2FA puis déconnexion complète | TOTP calculé sur une clé périmée | setup OK, `signOut`, 0 session |
+| #   | Étape                                                            | Refusé                                          | Accepté                                    |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| 1   | Les pages protégées sont fermées aux visiteurs anonymes          | 9 routes `GUARDED_PAGES`                        | redirection login / mot de passe oublié    |
+| 2   | Inscription : les saisies invalides sont refusées                | pseudo court, email HTML, 5 règles MDP          | reste sur `/auth/signup`, pas de session   |
+| 3   | Inscription : le compte est créé, non vérifié                    | —                                               | session, `emailVerified=false`, hash argon |
+| 4   | Vérification de l'adresse : les codes invalides sont rejetés     | code trop court, code inexistant                | `emailVerified` reste faux                 |
+| 5   | Vérification de l'adresse : un renvoi invalide le code précédent | ancien code après « Renvoyer »                  | nouveau code → `/auth`, vérifié            |
+| 6   | Mot de passe : un mot de passe courant erroné ne change rien     | MDP trop court, courant faux                    | hash inchangé                              |
+| 7   | Mot de passe : le changement révoque les autres sessions         | —                                               | 1 session, cookie conservé                 |
+| 8   | Connexion : les identifiants erronés sont refusés                | compte inconnu, ancien MDP, MDP faux            | pas de cookie                              |
+| 9   | Connexion : le nouveau mot de passe est accepté                  | —                                               | redirection `/`                            |
+| 10  | Changement d'email : une adresse déjà prise est refusée          | email occupé                                    | email du compte inchangé                   |
+| 11  | Changement d'email : effectif après validation du code           | avant le code, email encore l'ancien            | code reçu sur la **nouvelle** adresse      |
+| 12  | Mot de passe oublié : demande et code invalides                  | email inconnu, code faux, GET `/reset-password` | reste sur verify-email                     |
+| 13  | Mot de passe oublié : réinitialisation avec le bon code          | MDP trop court                                  | 1 session, `/auth`                         |
+| 14  | 2FA : un code de configuration invalide n’enregistre rien        | TOTP court / faux                               | `totpKey` reste null                       |
+| 15  | 2FA : configuration acceptée et code de secours délivré          | —                                               | code affiché = code chiffré en base        |
+| 16  | 2FA : la session reste bridée jusqu’à la saisie du code          | TOTP faux, GET `/auth/settings`                 | après Verify → `/auth`                     |
+| 17  | Code de secours : refusé s’il est faux, à usage unique sinon     | trop court, faux                                | 2FA retirée, nouveau recovery              |
+| 18  | Reconfiguration de la 2FA puis déconnexion complète              | TOTP calculé sur une clé périmée                | setup OK, `signOut`, 0 session             |
 
 Test à part : déconnexion depuis le tiroir panier (`signOutFromCart`) — cookie
 absent, 0 session, GET `/auth/settings` → `/auth/login`.
@@ -134,34 +131,62 @@ Constantes du spec à ajuster en même temps : `GUARDED_PAGES`, `WEAK_PASSWORDS`
 
 Routes fermées : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Un visiteur anonyme est renvoyé à la connexion | GET chaque `ADMIN_PATHS` | `/auth/login` |
-| 2 | Un CLIENT est renvoyé à l’accueil | inscription + GET chaque path | `/` |
-| 3 | Un CLIENT ne peut pas muter (users, promo) | POST `?/deleteUser`, `?/deletePromo` | lignes encore en base |
-| 4 | Un ADMIN atteint le tableau de bord et les comptes | `promoteToAdmin` + GET `/admin`, `/admin/users` | titres Accueil / Utilisateurs |
+| #   | Étape                                              | Geste                                           | Preuve                        |
+| --- | -------------------------------------------------- | ----------------------------------------------- | ----------------------------- |
+| 1   | Un visiteur anonyme est renvoyé à la connexion     | GET chaque `ADMIN_PATHS`                        | `/auth/login`                 |
+| 2   | Un CLIENT est renvoyé à l’accueil                  | inscription + GET chaque path                   | `/`                           |
+| 3   | Un CLIENT ne peut pas muter (users, promo)         | POST `?/deleteUser`, `?/deletePromo`            | lignes encore en base         |
+| 4   | Un ADMIN atteint le tableau de bord et les comptes | `promoteToAdmin` + GET `/admin`, `/admin/users` | titres Accueil / Utilisateurs |
 
 ### Admin utilisateurs — `e2e/admin/users.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste affiche les emails, sans secret | recherche dans le tableau | 3 emails visibles ; pas de hash / totp / recovery |
-| 2 | Promotion CLIENT → ADMIN | crayon « edit » → menu ADMIN → Save | URL `/admin/users/:id`, `role === ADMIN` |
-| 3 | Un rôle hors enum est refusé | POST `SUPERUSER` | `role` reste `CLIENT` |
-| 4 | La MFA se bascule depuis la fiche | checkbox + Save | `isMfaEnabled === true` |
-| 5 | Suppression d’un CLIENT | dialogue Continue | disparu du tableau **et** de la base |
+| #   | Étape                                    | Geste                               | Preuve                                            |
+| --- | ---------------------------------------- | ----------------------------------- | ------------------------------------------------- |
+| 1   | La liste affiche les emails, sans secret | recherche dans le tableau           | 3 emails visibles ; pas de hash / totp / recovery |
+| 2   | Promotion CLIENT → ADMIN                 | crayon « edit » → menu ADMIN → Save | URL `/admin/users/:id`, `role === ADMIN`          |
+| 3   | Un rôle hors enum est refusé             | POST `SUPERUSER`                    | `role` reste `CLIENT`                             |
+| 4   | La MFA se bascule depuis la fiche        | checkbox + Save                     | `isMfaEnabled === true`                           |
+| 5   | Suppression d’un CLIENT                  | dialogue Continue                   | disparu du tableau **et** de la base              |
 
 Test à part (sans numéro) : un CLIENT qui GET `/admin/users/:id` d'un autre
 compte est renvoyé à `/`.
 
+### Admin modules e-commerce — `e2e/admin/settings.spec.ts`
+
+| #   | Étape                                         | Geste                 | Preuve                                      |
+| --- | --------------------------------------------- | --------------------- | ------------------------------------------- |
+| 1   | Les modules apparaissent désactivés au départ | GET `/admin/settings` | `data-state="unchecked"` sur les 5 switches |
+| 2   | Activer la liste d'envies et enregistrer      | switch + Enregistrer  | `StoreSettings.wishlistEnabled === true`    |
+| 3   | Rechargée, la page reflète l'état enregistré  | reload                | `data-state="checked"` sur le bon switch    |
+
+Test à part : un CLIENT POST sur `/admin/settings` — les réglages en base ne
+changent pas.
+
+### Admin exports — `e2e/admin/exports.spec.ts`
+
+La purge est jouée sur `products`, avec un seuil de 365 jours (le préréglage de
+l'UI) et des lignes vieillies de 400 jours (`createOldCatalogProduct`) — jamais
+un seuil de 0 jour, qui recouperait aussi les fiches fraîches d'autres specs.
+
+| #   | Étape                                                                | Geste                                  | Preuve                                                       |
+| --- | -------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| 1   | Export CSV téléchargeable, colonnes attendues                        | GET `/admin/exports/products`          | `Content-Type: text/csv`, en-tête et nom du produit présents |
+| 2   | Aperçu de purge : compte les lignes de plus de 365 jours             | Prévisualiser                          | delta de +2 par rapport à la base                            |
+| 3   | Purge : supprime la ligne libre, ignore la ligne liée à une commande | Confirmer la suppression               | `1 ligne(s) supprimée(s), 1 ignorée(s)`                      |
+| 4   | Réimport : une ligne modifiée met à jour le prix                     | Importer un CSV réexporté puis modifié | `0 créé(s), 1 mis à jour`, prix changé en base               |
+
+Le blocage anonyme/CLIENT de `/admin/exports`, `/admin/exports/products` et
+`/admin/exports/products/purge` est couvert par `ADMIN_PATHS` dans
+`e2e/admin/security.spec.ts`, pas dupliqué ici.
+
 ### Catalogue vitrine — `e2e/products/catalog.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste affiche le nom Prisma | GET `/products` | titres Catalogue + nom, lien catégorie |
-| 2 | La fiche s’ouvre par slug | GET `/products/[slug]` | nom, prix, ligne en base |
-| 3 | Un slug inconnu renvoie 404 | GET slug absent | statut 404 |
-| 4 | Pas d’UI d’édition admin sur la vitrine | HTML de `/products` | pas de `/admin/products` ni `passwordHash` |
+| #   | Étape                                   | Geste                  | Preuve                                     |
+| --- | --------------------------------------- | ---------------------- | ------------------------------------------ |
+| 1   | La liste affiche le nom Prisma          | GET `/products`        | titres Catalogue + nom, lien catégorie     |
+| 2   | La fiche s’ouvre par slug               | GET `/products/[slug]` | nom, prix, ligne en base                   |
+| 3   | Un slug inconnu renvoie 404             | GET slug absent        | statut 404                                 |
+| 4   | Pas d’UI d’édition admin sur la vitrine | HTML de `/products`    | pas de `/admin/products` ni `passwordHash` |
 
 ### Catalogue admin — `e2e/products/admin.spec.ts`
 
@@ -169,28 +194,63 @@ Les produits du CRUD courant sont posés en Prisma (`createCatalogProduct`).
 L'upload Cloudinary est un spec live (`e2e/live/cloudinary.spec.ts`), joué
 seulement si `CLOUDINARY_*` n'est pas factice.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste admin affiche les produits | GET `/admin/products`, recherche | ligne du tableau Produits |
-| 2 | Création Prisma visible sur la vitrine | GET `/products` | heading du nom + ligne en base |
-| 3 | Édition prix et stock | fiche admin → 9,99 / 7 → Save | DB + fiche publique « 9.99 € », « Stock : 7 » |
-| 4 | Suppression d’un produit sans commande | dialogue Continue | produit absent en base |
-| 5 | Un produit commandé est refusé à la suppression | même geste sur un `OrderItem` | produit **encore** en base |
+| #   | Étape                                           | Geste                            | Preuve                                        |
+| --- | ----------------------------------------------- | -------------------------------- | --------------------------------------------- |
+| 1   | La liste admin affiche les produits             | GET `/admin/products`, recherche | ligne du tableau Produits                     |
+| 2   | Création Prisma visible sur la vitrine          | GET `/products`                  | heading du nom + ligne en base                |
+| 3   | Édition prix et stock                           | fiche admin → 9,99 / 7 → Save    | DB + fiche publique « 9.99 € », « Stock : 7 » |
+| 4   | Suppression d’un produit sans commande          | dialogue Continue                | produit absent en base                        |
+| 5   | Un produit commandé est refusé à la suppression | même geste sur un `OrderItem`    | produit **encore** en base                    |
 
 Test à part : un CLIENT POST `?/deleteProduct` — le produit reste.
+
+### Catalogue matières — `e2e/products/materials.spec.ts`
+
+| #   | Étape                                                   | Geste                         | Preuve                                                  |
+| --- | ------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| 1   | Création depuis `/admin/products/materials/create`      | Save changes                  | ligne du tableau Matières                               |
+| 2   | Association à un produit depuis la fiche admin          | Select matière → Save changes | `Product.materialId`, nom visible sur la fiche publique |
+| 3   | Filtre catalogue par matière                            | GET `/products?materiau=:id`  | produit présent ; id inconnu → absent                   |
+| 4   | Renommage                                               | Save changes                  | nom mis à jour en base et dans le tableau               |
+| 5   | Suppression : ne bloque pas, le produit perd sa matière | dialogue Continue             | matière absente, `Product.materialId === null`          |
+
+Test à part : un CLIENT POST `?/createMaterial` — aucune matière créée.
+
+### Avis produit — `e2e/products/reviews.spec.ts`
+
+| #   | Étape                                              | Geste                                | Preuve                                                    |
+| --- | -------------------------------------------------- | ------------------------------------ | --------------------------------------------------------- |
+| 1   | Anonyme : invité à se connecter, pas de formulaire | GET `/products/[slug]`               | lien « Connectez-vous », pas de `form[action="?/review"]` |
+| 2   | Connecté : note et commentaire publiés             | étoiles + commentaire → Publier      | toast, commentaire affiché, `Review` en base              |
+| 3   | Un second avis du même compte est refusé           | POST `?/review` rejoué               | 409, `AlreadyReviewedError`                               |
+| 4   | Modération admin : liste puis suppression          | `/admin/products/reviews` → Continue | avis absent en base                                       |
+
+Test à part : un CLIENT POST `?/deleteReview` sur l'avis d'un autre — l'avis reste.
+
+### Liste d'envies — `e2e/products/wishlist.spec.ts`
+
+| #   | Étape                                                 | Geste                                                                   | Preuve                                        |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Module désactivé : bouton absent, page et API fermées | GET `/products/[slug]`, `/auth/settings/wishlist`, POST `/api/wishlist` | bouton absent, 404, 404                       |
+| 2   | Module activé : ajout depuis la fiche produit         | clic cœur                                                               | `WishlistItem` créé, libellé « Retirer… »     |
+| 3   | La liste du compte affiche le produit                 | GET `/auth/settings/wishlist`                                           | carte produit visible                         |
+| 4   | Retrait depuis la page liste d'envies                 | bouton Retirer                                                          | carte disparue, ligne absente en base         |
+| 5   | Ré-ajout puis retrait depuis la fiche produit         | clic cœur × 2                                                           | libellé revient à « Ajouter… », ligne absente |
+
+Test à part : un anonyme POST `/api/wishlist` — 401.
 
 ### Auth adresses — `e2e/auth/address.spec.ts`
 
 OpenCage est appelé pour de vrai dès que `SECRET_OPENCAGEDATA_KEY` n'est pas
 `e2e`. Sinon la fixture `Rue des Tests` est renvoyée.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme | GET `/auth/settings/address` | `/auth/login` |
-| 2 | Requête vide | GET `/api/open-cage-data` | 400 |
-| 3 | Création | suggestions OpenCage → Enregistrer | 1 adresse, ville Toulouse |
-| 4 | IDOR | GET/POST une adresse étrangère | 404 / adresse encore en base |
-| 5 | Suppression | Delete address | ligne absente |
+| #   | Étape        | Geste                              | Preuve                       |
+| --- | ------------ | ---------------------------------- | ---------------------------- |
+| 1   | Anonyme      | GET `/auth/settings/address`       | `/auth/login`                |
+| 2   | Requête vide | GET `/api/open-cage-data`          | 400                          |
+| 3   | Création     | suggestions OpenCage → Enregistrer | 1 adresse, ville Toulouse    |
+| 4   | IDOR         | GET/POST une adresse étrangère     | 404 / adresse encore en base |
+| 5   | Suppression  | Delete address                     | ligne absente                |
 
 ### Auth Google — `e2e/auth/google.spec.ts`
 
@@ -204,10 +264,10 @@ la console Google).
 
 Ignoré si `SMTP_LIVE_HOST` / `USER` / `PASS` sont factices. Sinon :
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Auth SMTP | `transporter.verify()` vers `SMTP_LIVE_*` | Brevo accepte le login |
-| 2 | Envoi (si `E2E_LIVE_INBOX`) | `sendVerificationEmail` | `accepted` contient l'inbox |
+| #   | Étape                       | Geste                                     | Preuve                      |
+| --- | --------------------------- | ----------------------------------------- | --------------------------- |
+| 1   | Auth SMTP                   | `transporter.verify()` vers `SMTP_LIVE_*` | Brevo accepte le login      |
+| 2   | Envoi (si `E2E_LIVE_INBOX`) | `sendVerificationEmail`                   | `accepted` contient l'inbox |
 
 Sans `E2E_LIVE_INBOX`, le spec s'arrête après l'étape 1.
 
@@ -219,11 +279,11 @@ pas dans la liste d'IPs autorisées du SMTP Brevo.
 Ignoré si `CLOUDINARY_CLOUD_NAME` / `API_KEY` / `API_SECRET` sont factices
 (`e2e`). Sinon :
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Ping | `cloudinary.api.ping()` | `status: ok` |
-| 2 | Upload UI | create produit + PNG 1×1 | redirection liste admin |
-| 3 | URL | lecture Prisma | `res.cloudinary.com` |
+| #   | Étape     | Geste                    | Preuve                  |
+| --- | --------- | ------------------------ | ----------------------- |
+| 1   | Ping      | `cloudinary.api.ping()`  | `status: ok`            |
+| 2   | Upload UI | create produit + PNG 1×1 | redirection liste admin |
+| 3   | URL       | lecture Prisma           | `res.cloudinary.com`    |
 
 ### Live Sendcloud — `e2e/live/sendcloud.spec.ts`
 
@@ -231,78 +291,78 @@ Ignoré si `SENDCLOUD_PUBLIC_KEY` / `SECRET_KEY` / `INTEGRATION_ID` sont factice
 (`e2e` / `0`). Les étiquettes ne sont **pas** créées : le webhook Stripe skippe
 Sendcloud dès que `PUBLIC_ENV=test`.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Options | POST `/api/sendcloud/shipping-options` | `data` non vide |
-| 2 | Points relais | POST `/api/sendcloud/service-points` | au moins un point |
-| 3 | Checkout UI | adresse → options | « Options de livraison » |
-| 4 | Persistance | POST `?/checkout` (`shippingCost` 0) | `servicePointId` en base |
+| #   | Étape         | Geste                                  | Preuve                   |
+| --- | ------------- | -------------------------------------- | ------------------------ |
+| 1   | Options       | POST `/api/sendcloud/shipping-options` | `data` non vide          |
+| 2   | Points relais | POST `/api/sendcloud/service-points`   | au moins un point        |
+| 3   | Checkout UI   | adresse → options                      | « Options de livraison » |
+| 4   | Persistance   | POST `?/checkout` (`shippingCost` 0)   | `servicePointId` en base |
 
 ### Commerce panier — `e2e/commerce/cart.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Fiche : ajouter au panier | bouton « Ajouter au panier » | UI + `OrderItem` |
-| 2 | save-cart d'une autre commande | POST id étranger | 403 |
-| 3 | Prix posté ≠ catalogue | POST `price: 0.01` | persisté = catalogue |
+| #   | Étape                          | Geste                        | Preuve               |
+| --- | ------------------------------ | ---------------------------- | -------------------- |
+| 1   | Fiche : ajouter au panier      | bouton « Ajouter au panier » | UI + `OrderItem`     |
+| 2   | save-cart d'une autre commande | POST id étranger             | 403                  |
+| 3   | Prix posté ≠ catalogue         | POST `price: 0.01`           | persisté = catalogue |
 
 ### Commerce panier invité — `e2e/commerce/guest.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme : ajouter puis recharger | bouton puis reload | item encore visible |
-| 2 | Anonyme puis inscription | signup après add | `OrderItem` en base, localStorage vide |
-| 3 | Compte + invité (autre produit) | login après add invité | les deux lignes en base |
+| #   | Étape                            | Geste                  | Preuve                                 |
+| --- | -------------------------------- | ---------------------- | -------------------------------------- |
+| 1   | Anonyme : ajouter puis recharger | bouton puis reload     | item encore visible                    |
+| 2   | Anonyme puis inscription         | signup après add       | `OrderItem` en base, localStorage vide |
+| 3   | Compte + invité (autre produit)  | login après add invité | les deux lignes en base                |
 
 ### Commerce checkout — `e2e/commerce/checkout.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Anonyme GET `/checkout` | navigation | `/auth/login` |
-| 2 | CLIENT avec panier | `/checkout` | sélecteur d'adresse |
-| 3 | POST sans adresse / sans être proprio | `?/checkout` | 400 / 403 |
-| 4 | Paiement simulé | helper Prisma | l'order payée n'est plus `PENDING` |
+| #   | Étape                                 | Geste         | Preuve                             |
+| --- | ------------------------------------- | ------------- | ---------------------------------- |
+| 1   | Anonyme GET `/checkout`               | navigation    | `/auth/login`                      |
+| 2   | CLIENT avec panier                    | `/checkout`   | sélecteur d'adresse                |
+| 3   | POST sans adresse / sans être proprio | `?/checkout`  | 400 / 403                          |
+| 4   | Paiement simulé                       | helper Prisma | l'order payée n'est plus `PENDING` |
 
 ### Commerce webhook Stripe — `e2e/commerce/stripe.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Signature invalide | POST `/api/webhooks` HMAC faux | 400 |
-| 2 | `checkout.session.completed` | POST signé (secret e2e) | `Order` `PAID` + `Transaction` |
-| 3 | Facture compte | GET `/auth/settings/factures/[id]` | HTML contient l'id |
-| 4 | Facture admin | GET `/admin/sales/facture/[id]` | HTML contient l'id |
-| 5 | Bordereau admin | GET `/admin/sales/bordereau/[id]` | HTML contient l'id |
+| #   | Étape                        | Geste                              | Preuve                         |
+| --- | ---------------------------- | ---------------------------------- | ------------------------------ |
+| 1   | Signature invalide           | POST `/api/webhooks` HMAC faux     | 400                            |
+| 2   | `checkout.session.completed` | POST signé (secret e2e)            | `Order` `PAID` + `Transaction` |
+| 3   | Facture compte               | GET `/auth/settings/factures/[id]` | HTML contient l'id             |
+| 4   | Facture admin                | GET `/admin/sales/facture/[id]`    | HTML contient l'id             |
+| 5   | Bordereau admin              | GET `/admin/sales/bordereau/[id]`  | HTML contient l'id             |
 
 ### Commerce ventes — `e2e/commerce/sales.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | ADMIN voit la transaction | `/admin/sales` | cellule email |
-| 2 | CLIENT GET `/admin/sales` | navigation | `/` |
-| 3 | Facture user : uniquement la sienne | GET facture d'un autre | 404 |
+| #   | Étape                               | Geste                  | Preuve        |
+| --- | ----------------------------------- | ---------------------- | ------------- |
+| 1   | ADMIN voit la transaction           | `/admin/sales`         | cellule email |
+| 2   | CLIENT GET `/admin/sales`           | navigation             | `/`           |
+| 3   | Facture user : uniquement la sienne | GET facture d'un autre | 404           |
 
 ### Blog vitrine — `e2e/blog/catalog.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste affiche le titre Prisma | GET `/blog` | titres Blog + nom, lien catégorie |
-| 2 | La fiche s’ouvre par slug | GET `/blog/[slug]` | titre, auteur, ligne en base |
-| 3 | Un slug inconnu renvoie 404 | GET slug absent | statut 404 |
-| 4 | Un brouillon n’est pas public | GET slug `published=false` | 404, absent de la liste |
-| 5 | Pas d’UI d’édition admin | HTML de `/blog` | pas de `/admin/blog` ni `passwordHash` |
+| #   | Étape                            | Geste                      | Preuve                                 |
+| --- | -------------------------------- | -------------------------- | -------------------------------------- |
+| 1   | La liste affiche le titre Prisma | GET `/blog`                | titres Blog + nom, lien catégorie      |
+| 2   | La fiche s’ouvre par slug        | GET `/blog/[slug]`         | titre, auteur, ligne en base           |
+| 3   | Un slug inconnu renvoie 404      | GET slug absent            | statut 404                             |
+| 4   | Un brouillon n’est pas public    | GET slug `published=false` | 404, absent de la liste                |
+| 5   | Pas d’UI d’édition admin         | HTML de `/blog`            | pas de `/admin/blog` ni `passwordHash` |
 
 ### Blog admin — `e2e/blog/admin.spec.ts`
 
 La création UI (TinyMCE) n'est pas jouée. Les articles sont posés en Prisma
 (`createBlogPost`). L'édition du titre aussi (`updateBlogPostTitle`).
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste admin affiche les articles | GET `/admin/blog`, recherche | ligne du tableau Articles |
-| 2 | Création Prisma visible sur la vitrine | GET `/blog` | heading du titre + ligne en base |
-| 3 | Édition Prisma du titre | helper Prisma | DB + titre public |
-| 4 | Suppression | dialogue Continue | article absent en base |
-| 5 | Dépublier | `published=false` en Prisma | GET slug → 404 |
+| #   | Étape                                  | Geste                        | Preuve                           |
+| --- | -------------------------------------- | ---------------------------- | -------------------------------- |
+| 1   | La liste admin affiche les articles    | GET `/admin/blog`, recherche | ligne du tableau Articles        |
+| 2   | Création Prisma visible sur la vitrine | GET `/blog`                  | heading du titre + ligne en base |
+| 3   | Édition Prisma du titre                | helper Prisma                | DB + titre public                |
+| 4   | Suppression                            | dialogue Continue            | article absent en base           |
+| 5   | Dépublier                              | `published=false` en Prisma  | GET slug → 404                   |
 
 Test à part : un CLIENT POST `?/deleteBlogPost` — l'article reste.
 
@@ -311,38 +371,38 @@ Test à part : un CLIENT POST `?/deleteBlogPost` — l'article reste.
 La création passe par Prisma. L'édition de la valeur et la suppression passent
 par l'UI.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Liste admin | GET `/admin/promo`, recherche | ligne du code |
-| 2 | Édition de la valeur | fiche → 15 → Enregistrer | `value` en base |
-| 3 | Suppression | dialogue Continue | code absent en base |
+| #   | Étape                | Geste                         | Preuve              |
+| --- | -------------------- | ----------------------------- | ------------------- |
+| 1   | Liste admin          | GET `/admin/promo`, recherche | ligne du code       |
+| 2   | Édition de la valeur | fiche → 15 → Enregistrer      | `value` en base     |
+| 3   | Suppression          | dialogue Continue             | code absent en base |
 
 Test à part : un CLIENT POST `?/deletePromo` — le code reste.
 
 ### Promo validation — `e2e/promo/validate.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ------ | ------ |
-| 1 | Pourcentage accepté | POST `/api/promo/validate` 10 % / 100 € | remise 10 |
-| 2 | Inconnu / inactif / expiré | POST | `valid: false` |
-| 3 | Montant min. et quota | POST sous le seuil / quota plein | `valid: false` |
-| 4 | Checkout : appliqué | UI « Appliquer » | toast + remise |
-| 5 | Checkout : refusé | code faux | champ encore vide |
+| #   | Étape                      | Geste                                   | Preuve            |
+| --- | -------------------------- | --------------------------------------- | ----------------- |
+| 1   | Pourcentage accepté        | POST `/api/promo/validate` 10 % / 100 € | remise 10         |
+| 2   | Inconnu / inactif / expiré | POST                                    | `valid: false`    |
+| 3   | Montant min. et quota      | POST sous le seuil / quota plein        | `valid: false`    |
+| 4   | Checkout : appliqué        | UI « Appliquer »                        | toast + remise    |
+| 5   | Checkout : refusé          | code faux                               | champ encore vide |
 
 ### Contact formulaire — `e2e/contact/form.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Envoi valide | remplir + Envoyer | toast + ligne en base |
-| 2 | Email invalide (serveur) | POST `?/send` | pas de ligne (400 ou `fail` Superforms) |
-| 3 | Limiteur | 5 envois valides puis un 6ᵉ | 5 lignes, 429 |
+| #   | Étape                    | Geste                       | Preuve                                  |
+| --- | ------------------------ | --------------------------- | --------------------------------------- |
+| 1   | Envoi valide             | remplir + Envoyer           | toast + ligne en base                   |
+| 2   | Email invalide (serveur) | POST `?/send`               | pas de ligne (400 ou `fail` Superforms) |
+| 3   | Limiteur                 | 5 envois valides puis un 6ᵉ | 5 lignes, 429                           |
 
 ### Contact admin — `e2e/contact/admin.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Liste admin | GET `/admin/contacts`, recherche | ligne email |
-| 2 | Fiche | GET `/admin/contacts/view/[id]` | nom, sujet, message |
+| #   | Étape       | Geste                            | Preuve              |
+| --- | ----------- | -------------------------------- | ------------------- |
+| 1   | Liste admin | GET `/admin/contacts`, recherche | ligne email         |
+| 2   | Fiche       | GET `/admin/contacts/view/[id]`  | nom, sujet, message |
 
 Test à part : un CLIENT GET `/admin/contacts` → `/`.
 
@@ -386,18 +446,18 @@ d'étiquette).
 entre les étapes. Ajouter des tentatives invalides consomme un budget réel ; le
 tableau ci-dessous donne les marges disponibles.
 
-| Limiteur                                    | Budget          | Clé        | Consommé par le parcours |
-| ------------------------------------------- | --------------- | ---------- | ------------------------ |
-| `hooks.server.ts`                           | 100 / 1 s       | IP         | ~60 requêtes             |
-| signup `ipBucket`                           | 3 / 10 s        | IP         | 1                        |
-| login `throttler`                           | 0,1,2,4,8,16… s | compte     | 2 échecs                 |
-| `verify-email` (saisie du code)             | 5 / 30 min      | compte     | 4 ← marge la plus mince  |
-| `sendVerificationEmailBucket` (renvoi)      | 3 / 10 min      | compte     | 1                        |
-| `forgot-password` (IP et compte)            | 3 / 60 s        | IP, compte | 1                        |
-| `reset-password/verify-email`               | 5 / 30 min      | compte     | 2                        |
-| `totpBucket`                                | 5 / 30 min      | compte     | 2                        |
-| `recoveryCodeBucket`                        | 3 / 60 min      | compte     | 2                        |
-| `contactFormLimiter` (`/contact?/send`)     | 5 valides, 1 / 60 s | IP     | 5 (puis 429, spec contact) |
+| Limiteur                                | Budget              | Clé        | Consommé par le parcours   |
+| --------------------------------------- | ------------------- | ---------- | -------------------------- |
+| `hooks.server.ts`                       | 100 / 1 s           | IP         | ~60 requêtes               |
+| signup `ipBucket`                       | 3 / 10 s            | IP         | 1                          |
+| login `throttler`                       | 0,1,2,4,8,16… s     | compte     | 2 échecs                   |
+| `verify-email` (saisie du code)         | 5 / 30 min          | compte     | 4 ← marge la plus mince    |
+| `sendVerificationEmailBucket` (renvoi)  | 3 / 10 min          | compte     | 1                          |
+| `forgot-password` (IP et compte)        | 3 / 60 s            | IP, compte | 1                          |
+| `reset-password/verify-email`           | 5 / 30 min          | compte     | 2                          |
+| `totpBucket`                            | 5 / 30 min          | compte     | 2                          |
+| `recoveryCodeBucket`                    | 3 / 60 min          | compte     | 2                          |
+| `contactFormLimiter` (`/contact?/send`) | 5 valides, 1 / 60 s | IP         | 5 (puis 429, spec contact) |
 
 Le throttler de connexion impose une attente **croissante** entre deux échecs sur
 un même compte : `waitOutLoginThrottle()` la fait patienter explicitement. Sans
@@ -461,12 +521,12 @@ relation `Order → User` est en `Restrict`.
 
 ## Dépannage
 
-| Symptôme                                          | Cause probable                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `http://localhost:2001 is already used` ou `EADDRINUSE 2525` | Un Vite e2e ou le puits SMTP d'une exécution interrompue occupe le port. Libérer : `fuser -k 2001/tcp 2525/tcp 2526/tcp`. Ne pas tuer le 2000 (`npm run dev`). |
+| Symptôme                                                                                         | Cause probable                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http://localhost:2001 is already used` ou `EADDRINUSE 2525`                                     | Un Vite e2e ou le puits SMTP d'une exécution interrompue occupe le port. Libérer : `fuser -k 2001/tcp 2525/tcp 2526/tcp`. Ne pas tuer le 2000 (`npm run dev`).                                    |
 | Vite refuse un fichier sous un autre dépôt (`Lezardoises`, `outside of Vite serving allow list`) | Un service worker PWA d'un autre projet est resté accroché à `localhost:2000`. Recharger une fois (le hook client le retire en dev) ou, dans Chrome : Application → Service Workers → Unregister. |
-| `Can't reach database server`                     | Neon en veille ou IPv6 capricieux sous WSL. Les lectures rejouent déjà ; relancer. |
-| Le test attend un code d'email indéfiniment       | La boîte SMTP n'a pas démarré, ou `SMTP_HOST` de `.env.test` pointe vers Brevo au lieu de `127.0.0.1`. Les clés live vont dans `SMTP_LIVE_*`. |
-| « Too many requests » inattendu                   | Une tentative invalide a été ajoutée sans marge. Voir le tableau des limiteurs. |
-| Les données de dev sont modifiées                 | `DATABASE_URL` de `.env.test` ne contient pas `schema=e2e`, ou les guillemets manquent autour de l'URL. |
-| `strict mode violation` sur un message            | Message présent en toast et sous le champ : utiliser `expectMessage()`.         |
+| `Can't reach database server`                                                                    | Neon en veille ou IPv6 capricieux sous WSL. Les lectures rejouent déjà ; relancer.                                                                                                                |
+| Le test attend un code d'email indéfiniment                                                      | La boîte SMTP n'a pas démarré, ou `SMTP_HOST` de `.env.test` pointe vers Brevo au lieu de `127.0.0.1`. Les clés live vont dans `SMTP_LIVE_*`.                                                     |
+| « Too many requests » inattendu                                                                  | Une tentative invalide a été ajoutée sans marge. Voir le tableau des limiteurs.                                                                                                                   |
+| Les données de dev sont modifiées                                                                | `DATABASE_URL` de `.env.test` ne contient pas `schema=e2e`, ou les guillemets manquent autour de l'URL.                                                                                           |
+| `strict mode violation` sur un message                                                           | Message présent en toast et sous le champ : utiliser `expectMessage()`.                                                                                                                           |

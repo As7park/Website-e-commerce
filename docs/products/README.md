@@ -21,10 +21,10 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 Deux taxonomies gérées en admin, jamais en champ texte libre — évite que
 « Or »/« or »/« OR » cohabitent et cassent silencieusement un filtre :
 
-| Taxonomie  | Relation                          | CRUD admin                                          |
-| ---------- | ---------------------------------- | ---------------------------------------------------- |
+| Taxonomie  | Relation                           | CRUD admin                                                                                                         |
+| ---------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Catégories | many-to-many (`ProductCategory`)   | table « Catégories » sur `/admin/products`, `/admin/products/categories/create`, `/admin/products/categories/[id]` |
-| Matière    | many-to-one (`Product.materialId`) | table « Matières » sur `/admin/products`, `/admin/products/materials/create`, `/admin/products/materials/[id]` |
+| Matière    | many-to-one (`Product.materialId`) | table « Matières » sur `/admin/products`, `/admin/products/materials/create`, `/admin/products/materials/[id]`     |
 
 Une catégorie ou une matière se supprime même si des produits l'utilisent
 encore : `ProductCategory` est nettoyée explicitement avant de supprimer la
@@ -38,12 +38,12 @@ ligne par valeur déjà présente, sans perte.
 
 ## Frontière du module
 
-| Emplacement                                                | Contenu                                  |
-| ---------------------------------------------------------- | ---------------------------------------- |
-| `src/lib/products/`                                        | lecture publique et chemins de tests     |
-| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/materials/`, `src/lib/prisma/reviews/` | DAO Prisma |
-| `src/routes/products/`                                     | vitrine (fiche produit inclut les avis)  |
-| `src/routes/admin/products/`                               | CRUD back-office (produits, catégories, matières — gardes = module admin) |
+| Emplacement                                                                                                      | Contenu                                                                   |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `src/lib/products/`                                                                                              | lecture publique et chemins de tests                                      |
+| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/materials/`, `src/lib/prisma/reviews/` | DAO Prisma                                                                |
+| `src/routes/products/`                                                                                           | vitrine (fiche produit inclut les avis)                                   |
+| `src/routes/admin/products/`                                                                                     | CRUD back-office (produits, catégories, matières — gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
 qui ne s'applique qu'aux chemins `/products*` (rate-limit dédié + heuristique
@@ -64,10 +64,10 @@ Le bouton « Ajouter au panier » sur la fiche est un accrochage COMMERCE.
 
 ## Vitrine
 
-| Route              | Rôle                                                                   |
-| ------------------ | ----------------------------------------------------------------------- |
-| `/products`        | liste avec sidebar de filtres, tous combinables et pilotés par l'URL   |
-| `/products/[slug]` | fiche ; 404 si le slug est inconnu                                     |
+| Route              | Rôle                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| `/products`        | liste avec sidebar de filtres, tous combinables et pilotés par l'URL |
+| `/products/[slug]` | fiche ; 404 si le slug est inconnu                                   |
 
 Les données viennent de Prisma. Contentful n'est plus utilisé pour les produits.
 
@@ -77,15 +77,15 @@ Tous les filtres de `/products` sont des paramètres d'URL, combinables entre
 eux, lus par `src/routes/products/+page.server.ts` et appliqués dans
 `listProducts` (`src/lib/products/catalog.ts`) :
 
-| Paramètre     | Filtre                                        |
-| ------------- | ---------------------------------------------- |
-| `categorie`   | catégorie (sélection unique)                   |
-| `q`           | recherche texte (`contains` Prisma, nom + description, insensible à la casse) |
-| `materiau`    | matière, répétable (`?materiau=Or&materiau=Argent`) — OR entre les valeurs |
-| `prixMin`/`prixMax` | bornes de prix                           |
-| `dispo=1`     | en stock uniquement (`stock > 0`)              |
-| `tri`         | `pertinence` (défaut) / `prix-asc` / `prix-desc` / `nouveaute` |
-| `page`        | pagination                                     |
+| Paramètre           | Filtre                                                                        |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `categorie`         | catégorie (sélection unique)                                                  |
+| `q`                 | recherche texte (`contains` Prisma, nom + description, insensible à la casse) |
+| `materiau`          | matière, répétable (`?materiau=Or&materiau=Argent`) — OR entre les valeurs    |
+| `prixMin`/`prixMax` | bornes de prix                                                                |
+| `dispo=1`           | en stock uniquement (`stock > 0`)                                             |
+| `tri`               | `pertinence` (défaut) / `prix-asc` / `prix-desc` / `nouveaute`                |
+| `page`              | pagination                                                                    |
 
 `getCatalogFacets` calcule les matières disponibles (avec leur nombre de
 produits) et les bornes de prix pour la sidebar — recalculées à partir de la
@@ -204,6 +204,41 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 | 5   | Produit commandé : suppression refusée | même geste si `OrderItem`        | produit **encore** en base      |
 
 À part : CLIENT POST `?/deleteProduct` — le produit reste.
+
+### Matières — `e2e/products/materials.spec.ts`
+
+| #   | Étape                        | Geste                       | Preuve                                          |
+| --- | ---------------------------- | --------------------------- | ----------------------------------------------- |
+| 1   | Création                     | Save changes                | ligne du tableau Matières                       |
+| 2   | Association à un produit     | Select → Save changes       | `materialId`, nom visible sur la fiche publique |
+| 3   | Filtre catalogue par matière | GET `/products?materiau=id` | produit présent ; id inconnu → absent           |
+| 4   | Renommage                    | Save changes                | nom mis à jour                                  |
+| 5   | Suppression non bloquante    | dialogue Continue           | matière absente, `materialId === null`          |
+
+À part : CLIENT POST `?/createMaterial` — aucune matière créée.
+
+### Avis produit — `e2e/products/reviews.spec.ts`
+
+| #   | Étape                             | Geste                     | Preuve                        |
+| --- | --------------------------------- | ------------------------- | ----------------------------- |
+| 1   | Anonyme invité à se connecter     | GET `/products/[slug]`    | pas de formulaire d'avis      |
+| 2   | Note et commentaire publiés       | étoiles + commentaire     | `Review` en base, affiché     |
+| 3   | Second avis du même compte refusé | POST `?/review` rejoué    | 409, `AlreadyReviewedError`   |
+| 4   | Modération admin                  | `/admin/products/reviews` | avis absent après suppression |
+
+À part : CLIENT POST `?/deleteReview` sur l'avis d'un autre — l'avis reste.
+
+### Liste d'envies — `e2e/products/wishlist.spec.ts`
+
+| #   | Étape                                 | Geste                         | Preuve                         |
+| --- | ------------------------------------- | ----------------------------- | ------------------------------ |
+| 1   | Module désactivé : tout fermé         | GET fiche/page/API            | bouton absent, 404, 404        |
+| 2   | Ajout depuis la fiche produit         | clic cœur                     | `WishlistItem` créé            |
+| 3   | Liste du compte                       | GET `/auth/settings/wishlist` | carte produit visible          |
+| 4   | Retrait depuis la liste               | bouton Retirer                | ligne absente en base          |
+| 5   | Ré-ajout puis retrait depuis la fiche | clic cœur × 2                 | libellé revient à « Ajouter… » |
+
+À part : anonyme POST `/api/wishlist` — 401.
 
 ```bash
 npm run test:e2e

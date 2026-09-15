@@ -15,3 +15,12 @@ export function productsAdminTable(page: Page) {
 export function productAdminRow(page: Page, productName: string) {
 	return productsAdminTable(page).locator('tbody tr', { hasText: productName });
 }
+
+/** Tableau Matières (le troisième sur `/admin/products` : Produits, Catégories, Matières). */
+export function materialsAdminTable(page: Page) {
+	return page.locator('table').nth(2);
+}
+
+export function materialAdminRow(page: Page, materialName: string) {
+	return materialsAdminTable(page).locator('tbody tr', { hasText: materialName });
+}

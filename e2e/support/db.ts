@@ -207,6 +207,34 @@ export async function createCatalogProduct(overrides?: { name?: string; slug?: s
 	return { product, category };
 }
 
+/**
+ * Produit de test avec un `createdAt` volontairement ancien, pour les tests
+ * de purge (`/admin/exports`). Le décalage doit rester net (plusieurs mois)
+ * pour ne jamais recouper un produit fraîchement créé par un autre test.
+ */
+export async function createOldCatalogProduct(daysAgo: number, overrides?: { name?: string }) {
+	const stamp = `${Date.now()}`;
+	const category = await resilient(() =>
+		db.category.create({ data: { name: `e2e-cat-${stamp}` } })
+	);
+	const product = await resilient(() =>
+		db.product.create({
+			data: {
+				name: overrides?.name ?? `e2e-prod-old-${stamp}`,
+				slug: overrides?.name ?? `e2e-prod-old-${stamp}`,
+				description: 'Produit de test e2e pour la purge.',
+				price: 12.5,
+				stock: 10,
+				images: ['https://example.test/e2e-product.jpg'],
+				colorProduct: '#112233',
+				createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+				categories: { create: { categoryId: category.id } }
+			}
+		})
+	);
+	return { product, category };
+}
+
 export async function getProductBySlug(slug: string) {
 	return resilient(() => db.product.findUnique({ where: { slug } }));
 }
@@ -508,4 +536,91 @@ export async function deleteUser(email: string) {
 	await resilient(() => db.transaction.deleteMany({ where: { userId: user.id } }));
 	await resilient(() => db.order.deleteMany({ where: { userId: user.id } }));
 	await resilient(() => db.user.delete({ where: { id: user.id } }));
+}
+
+/** Taxonomie « Matière » : matière de test isolée. */
+export async function createMaterial(name?: string) {
+	return resilient(() =>
+		db.material.create({ data: { name: name ?? `e2e-material-${Date.now()}` } })
+	);
+}
+
+export async function getMaterialById(id: string) {
+	return resilient(() => db.material.findUnique({ where: { id } }));
+}
+
+export async function getMaterialByName(name: string) {
+	return resilient(() => db.material.findUnique({ where: { name } }));
+}
+
+/** Ne bloque jamais sur les produits qui l'utilisent (`onDelete: SetNull`). */
+export async function deleteMaterial(id: string) {
+	await resilient(() => db.material.deleteMany({ where: { id } }));
+}
+
+/** Avis produit : pose un avis directement en base (sans passer par la fiche produit). */
+export async function createReview(overrides: {
+	productId: string;
+	userId: string;
+	rating?: number;
+	comment?: string | null;
+}) {
+	return resilient(() =>
+		db.review.create({
+			data: {
+				productId: overrides.productId,
+				userId: overrides.userId,
+				rating: overrides.rating ?? 5,
+				comment: overrides.comment ?? null
+			}
+		})
+	);
+}
+
+export async function getReviewForUser(productId: string, userId: string) {
+	return resilient(() =>
+		db.review.findUnique({ where: { productId_userId: { productId, userId } } })
+	);
+}
+
+/** Liste d'envies : bascule directe en base (sans passer par la fiche produit). */
+export async function isInWishlistDb(userId: string, productId: string): Promise<boolean> {
+	const item = await resilient(() =>
+		db.wishlistItem.findUnique({ where: { userId_productId: { userId, productId } } })
+	);
+	return item !== null;
+}
+
+/**
+ * Réglages boutique (`StoreSettings`, ligne unique `id = "singleton"`).
+ *
+ * Ligne partagée par toute la suite : chaque test qui modifie un module doit
+ * restaurer les valeurs lues par `getStoreFeatureFlags` (`finally` avec
+ * `setStoreFeatureFlags(previous)`), pour ne pas laisser un module activé/
+ * désactivé pour les tests suivants.
+ */
+export async function getStoreFeatureFlags() {
+	const row = await resilient(() =>
+		db.storeSettings.findUniqueOrThrow({
+			where: { id: 'singleton' },
+			select: {
+				wishlistEnabled: true,
+				crossSellEnabled: true,
+				returnsEnabled: true,
+				savedPaymentsEnabled: true,
+				loyaltyEnabled: true
+			}
+		})
+	);
+	return row;
+}
+
+export async function setStoreFeatureFlags(patch: {
+	wishlistEnabled?: boolean;
+	crossSellEnabled?: boolean;
+	returnsEnabled?: boolean;
+	savedPaymentsEnabled?: boolean;
+	loyaltyEnabled?: boolean;
+}) {
+	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

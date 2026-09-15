@@ -62,18 +62,18 @@ naissent par inscription.
 
 ## Sections
 
-| Route             | Rôle                                                                             |
-| ----------------- | -------------------------------------------------------------------------------- |
-| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                        |
-| `/admin/sales`    | transactions, factures, bordereaux                                               |
-| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses       |
-| `/admin/products` | catalogue et catégories                                                          |
-| `/admin/blog`     | articles, catégories, tags                                                       |
-| `/admin/promo`    | codes promo                                                                      |
-| `/admin/contacts` | messages du formulaire de contact                                                |
-| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                 |
+| Route             | Rôle                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                                                              |
+| `/admin/sales`    | transactions, factures, bordereaux                                                                                     |
+| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                             |
+| `/admin/products` | catalogue et catégories                                                                                                |
+| `/admin/blog`     | articles, catégories, tags                                                                                             |
+| `/admin/promo`    | codes promo                                                                                                            |
+| `/admin/contacts` | messages du formulaire de contact                                                                                      |
+| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                       |
 | `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts |
-| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                    |
+| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                                                         |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -176,6 +176,29 @@ Routes : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 | 5   | Suppression d’un CLIENT  | dialogue Continue    | disparu UI + base                          |
 
 À part : CLIENT GET `/admin/users/:id` d'un autre compte → `/`.
+
+### Modules e-commerce — `e2e/admin/settings.spec.ts`
+
+| #   | Étape                                 | Geste                 | Preuve                   |
+| --- | ------------------------------------- | --------------------- | ------------------------ |
+| 1   | Modules désactivés au départ          | GET `/admin/settings` | 5 switches à `unchecked` |
+| 2   | Activation d'un module                | switch + Enregistrer  | `StoreSettings` en base  |
+| 3   | Rechargée, l'état enregistré persiste | reload                | switch reflète la base   |
+
+À part : CLIENT POST `/admin/settings` — réglages inchangés.
+
+### Exports — `e2e/admin/exports.spec.ts`
+
+Purge jouée sur `products`, seuil 365 jours, lignes de test vieillies de 400 jours.
+
+| #   | Étape                                  | Geste                         | Preuve                                 |
+| --- | -------------------------------------- | ----------------------------- | -------------------------------------- |
+| 1   | Export CSV                             | GET `/admin/exports/products` | en-tête + ligne attendues              |
+| 2   | Aperçu de purge                        | Prévisualiser                 | delta +2 sur le compte                 |
+| 3   | Purge ciblée, FK protégée ignorée      | Confirmer la suppression      | `1 supprimée(s), 1 ignorée(s)`         |
+| 4   | Réimport met à jour une ligne modifiée | Importer                      | `0 créé(s), 1 mis à jour`, prix changé |
+
+Blocage anonyme/CLIENT couvert par `ADMIN_PATHS` (`e2e/admin/security.spec.ts`).
 
 Catalogue admin : [docs/products](../products/README.md). Ventes :
 [docs/commerce](../commerce/README.md). Blog : [docs/blog](../blog/README.md).

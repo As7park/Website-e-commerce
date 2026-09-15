@@ -7,6 +7,10 @@ import type { Plugin } from 'vite';
  * sert une page morte avant notre JS.
  *
  * Ce middleware répond AVANT le contrôle `server.fs.allow` de Vite.
+ * Attention : la détection « module hors de ce projet » doit comparer au
+ * chemin racine réel (`server.config.root`), jamais à un nom de dossier
+ * écrit en dur — sinon elle intercepte aussi les fichiers de CE dépôt
+ * (ex. `.svelte-kit/generated/client/app.js`) et boucle en rechargement.
  */
 const unregisterPage = `navigator.serviceWorker?.getRegistrations?.().then(async (regs) => {
 	await Promise.all(regs.map((reg) => reg.unregister()));
@@ -37,6 +41,12 @@ export function dropStalePwa(): Plugin {
 	return {
 		name: 'drop-stale-pwa',
 		configureServer(server) {
+			// Racine réelle du projet (chemin absolu) : un `/@fs/...` qui la
+			// contient sert un fichier de CE dépôt (ex. `.svelte-kit/generated`),
+			// jamais un module d'un autre projet. Comparer à un nom de dossier
+			// figé cassait dès que le dépôt était cloné/renommé différemment.
+			const projectRoot = server.config.root;
+
 			server.middlewares.use((req, res, next) => {
 				const url = decodeURIComponent((req.url ?? '').split('?')[0] ?? '');
 
@@ -62,8 +72,7 @@ export function dropStalePwa(): Plugin {
 				}
 
 				const foreignFs =
-					url.includes('Lezardoises') ||
-					(url.includes('/@fs/') && !url.includes('boilerplate_core'));
+					url.includes('Lezardoises') || (url.includes('/@fs/') && !url.includes(projectRoot));
 
 				if (foreignFs) {
 					res.setHeader('Content-Type', 'text/javascript; charset=utf-8');

@@ -151,6 +151,9 @@
 						<Form.Field name="materialId" form={createProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
+								<!-- `Select.Trigger` est un bouton : sans cet input cachée, sa
+								     valeur ne fait jamais partie du `FormData` natif soumis. -->
+								<input type="hidden" name="materialId" value={$createProductData.materialId} />
 								<Select.Root
 									type="single"
 									value={materialSelectValue}
@@ -169,8 +172,9 @@
 									</Select.Content>
 								</Select.Root>
 								<p class="text-sm text-muted-foreground">
-									Matières gérées depuis <a href="/admin/products/materials/create" class="underline"
-										>la liste des matières</a
+									Matières gérées depuis <a
+										href="/admin/products/materials/create"
+										class="underline">la liste des matières</a
 									>.
 								</p>
 							</Form.Control>

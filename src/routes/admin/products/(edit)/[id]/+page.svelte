@@ -32,7 +32,13 @@
 
 	let DataPrice: number = $state(data.IupdateProductSchema.data.price);
 	let DataStock: number = $state(data.IupdateProductSchema.data.stock);
-	let DataCompareAtPrice: string = $state(String(data.IupdateProductSchema.data.compareAtPrice ?? ''));
+	// `0` = pas de prix barré : champ vide, sinon `min="0.01"` du <input> bloque
+	// la sauvegarde de tout produit sans prix barré (0 n'est pas >= 0.01).
+	let DataCompareAtPrice: string = $state(
+		data.IupdateProductSchema.data.compareAtPrice
+			? String(data.IupdateProductSchema.data.compareAtPrice)
+			: ''
+	);
 	// bits-ui Select n'accepte pas la chaîne vide comme valeur d'item —
 	// `'none'` représente « aucune matière », traduit en `''` avant envoi.
 	let materialSelectValue: string = $state(data.IupdateProductSchema.data.materialId || 'none');
@@ -154,6 +160,9 @@
 						<Form.Field name="materialId" form={updateProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
+								<!-- `Select.Trigger` est un bouton : sans cet input cachée, sa
+								     valeur ne fait jamais partie du `FormData` natif soumis. -->
+								<input type="hidden" name="materialId" value={$updateProductData.materialId} />
 								<Select.Root
 									type="single"
 									value={materialSelectValue}
@@ -173,8 +182,9 @@
 									</Select.Content>
 								</Select.Root>
 								<p class="text-sm text-muted-foreground">
-									Matières gérées depuis <a href="/admin/products/materials/create" class="underline"
-										>la liste des matières</a
+									Matières gérées depuis <a
+										href="/admin/products/materials/create"
+										class="underline">la liste des matières</a
 									>.
 								</p>
 							</Form.Control>
@@ -276,7 +286,7 @@
 					</div>
 					<div class="mt-3 flex flex-wrap gap-2 flex-1 w-[300px] rts">
 						<p class="text-sm">Ces images seront suppirmées à la suite d'une modification :</p>
-						{#each (($updateProductData.existingImages as string[] | undefined) ?? []) as imageUrl}
+						{#each ($updateProductData.existingImages as string[] | undefined) ?? [] as imageUrl}
 							<div class="relative w-[65px] h-[65px]">
 								<img src={String(imageUrl)} alt="" class="w-full h-full object-cover rounded" />
 							</div>
