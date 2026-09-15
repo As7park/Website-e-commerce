@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { type Actions } from '@sveltejs/kit';
+import { error, type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
@@ -12,8 +12,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const category = await getCategoriesById(params.id);
 
 	if (!category) {
-		// console.log('Category not found');
-		return fail(404, { message: 'Category not found' });
+		error(404, 'Category not found');
 	}
 
 	const initialData = {

@@ -7,6 +7,7 @@
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
 	import { deleteCategorySchema } from '$lib/schema/categories/deleteCategorySchema.js';
+	import { deleteMaterialSchema } from '$lib/schema/materials/materialSchema.js';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	// Props
@@ -24,6 +25,7 @@
 			categories:
 				product.categories?.map((cat) => cat.category?.name || 'Unknown').join(', ') ||
 				'No category',
+			materialName: product.material?.name ?? '—',
 			// Première image ou placeholder
 			images: `<img class='w-20 h-20' src='${optimizedImageUrl(product.images[0] ?? '', 80)}' alt='${product.name}' />`,
 			// Description tronquée
@@ -52,6 +54,7 @@
 		{ key: 'name', label: 'Nom' },
 		{ key: 'price', label: 'Prix' },
 		{ key: 'categories', label: 'Catégories' },
+		{ key: 'materialName', label: 'Matière' },
 		{ key: 'images', label: 'Images' },
 		{ key: 'description', label: 'Description' }
 	]);
@@ -120,6 +123,46 @@
 			toast.success($deleteCategoryMessage);
 		}
 	});
+
+	// Form handling with superForm
+	const deleteMaterial = superForm(data?.IdeleteMaterialSchema ?? {}, {
+		validators: zodClient(deleteMaterialSchema),
+		id: 'deleteMaterial'
+	});
+
+	const {
+		form: deleteMaterialData,
+		enhance: deleteMaterialEnhance,
+		message: deleteMaterialMessage
+	} = deleteMaterial;
+
+	// Table columns
+	const materialColumns = [{ key: 'name', label: 'Nom' }];
+
+	// Table actions
+	const materialActions = [
+		{
+			type: 'link',
+			name: 'edit',
+			url: (item: any) => `/admin/products/materials/${item.id}`,
+			icon: Pencil
+		},
+		{
+			type: 'form',
+			name: 'delete',
+			url: '?/deleteMaterial',
+			dataForm: deleteMaterialData.id,
+			enhanceAction: deleteMaterialEnhance,
+			icon: Trash
+		}
+	];
+
+	// Show toast on delete message
+	$effect(() => {
+		if ($deleteMaterialMessage) {
+			toast.success($deleteMaterialMessage);
+		}
+	});
 </script>
 
 <h1 class="m-5 text-4xl">Gestion produits</h1>
@@ -150,5 +193,15 @@
 		data={data.categories ?? []}
 		actions={categoryActions}
 		addLink="/admin/products/categories/create"
+	/>
+</div>
+
+<div class="ccc w-[100%]">
+	<Table
+		name="Matières"
+		columns={materialColumns}
+		data={data.materials ?? []}
+		actions={materialActions}
+		addLink="/admin/products/materials/create"
 	/>
 </div>

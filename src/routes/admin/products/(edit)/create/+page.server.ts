@@ -6,17 +6,14 @@ import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import { createProductSchema } from '$lib/schema/products/productSchema';
 import { slugify } from '$lib/prisma/slugify';
-import {
-	connectProductToCategories,
-	createProduct,
-	listDistinctMaterials
-} from '$lib/prisma/products/products';
+import { connectProductToCategories, createProduct } from '$lib/prisma/products/products';
 import { getAllcategories, getCategoriesByIds } from '$lib/prisma/categories/categories';
+import { getAllMaterials } from '$lib/prisma/materials/materials';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));
-	const [categories, materials] = await Promise.all([getAllcategories(), listDistinctMaterials()]);
+	const [categories, materials] = await Promise.all([getAllcategories(), getAllMaterials()]);
 
 	return {
 		categories,
@@ -94,7 +91,7 @@ export const actions: Actions = {
 				slug: slug,
 				colorProduct: form.data.colorProduct,
 				sku: form.data.sku || null,
-				material: form.data.material || null,
+				materialId: form.data.materialId || null,
 				compareAtPrice: form.data.compareAtPrice || null
 			});
 

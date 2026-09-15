@@ -264,9 +264,6 @@ model Product {
   /// Référence interne, distincte de `id` (cuid non lisible) — affichée en
   /// admin et sur la facture, jamais utilisée comme clé de recherche Prisma.
   sku            String?  @unique
-  /// Filtre catalogue (facette « Matière »). Nul pour les produits qui n'en
-  /// ont pas (prestations de service, ex. les offres du studio).
-  material       String?
   /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
   /// prix réellement facturé — pas de logique de remise appliquée ici).
   compareAtPrice Float?
@@ -274,11 +271,25 @@ model Product {
   orderItems    OrderItem[]
   reviews       Review[]
   wishlistedBy  WishlistItem[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  /// Facette catalogue « Matière » — taxonomie gérée depuis
+  /// `/admin/products` (section Matières), pas un champ libre : évite que
+  /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
+  materialId String?
+  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  @@index([material])
+  @@index([materialId])
   @@map("products")
+}
+
+model Material {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+
+  @@map("materials")
 }
 
 model Review {

@@ -33,7 +33,7 @@ const createProductSchema = z.object({
     .string()
     .regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
   sku: z.string().trim().max(64).optional().or(z.literal('')),
-  material: z.string().trim().max(64).optional().or(z.literal('')),
+  materialId: z.string().optional().or(z.literal('')),
   // Un seul type (jamais `number | ''`) : la validation par FormData de
   // superforms ne supporte pas les unions hors mode `dataType: 'json'`
   // (nécessaire ici pour les champs fichier Cloudinary). `0` vaut « pas de
@@ -69,7 +69,7 @@ const updateProductSchema = z.object({
     .string()
     .regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
   sku: z.string().trim().max(64).optional().or(z.literal('')),
-  material: z.string().trim().max(64).optional().or(z.literal('')),
+  materialId: z.string().optional().or(z.literal('')),
   compareAtPrice: z.coerce.number().min(0).default(0)
 });
 

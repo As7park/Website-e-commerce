@@ -98,7 +98,12 @@
 		<div>
 			<h1 class="mb-2 font-normal">{product.name}</h1>
 			{#if categoryNames.length}
-				<p class="mb-3 text-muted-foreground">{categoryNames.join(', ')}</p>
+				<p class="mb-1 text-muted-foreground">{categoryNames.join(', ')}</p>
+			{/if}
+			{#if product.material}
+				<p class="mb-3 text-xs tracking-wide text-muted-foreground uppercase">
+					{product.material.name}
+				</p>
 			{/if}
 
 			<div class="mb-3 flex items-center gap-2">

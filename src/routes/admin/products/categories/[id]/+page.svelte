@@ -37,7 +37,7 @@
 	$effect(() => {
 		if ($updateCategoryMessage === 'Category updated successfully') {
 			toast.success($updateCategoryMessage);
-			setTimeout(() => goto('/admin/products/categories/'), 0);
+			setTimeout(() => goto('/admin/products'), 0);
 		}
 	});
 </script>

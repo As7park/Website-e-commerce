@@ -12,6 +12,7 @@ import cloudinary from '$lib/server/cloudinary';
 
 import { deleteProductSchema } from '$lib/schema/products/productSchema';
 import { deleteCategorySchema } from '$lib/schema/categories/deleteCategorySchema';
+import { deleteMaterialSchema } from '$lib/schema/materials/materialSchema';
 
 import {
 	deleteCategoryById,
@@ -19,6 +20,7 @@ import {
 	getAllcategories,
 	getCategoriesById
 } from '$lib/prisma/categories/categories';
+import { deleteMaterialById, getAllMaterials, getMaterialById } from '$lib/prisma/materials/materials';
 import {
 	deleteProductById,
 	getAllProducts,
@@ -30,6 +32,7 @@ import { requireAdmin } from '$lib/admin/guards';
 export const load: PageServerLoad = async ({ url }) => {
 	const IdeleteProductSchema = await superValidate(zod(deleteProductSchema));
 	const IdeleteCategorySchema = await superValidate(zod(deleteCategorySchema));
+	const IdeleteMaterialSchema = await superValidate(zod(deleteMaterialSchema));
 	const {
 		items: products,
 		total,
@@ -45,7 +48,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		sort: url.searchParams.get('sort') ?? undefined,
 		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
 	});
-	const categories = await getAllcategories();
+	const [categories, materials] = await Promise.all([getAllcategories(), getAllMaterials()]);
 
 	return {
 		products,
@@ -56,8 +59,10 @@ export const load: PageServerLoad = async ({ url }) => {
 		sort,
 		dir,
 		IdeleteCategorySchema,
+		IdeleteMaterialSchema,
 		IdeleteProductSchema,
-		categories
+		categories,
+		materials
 	};
 };
 
@@ -102,7 +107,10 @@ export const actions: Actions = {
 		requireAdmin(locals);
 		const formData = await request.formData();
 		const form = await superValidate(formData, zod(deleteCategorySchema));
-		const categoryId = formData.get('categoryId') as string;
+		// Table.svelte soumet toujours le champ caché sous le nom `id` pour une
+		// action de type `form`, jamais `categoryId` — lire le mauvais champ ici
+		// faisait échouer la suppression à coup sûr (« Category ID is required »).
+		const categoryId = formData.get('id') as string;
 
 		if (!categoryId) {
 			return fail(400, { message: 'Category ID is required' });
@@ -121,6 +129,29 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error deleting category:', error);
 			return fail(500, { message: 'Category deletion failed' });
+		}
+	},
+	deleteMaterial: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const form = await superValidate(formData, zod(deleteMaterialSchema));
+		const materialId = formData.get('id') as string;
+
+		if (!materialId) {
+			return fail(400, { message: 'Material ID is required' });
+		}
+		try {
+			const existingMaterial = await getMaterialById(materialId);
+			if (!existingMaterial) {
+				return fail(400, { message: 'Material not found' });
+			}
+
+			await deleteMaterialById(materialId);
+
+			return message(form, 'Material deleted successfully');
+		} catch (error) {
+			console.error('Error deleting material:', error);
+			return fail(500, { message: 'Material deletion failed' });
 		}
 	}
 };

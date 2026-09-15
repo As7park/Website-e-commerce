@@ -324,7 +324,7 @@
 								<Card.Content class="flex flex-1 flex-col p-4">
 									{#if product.material}
 										<p class="mb-1 text-xs tracking-wide text-muted-foreground uppercase">
-											{product.material}
+											{product.material.name}
 										</p>
 									{/if}
 									<Card.Title class="mb-2 text-[0.95rem] font-medium">

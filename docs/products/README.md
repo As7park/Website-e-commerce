@@ -8,21 +8,42 @@ En plus des champs de base (nom, description, prix, stock, images,
 catégories), `Product` porte trois attributs facultatifs, éditables depuis le
 formulaire admin (`/admin/products/create`, `/admin/products/[id]`) : `sku`
 (référence interne, unique, jamais utilisée comme clé de recherche),
-`material` (facette « Matière » du filtre catalogue) et `compareAtPrice`
-(prix barré affiché à côté du prix réel — `price` reste le seul montant
-facturé, aucune logique de remise n'en découle).
+`materialId` (facette « Matière » du filtre catalogue — voir « Taxonomies »
+ci-dessous) et `compareAtPrice` (prix barré affiché à côté du prix réel —
+`price` reste le seul montant facturé, aucune logique de remise n'en
+découle).
 
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
+
+## Taxonomies
+
+Deux taxonomies gérées en admin, jamais en champ texte libre — évite que
+« Or »/« or »/« OR » cohabitent et cassent silencieusement un filtre :
+
+| Taxonomie  | Relation                          | CRUD admin                                          |
+| ---------- | ---------------------------------- | ---------------------------------------------------- |
+| Catégories | many-to-many (`ProductCategory`)   | table « Catégories » sur `/admin/products`, `/admin/products/categories/create`, `/admin/products/categories/[id]` |
+| Matière    | many-to-one (`Product.materialId`) | table « Matières » sur `/admin/products`, `/admin/products/materials/create`, `/admin/products/materials/[id]` |
+
+Une catégorie ou une matière se supprime même si des produits l'utilisent
+encore : `ProductCategory` est nettoyée explicitement avant de supprimer la
+catégorie (many-to-many) ; `Product.materialId` repasse simplement à `null`
+(`onDelete: SetNull`, many-to-one — pas de table de jointure à nettoyer).
+
+`Material` a été introduite par migration de données
+(`20260915180000_add_material_taxonomy`) : l'ancienne colonne texte libre
+`products.material` a été convertie en table `materials` + relation, une
+ligne par valeur déjà présente, sans perte.
 
 ## Frontière du module
 
 | Emplacement                                                | Contenu                                  |
 | ---------------------------------------------------------- | ---------------------------------------- |
 | `src/lib/products/`                                        | lecture publique et chemins de tests     |
-| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/reviews/` | DAO Prisma |
+| `src/lib/prisma/products/`, `src/lib/prisma/categories/`, `src/lib/prisma/materials/`, `src/lib/prisma/reviews/` | DAO Prisma |
 | `src/routes/products/`                                     | vitrine (fiche produit inclut les avis)  |
-| `src/routes/admin/products/`                               | CRUD back-office (gardes = module admin) |
+| `src/routes/admin/products/`                               | CRUD back-office (produits, catégories, matières — gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
 qui ne s'applique qu'aux chemins `/products*` (rate-limit dédié + heuristique

@@ -16,7 +16,8 @@ const publicProductInclude = {
 		include: {
 			category: true
 		}
-	}
+	},
+	material: true
 } as const;
 
 export type PublicProduct = Awaited<ReturnType<typeof listProducts>>['products'][number];
@@ -77,7 +78,7 @@ function buildWhere({
 					]
 				}
 			: {}),
-		...(normalizedMaterials?.length ? { material: { in: normalizedMaterials } } : {}),
+		...(normalizedMaterials?.length ? { material: { name: { in: normalizedMaterials } } } : {}),
 		...(inStockOnly ? { stock: { gt: 0 } } : {}),
 		...(minPrice !== undefined || maxPrice !== undefined
 			? { price: { ...(minPrice !== undefined ? { gte: minPrice } : {}), ...(maxPrice !== undefined ? { lte: maxPrice } : {}) } }
@@ -133,11 +134,10 @@ export async function getCatalogFacets(categoryId?: string, search?: string): Pr
 	const key = await catalogKey(`facets:${JSON.stringify({ categoryId, search })}`);
 
 	return cached(key, CACHE_TTL_SECONDS, async () => {
-		const [materialGroups, priceAgg] = await Promise.all([
-			prisma.product.groupBy({
-				by: ['material'],
-				where: { ...where, material: { not: null } },
-				_count: true
+		const [materialRows, priceAgg] = await Promise.all([
+			prisma.material.findMany({
+				where: { products: { some: where } },
+				select: { name: true, _count: { select: { products: { where } } } }
 			}),
 			prisma.product.aggregate({
 				where,
@@ -146,9 +146,8 @@ export async function getCatalogFacets(categoryId?: string, search?: string): Pr
 			})
 		]);
 
-		const materials = materialGroups
-			.filter((group) => group.material)
-			.map((group) => ({ value: group.material as string, count: group._count }))
+		const materials = materialRows
+			.map((row) => ({ value: row.name, count: row._count.products }))
 			.sort((a, b) => b.count - a.count);
 
 		return {

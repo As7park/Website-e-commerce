@@ -1,12 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { type Actions } from '@sveltejs/kit';
+import { error, type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message, withFiles } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import cloudinary from '$lib/server/cloudinary';
 import {
 	connectProductToCategories,
 	getProductById,
-	listDistinctMaterials,
 	updateProductById
 } from '$lib/prisma/products/products';
 import { updateProductSchema } from '$lib/schema/products/productSchema';
@@ -16,44 +15,40 @@ import {
 	getAllcategories,
 	getCategoriesByIds
 } from '$lib/prisma/categories/categories';
+import { getAllMaterials } from '$lib/prisma/materials/materials';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
-	try {
-		const product = await getProductById(params.id);
+	const product = await getProductById(params.id);
 
-		if (!product) {
-			return fail(404, { message: 'Product not found' });
-		}
-
-		const [categories, materials] = await Promise.all([getAllcategories(), listDistinctMaterials()]);
-
-		const initialData = {
-			_id: product.id,
-			name: product.name,
-			description: product.description,
-			price: product.price,
-			stock: product.stock,
-			colorProduct: product.colorProduct,
-			sku: product.sku ?? '',
-			material: product.material ?? '',
-			compareAtPrice: product.compareAtPrice ?? 0,
-			categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
-			images: [],
-			existingImages: product.images
-		};
-
-		const IupdateProductSchema = await superValidate(initialData, zod(updateProductSchema));
-
-		return {
-			categories,
-			materials,
-			IupdateProductSchema
-		};
-	} catch (error) {
-		console.error('Error loading product:', error);
-		return fail(500, { message: 'An error occurred while loading the product' });
+	if (!product) {
+		error(404, 'Product not found');
 	}
+
+	const [categories, materials] = await Promise.all([getAllcategories(), getAllMaterials()]);
+
+	const initialData = {
+		_id: product.id,
+		name: product.name,
+		description: product.description,
+		price: product.price,
+		stock: product.stock,
+		colorProduct: product.colorProduct,
+		sku: product.sku ?? '',
+		materialId: product.materialId ?? '',
+		compareAtPrice: product.compareAtPrice ?? 0,
+		categoryId: product.categories.map((cat) => cat.categoryId) as [string, ...string[]],
+		images: [],
+		existingImages: product.images
+	};
+
+	const IupdateProductSchema = await superValidate(initialData, zod(updateProductSchema));
+
+	return {
+		categories,
+		materials,
+		IupdateProductSchema
+	};
 };
 
 export const actions: Actions = {
@@ -139,7 +134,7 @@ export const actions: Actions = {
 					colorProduct: form.data.colorProduct,
 					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages,
 					sku: form.data.sku || null,
-					material: form.data.material || null,
+					materialId: form.data.materialId || null,
 					compareAtPrice: form.data.compareAtPrice || null
 				});
 

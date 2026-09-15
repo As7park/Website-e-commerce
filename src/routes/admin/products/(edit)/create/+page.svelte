@@ -5,6 +5,7 @@
 	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
 	import { Label } from '$shadcn/label';
 	import { Textarea } from '$shadcn/textarea';
+	import * as Select from '$shadcn/select';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { createProductSchema } from '$lib/schema/products/productSchema';
@@ -27,6 +28,9 @@
 	let DataPrice: number = $state(0);
 	let DataStock: number = $state(0);
 	let DataCompareAtPrice: string = $state('');
+	// bits-ui Select n'accepte pas la chaîne vide comme valeur d'item —
+	// `'none'` représente « aucune matière », traduit en `''` avant envoi.
+	let materialSelectValue: string = $state('none');
 
 	// Chargement des données
 	let categories = $state(
@@ -48,6 +52,7 @@
 		$createProductData.price = Number(DataPrice);
 		$createProductData.stock = Number(DataStock);
 		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
+		$createProductData.materialId = materialSelectValue === 'none' ? '' : materialSelectValue;
 	});
 
 	$effect(() => {
@@ -143,15 +148,31 @@
 					</div>
 
 					<div class="w-[100%]">
-						<Form.Field name="material" form={createProduct}>
+						<Form.Field name="materialId" form={createProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
-								<Input name="material" type="text" list="material-suggestions" bind:value={$createProductData.material} />
-							<datalist id="material-suggestions">
-								{#each data.materials as material (material)}
-									<option value={material}></option>
-								{/each}
-							</datalist>
+								<Select.Root
+									type="single"
+									value={materialSelectValue}
+									onValueChange={(value) => (materialSelectValue = value)}
+								>
+									<Select.Trigger class="w-full">
+										<span>
+											{data.materials.find((m) => m.id === materialSelectValue)?.name ?? 'Aucune'}
+										</span>
+									</Select.Trigger>
+									<Select.Content>
+										<Select.Item value="none">Aucune</Select.Item>
+										{#each data.materials as material (material.id)}
+											<Select.Item value={material.id}>{material.name}</Select.Item>
+										{/each}
+									</Select.Content>
+								</Select.Root>
+								<p class="text-sm text-muted-foreground">
+									Matières gérées depuis <a href="/admin/products/materials/create" class="underline"
+										>la liste des matières</a
+									>.
+								</p>
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

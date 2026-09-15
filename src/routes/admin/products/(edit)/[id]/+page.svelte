@@ -9,6 +9,7 @@
 	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
 	import { Label } from '$shadcn/label';
 	import { Textarea } from '$shadcn/textarea';
+	import * as Select from '$shadcn/select';
 
 	import { updateProductSchema } from '$lib/schema/products/productSchema.js';
 	import { toast } from 'svelte-sonner';
@@ -32,6 +33,9 @@
 	let DataPrice: number = $state(data.IupdateProductSchema.data.price);
 	let DataStock: number = $state(data.IupdateProductSchema.data.stock);
 	let DataCompareAtPrice: string = $state(String(data.IupdateProductSchema.data.compareAtPrice ?? ''));
+	// bits-ui Select n'accepte pas la chaîne vide comme valeur d'item —
+	// `'none'` représente « aucune matière », traduit en `''` avant envoi.
+	let materialSelectValue: string = $state(data.IupdateProductSchema.data.materialId || 'none');
 	let existingImages = $state(data.IupdateProductSchema.data.existingImages);
 
 	// Chargement des données
@@ -53,6 +57,7 @@
 		$updateProductData.price = Number(DataPrice);
 		$updateProductData.stock = Number(DataStock);
 		$updateProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
+		$updateProductData.materialId = materialSelectValue === 'none' ? '' : materialSelectValue;
 	});
 
 	$effect(() => {
@@ -146,15 +151,32 @@
 					</div>
 
 					<div class="w-[100%]">
-						<Form.Field name="material" form={updateProduct}>
+						<Form.Field name="materialId" form={updateProduct}>
 							<Form.Control>
 								<Form.Label>Matière</Form.Label>
-								<Input name="material" type="text" list="material-suggestions" bind:value={$updateProductData.material} />
-							<datalist id="material-suggestions">
-								{#each data.materials ?? [] as material (material)}
-									<option value={material}></option>
-								{/each}
-							</datalist>
+								<Select.Root
+									type="single"
+									value={materialSelectValue}
+									onValueChange={(value) => (materialSelectValue = value)}
+								>
+									<Select.Trigger class="w-full">
+										<span>
+											{(data.materials ?? []).find((m) => m.id === materialSelectValue)?.name ??
+												'Aucune'}
+										</span>
+									</Select.Trigger>
+									<Select.Content>
+										<Select.Item value="none">Aucune</Select.Item>
+										{#each data.materials ?? [] as material (material.id)}
+											<Select.Item value={material.id}>{material.name}</Select.Item>
+										{/each}
+									</Select.Content>
+								</Select.Root>
+								<p class="text-sm text-muted-foreground">
+									Matières gérées depuis <a href="/admin/products/materials/create" class="underline"
+										>la liste des matières</a
+									>.
+								</p>
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
