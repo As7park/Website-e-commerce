@@ -19,6 +19,14 @@ La suite Playwright couvre cinq domaines, exécutés en séquence (un seul worke
   (`e2e/live/sendcloud.spec.ts`) et Cloudinary (`e2e/live/cloudinary.spec.ts`),
   ignorés si les clés sont factices.
 
+> **Couverture manquante (15/09/2026)** : les fonctionnalités matières
+> (`Material`), avis produit (`Review`), liste d'envies (`WishlistItem`),
+> réglages boutique (`StoreSettings`, `/admin/settings`) et import/purge CSV
+> (`/admin/exports`) n'ont pas encore de spec Playwright. Documentées dans
+> [docs/products](../docs/products/README.md#avis-produit) et
+> [docs/admin](../docs/admin/README.md#modules-e-commerce-optionnels---adminsettings),
+> mais sans preuve automatisée pour l'instant.
+
 ## Authentification
 
 Un seul scénario, `e2e/auth/journey.spec.ts`, joue tout le cycle de vie d'un
