@@ -67,9 +67,10 @@ naissent par inscription.
 | `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                                                                             |
 | `/admin/sales`    | transactions, factures, bordereaux                                                                                                    |
 | `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                            |
-| `/admin/products` | catalogue et catégories                                                                                                               |
+| `/admin/products` | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                             |
 | `/admin/blog`     | articles, catégories, tags                                                                                                            |
 | `/admin/promo`    | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
+| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                 |
 | `/admin/returns`  | approbation/refus des demandes de retour, remboursement Stripe automatique (voir [docs/commerce](../commerce/README.md#retours--sav)) |
 | `/admin/contacts` | messages du formulaire de contact                                                                                                     |
 | `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
@@ -101,9 +102,10 @@ commentaires de blog). Indisponible pour les ventes.
 
 ### Modules e-commerce optionnels — `/admin/settings`
 
-Cinq modules de la roadmap post-audit sont derrière un interrupteur plutôt
+Sept modules de la roadmap post-audit sont derrière un interrupteur plutôt
 qu'activés en dur : liste d'envies, ventes croisées, espace retour/SAV,
-moyen de paiement enregistré, palier de fidélité. Réglage unique
+moyen de paiement enregistré, palier de fidélité, cartes cadeaux, questions
+& réponses produit. Réglage unique
 (`StoreSettings`, ligne `id = "singleton"`, `$lib/server/storeSettings.ts`),
 lu par chaque route publique concernée — un module désactivé ne se contente
 pas d'être masqué à l'écran, sa route reste fermée (ex. `/auth/settings/wishlist`
@@ -121,13 +123,38 @@ une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
 répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
 lui-même lit toujours la valeur non mise en cache.
 
-Au 16/09/2026, les cinq modules ont une implémentation complète derrière leur
+Au 16/09/2026, les sept modules ont une implémentation complète derrière leur
 interrupteur : liste d'envies, ventes croisées (`e2e/products/wishlist.spec.ts`,
 `e2e/products/cross-sell.spec.ts`), espace retour/SAV avec remboursement Stripe
-automatique, moyen de paiement enregistré (Stripe Elements) et palier de
-fidélité intégré à la section promo — voir [docs/commerce](../commerce/README.md#retours--sav)
-et [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9) pour le détail de ces
-trois derniers.
+automatique, moyen de paiement enregistré (Stripe Elements), palier de
+fidélité intégré à la section promo, cartes cadeaux à solde décroissant
+(`e2e/gift-cards/*.spec.ts`) et questions & réponses produit modérées
+(`e2e/products/questions.spec.ts`) — voir
+[docs/commerce](../commerce/README.md#retours--sav) et
+[docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9) pour le détail des trois
+premiers, [docs/commerce#cartes-cadeaux](../commerce/README.md#cartes-cadeaux)
+et [docs/products#questions--réponses-produit](../products/README.md#questions--r%C3%A9ponses-produit)
+pour les deux derniers.
+
+### Actions groupées
+
+`src/lib/components/Table.svelte`, le tableau générique réutilisé par toutes
+les listes admin, expose deux props optionnelles pour la sélection multiple :
+`selectable` (colonne de case à cocher, case « tout sélectionner » sur la
+page courante) et `bulkActions` (barre d'actions affichée dès qu'une ligne
+est cochée — libellé, variante `destructive` avec confirmation
+`AlertDialog`, fonction `onApply(ids: string[])`). Les deux sont `undefined`
+par défaut : les autres listes admin qui n'y opèrent pas restent inchangées,
+zéro risque à l'ajout.
+
+Seule `/admin/products` la consomme pour l'instant (suppression en lot,
+action `bulkDeleteProducts`) : un produit du lot déjà présent dans une
+commande est compté à part (`skipped`) plutôt que de faire échouer toute la
+suppression — même logique FK-Restrict qu'une suppression individuelle,
+appliquée ligne par ligne. La sélection est réinitialisée à chaque
+changement de page/recherche (elle ne suit jamais des lignes qui ne sont
+plus affichées). Voir [docs/products](../products/README.md#admin) et le
+test `e2e/products/admin-bulk.spec.ts`.
 
 ### Alerting
 
@@ -191,7 +218,7 @@ Routes : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 
 | #   | Étape                                  | Geste                 | Preuve                   |
 | --- | -------------------------------------- | --------------------- | ------------------------ |
-| 1   | Modules désactivés au départ           | GET `/admin/settings` | 5 switches à `unchecked` |
+| 1   | Modules désactivés au départ           | GET `/admin/settings` | 5 des 7 switches à `unchecked` (couverture historique, cartes cadeaux/Q&A non vérifiés par ce spec) |
 | 2   | Activation d'un module (pas de bouton) | switch                | `StoreSettings` en base  |
 | 3   | Rechargée, l'état enregistré persiste  | reload                | switch reflète la base   |
 

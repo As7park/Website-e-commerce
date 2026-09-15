@@ -12,6 +12,7 @@
 	import * as Pagination from '$shadcn/pagination/index.js';
 	import { Label } from '$shadcn/label';
 	import * as Tooltip from '$shadcn/tooltip/index.js';
+	import { Checkbox } from '$shadcn/checkbox/index.js';
 
 	import type { Component } from 'svelte';
 	import type { Action } from 'svelte/action';
@@ -64,6 +65,21 @@
 		dir?: 'asc' | 'desc';
 	}
 
+	/**
+	 * Action groupée, appliquée à un lot d'ids sélectionnés (checkboxes).
+	 * `variant: 'destructive'` affiche le bouton en rouge et exige une
+	 * confirmation (`AlertDialog`) avant d'appeler `onApply` — même esprit que
+	 * les actions de ligne `type: 'form'` existantes, mais un seul appel pour
+	 * tout le lot plutôt qu'un formulaire par ligne.
+	 */
+	type BulkAction = {
+		label: string;
+		icon?: Component;
+		variant?: 'default' | 'destructive';
+		confirmDescription?: string;
+		onApply: (ids: string[]) => void | Promise<void>;
+	};
+
 	interface Props {
 		data: TableItem[];
 		columns: TableColumn[];
@@ -71,9 +87,25 @@
 		actions?: TableAction[] | null;
 		addLink?: string | null;
 		server?: ServerPaging | null;
+		/** Opt-in : ajoute une colonne de case à cocher + barre d'actions groupées. */
+		selectable?: boolean;
+		bulkActions?: BulkAction[] | null;
 	}
 
-	let { data, columns, name, actions = null, addLink = null, server = null }: Props = $props();
+	let {
+		data,
+		columns,
+		name,
+		actions = null,
+		addLink = null,
+		server = null,
+		selectable = false,
+		bulkActions = null
+	}: Props = $props();
+
+	let selectedIds = $state<Set<string>>(new Set());
+	let bulkConfirmAction = $state<BulkAction | null>(null);
+	let bulkApplying = $state(false);
 
 	let dialogOpenId = $state<string | null>(null);
 	let searchQuery = $state(server?.search ?? '');
@@ -212,6 +244,54 @@
 
 	let visibleColumns = $derived(columns.filter((col) => columnsVisibility[col.key]));
 
+	// La sélection ne survit pas à un changement de page/recherche/rechargement
+	// des données : `paginatedItems` (référence) ne change que dans ces cas-là,
+	// jamais quand on coche/décoche une case (qui n'influence pas sa dérivation).
+	$effect(() => {
+		paginatedItems;
+		selectedIds = new Set();
+	});
+
+	let isAllOnPageSelected = $derived(
+		paginatedItems.length > 0 && paginatedItems.every((item) => selectedIds.has(item.id))
+	);
+	let isSomeOnPageSelected = $derived(paginatedItems.some((item) => selectedIds.has(item.id)));
+
+	function toggleSelectItem(id: string, checked: boolean) {
+		const next = new Set(selectedIds);
+		if (checked) next.add(id);
+		else next.delete(id);
+		selectedIds = next;
+	}
+
+	function toggleSelectAllOnPage(checked: boolean) {
+		const next = new Set(selectedIds);
+		for (const item of paginatedItems) {
+			if (checked) next.add(item.id);
+			else next.delete(item.id);
+		}
+		selectedIds = next;
+	}
+
+	async function runBulkAction(action: BulkAction) {
+		bulkApplying = true;
+		try {
+			await action.onApply(Array.from(selectedIds));
+			selectedIds = new Set();
+		} finally {
+			bulkApplying = false;
+			bulkConfirmAction = null;
+		}
+	}
+
+	function handleBulkActionClick(action: BulkAction) {
+		if (action.variant === 'destructive') {
+			bulkConfirmAction = action;
+			return;
+		}
+		runBulkAction(action);
+	}
+
 	let jumpToPageValue = $state('');
 	function submitJumpToPage(event: SubmitEvent) {
 		event.preventDefault();
@@ -337,6 +417,65 @@
 				</div>
 			</div>
 
+			{#if selectable && bulkActions && bulkActions.length > 0 && selectedIds.size > 0}
+				<div
+					class="bg-muted/50 mb-3 flex flex-wrap items-center justify-between gap-2 rounded border p-2"
+				>
+					<p class="text-sm font-medium">
+						{selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''} sélectionné{selectedIds.size >
+						1
+							? 's'
+							: ''}
+					</p>
+					<div class="flex flex-wrap items-center gap-2">
+						<Button variant="ghost" size="sm" onclick={() => (selectedIds = new Set())}>
+							Désélectionner
+						</Button>
+						{#each bulkActions as action}
+							<Button
+								variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
+								size="sm"
+								disabled={bulkApplying}
+								onclick={() => handleBulkActionClick(action)}
+							>
+								{#if action.icon}
+									<action.icon class="mr-1 size-4" />
+								{/if}
+								{action.label}
+							</Button>
+						{/each}
+					</div>
+				</div>
+
+				<AlertDialog.Root
+					open={bulkConfirmAction !== null}
+					onOpenChange={(open) => {
+						if (!open) bulkConfirmAction = null;
+					}}
+				>
+					<AlertDialog.Content>
+						<AlertDialog.Header>
+							<AlertDialog.Title>Confirmer l'action groupée</AlertDialog.Title>
+							<AlertDialog.Description>
+								{bulkConfirmAction?.confirmDescription ??
+									`Cette action va s'appliquer à ${selectedIds.size} élément${selectedIds.size > 1 ? 's' : ''} et ne peut pas être annulée.`}
+							</AlertDialog.Description>
+						</AlertDialog.Header>
+						<AlertDialog.Footer>
+							<AlertDialog.Cancel onclick={() => (bulkConfirmAction = null)}>
+								Annuler
+							</AlertDialog.Cancel>
+							<AlertDialog.Action
+								disabled={bulkApplying}
+								onclick={() => bulkConfirmAction && runBulkAction(bulkConfirmAction)}
+							>
+								Confirmer
+							</AlertDialog.Action>
+						</AlertDialog.Footer>
+					</AlertDialog.Content>
+				</AlertDialog.Root>
+			{/if}
+
 			{#snippet actionButton(item: TableItem, action: TableAction, view: 'table' | 'card')}
 				{@const dialogKey = `${view}:${item.id}`}
 				{#if (!action.condition || action.condition(item)) && action.type === 'link'}
@@ -433,6 +572,16 @@
 						<Table.Root>
 							<Table.Header>
 								<Table.Row>
+									{#if selectable}
+										<Table.Head class="border-r border-r-gray-800 pr-2 w-10">
+											<Checkbox
+												checked={isAllOnPageSelected}
+												indeterminate={!isAllOnPageSelected && isSomeOnPageSelected}
+												onCheckedChange={(value) => toggleSelectAllOnPage(Boolean(value))}
+												aria-label="Tout sélectionner sur cette page"
+											/>
+										</Table.Head>
+									{/if}
 									{#each visibleColumns as column}
 										<Table.Head class="border-r border-r-gray-800 pr-2">
 											<div class="rcb">
@@ -448,6 +597,15 @@
 							<Table.Body>
 								{#each paginatedItems as item (item.id)}
 									<TableRow>
+										{#if selectable}
+											<td class="border border-gray-300 p-2">
+												<Checkbox
+													checked={selectedIds.has(item.id)}
+													onCheckedChange={(value) => toggleSelectItem(item.id, Boolean(value))}
+													aria-label={`Sélectionner la ligne ${item.id}`}
+												/>
+											</td>
+										{/if}
 										{#each visibleColumns as column}
 											<td class="border border-gray-300 p-2">
 												{#if column.key === 'images'}
@@ -481,6 +639,16 @@
 					<div class="space-y-3 md:hidden">
 						{#each paginatedItems as item (item.id)}
 							<div class="rounded border p-3">
+								{#if selectable}
+									<div class="mb-2 flex items-center gap-2 border-b pb-2">
+										<Checkbox
+											checked={selectedIds.has(item.id)}
+											onCheckedChange={(value) => toggleSelectItem(item.id, Boolean(value))}
+											aria-label={`Sélectionner la ligne ${item.id}`}
+										/>
+										<span class="text-muted-foreground text-xs">Sélectionner</span>
+									</div>
+								{/if}
 								<dl class="space-y-1.5">
 									{#each visibleColumns as column}
 										<div class="flex items-baseline justify-between gap-3">

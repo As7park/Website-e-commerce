@@ -21,6 +21,8 @@ export interface StoreFeatureFlags {
 	returnsEnabled: boolean;
 	savedPaymentsEnabled: boolean;
 	loyaltyEnabled: boolean;
+	giftCardsEnabled: boolean;
+	productQnaEnabled: boolean;
 }
 
 const DEFAULT_FLAGS: StoreFeatureFlags = {
@@ -28,7 +30,9 @@ const DEFAULT_FLAGS: StoreFeatureFlags = {
 	crossSellEnabled: false,
 	returnsEnabled: false,
 	savedPaymentsEnabled: false,
-	loyaltyEnabled: false
+	loyaltyEnabled: false,
+	giftCardsEnabled: false,
+	productQnaEnabled: false
 };
 
 /** Lecture mise en cache — utilisée par les routes publiques. */
@@ -43,7 +47,9 @@ export async function getStoreFeatureFlags(): Promise<StoreFeatureFlags> {
 			crossSellEnabled: row.crossSellEnabled,
 			returnsEnabled: row.returnsEnabled,
 			savedPaymentsEnabled: row.savedPaymentsEnabled,
-			loyaltyEnabled: row.loyaltyEnabled
+			loyaltyEnabled: row.loyaltyEnabled,
+			giftCardsEnabled: row.giftCardsEnabled,
+			productQnaEnabled: row.productQnaEnabled
 		};
 	});
 }

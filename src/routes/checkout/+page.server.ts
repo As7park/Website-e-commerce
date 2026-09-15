@@ -16,6 +16,8 @@ import { getOrderById } from '$lib/prisma/order/prendingOrder';
 import { getUserAddresses } from '$lib/prisma/addresses/addresses';
 import { OrderSchema } from '$lib/schema/order/order';
 import { validatePromo, incrementUsage } from '$lib/prisma/promo/promo';
+import { validateGiftCard, decrementGiftCardBalance } from '$lib/prisma/giftCards/giftCards';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { prisma } from '$lib/server';
 import {
 	assertOrderOwnedBy,
@@ -36,10 +38,12 @@ export const load = (async ({ locals }) => {
 	// AUTH-PLUGIN ▲
 	const IOrderSchema = await superValidate(zod(OrderSchema));
 	const addresses = await getUserAddresses(userId);
+	const { giftCardsEnabled } = await getStoreFeatureFlags();
 
 	return {
 		addresses,
-		IOrderSchema
+		IOrderSchema,
+		giftCardsEnabled
 	};
 }) satisfies PageServerLoad;
 
@@ -59,6 +63,7 @@ export const actions: Actions = {
 			shippingOption,
 			shippingCost,
 			promoCode,
+			giftCardCode,
 			servicePointId,
 			servicePointPostNumber,
 			servicePointLatitude,
@@ -109,9 +114,21 @@ export const actions: Actions = {
 				.toFixed(2)
 		);
 		const promoResult = await validatePromo(promoCode, productTotalTTC);
-		const appliedDiscount = promoResult.valid ? promoResult.discountAmount : 0;
+		const promoDiscount = promoResult.valid ? promoResult.discountAmount : 0;
 		const appliedPromoCode = promoResult.valid ? (promoResult.promo?.code ?? null) : null;
 		// PROMO-PLUGIN ▲
+
+		// Carte cadeau : plafonnée par ce qu'il reste à payer une fois la remise
+		// promo ci-dessus déduite. Comme pour `validatePromo`, seul ce calcul
+		// serveur fait foi — jamais un montant envoyé par le client.
+		const { giftCardsEnabled } = await getStoreFeatureFlags();
+		const giftCardResult = giftCardsEnabled
+			? await validateGiftCard(giftCardCode, Math.max(0, productTotalTTC - promoDiscount))
+			: { valid: false, amount: 0, giftCard: null };
+		const appliedGiftCardAmount = giftCardResult.valid ? giftCardResult.amount : 0;
+		const appliedGiftCardCode = giftCardResult.valid ? (giftCardResult.giftCard?.code ?? null) : null;
+
+		const appliedDiscount = parseFloat((promoDiscount + appliedGiftCardAmount).toFixed(2));
 
 		// COMMERCE-PLUGIN : réutilise le client Stripe existant (`savedPaymentsEnabled`)
 		// s'il en existe déjà un pour ce compte — n'en crée jamais un ici.
@@ -130,6 +147,8 @@ export const actions: Actions = {
 			hasCustomItems,
 			promoCode: appliedPromoCode,
 			discountAmount: appliedDiscount,
+			giftCardCode: appliedGiftCardCode,
+			giftCardAmount: appliedGiftCardAmount,
 			stripeCustomerId: currentUser?.stripeCustomerId,
 			servicePoint: {
 				id: servicePointId,
@@ -147,6 +166,14 @@ export const actions: Actions = {
 				await incrementUsage(promoResult.promo.id);
 			} catch (err) {
 				console.error('Erreur incrementUsage code promo:', err);
+			}
+		}
+
+		if (giftCardResult.valid && giftCardResult.giftCard && appliedGiftCardAmount > 0) {
+			try {
+				await decrementGiftCardBalance(giftCardResult.giftCard.id, appliedGiftCardAmount);
+			} catch (err) {
+				console.error('Erreur decrementGiftCardBalance:', err);
 			}
 		}
 

@@ -86,6 +86,8 @@ export async function createCheckoutSession(params: {
 	hasCustomItems: boolean;
 	promoCode: string | null;
 	discountAmount: number;
+	giftCardCode?: string | null;
+	giftCardAmount?: number;
 	/**
 	 * Client Stripe déjà existant (`User.stripeCustomerId`, posé au premier
 	 * ajout d'une carte enregistrée — voir `$lib/server/stripeCustomer.ts`).
@@ -111,6 +113,8 @@ export async function createCheckoutSession(params: {
 		hasCustomItems,
 		promoCode,
 		discountAmount,
+		giftCardCode = null,
+		giftCardAmount = 0,
 		servicePoint,
 		stripeCustomerId
 	} = params;
@@ -143,6 +147,17 @@ export async function createCheckoutSession(params: {
 		promoCode,
 		discountAmount
 	);
+
+	// Pas de paramètre dédié sur `updateOrder` (déjà 12 positionnels) : la
+	// carte cadeau n'est que du détail d'audit/affichage, `discountAmount`
+	// ci-dessus (qui inclut déjà `giftCardAmount`) reste la seule source pour
+	// le calcul de facture.
+	if (giftCardCode) {
+		await prisma.order.update({
+			where: { id: order.id },
+			data: { giftCardCode, giftCardAmount }
+		});
+	}
 
 	const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = order.items.map((item) => {
 		const ttcPrice = item.product.price * (1 + TVA_RATE);
@@ -181,7 +196,9 @@ export async function createCheckoutSession(params: {
 			shipping_option: finalShippingOption,
 			shipping_cost: (updatedOrder.shippingCost || 0).toString(),
 			promo_code: promoCode || '',
-			discount_amount: discountAmount.toString()
+			discount_amount: discountAmount.toString(),
+			gift_card_code: giftCardCode || '',
+			gift_card_amount: giftCardAmount.toString()
 		},
 		payment_intent_data: {
 			metadata: {

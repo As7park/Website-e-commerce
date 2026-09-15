@@ -94,12 +94,12 @@
 	/* ------------------------------------------------------------------
 	   ACTIONS
 	------------------------------------------------------------------ */
-	function handleRemoveFromCart(id: string, customId?: string) {
-		removeFromCart(id, customId);
+	function handleRemoveFromCart(id: string, customId?: string, variantId?: string) {
+		removeFromCart(id, customId, variantId);
 	}
 
-	function changeQuantity(id: string, qte: number, customId?: string) {
-		updateCartItemQuantity(id, qte, customId);
+	function changeQuantity(id: string, qte: number, customId?: string, variantId?: string) {
+		updateCartItemQuantity(id, qte, customId, variantId);
 	}
 
 	/**
@@ -181,6 +181,9 @@
 										<div class="flex-1 mx-4">
 											<h3 class="text-lg font-semibold">
 												{item.product.name}
+												{#if item.variant}
+													<span class="text-sm font-normal text-gray-500">— {item.variant.label}</span>
+												{/if}
 												{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
 													<span class="text-sm font-normal text-gray-500">Custom</span>
 												{/if}
@@ -189,7 +192,7 @@
 												{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
 													{getCustomCanPrice(item.quantity).toFixed(2)}€ l'unité
 												{:else}
-													{item.product.price.toFixed(2)}€
+													{(item.variant?.price ?? item.product.price).toFixed(2)}€
 												{/if}
 											</p>
 
@@ -203,7 +206,12 @@
 																? 'bg-blue-500 text-white'
 																: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
 															onclick={() =>
-																changeQuantity(item.product.id, option.value, item.custom?.[0]?.id)}
+																changeQuantity(
+																	item.product.id,
+																	option.value,
+																	item.custom?.[0]?.id,
+																	item.variant?.id
+																)}
 														>
 															{option.value}
 														</button>
@@ -225,7 +233,7 @@
 																: ''}"
 															onclick={() =>
 																canAddQuantity(option, item.quantity, false) &&
-																changeQuantity(item.product.id, option)}
+																changeQuantity(item.product.id, option, undefined, item.variant?.id)}
 															disabled={!canAddQuantity(option, item.quantity, false)}
 														>
 															{option}
@@ -248,7 +256,8 @@
 												{/if}
 											</p>
 											<button
-												onclick={() => handleRemoveFromCart(item.product.id, item.custom?.[0]?.id)}
+												onclick={() =>
+													handleRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
 												class="text-red-600 hover:text-red-800"
 											>
 												<Trash />

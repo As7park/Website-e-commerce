@@ -118,7 +118,14 @@
 								</AlertDialog.Content>
 							</AlertDialog.Root>
 						{:else}
-							<span class="text-sm font-medium">{STATUS_LABELS[item.status] ?? item.status}</span>
+							<div class="text-right">
+								<span class="text-sm font-medium">{STATUS_LABELS[item.status] ?? item.status}</span>
+								{#if item.returnTrackingNumber}
+									<p class="text-xs text-muted-foreground">
+										Étiquette : {item.returnTrackingNumber}
+									</p>
+								{/if}
+							</div>
 						{/if}
 					</div>
 				</Card.Content>

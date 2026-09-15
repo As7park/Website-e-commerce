@@ -6,6 +6,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
+	import { enhance } from '$app/forms';
 	import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
 	import { Switch } from '$shadcn/switch/index.js';
 	import { Label } from '$shadcn/label/index.js';
@@ -20,10 +21,13 @@
 		KeyRound,
 		ShieldCheck,
 		CreditCard,
-		Undo2
+		Undo2,
+		Bell
 	} from 'lucide-svelte';
 
 	let { data } = $props();
+
+	let marketingOptIn = $state(data.marketingEmailsOptIn);
 
 	// Initialiser les formulaires Superform
 	const emailForm = superForm(data.emailForm, {
@@ -182,6 +186,43 @@
 					</Card.Footer>
 				</Card.Root>
 			{/if}
+
+			<!-- Préférences de communication -->
+			<Card.Root class="flex flex-col">
+				<Card.Header>
+					<Card.Title class="flex items-center gap-2">
+						<Bell class="w-6 h-6 text-primary" />
+						<span>Communications</span>
+					</Card.Title>
+					<Card.Description>
+						Les emails liés à vos commandes (facture, confirmation) sont toujours envoyés,
+						quel que soit ce réglage.
+					</Card.Description>
+				</Card.Header>
+				<Card.Content class="flex-grow">
+					<form
+						method="POST"
+						action="?/marketingEmailsOptIn"
+						use:enhance={() => {
+							return async ({ result }) => {
+								if (result.type === 'success' && result.data) {
+									marketingOptIn = result.data.marketingEmailsOptIn as boolean;
+									toast.success(
+										marketingOptIn ? 'Emails marketing activés' : 'Emails marketing désactivés'
+									);
+								}
+							};
+						}}
+					>
+						<div class="flex items-center justify-between rounded-lg border p-3">
+							<Label for="marketing-switch" class="flex-grow cursor-pointer pr-4">
+								Offres, nouveautés et alertes (retour en stock, relance panier)
+							</Label>
+							<Switch id="marketing-switch" checked={marketingOptIn} type="submit" />
+						</div>
+					</form>
+				</Card.Content>
+			</Card.Root>
 		{/if}
 
 		{#if !data.user.googleId}

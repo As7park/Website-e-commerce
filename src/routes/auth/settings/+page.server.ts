@@ -33,7 +33,12 @@ import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, RequestEvent } from './$types';
 import type { SessionFlags } from '$lib/lucia/session';
 import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema';
-import { getUserMFA, updateUserMFA } from '$lib/prisma/user/user';
+import {
+	getMarketingEmailsOptIn,
+	getUserMFA,
+	updateMarketingEmailsOptIn,
+	updateUserMFA
+} from '$lib/prisma/user/user';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
@@ -70,6 +75,7 @@ export const load = async (event: RequestEvent) => {
 	);
 
 	const { wishlistEnabled, savedPaymentsEnabled, returnsEnabled } = await getStoreFeatureFlags();
+	const marketingEmailsOptIn = await getMarketingEmailsOptIn(event.locals.user.id);
 
 	return {
 		recoveryCode,
@@ -79,7 +85,8 @@ export const load = async (event: RequestEvent) => {
 		isMfaEnabledForm,
 		wishlistEnabled,
 		savedPaymentsEnabled,
-		returnsEnabled
+		returnsEnabled,
+		marketingEmailsOptIn
 	};
 };
 
@@ -185,5 +192,12 @@ export const actions: Actions = {
 			text: 'Authentication modifiée',
 			newStatus: newMfaStatus
 		});
+	},
+
+	marketingEmailsOptIn: async (event: RequestEvent) => {
+		const current = await getMarketingEmailsOptIn(event.locals.user.id);
+		const next = !current;
+		await updateMarketingEmailsOptIn(event.locals.user.id, next);
+		return { marketingEmailsOptIn: next };
 	}
 };

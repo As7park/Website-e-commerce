@@ -18,6 +18,14 @@
 		noindex?: boolean;
 		nofollow?: boolean;
 		pageKey?: keyof typeof seoConfig.pages;
+		/** `type="product"` uniquement — alimente le JSON-LD `Product` (rich snippets). */
+		price?: number;
+		currency?: string;
+		availability?: 'InStock' | 'OutOfStock';
+		sku?: string;
+		brand?: string;
+		ratingValue?: number;
+		reviewCount?: number;
 	}
 	
 	let { 
@@ -34,7 +42,14 @@
 		tags = [],
 		noindex = false,
 		nofollow = false,
-		pageKey
+		pageKey,
+		price,
+		currency = 'EUR',
+		availability,
+		sku,
+		brand,
+		ratingValue,
+		reviewCount
 	}: SEOProps = $props();
 	
 	// Utiliser la configuration par défaut si pageKey est fourni
@@ -95,6 +110,39 @@
 		...(section && { articleSection: section }),
 		...(tags.length > 0 && { keywords: tags.join(', ') })
 	} : null);
+
+	// Données structurées pour une fiche produit — `aggregateRating` seulement
+	// si des avis existent déjà (un `Product` sans avis ne doit pas prétendre
+	// à une note de 0/5, Google rejette d'ailleurs les faux avis à 0 note).
+	const productData = $derived(
+		type === 'product'
+			? {
+					name: finalTitle,
+					description: finalDescription,
+					image: finalImage.startsWith('http') ? finalImage : `${seoConfig.site.url}${finalImage}`,
+					...(sku && { sku }),
+					...(brand && { brand: { '@type': 'Brand', name: brand } }),
+					...(price !== undefined && {
+						offers: {
+							'@type': 'Offer',
+							url: canonicalUrl,
+							priceCurrency: currency,
+							price: price.toFixed(2),
+							availability: `https://schema.org/${availability ?? 'InStock'}`
+						}
+					}),
+					...(ratingValue !== undefined && reviewCount !== undefined && reviewCount > 0
+						? {
+								aggregateRating: {
+									'@type': 'AggregateRating',
+									ratingValue: ratingValue.toFixed(1),
+									reviewCount
+								}
+							}
+						: {})
+				}
+			: null
+	);
 </script>
 
 <svelte:head>
@@ -155,4 +203,8 @@
 
 {#if type === 'article' && articleData}
 	<StructuredData type="Article" data={articleData} />
+{/if}
+
+{#if type === 'product' && productData}
+	<StructuredData type="Product" data={productData} />
 {/if}

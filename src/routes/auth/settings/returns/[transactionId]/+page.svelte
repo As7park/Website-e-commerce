@@ -54,6 +54,24 @@
 						Le remboursement a été émis auprès de votre moyen de paiement.
 					</p>
 				{/if}
+				{#if data.returnRequest.returnTrackingNumber}
+					<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+						<div>
+							<p class="text-xs text-muted-foreground">Étiquette de retour — numéro de suivi</p>
+							<p class="font-mono text-sm">{data.returnRequest.returnTrackingNumber}</p>
+						</div>
+						{#if data.returnRequest.returnTrackingUrl}
+							<Button href={data.returnRequest.returnTrackingUrl} target="_blank" rel="noopener noreferrer" size="sm">
+								Télécharger l'étiquette
+							</Button>
+						{/if}
+					</div>
+				{:else if data.returnRequest.status === 'REFUNDED'}
+					<p class="mt-2 text-sm text-muted-foreground">
+						L'étiquette de retour n'est pas encore disponible — contactez-nous si elle tarde à
+						apparaître.
+					</p>
+				{/if}
 			</Card.Content>
 		</Card.Root>
 	{:else}

@@ -26,7 +26,8 @@ const publicProductInclude = {
 		}
 	},
 	material: true,
-	taxonomyValues: { include: { taxonomyValue: { include: { taxonomy: true } } } }
+	taxonomyValues: { include: { taxonomyValue: { include: { taxonomy: true } } } },
+	variants: { orderBy: { position: 'asc' } }
 } as const;
 
 export type PublicProduct = Awaited<ReturnType<typeof listProducts>>['products'][number];

@@ -8,6 +8,8 @@ import {
 	markReturnRejected
 } from '$lib/prisma/returns/returns';
 import { stripe } from '$lib/server/stripe';
+import { createSendcloudReturnLabel } from '$lib/sendcloud/returnLabel';
+import { log } from '$lib/server/log';
 
 /**
  * Gestion admin des demandes de retour (`ReturnRequest`).
@@ -71,6 +73,21 @@ export const actions: Actions = {
 			});
 
 			await markReturnApproved(id, refund.id);
+
+			// Best-effort : le remboursement est déjà acquis, une étiquette de
+			// retour qui échoue ne doit pas repasser la demande en échec.
+			try {
+				await createSendcloudReturnLabel(id, {
+					shippingMethodId: returnRequest.transaction.shippingMethodId,
+					package_weight: returnRequest.transaction.package_weight
+				});
+			} catch (labelErr) {
+				log('WARN', 'returns', 'Étiquette de retour Sendcloud non générée', {
+					returnRequestId: id,
+					error: labelErr instanceof Error ? labelErr.message : String(labelErr)
+				});
+			}
+
 			return { success: true };
 		} catch (err) {
 			console.error('Erreur remboursement Stripe:', err);

@@ -237,5 +237,12 @@
 
 			<Button type="submit">Save changes</Button>
 		</form>
+
+		<a
+			href={`/admin/products/${$updateProductData._id}/variants`}
+			class="mt-4 inline-block text-sm text-primary underline"
+		>
+			Gérer les variantes (tailles, couleurs...)
+		</a>
 	</div>
 </div>

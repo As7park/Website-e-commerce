@@ -13,6 +13,18 @@ export type OrderItem = {
 		images: string;
 		stock: number;
 	};
+	/**
+	 * Variante sélectionnée (`ProductVariant`), absente pour un produit sans
+	 * variante. `price`/`stock` remplacent ceux de `product` ci-dessus pour
+	 * tous les calculs de cette ligne — le prix/stock du produit reste
+	 * affiché nulle part une fois une variante choisie.
+	 */
+	variant?: {
+		id: string;
+		label: string;
+		price: number;
+		stock: number;
+	};
 	quantity: number;
 	price: number;
 	custom?: Array<{
@@ -177,11 +189,19 @@ export const addToCart = (product: OrderItem) => {
 			}
 		}
 
+		// Deux variantes du même produit sont des lignes distinctes : leur stock
+		// et leur fusion ne doivent jamais se mélanger, d'où la comparaison sur
+		// l'id de variante (`undefined` des deux côtés pour un produit sans
+		// variante — comportement inchangé dans ce cas).
+		const sameLine = (item: OrderItem) =>
+			item.product.id === product.product.id && item.variant?.id === product.variant?.id;
+
 		const totalQuantityForProduct = currentCart.items
-			.filter((item) => item.product.id === product.product.id)
+			.filter(sameLine)
 			.reduce((sum, item) => sum + item.quantity, 0);
 
-		const availableStock = product.product.stock - totalQuantityForProduct;
+		const stockLimit = product.variant?.stock ?? product.product.stock;
+		const availableStock = stockLimit - totalQuantityForProduct;
 		if (availableStock <= 0) {
 			console.error('Stock exceeded');
 			toast.error('Stock insuffisant.');
@@ -192,8 +212,7 @@ export const addToCart = (product: OrderItem) => {
 
 		const itemIndex = currentCart.items.findIndex(
 			(item) =>
-				item.product.id === product.product.id &&
-				JSON.stringify(item.custom) === JSON.stringify(product.custom)
+				sameLine(item) && JSON.stringify(item.custom) === JSON.stringify(product.custom)
 		);
 
 		if (itemIndex !== -1) {
@@ -208,7 +227,9 @@ export const addToCart = (product: OrderItem) => {
 		// Recalc product subtotal with custom pricing for personalized items
 		const newSubtotal = currentCart.items.reduce((sum, item) => {
 			const isCustom = Array.isArray(item.custom) && item.custom.length > 0;
-			const unitPrice = isCustom ? getCustomCanPrice(item.quantity) : item.product.price;
+			const unitPrice = isCustom
+				? getCustomCanPrice(item.quantity)
+				: (item.variant?.price ?? item.product.price);
 			return sum + unitPrice * item.quantity;
 		}, 0);
 		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));
@@ -226,28 +247,28 @@ export const addToCart = (product: OrderItem) => {
 /**
  * Removes a product from the cart
  */
-export const removeFromCart = (productId: string, customId?: string) => {
+export const removeFromCart = (productId: string, customId?: string, variantId?: string) => {
 	cart.update((currentCart) => {
-		const itemToRemoveExists = currentCart.items.some(
-			(item) => item.product.id === productId && (!customId || item.custom?.[0]?.id === customId)
-		);
+		const matchesLine = (item: OrderItem) =>
+			item.product.id === productId &&
+			(!customId || item.custom?.[0]?.id === customId) &&
+			item.variant?.id === variantId;
+
+		const itemToRemoveExists = currentCart.items.some(matchesLine);
 
 		if (!itemToRemoveExists) {
 			toast.error('Produit introuvable dans le panier.');
 			return currentCart;
 		}
 
-		currentCart.items = currentCart.items.filter((item) => {
-			if (customId) {
-				return !(item.product.id === productId && item.custom?.[0]?.id === customId);
-			}
-			return item.product.id !== productId;
-		});
+		currentCart.items = currentCart.items.filter((item) => !matchesLine(item));
 
 		// Recalc product subtotal with custom pricing for personalized items
 		const newSubtotal = currentCart.items.reduce((sum, item) => {
 			const isCustom = Array.isArray(item.custom) && item.custom.length > 0;
-			const unitPrice = isCustom ? getCustomCanPrice(item.quantity) : item.product.price;
+			const unitPrice = isCustom
+				? getCustomCanPrice(item.quantity)
+				: (item.variant?.price ?? item.product.price);
 			return sum + unitPrice * item.quantity;
 		}, 0);
 		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));
@@ -265,10 +286,18 @@ export const removeFromCart = (productId: string, customId?: string) => {
 /**
  * Updates the quantity of a product in the cart
  */
-export const updateCartItemQuantity = (productId: string, quantity: number, customId?: string) => {
+export const updateCartItemQuantity = (
+	productId: string,
+	quantity: number,
+	customId?: string,
+	variantId?: string
+) => {
 	cart.update((currentCart) => {
 		const itemIndex = currentCart.items.findIndex(
-			(item) => item.product.id === productId && (!customId || item.custom?.[0]?.id === customId)
+			(item) =>
+				item.product.id === productId &&
+				(!customId || item.custom?.[0]?.id === customId) &&
+				item.variant?.id === variantId
 		);
 
 		if (itemIndex === -1) {
@@ -279,10 +308,16 @@ export const updateCartItemQuantity = (productId: string, quantity: number, cust
 		const currentItem = currentCart.items[itemIndex];
 
 		const otherItemsQuantity = currentCart.items
-			.filter((_, idx) => idx !== itemIndex && _.product.id === productId)
+			.filter(
+				(item, idx) =>
+					idx !== itemIndex &&
+					item.product.id === productId &&
+					item.variant?.id === currentItem.variant?.id
+			)
 			.reduce((sum, i) => sum + i.quantity, 0);
 
-		const maxAvailable = currentItem.product.stock - otherItemsQuantity;
+		const stockLimit = currentItem.variant?.stock ?? currentItem.product.stock;
+		const maxAvailable = stockLimit - otherItemsQuantity;
 		let newQuantity = Math.min(quantity, maxAvailable);
 
 		// 72-limit logic if not custom
@@ -302,7 +337,7 @@ export const updateCartItemQuantity = (productId: string, quantity: number, cust
 		// Recalc product subtotal with custom pricing for personalized items
 		const newSubtotal = currentCart.items.reduce((sum, i) => {
 			const isCustom = Array.isArray(i.custom) && i.custom.length > 0;
-			const unitPrice = isCustom ? getCustomCanPrice(i.quantity) : i.product.price;
+			const unitPrice = isCustom ? getCustomCanPrice(i.quantity) : (i.variant?.price ?? i.product.price);
 			return sum + unitPrice * i.quantity;
 		}, 0);
 		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));

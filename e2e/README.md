@@ -8,12 +8,16 @@ worker) :
   (`e2e/admin/users.spec.ts`), modules e-commerce optionnels
   (`e2e/admin/settings.spec.ts`) et export/purge/import CSV
   (`e2e/admin/exports.spec.ts`) ;
-- catalogue : vitrine (`e2e/products/catalog.spec.ts`), CRUD admin produits
-  (`e2e/products/admin.spec.ts`), taxonomies génériques
-  (`e2e/products/taxonomies.spec.ts`), avis produit (`e2e/products/reviews.spec.ts`)
-  et liste d'envies (`e2e/products/wishlist.spec.ts`) ;
+- catalogue : vitrine (`e2e/products/catalog.spec.ts`), CRUD admin produits +
+  actions groupées (`e2e/products/admin.spec.ts`, `e2e/products/admin-bulk.spec.ts`),
+  taxonomies génériques (`e2e/products/taxonomies.spec.ts`), avis
+  (`e2e/products/reviews.spec.ts`), questions & réponses
+  (`e2e/products/questions.spec.ts`), variantes (`e2e/products/variants.spec.ts`)
+  liste d'envies (`e2e/products/wishlist.spec.ts`) et ventes croisées
+  (`e2e/products/cross-sell.spec.ts`) ;
 - commerce : panier (connecté + invité), checkout, webhook Stripe, ventes,
-  retours/SAV, moyens de paiement enregistrés (`e2e/commerce/*.spec.ts`) ;
+  retours/SAV, moyens de paiement enregistrés (`e2e/commerce/*.spec.ts`) et
+  cartes cadeaux (`e2e/gift-cards/*.spec.ts`) ;
 - blog : vitrine (`e2e/blog/catalog.spec.ts`) et CRUD admin articles
   (`e2e/blog/admin.spec.ts`) ;
 - codes promo : CRUD admin (`e2e/promo/admin.spec.ts`), validation

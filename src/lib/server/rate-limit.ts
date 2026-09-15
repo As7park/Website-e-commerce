@@ -503,3 +503,11 @@ export function getClientIP(event: RequestEvent): string {
  * les 60 s. Le quota n'est consommé que si Zod a accepté le formulaire.
  */
 export const contactFormLimiter = new RefillingTokenBucket<string>(5, 60, 'contact-form');
+
+/**
+ * Limiteur pour le suivi de commande sans compte (`/suivi-commande`) — sans
+ * ça, un numéro de facture (identifiant court, prévisible) serait exposé à
+ * un essai en masse par IP pour retrouver l'email associé à une commande.
+ * 8 essais d'affilée, puis 1 toutes les 30 s.
+ */
+export const guestTrackingLimiter = new RefillingTokenBucket<string>(8, 30, 'guest-tracking');

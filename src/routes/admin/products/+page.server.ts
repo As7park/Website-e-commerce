@@ -97,6 +97,48 @@ export const actions: Actions = {
 			return fail(500, { message: 'Product deletion failed' });
 		}
 	},
+	bulkDeleteProducts: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const ids = formData.getAll('ids').filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+		if (ids.length === 0) {
+			return fail(400, { message: 'Aucun produit sélectionné' });
+		}
+
+		let deleted = 0;
+		let skipped = 0;
+		for (const id of ids) {
+			try {
+				const existingProduct = await getProductById(id);
+				if (!existingProduct) continue;
+
+				await deleteProductById(id);
+				deleted += 1;
+
+				for (const imageUrl of existingProduct.images) {
+					const publicId = getPublicIdFromUrl(imageUrl);
+					if (!publicId || !imageUrl.includes('cloudinary')) continue;
+					try {
+						await cloudinary.uploader.destroy(`products/${publicId}`);
+					} catch (error) {
+						console.error('Error deleting image from Cloudinary:', error);
+					}
+				}
+			} catch (error) {
+				if (error instanceof ProductInUseError) {
+					// Produit déjà commandé (FK Restrict) : on l'ignore plutôt que de
+					// faire échouer tout le lot pour une seule ligne bloquée.
+					skipped += 1;
+					continue;
+				}
+				console.error('Error bulk deleting product:', id, error);
+				skipped += 1;
+			}
+		}
+
+		return { deleted, skipped };
+	},
 	deleteTaxonomy: async ({ request, locals }) => {
 		requireAdmin(locals);
 		const formData = await request.formData();

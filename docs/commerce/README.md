@@ -25,6 +25,10 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 | `src/routes/admin/returns/`                                         | approbation/refus + remboursement Stripe (double marqueur ADMIN)                                  |
 | `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts` | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
 | `src/routes/auth/settings/saved-payments/`                          | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
+| `src/lib/prisma/giftCards/`                                         | DAO cartes cadeaux (solde décroissant)                                                             |
+| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/` | émission/gestion admin, validation côté checkout                                                 |
+| `src/lib/sendcloud/returnLabel.ts`                                   | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                 |
+| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/` | suivi de commande sans compte (n° facture + email)                       |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -57,11 +61,18 @@ Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
 ## Contrat serveur
 
 - `/api/save-cart` : authentifié, `order.userId` = visiteur, statut `PENDING`.
-- Prix des lignes = `Product.price`, jamais le JSON client ni le panier invité.
+- Prix des lignes = `Product.price` (ou `ProductVariant.price` si une
+  variante est sélectionnée — voir [docs/products](../products/README.md#variantes-produit)),
+  jamais le JSON client ni le panier invité.
 - Invité : `localStorage` seulement ; fusion au compte à signup / login
-  (même `productId` → quantités additionnées, plafonnées au stock).
+  (même `productId` **et** même `variantId` → quantités additionnées,
+  plafonnées au stock de la ligne ; deux variantes du même produit ne
+  fusionnent jamais entre elles).
 - `?/checkout` : même propriétaire ; un `shippingCost` Sendcloud entre 0 et
-  200 € est accepté pour créer la session Stripe.
+  200 € est accepté pour créer la session Stripe. Un code promo et une carte
+  cadeau (`giftCardCode`) se cumulent : la carte s'applique sur ce qu'il
+  reste à payer une fois la remise promo déduite (voir « Cartes cadeaux »
+  plus bas).
 - Webhook : sous verrou (`stripe:checkout:<session id>`, `src/lib/server/lock.ts`)
   pour tolérer une double livraison Stripe, crée la `Transaction` et passe
   l'`Order` en `PAID`. Facture et Sendcloud partent ensuite chacun dans leur
@@ -123,6 +134,19 @@ ci-dessus). Pas de nouvel appel Sendcloud : lecture seule des champs déjà
 écrits par le job post-paiement. Tant que l'étiquette n'est pas encore créée,
 le panneau l'indique plutôt que de laisser un vide.
 
+### Suivi de commande sans compte
+
+`/suivi-commande` réutilise le même `OrderTrackingPanel` pour un visiteur
+sans session : formulaire numéro de facture + email, résolu par
+`getTransactionByInvoiceAndEmail` (comparaison email insensible à la casse).
+Un couple invalide renvoie un message générique unique (« Aucune commande ne
+correspond à ces informations. ») sans préciser lequel des deux champs est en
+cause — sinon le formulaire devient un oracle pour tester des numéros de
+facture au hasard. Limité par IP (`guestTrackingLimiter`,
+`RefillingTokenBucket` de 8 jetons/30 s, `$lib/server/rate-limit.ts`) pour la
+même raison : sans compte ni mot de passe à deviner, seul ce débit protège
+contre l'énumération. Lien affiché sur `/checkout/success`.
+
 ### Débit SMTP sous rafale (facture)
 
 `runInvoiceEmailJob` (`$lib/server/jobs/invoice-email.ts`) consomme un jeton
@@ -169,6 +193,51 @@ pour une suppression, pas pour approuver/refuser) :
 
 Pas de remboursement partiel, pas de ré-expédition/échange : uniquement un
 remboursement complet vers le moyen de paiement d'origine.
+
+### Étiquette de retour Sendcloud
+
+À l'approbation, `createSendcloudReturnLabel`
+(`src/lib/sendcloud/returnLabel.ts`) génère une étiquette retour (`is_return:
+true`, destination = l'adresse de la boutique plutôt que celle du client —
+inverse de l'étiquette d'envoi) et pose `returnTrackingNumber`/
+`returnTrackingUrl` sur le `ReturnRequest`. Appel **best-effort** : encadré
+dans un `try/catch` séparé de l'appel Stripe, un échec Sendcloud ne bloque
+jamais le remboursement déjà effectué — seulement une entrée `WARN` dans les
+logs. Le compte voit le numéro de suivi sur
+`/auth/settings/returns/[transactionId]` dès qu'il est posé, avec un message
+d'attente sinon.
+
+⚠️ Le champ `is_return` n'a pas été vérifié contre un compte Sendcloud réel
+dans l'environnement de développement de ce projet (pas de sandbox
+disponible) : à valider une fois avant la première utilisation en
+production.
+
+## Cartes cadeaux
+
+Module activable depuis `/admin/settings` (`StoreSettings.giftCardsEnabled`,
+voir [docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)).
+Solde décroissant (`GiftCard`, `src/lib/prisma/giftCards/giftCards.ts`),
+émis uniquement depuis l'admin (`/admin/gift-cards/create` — code généré,
+format `GIFT-XXXX-XXXX-XXXX`, jamais choisi par l'admin ni le client) : pas
+de vente en ligne de carte cadeau, seulement leur utilisation au checkout.
+
+Un code se cumule avec un éventuel code promo (`PromoCodeInput`,
+[docs/promo](../promo/README.md)) : au checkout, le serveur calcule d'abord
+la remise promo, puis plafonne le montant de la carte cadeau par ce qu'il
+reste à payer (`validateGiftCard(code, productTotalTTC - promoDiscount)`) —
+jamais l'un sans l'autre, jamais un montant envoyé par le client. Le solde
+est décrémenté **au même moment que `PromoCode.usageCount`** : à la création
+de la session Stripe, pas à la confirmation du paiement — une session Stripe
+abandonnée consomme donc le solde de la carte, exactement comme un code
+promo abandonné consomme son compteur d'usage. Décision assumée pour rester
+cohérent avec le comportement déjà en place plutôt que d'introduire un
+second modèle de décompte au moment du webhook.
+
+Édition admin (`/admin/gift-cards/[id]`) : statut, destinataire, note,
+expiration. La valeur d'émission et le solde ne se modifient jamais par ce
+formulaire — un ajustement de solde (SAV, remboursement partiel) passe par un
+formulaire séparé et explicite, pour ne jamais mélanger metadata et argent
+dans le même geste.
 
 ## Moyens de paiement enregistrés
 
@@ -284,6 +353,24 @@ rejouable en e2e. Les cartes sont insérées directement en base
 | 4   | Suppression                                    | bouton corbeille                    | carte absente de l'UI et de la base |
 
 Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre.
+
+### Cartes cadeaux — `e2e/gift-cards/validate.spec.ts`, `e2e/gift-cards/admin.spec.ts`
+
+Stripe n'est pas appelé : `decrementGiftCardBalance` suit
+`stripe.checkout.sessions.create`, hors de portée de ces specs (même
+convention que `incrementUsage` pour les codes promo).
+
+| #   | Étape                                                       | Geste                        | Preuve                                    |
+| --- | ------------------------------------------------------------ | ------------------------------- | -------------------------------------------- |
+| 1   | API : acceptée / inconnue / inactive / expirée / épuisée    | POST `/api/gift-cards/validate` | `valid`/`reason` par cas                     |
+| 2   | Montant plafonné par le reste à payer, pas seulement le solde | `maxApplicable` < solde       | `amount === maxApplicable`                   |
+| 3   | Désactivée globalement : refusée même avec un code valide  | flag `giftCardsEnabled` à `false` | 404                                       |
+| 4   | Checkout : carte appliquée seule puis cumulée à un code promo | formulaires « Appliquer »    | montant affiché ; carte retirée si le plafond change |
+
+Administration (`admin.spec.ts`) : liste, désactivation, ajustement manuel du
+solde (ne touche jamais `initialValue`), suppression, création avec code
+généré affiché une seule fois. À part : CLIENT POST `?/deleteGiftCard` — la
+carte reste.
 
 ```bash
 npm run test:e2e

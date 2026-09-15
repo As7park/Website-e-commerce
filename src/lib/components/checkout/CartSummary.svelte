@@ -15,8 +15,13 @@
 		totalNonCustomQuantity: number;
 		canAddQuantity: (newQuantity: number, currentQuantity: number, isCustom: boolean) => boolean;
 		getCustomCanPrice: (quantity: number) => number;
-		onRemoveFromCart: (productId: string) => void;
-		onChangeQuantity: (productId: string, quantity: number, customId?: string) => void;
+		onRemoveFromCart: (productId: string, customId?: string, variantId?: string) => void;
+		onChangeQuantity: (
+			productId: string,
+			quantity: number,
+			customId?: string,
+			variantId?: string
+		) => void;
 		discountAmount?: number;
 		promoCode?: string;
 	}
@@ -100,9 +105,14 @@
 						/>
 						<div class="flex-1 space-y-2">
 							<div class="flex justify-between">
-								<h3 class="font-medium">{item.product.name}</h3>
+								<h3 class="font-medium">
+									{item.product.name}
+									{#if item.variant}
+										<span class="text-sm font-normal text-muted-foreground">— {item.variant.label}</span>
+									{/if}
+								</h3>
 								<button
-									onclick={() => onRemoveFromCart(item.product.id)}
+									onclick={() => onRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
 									class="text-destructive hover:text-destructive/80"
 								>
 									<Trash class="w-4 h-4" />
@@ -112,7 +122,7 @@
 								{#if item.custom?.length > 0}
 									{getCustomCanPrice(item.quantity).toFixed(2)}€ l'unité
 								{:else}
-									{item.product.price.toFixed(2)}€ l'unité
+									{(item.variant?.price ?? item.product.price).toFixed(2)}€ l'unité
 								{/if}
 							</p>
 
@@ -148,7 +158,7 @@
 												: ''}"
 											onclick={() =>
 												canAddQuantity(option, item.quantity, false) &&
-												onChangeQuantity(item.product.id, option)}
+												onChangeQuantity(item.product.id, option, undefined, item.variant?.id)}
 											disabled={!canAddQuantity(option, item.quantity, false)}
 										>
 											{option}

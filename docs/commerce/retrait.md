@@ -25,8 +25,15 @@ rm -rf src/lib/components/cart src/lib/components/checkout src/lib/components/Fa
 rm -rf src/routes/checkout src/routes/api/save-cart src/routes/api/webhooks
 rm -rf src/routes/admin/sales src/routes/auth/settings/factures
 rm -rf src/lib/server/jobs/post-payment.ts src/routes/api/jobs/post-payment
-rm -rf e2e/commerce docs/commerce
+rm -rf src/lib/prisma/giftCards src/routes/admin/gift-cards src/routes/api/gift-cards
+rm -rf src/lib/schema/giftCards
+rm -rf src/routes/suivi-commande
+rm -rf src/lib/sendcloud/returnLabel.ts
+rm -rf e2e/commerce e2e/gift-cards docs/commerce
 ```
+
+`src/lib/components/checkout/GiftCardInput.svelte` est déjà sous
+`src/lib/components/checkout` (ligne ci-dessus).
 
 Les adresses (`src/lib/prisma/addresses`) restent avec l'auth si le compte les
 expose encore.
@@ -54,7 +61,8 @@ tels quels.
 | `src/routes/admin/+layout.svelte` | retirer l'entrée « ventes » |
 | `src/lib/sitemap.config.ts` | retirer `/checkout` |
 | `src/routes/products/[slug]/+page.svelte` | retirer « Ajouter au panier » |
-| `prisma/schema.prisma` | `Order`, `OrderItem`, `Transaction` : garder si historique comptable |
+| `prisma/schema.prisma` | `Order`, `OrderItem`, `Transaction` : garder si historique comptable ; retirer `GiftCard`, `ReturnRequest`, `SavedPaymentMethod` et `StoreSettings.giftCardsEnabled`/`returnsEnabled`/`savedPaymentsEnabled` |
+| `src/routes/checkout/success/+page.svelte` | retirer le lien « Suivre ma commande » vers `/suivi-commande` |
 
 Sendcloud (`src/lib/sendcloud`, `/api/sendcloud`) et le promo (`PROMO-PLUGIN`)
 ne font pas partie de ce module : les retirer à part.

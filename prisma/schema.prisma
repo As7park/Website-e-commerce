@@ -87,6 +87,12 @@ model User {
   /// (`savedPaymentsEnabled`) — jamais créé pour le paiement simple.
   stripeCustomerId String? @unique
 
+  /// Consentement aux emails marketing (relances, retour en stock,
+  /// nouveautés) — jamais les emails transactionnels (facture, confirmation
+  /// de commande, réinitialisation de mot de passe), toujours envoyés.
+  /// `false` par défaut : opt-in explicite, pas opt-out.
+  marketingEmailsOptIn Boolean @default(false)
+
   role Role @default(CLIENT)
 
   // Relations commerce
@@ -94,6 +100,7 @@ model User {
   orders              Order[]
   transactions        Transaction[]
   reviews             Review[]
+  productQuestions    ProductQuestion[]
   wishlistItems       WishlistItem[]
   savedPaymentMethods SavedPaymentMethod[]
   returnRequests      ReturnRequest[]
@@ -207,6 +214,12 @@ model Order {
   status         OrderStatus @default(PENDING)
   promoCode      String?
   discountAmount Float       @default(0)
+  /// Carte cadeau appliquée : `giftCardAmount` est déjà inclus dans
+  /// `discountAmount` ci-dessus (qui reste la remise totale utilisée par le
+  /// calcul de facture) — ces deux champs ne servent qu'à l'affichage /
+  /// l'audit du détail de la remise.
+  giftCardCode   String?
+  giftCardAmount Float       @default(0)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]
@@ -247,6 +260,9 @@ model OrderItem {
   id        String   @id @default(cuid())
   orderId   String
   productId String
+  /// Variante sélectionnée, si le produit en propose (`ProductVariant`).
+  /// `null` pour un produit sans variante — comportement inchangé.
+  variantId String?
   quantity  Int
   price     Float
   custom    Custom[]
@@ -257,11 +273,38 @@ model OrderItem {
   // PRODUCT-PLUGIN / COMMERCE-PLUGIN : Restrict — un produit déjà commandé ne
   // doit pas pouvoir détruire l'historique de vente. OrderItem.productId est
   // le couplage catalogue → tunnel.
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // Même garde que `product` ci-dessus : une variante déjà commandée reste
+  // supprimable seulement une fois son historique purgé (jamais en cascade).
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([productId])
+  @@index([variantId])
   @@map("order_items")
+}
+
+/// Variante simple d'un produit (étiquette libre, pas d'axes combinatoires) :
+/// stock propre, prix optionnel qui surcharge `Product.price` quand renseigné.
+/// Gérée depuis `/admin/products/[id]/variants`, jamais depuis le formulaire
+/// produit principal (délibérément séparé — ce formulaire est déjà chargé).
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  label     String
+  sku       String?  @unique
+  /// `null` = utilise `Product.price` tel quel.
+  price     Float?
+  stock     Int      @default(0)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 model OrderStatusHistory {
@@ -295,7 +338,13 @@ model Product {
   categories     ProductCategory[]
   orderItems     OrderItem[]
   reviews        Review[]
+  questions      ProductQuestion[]
   wishlistedBy   WishlistItem[]
+  /// Variantes simples (étiquette libre : « Taille 54 », « Or blanc »...),
+  /// chacune avec son propre stock et un prix optionnel qui surcharge
+  /// `price` ci-dessus. Un produit sans variante se comporte exactement
+  /// comme avant leur introduction — jamais de variante implicite créée.
+  variants       ProductVariant[]
   /// Facette catalogue « Matière » — taxonomie gérée depuis
   /// `/admin/products` (section Matières), pas un champ libre : évite que
   /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
@@ -400,6 +449,28 @@ model Review {
   @@unique([productId, userId])
   @@index([productId])
   @@map("reviews")
+}
+
+/// Question posée par un client sur une fiche produit, distincte des avis
+/// (`Review`) : pas de note, réponse écrite par un admin avant publication —
+/// une question non répondue reste invisible du public (pas de file
+/// « en attente » affichée aux visiteurs). Activable/désactivable via
+/// `StoreSettings.productQnaEnabled`.
+model ProductQuestion {
+  id         String    @id @default(cuid())
+  productId  String
+  userId     String
+  question   String
+  answer     String?
+  answeredAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_questions")
 }
 
 model Custom {
@@ -685,9 +756,36 @@ model StoreSettings {
   returnsEnabled       Boolean  @default(false)
   savedPaymentsEnabled Boolean  @default(false)
   loyaltyEnabled       Boolean  @default(false)
+  giftCardsEnabled     Boolean  @default(false)
+  productQnaEnabled    Boolean  @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")
+}
+
+/// Carte cadeau à solde décroissant. Pas de relation FK vers `Order` — même
+/// choix que `PromoCode` (référencée par son `code`, en texte, sur la
+/// commande) : la carte reste consultable/désactivable indépendamment de
+/// l'historique des commandes qui l'ont utilisée.
+/// Activable/désactivable via `StoreSettings.giftCardsEnabled`.
+model GiftCard {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  initialValue   Float
+  /// Solde restant, décrémenté à chaque utilisation en caisse (voir
+  /// PROMO-PLUGIN : même moment que `PromoCode.usageCount`, c'est-à-dire à la
+  /// création de la session Stripe, pas à la confirmation du paiement — un
+  /// panier Stripe abandonné consomme donc le solde, comme pour un code promo).
+  balance        Float
+  active         Boolean   @default(true)
+  expiresAt      DateTime?
+  recipientEmail String?
+  note           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([active])
+  @@map("gift_cards")
 }
 
 /// Liste d'envies — un produit par compte au plus une fois (contrainte
@@ -752,6 +850,10 @@ model ReturnRequest {
   reason         String
   status         ReturnStatus @default(REQUESTED)
   stripeRefundId String?
+  /// Étiquette de retour Sendcloud — posée à l'approbation, best-effort : un
+  /// échec Sendcloud ne bloque jamais le remboursement (voir la route admin).
+  returnTrackingNumber String?
+  returnTrackingUrl    String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 

@@ -387,6 +387,21 @@ export async function updateUserMFA(userId: string, data: { isMfaEnabled: boolea
 	});
 }
 
+export async function getMarketingEmailsOptIn(userId: string) {
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { marketingEmailsOptIn: true }
+	});
+	return user?.marketingEmailsOptIn ?? false;
+}
+
+export async function updateMarketingEmailsOptIn(userId: string, optIn: boolean) {
+	return await prisma.user.update({
+		where: { id: userId },
+		data: { marketingEmailsOptIn: optIn }
+	});
+}
+
 export async function latestUsers() {
 	const users = await prisma.user.findMany({
 		orderBy: { createdAt: 'desc' },

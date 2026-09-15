@@ -24,6 +24,15 @@ export type GuestCartLine = {
 	images?: string;
 	stock?: number;
 	unitPrice?: number;
+	/**
+	 * Variante sélectionnée : une ligne invité avec `variantId` est distincte
+	 * d'une ligne du même `productId` sans variante (ou avec une autre
+	 * variante) — voir `mergeItems`, indexé sur les deux ensemble.
+	 */
+	variantId?: string;
+	variantLabel?: string;
+	variantPrice?: number;
+	variantStock?: number;
 };
 
 export type GuestCart = {
@@ -36,6 +45,7 @@ export type MergeLine = {
 	quantity: number;
 	stock?: number;
 	custom?: GuestCustom[];
+	variantId?: string;
 };
 
 export type StoreCartItem = {
@@ -45,6 +55,12 @@ export type StoreCartItem = {
 		name: string;
 		price: number;
 		images: string;
+		stock: number;
+	};
+	variant?: {
+		id: string;
+		label: string;
+		price: number;
 		stock: number;
 	};
 	quantity: number;
@@ -82,7 +98,11 @@ export function readGuestCart(): GuestCart {
 				name: line.name,
 				images: line.images,
 				stock: typeof line.stock === 'number' ? line.stock : undefined,
-				unitPrice: typeof line.unitPrice === 'number' ? line.unitPrice : undefined
+				unitPrice: typeof line.unitPrice === 'number' ? line.unitPrice : undefined,
+				variantId: typeof line.variantId === 'string' ? line.variantId : undefined,
+				variantLabel: typeof line.variantLabel === 'string' ? line.variantLabel : undefined,
+				variantPrice: typeof line.variantPrice === 'number' ? line.variantPrice : undefined,
+				variantStock: typeof line.variantStock === 'number' ? line.variantStock : undefined
 			});
 		}
 		return { items };
@@ -119,22 +139,34 @@ export function storeItemsToGuest(items: StoreCartItem[]): GuestCartLine[] {
 			name: item.product.name,
 			images: item.product.images,
 			stock: item.product.stock,
-			unitPrice: item.product.price
+			unitPrice: item.product.price,
+			variantId: item.variant?.id,
+			variantLabel: item.variant?.label,
+			variantPrice: item.variant?.price,
+			variantStock: item.variant?.stock
 		}));
 }
 
 export function guestToStoreItems(guest: GuestCart): StoreCartItem[] {
 	return guest.items.map((line) => {
-		const price = line.unitPrice ?? 0;
+		const price = line.variantId ? (line.variantPrice ?? line.unitPrice ?? 0) : (line.unitPrice ?? 0);
 		return {
 			id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : line.productId,
 			product: {
 				id: line.productId,
 				name: line.name ?? '',
-				price,
+				price: line.unitPrice ?? 0,
 				images: line.images ?? '',
 				stock: line.stock ?? 0
 			},
+			variant: line.variantId
+				? {
+						id: line.variantId,
+						label: line.variantLabel ?? '',
+						price,
+						stock: line.variantStock ?? 0
+					}
+				: undefined,
 			quantity: line.quantity,
 			price,
 			custom: line.custom?.map((entry) => ({
@@ -147,32 +179,39 @@ export function guestToStoreItems(guest: GuestCart): StoreCartItem[] {
 }
 
 export function totalsFromItems(items: StoreCartItem[]): { subtotal: number; tax: number } {
-	const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+	const subtotal = items.reduce(
+		(sum, item) => sum + (item.variant?.price ?? item.product.price) * item.quantity,
+		0
+	);
 	const tax = parseFloat((subtotal * 0.055).toFixed(2));
 	return { subtotal, tax };
 }
 
 /**
- * Union par `productId`. Quantités additionnées, plafonnées au stock connu.
- * La ligne serveur garde son `id` pour que `updateOrderItems` fasse un upsert.
+ * Union par `productId` + `variantId` (deux variantes du même produit sont
+ * des lignes distinctes, jamais fusionnées entre elles). Quantités
+ * additionnées, plafonnées au stock connu. La ligne serveur garde son `id`
+ * pour que `updateOrderItems` fasse un upsert.
  */
 export function mergeItems(server: MergeLine[], guest: MergeLine[]): MergeLine[] {
-	const byProduct = new Map<string, MergeLine>();
+	const lineKey = (line: MergeLine) => `${line.productId}:${line.variantId ?? ''}`;
+	const byLine = new Map<string, MergeLine>();
 
 	for (const line of server) {
 		if (!line.productId) continue;
-		byProduct.set(line.productId, { ...line });
+		byLine.set(lineKey(line), { ...line });
 	}
 
 	for (const line of guest) {
 		if (!line.productId) continue;
-		const existing = byProduct.get(line.productId);
+		const existing = byLine.get(lineKey(line));
 		if (!existing) {
-			byProduct.set(line.productId, {
+			byLine.set(lineKey(line), {
 				productId: line.productId,
 				quantity: line.quantity,
 				stock: line.stock,
-				custom: line.custom
+				custom: line.custom,
+				variantId: line.variantId
 			});
 			continue;
 		}
@@ -182,7 +221,7 @@ export function mergeItems(server: MergeLine[], guest: MergeLine[]): MergeLine[]
 		existing.quantity = typeof stock === 'number' && stock >= 0 ? Math.min(summed, stock) : summed;
 	}
 
-	return [...byProduct.values()];
+	return [...byLine.values()];
 }
 
 export function toSaveCartItems(lines: MergeLine[]) {
@@ -190,6 +229,7 @@ export function toSaveCartItems(lines: MergeLine[]) {
 		id: line.id,
 		product: { id: line.productId },
 		productId: line.productId,
+		variantId: line.variantId,
 		quantity: line.quantity,
 		custom: line.custom
 	}));
@@ -201,14 +241,16 @@ export function publicItemsToMergeLines(
 		quantity: number;
 		custom?: GuestCustom[];
 		product: { id: string; stock: number };
+		variant?: { id: string; stock: number } | null;
 	}>
 ): MergeLine[] {
 	return items.map((item) => ({
 		id: item.id,
 		productId: item.product.id,
 		quantity: item.quantity,
-		stock: item.product.stock,
-		custom: item.custom
+		stock: item.variant?.stock ?? item.product.stock,
+		custom: item.custom,
+		variantId: item.variant?.id
 	}));
 }
 
@@ -216,8 +258,9 @@ export function guestToMergeLines(guest: GuestCart): MergeLine[] {
 	return guest.items.map((line) => ({
 		productId: line.productId,
 		quantity: line.quantity,
-		stock: line.stock,
-		custom: line.custom
+		stock: line.variantId ? line.variantStock : line.stock,
+		custom: line.custom,
+		variantId: line.variantId
 	}));
 }
 
@@ -238,6 +281,12 @@ export function serverOrderToStore(order: {
 			name: string;
 			price: number;
 			images: string[] | string;
+			stock: number;
+		} | null;
+		variant?: {
+			id: string;
+			label: string;
+			price: number | null;
 			stock: number;
 		} | null;
 	}>;
@@ -268,6 +317,14 @@ export function serverOrderToStore(order: {
 					images: image,
 					stock: item.product?.stock ?? 0
 				},
+				variant: item.variant
+					? {
+							id: item.variant.id,
+							label: item.variant.label,
+							price: item.variant.price ?? item.product?.price ?? item.price,
+							stock: item.variant.stock
+						}
+					: undefined,
 				quantity: item.quantity,
 				price: item.price,
 				custom: item.custom

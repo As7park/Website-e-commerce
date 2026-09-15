@@ -8,13 +8,32 @@
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { reviewSchema } from '$lib/schema/products/reviewSchema';
+	import { askQuestionSchema } from '$lib/schema/products/questionSchema';
 	import StarRating from '$lib/components/reviews/StarRating.svelte';
 	import Heart from 'lucide-svelte/icons/heart';
 	import * as Card from '$shadcn/card';
+	import * as Select from '$shadcn/select';
 	import { Badge } from '$shadcn/badge';
+	import SEO from '$lib/components/SEO.svelte';
+	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
 
 	let { data } = $props();
 	let product = $derived(data.product);
+
+	let recentlyViewed = $state<ReturnType<typeof readRecentlyViewed>>([]);
+	$effect(() => {
+		// Capture la visite courante puis lit l'historique — dans cet ordre,
+		// le produit affiché ici n'est jamais celui qu'on est déjà en train
+		// de consulter (il vient d'être placé en tête, filtré juste après).
+		recordProductView({
+			id: product.id,
+			slug: product.slug,
+			name: product.name,
+			price: product.price,
+			image: product.images[0] ?? null
+		});
+		recentlyViewed = readRecentlyViewed().filter((item) => item.id !== product.id);
+	});
 	let categoryNames = $derived(
 		product.categories.map((link) => link.category.name).filter(Boolean)
 	);
@@ -49,7 +68,26 @@
 		}
 	}
 
+	// Variantes (`ProductVariant`) : un produit sans variante se comporte
+	// exactement comme avant leur introduction (`selectedVariant` reste
+	// `null`, jamais de sélection imposée).
+	let selectedVariantId = $state<string | null>(product.variants[0]?.id ?? null);
+	let selectedVariant = $derived(
+		product.variants.find((v) => v.id === selectedVariantId) ?? null
+	);
+	let displayedPrice = $derived(selectedVariant?.price ?? product.price);
+	let displayedStock = $derived(selectedVariant?.stock ?? product.stock);
+
 	function handleAddToCart() {
+		if (product.variants.length > 0 && !selectedVariant) {
+			toast.error('Choisissez une variante.');
+			return;
+		}
+		if (displayedStock <= 0) {
+			toast.error('Rupture de stock.');
+			return;
+		}
+
 		addToCart({
 			id: crypto.randomUUID(),
 			product: {
@@ -59,8 +97,16 @@
 				images: product.images[0] ?? '',
 				stock: product.stock
 			},
+			variant: selectedVariant
+				? {
+						id: selectedVariant.id,
+						label: selectedVariant.label,
+						price: displayedPrice,
+						stock: selectedVariant.stock
+					}
+				: undefined,
 			quantity: 1,
-			price: product.price
+			price: displayedPrice
 		});
 	}
 
@@ -79,7 +125,39 @@
 			toast.error($reviewMessage);
 		}
 	});
+
+	const askQuestionFormCtx = superForm(data.askForm, {
+		validators: zodClient(askQuestionSchema),
+		id: 'askQuestionForm',
+		resetForm: true
+	});
+	const {
+		form: askQuestionData,
+		enhance: askQuestionEnhance,
+		message: askQuestionMessage
+	} = askQuestionFormCtx;
+
+	$effect(() => {
+		if (!$askQuestionMessage) return;
+		if ($askQuestionMessage.startsWith('Question envoyée')) {
+			toast.success($askQuestionMessage);
+		} else {
+			toast.error($askQuestionMessage);
+		}
+	});
 </script>
+
+<SEO
+	type="product"
+	title={product.name}
+	description={product.description}
+	image={product.images[0] ? optimizedImageUrl(product.images[0], 800) : undefined}
+	price={displayedPrice}
+	availability={displayedStock > 0 ? 'InStock' : 'OutOfStock'}
+	sku={product.sku ?? undefined}
+	ratingValue={data.reviewSummary.average}
+	reviewCount={data.reviewSummary.count}
+/>
 
 <article class="mx-auto max-w-[960px] px-6 pt-24 pb-12">
 	<p class="mb-6">
@@ -118,19 +196,44 @@
 			</div>
 
 			<div class="mb-4 flex items-center gap-3">
-				<p class="text-2xl">{product.price.toFixed(2)} €</p>
-				{#if hasDiscount}
+				<p class="text-2xl">{displayedPrice.toFixed(2)} €</p>
+				{#if !selectedVariant && hasDiscount}
 					<p class="text-lg text-muted-foreground line-through">
 						{(product.compareAtPrice as number).toFixed(2)} €
 					</p>
 					<Badge variant="destructive">-{discountPercent}%</Badge>
 				{/if}
 			</div>
-			<p class="mb-3 text-muted-foreground">Stock : {product.stock}</p>
+
+			{#if product.variants.length > 0}
+				<div class="mb-4">
+					<label for="variant-select" class="mb-1 block text-sm font-medium">Variante</label>
+					<Select.Root
+						type="single"
+						value={selectedVariantId ?? undefined}
+						onValueChange={(v) => (selectedVariantId = v || null)}
+					>
+						<Select.Trigger id="variant-select" class="w-full max-w-xs">
+							<span>{selectedVariant?.label ?? 'Choisir une variante'}</span>
+						</Select.Trigger>
+						<Select.Content>
+							{#each product.variants as variant (variant.id)}
+								<Select.Item value={variant.id} disabled={variant.stock <= 0}>
+									{variant.label}{variant.stock <= 0 ? ' (rupture)' : ''}
+								</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
+			{/if}
+
+			<p class="mb-3 text-muted-foreground">Stock : {displayedStock}</p>
 			<p class="mb-6 leading-normal">{product.description}</p>
 			<div class="flex items-center gap-3">
 				<!-- COMMERCE-PLUGIN : entrée du tunnel depuis le catalogue. -->
-				<Button type="button" onclick={handleAddToCart}>Ajouter au panier</Button>
+				<Button type="button" onclick={handleAddToCart} disabled={displayedStock <= 0}>
+					Ajouter au panier
+				</Button>
 				{#if data.wishlistEnabled}
 					<Button
 						type="button"
@@ -169,6 +272,36 @@
 							<Card.Content class="p-3">
 								<p class="line-clamp-1 text-sm font-medium">{related.name}</p>
 								<p class="text-sm text-muted-foreground">{related.price.toFixed(2)} €</p>
+							</Card.Content>
+						</Card.Root>
+					</a>
+				{/each}
+			</div>
+		</section>
+	{/if}
+
+	{#if recentlyViewed.length > 0}
+		<section class="mt-16 border-t pt-10">
+			<h2 class="mb-6 text-xl font-medium">Récemment consultés</h2>
+			<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+				{#each recentlyViewed as viewed (viewed.id)}
+					<a href="/products/{viewed.slug}" class="block">
+						<Card.Root class="gap-0 overflow-hidden py-0 transition-colors hover:border-foreground">
+							<div class="h-32 w-full shrink-0 overflow-hidden">
+								{#if viewed.image}
+									<img
+										src={optimizedImageUrl(viewed.image, 300)}
+										alt={viewed.name}
+										loading="lazy"
+										class="h-full w-full object-cover"
+									/>
+								{:else}
+									<div class="h-full w-full bg-muted" aria-hidden="true"></div>
+								{/if}
+							</div>
+							<Card.Content class="p-3">
+								<p class="line-clamp-1 text-sm font-medium">{viewed.name}</p>
+								<p class="text-sm text-muted-foreground">{viewed.price.toFixed(2)} €</p>
 							</Card.Content>
 						</Card.Root>
 					</a>
@@ -234,4 +367,46 @@
 			</ul>
 		{/if}
 	</section>
+
+	{#if data.productQnaEnabled}
+		<section class="mt-16 border-t pt-10">
+			<h2 class="mb-6 text-xl font-medium">Questions & réponses</h2>
+
+			{#if data.user}
+				<form
+					method="POST"
+					action="?/askQuestion"
+					use:askQuestionEnhance
+					class="mb-10 max-w-md space-y-4 rounded-lg border p-4"
+				>
+					<Form.Field name="question" form={askQuestionFormCtx}>
+						<Form.Control>
+							<Form.Label>Votre question</Form.Label>
+							<Textarea name="question" bind:value={$askQuestionData.question} rows={3} />
+						</Form.Control>
+						<Form.FieldErrors />
+					</Form.Field>
+
+					<Button type="submit">Envoyer la question</Button>
+				</form>
+			{:else}
+				<p class="text-muted-foreground mb-8 text-sm">
+					<a href="/auth/login" class="underline">Connectez-vous</a> pour poser une question.
+				</p>
+			{/if}
+
+			{#if data.questions.length === 0}
+				<p class="text-muted-foreground text-sm">Aucune question répondue pour ce produit.</p>
+			{:else}
+				<ul class="space-y-6">
+					{#each data.questions as qa (qa.id)}
+						<li class="border-b pb-6 last:border-0">
+							<p class="text-sm font-medium">Q : {qa.question}</p>
+							<p class="text-muted-foreground mt-1 text-sm">R : {qa.answer}</p>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
+	{/if}
 </article>

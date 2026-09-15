@@ -18,6 +18,7 @@ export const findPendingOrder = async (userId: string) => {
 			items: {
 				include: {
 					product: true,
+					variant: true,
 					custom: true
 				}
 			}
@@ -74,7 +75,25 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 			if (!catalogProduct) {
 				throw new UnknownProductError(productId);
 			}
-			const catalogPrice = catalogProduct.price;
+
+			// Variante sélectionnée : prix relu depuis `ProductVariant`, jamais
+			// celui du client — même garde que pour `catalogProduct` ci-dessus.
+			// `variant.productId !== productId` est refusé (id de variante rejoué
+			// pour un autre produit) plutôt que silencieusement ignoré.
+			const variantId: string | null = newItem.variant?.id ?? newItem.variantId ?? null;
+			let variantPrice: number | null = null;
+			if (variantId) {
+				const variant = await prisma.productVariant.findUnique({
+					where: { id: variantId },
+					select: { id: true, productId: true, price: true }
+				});
+				if (!variant || variant.productId !== productId) {
+					throw new UnknownProductError(productId);
+				}
+				variantPrice = variant.price;
+			}
+
+			const catalogPrice = variantPrice ?? catalogProduct.price;
 			const quantity = Math.max(1, Math.trunc(Number(newItem.quantity) || 1));
 
 			// Normaliser newItem.custom en tableau
@@ -91,7 +110,8 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 					data: {
 						quantity,
 						price: catalogPrice,
-						productId: catalogProduct.id
+						productId: catalogProduct.id,
+						variantId
 					}
 				});
 
@@ -117,6 +137,7 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 					data: {
 						orderId,
 						productId: catalogProduct.id,
+						variantId,
 						quantity,
 						price: catalogPrice
 					}
@@ -180,6 +201,7 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 				items: {
 					include: {
 						product: true,
+						variant: true,
 						custom: true
 					}
 				}

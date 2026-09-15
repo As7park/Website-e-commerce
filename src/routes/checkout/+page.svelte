@@ -12,6 +12,7 @@
 	import ServicePointMap from '$lib/components/checkout/ServicePointMap.svelte';
 	import CartSummary from '$lib/components/checkout/CartSummary.svelte';
 	import PromoCodeInput from '$lib/components/checkout/PromoCodeInput.svelte'; // PROMO-PLUGIN
+	import GiftCardInput from '$lib/components/checkout/GiftCardInput.svelte';
 	import {
 		CreditCard
 	} from 'lucide-svelte';
@@ -94,21 +95,44 @@
 	let promoCode = $state('');
 	let discountAmount = $state(0);
 
+	// Carte cadeau — se cumule avec le code promo, sur ce qu'il reste à payer
+	// une fois la remise promo déduite (`giftCardMaxApplicable`).
+	let giftCardCode = $state('');
+	let giftCardAmount = $state(0);
+
 	// Total TTC des produits (hors frais de port) — base de calcul de la remise
 	let productTotalTTC = $derived($cartStore.subtotal + $cartStore.tax);
+	let giftCardMaxApplicable = $derived(Math.max(0, productTotalTTC - discountAmount));
 
 	let totalTTC = $derived(
-		Math.max(0, $cartStore.subtotal + $cartStore.tax + shippingCost - discountAmount)
+		Math.max(
+			0,
+			$cartStore.subtotal + $cartStore.tax + shippingCost - discountAmount - giftCardAmount
+		)
 	);
+
+	function resetGiftCard() {
+		giftCardCode = '';
+		giftCardAmount = 0;
+	}
+
+	function handleGiftCardApplied(code: string, amount: number) {
+		giftCardCode = code;
+		giftCardAmount = amount;
+	}
 
 	function resetPromo() {
 		promoCode = '';
 		discountAmount = 0;
+		// Le plafond applicable à la carte cadeau vient de changer, la revalider
+		// est plus sûr que de laisser un montant potentiellement trop élevé.
+		resetGiftCard();
 	}
 
 	function handlePromoApplied(code: string, discount: number) {
 		promoCode = code;
 		discountAmount = discount;
+		resetGiftCard();
 	}
 
 	// Détecter si la commande contient des projets sur-mesure
@@ -389,8 +413,8 @@
 		}
 	}
 
-	function handleRemoveFromCart(productId: string) {
-		removeFromCart(productId);
+	function handleRemoveFromCart(productId: string, customId?: string, variantId?: string) {
+		removeFromCart(productId, customId, variantId);
 
 		// Le montant du panier a changé : on invalide le code promo appliqué
 		resetPromo();
@@ -405,11 +429,16 @@
 		}
 	}
 
-	function changeQuantity(productId: string, quantity: number, customId?: string) {
+	function changeQuantity(
+		productId: string,
+		quantity: number,
+		customId?: string,
+		variantId?: string
+	) {
 		console.log('🔄 changeQuantity appelée:', { productId, quantity, customId });
 		console.log('📦 Avant mise à jour - Store:', $cartStore.items);
-		
-		updateCartItemQuantity(productId, quantity, customId);
+
+		updateCartItemQuantity(productId, quantity, customId, variantId);
 
 		// Le montant du panier a changé : on invalide le code promo appliqué
 		resetPromo();
@@ -452,6 +481,7 @@
 		$createPaymentData.shippingOption = selectedShippingOption || undefined;
 		$createPaymentData.promoCode = promoCode || undefined;
 		$createPaymentData.discountAmount = discountAmount ? discountAmount.toString() : '0';
+		$createPaymentData.giftCardCode = giftCardCode || undefined;
 	}
 
 	// permet de récupérer l'id de la commande en cours
@@ -530,6 +560,15 @@
 							onRemoved={resetPromo}
 						/>
 					{/if}
+					{#if $cartStore.items.length > 0 && data.giftCardsEnabled}
+						<GiftCardInput
+							maxApplicable={giftCardMaxApplicable}
+							appliedCode={giftCardCode}
+							appliedAmount={giftCardAmount}
+							onApplied={handleGiftCardApplied}
+							onRemoved={resetGiftCard}
+						/>
+					{/if}
 					<!-- Formulaire de paiement -->
 					{#if $cartStore.items.length > 0}
 						<Card.Root>
@@ -558,6 +597,11 @@
 										type="hidden"
 										name="discountAmount"
 										bind:value={$createPaymentData.discountAmount}
+									/>
+									<input
+										type="hidden"
+										name="giftCardCode"
+										bind:value={$createPaymentData.giftCardCode}
 									/>
 
 									<input

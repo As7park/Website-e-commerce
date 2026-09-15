@@ -20,10 +20,16 @@ Les étapes 1 et 2 sont communes. L'étape 3 traite le commerce conservé.
 
 ```bash
 rm -rf src/lib/products src/routes/products src/routes/admin/products
-rm -rf src/lib/prisma/products src/lib/prisma/taxonomies
+rm -rf src/lib/prisma/products src/lib/prisma/taxonomies src/lib/prisma/reviews
+rm -rf src/lib/prisma/productQuestions src/lib/prisma/productVariants
 rm -rf src/lib/schema/products src/lib/schema/taxonomies
+rm -rf src/lib/store/recentlyViewed.ts
 rm -rf e2e/products docs/products
 ```
+
+Emporte au passage les avis (`Review`), questions (`ProductQuestion`) et
+variantes (`ProductVariant`) : trois modèles qui n'existent que pour référencer
+un `Product`, sans utilité une fois le catalogue retiré.
 
 Les schémas `src/lib/schema/taxonomies` concernent les **taxonomies produit**
 (catégories, matière, ...), pas le blog (`src/lib/schema/BlogPost/`).
@@ -43,7 +49,7 @@ tels quels.
 | `src/routes/admin/+layout.svelte`      | retirer l'entrée « produits » du menu               |
 | `src/lib/sitemap.config.ts`            | retirer `/products`                                 |
 | `prisma/seed.js`                       | ne plus créer de taxonomies ni de produits          |
-| `prisma/schema.prisma`                 | `OrderItem.productId` : garder si le commerce reste |
+| `prisma/schema.prisma`                 | `OrderItem.productId`/`OrderItem.variantId` : garder si le commerce reste ; retirer `Review`/`ProductQuestion`/`ProductVariant` et `StoreSettings.productQnaEnabled` |
 
 Point de vigilance : le panier et le checkout **dépendent** encore de `Product`.
 Les retirer n'est pas inclus dans ce module ; voir un futur `COMMERCE-PLUGIN`.

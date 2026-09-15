@@ -131,7 +131,13 @@ session volée ne survit pas à une réinitialisation.
 ### Espace compte
 
 `/auth/settings` couvre le changement d'adresse (avec revalidation par code), le
-changement de mot de passe (mot de passe actuel exigé) et l'activation de la 2FA.
+changement de mot de passe (mot de passe actuel exigé), l'activation de la 2FA,
+et pour un `CLIENT` un interrupteur de consentement aux emails marketing
+(`User.marketingEmailsOptIn`, `false` par défaut — opt-in explicite). Ce
+réglage ne concerne jamais les emails transactionnels (facture, confirmation
+de commande, réinitialisation de mot de passe), toujours envoyés quel que
+soit son état ; au 16/09/2026 rien ne consomme encore ce champ pour l'envoi
+de campagnes, c'est une préférence enregistrée en avance de la fonctionnalité.
 
 Deux sections hébergées sous `/auth/settings` relèvent du commerce et non de
 l'authentification : `address/` (carnet d'adresses) et `factures/` (transactions).

@@ -10,6 +10,9 @@ export const OrderSchema = z.object({
   promoCode: z.string().optional(),
   discountAmount: z.string().optional(),
 
+  // Carte cadeau appliquée (optionnel) — StoreSettings.giftCardsEnabled
+  giftCardCode: z.string().optional(),
+
   // Champs plats pour les informations du point relais
   servicePointId: z.string().optional(),
   servicePointPostNumber: z.string().optional(),

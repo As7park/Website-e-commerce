@@ -12,7 +12,9 @@
 		| 'crossSellEnabled'
 		| 'returnsEnabled'
 		| 'savedPaymentsEnabled'
-		| 'loyaltyEnabled';
+		| 'loyaltyEnabled'
+		| 'giftCardsEnabled'
+		| 'productQnaEnabled';
 
 	const MODULES: { key: FlagKey; label: string; description: string }[] = [
 		{
@@ -44,6 +46,18 @@
 			label: 'Palier de fidélité',
 			description:
 				'Code promo automatique après un nombre de commandes payées, sur le moteur de codes promo déjà existant.'
+		},
+		{
+			key: 'giftCardsEnabled',
+			label: 'Cartes cadeaux',
+			description:
+				'Champ dédié au tunnel de commande pour appliquer une carte cadeau (solde décroissant), en plus d’un éventuel code promo. Émission depuis /admin/gift-cards.'
+		},
+		{
+			key: 'productQnaEnabled',
+			label: 'Questions & réponses produit',
+			description:
+				'Formulaire de question sur la fiche produit. Une question reste invisible du public tant qu’un admin n’y a pas répondu depuis /admin/products/questions.'
 		}
 	];
 

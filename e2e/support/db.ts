@@ -146,6 +146,98 @@ export async function deletePromoCode(id: string) {
 	});
 }
 
+/** Carte cadeau de test — code fourni explicitement (généré côté app en usage réel). */
+export async function createGiftCard(
+	code: string,
+	overrides?: {
+		initialValue?: number;
+		balance?: number;
+		active?: boolean;
+		expiresAt?: Date | null;
+		recipientEmail?: string | null;
+	}
+) {
+	const initialValue = overrides?.initialValue ?? 50;
+	return resilient(() =>
+		db.giftCard.create({
+			data: {
+				code,
+				initialValue,
+				balance: overrides?.balance ?? initialValue,
+				active: overrides?.active ?? true,
+				expiresAt: overrides?.expiresAt ?? null,
+				recipientEmail: overrides?.recipientEmail ?? null
+			}
+		})
+	);
+}
+
+export async function getGiftCardById(id: string) {
+	return resilient(() => db.giftCard.findUnique({ where: { id } }));
+}
+
+export async function deleteGiftCard(id: string) {
+	await resilient(async () => {
+		await db.giftCard.deleteMany({ where: { id } });
+	});
+}
+
+export async function createProductQuestion(
+	productId: string,
+	userId: string,
+	overrides?: { question?: string; answer?: string | null; answeredAt?: Date | null }
+) {
+	return resilient(() =>
+		db.productQuestion.create({
+			data: {
+				productId,
+				userId,
+				question: overrides?.question ?? 'Cette pièce est-elle disponible en 52 ?',
+				answer: overrides?.answer ?? null,
+				answeredAt: overrides?.answeredAt ?? null
+			}
+		})
+	);
+}
+
+export async function getProductQuestionById(id: string) {
+	return resilient(() => db.productQuestion.findUnique({ where: { id } }));
+}
+
+export async function deleteProductQuestion(id: string) {
+	await resilient(async () => {
+		await db.productQuestion.deleteMany({ where: { id } });
+	});
+}
+
+export async function createProductVariant(
+	productId: string,
+	overrides?: { label?: string; sku?: string | null; price?: number | null; stock?: number }
+) {
+	return resilient(() =>
+		db.productVariant.create({
+			data: {
+				productId,
+				label: overrides?.label ?? 'Taille 54',
+				sku: overrides?.sku ?? null,
+				price: overrides?.price ?? null,
+				stock: overrides?.stock ?? 3
+			}
+		})
+	);
+}
+
+export async function getProductVariantById(id: string) {
+	return resilient(() => db.productVariant.findUnique({ where: { id } }));
+}
+
+export async function deleteProductVariant(id: string) {
+	await resilient(async () => {
+		await db.orderItem.updateMany({ where: { variantId: id }, data: { variantId: null } });
+		await db.productVariant.deleteMany({ where: { id } });
+	});
+}
+
 /** CONTACT-PLUGIN : message de test isolé. */
 export async function createContactMessage(overrides?: {
 	name?: string;
@@ -349,11 +441,15 @@ export async function deleteBlogPost(postId: string) {
 }
 
 /** Relie un produit à une commande, pour vérifier le refus de suppression. */
-export async function linkProductToOrder(userId: string, productId: string) {
+export async function linkProductToOrder(
+	userId: string,
+	productId: string,
+	overrides?: { variantId?: string }
+) {
 	const order = await resilient(() => db.order.create({ data: { userId } }));
 	const item = await resilient(() =>
 		db.orderItem.create({
-			data: { orderId: order.id, productId, quantity: 1, price: 1 }
+			data: { orderId: order.id, productId, variantId: overrides?.variantId, quantity: 1, price: 1 }
 		})
 	);
 	return { order, item };
@@ -680,7 +776,9 @@ export async function getStoreFeatureFlags() {
 				crossSellEnabled: true,
 				returnsEnabled: true,
 				savedPaymentsEnabled: true,
-				loyaltyEnabled: true
+				loyaltyEnabled: true,
+				giftCardsEnabled: true,
+				productQnaEnabled: true
 			}
 		})
 	);
@@ -693,6 +791,8 @@ export async function setStoreFeatureFlags(patch: {
 	returnsEnabled?: boolean;
 	savedPaymentsEnabled?: boolean;
 	loyaltyEnabled?: boolean;
+	giftCardsEnabled?: boolean;
+	productQnaEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

@@ -43,12 +43,13 @@ retirées par migration une fois tous les produits reportés sur des
 
 ## Frontière du module
 
-| Emplacement                                                                         | Contenu                                                         |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `src/lib/products/`                                                                 | lecture publique et chemins de tests                            |
-| `src/lib/prisma/products/`, `src/lib/prisma/taxonomies/`, `src/lib/prisma/reviews/` | DAO Prisma                                                      |
-| `src/routes/products/`                                                              | vitrine (fiche produit inclut les avis)                         |
-| `src/routes/admin/products/`                                                        | CRUD back-office (produits, taxonomies — gardes = module admin) |
+| Emplacement                                                                                                                                                | Contenu                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/lib/products/`                                                                                                                                        | lecture publique et chemins de tests                                                         |
+| `src/lib/prisma/products/`, `src/lib/prisma/taxonomies/`, `src/lib/prisma/reviews/`, `src/lib/prisma/productQuestions/`, `src/lib/prisma/productVariants/` | DAO Prisma                                                                                    |
+| `src/lib/store/recentlyViewed.ts`                                                                                                                          | historique « récemment consultés », 100 % client (`localStorage`, aucun backend)             |
+| `src/routes/products/`                                                                                                                                     | vitrine (fiche produit inclut avis, questions/réponses et sélecteur de variante)             |
+| `src/routes/admin/products/`                                                                                                                               | CRUD back-office (produits, taxonomies, avis, questions, variantes — gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
 qui ne s'applique qu'aux chemins `/products*` (rate-limit dédié + heuristique
@@ -75,6 +76,13 @@ Le bouton « Ajouter au panier » sur la fiche est un accrochage COMMERCE.
 | `/products/[slug]` | fiche ; 404 si le slug est inconnu                                   |
 
 Les données viennent de Prisma. Contentful n'est plus utilisé pour les produits.
+
+La fiche produit publie un bloc JSON-LD `schema.org/Product` (prix,
+disponibilité, SKU, note moyenne — `<SEO type="product" .../>`,
+`src/lib/components/SEO.svelte`) dérivé des mêmes valeurs affichées à
+l'écran : si une variante est sélectionnée, prix et disponibilité reflètent
+la variante, pas le produit de base. `aggregateRating` n'est inclus que si
+au moins un avis existe.
 
 ### Filtres du catalogue
 
@@ -106,9 +114,10 @@ Les lectures publiques (`listProducts`, `getProductBySlug`,
 `src/lib/products/catalog.ts`) passent par un cache Redis de 60 s quand
 Upstash est configuré (`src/lib/server/cache.ts`), invalidé automatiquement à
 chaque écriture des DAO `src/lib/prisma/products` / `src/lib/prisma/taxonomies`
-(un seul numéro de version pour tout le catalogue :
-`bumpCacheVersion('catalog')`). Sans Redis configuré, ces fonctions relisent
-Prisma à chaque appel, comme avant.
+/ `src/lib/prisma/productVariants` (un seul numéro de version pour tout le
+catalogue : `bumpCacheVersion('catalog')` — une variante créée/modifiée/supprimée
+invalide donc la fiche produit comme un changement de prix classique). Sans
+Redis configuré, ces fonctions relisent Prisma à chaque appel, comme avant.
 
 ### Avis produit
 
@@ -122,6 +131,64 @@ non passée par le cache du catalogue ci-dessus — volume modeste, fraîcheur
 after-submit plus utile ici qu'un TTL de 60 s. Supprimer un compte supprime
 ses avis (`onDelete: Cascade`) : ce ne sont pas des écritures comptables à
 conserver, contrairement aux `Transaction`.
+
+### Questions & réponses produit
+
+Distinctes des avis : pas de note, et une question (`ProductQuestion`,
+`src/lib/prisma/productQuestions/productQuestions.ts`) n'est **jamais**
+publique tant qu'un admin n'y a pas répondu — `listPublicQuestionsForProduct`
+ne renvoie que les lignes avec `answer` renseigné, il n'existe pas de file
+« en attente » visible des visiteurs. Poser une question exige un compte
+(`?/askQuestion` sur `/products/[slug]`) ; modérer/répondre se fait depuis
+`/admin/products/questions` (liste, delete) et `/admin/products/questions/[id]`
+(formulaire de réponse dédié — répondre n'est pas une colonne éditable du
+tableau). Module activable depuis `/admin/settings`
+(`StoreSettings.productQnaEnabled`, voir
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)) ;
+désactivé, la section n'apparaît pas sur la fiche produit et `?/askQuestion`
+répond 404. Supprimer un compte supprime ses questions (`onDelete: Cascade`).
+
+### Variantes produit
+
+Une variante (`ProductVariant`, `src/lib/prisma/productVariants/productVariants.ts`)
+est une étiquette libre (« Taille 54 », « Or blanc »...) avec son propre stock
+et un prix optionnel qui surcharge `Product.price` quand renseigné — pas
+d'axes combinatoires (taille × couleur générant un produit cartésien) :
+choix délibéré pour rester simple à administrer, une taxonomie plus riche
+serait à construire séparément si le besoin apparaît. Un produit sans
+variante se comporte exactement comme avant leur introduction : le
+sélecteur n'apparaît sur `/products/[slug]` que si `product.variants.length
+> 0`, et aucune variante n'est créée implicitement à la création d'un produit.
+
+Gérées depuis une section dédiée, volontairement séparée du formulaire
+produit principal (déjà chargé — upload d'images, taxonomies, prix barré) :
+liste et création sur `/admin/products/[id]/variants`, édition sur
+`/admin/products/[id]/variants/[variantId]`. Une variante déjà présente dans
+un `OrderItem` **ne peut pas** être supprimée (`onDelete: Restrict` sur
+`OrderItem.variantId`, même garde que pour `Product`).
+
+Le panier distingue deux variantes du même produit comme deux lignes
+séparées, jamais fusionnées entre elles (`cartStore.ts`, `guestCart.ts` —
+paniers connecté et invité) : stock, prix et quantité maximale sont
+plafonnés par variante, pas par produit. Le prix d'une ligne est toujours
+revalidé serveur (`updateOrderItems`, `src/lib/prisma/order/prendingOrder.ts`)
+contre `ProductVariant.price`, jamais celui envoyé par le client — même
+garde que pour `Product.price`. Comme pour un produit sans variante, le
+panier ne décrémente jamais le stock en base à la vente (voir
+[docs/commerce](../commerce/README.md) : le stock reste un nombre géré par
+l'admin, pas un compteur temps réel).
+
+### Récemment consultés
+
+`$lib/store/recentlyViewed.ts` est un historique 100 % client
+(`localStorage`, clé `recently-viewed-products`, 8 entrées max) : aucune
+route serveur, aucune table Prisma. Chaque visite d'une fiche produit
+enregistre un instantané (id/slug/nom/prix/image au moment de la visite) et
+affiche les précédentes sous « Récemment consultés » — le prix affiché peut
+donc devenir périmé si le produit change de prix depuis, compromis accepté
+pour éviter un aller-retour serveur. Toutes les lectures/écritures sont
+encadrées d'un `try/catch` (navigation privée, quota dépassé) : une panne de
+`localStorage` masque simplement la section, elle ne casse jamais la page.
 
 ### Liste d'envies & ventes croisées
 
@@ -174,7 +241,17 @@ pas une URL Cloudinary `/upload/` (donnée de seed/placeholder).
 
 `/admin/products` : liste, création, édition, suppression, taxonomies. Accès
 couvert par `adminHandle`. Un produit déjà présent dans une `OrderItem` **ne
-peut pas** être supprimé (`onDelete: Restrict`).
+peut pas** être supprimé (`onDelete: Restrict`). La liste supporte la
+sélection multiple et la suppression en lot (voir
+[docs/admin](../admin/README.md#actions-groupées)) : un produit du lot déjà
+commandé est ignoré plutôt que de faire échouer tout le lot.
+
+`/admin/products/reviews` (modération des avis) et
+`/admin/products/questions` (modération + réponse aux questions) sont deux
+listes séparées, chacune avec sa propre garde de suppression. Les variantes
+d'un produit se gèrent depuis `/admin/products/[id]/variants`, accessible
+par un lien sur sa fiche d'édition — volontairement pas un onglet du même
+formulaire.
 
 ## Ce qui n'est pas le catalogue
 
@@ -247,6 +324,40 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 | 5   | Ré-ajout puis retrait depuis la fiche | clic cœur × 2                 | libellé revient à « Ajouter… » |
 
 À part : anonyme POST `/api/wishlist` — 401.
+
+### Questions & réponses — `e2e/products/questions.spec.ts`
+
+| #   | Étape                                          | Geste                          | Preuve                                |
+| --- | ----------------------------------------------- | ------------------------------- | --------------------------------------- |
+| 1   | Module désactivé : section absente             | GET fiche produit               | pas de heading « Questions & réponses » |
+| 2   | Anonyme invité à se connecter                  | GET fiche produit               | pas de formulaire `?/askQuestion`       |
+| 3   | Question envoyée, pas encore publique          | formulaire → Envoyer            | absente de la fiche, message de confirmation |
+| 4   | Modération admin : réponse publiée             | `/admin/products/questions/[id]` | réponse visible sur la fiche ensuite   |
+| 5   | Modération admin : suppression                 | dialogue Continue               | réponse retirée de la fiche             |
+
+À part : CLIENT POST `?/deleteQuestion` sur la question d'un autre — la question reste.
+
+### Variantes — `e2e/products/variants.spec.ts`
+
+| #   | Étape                                                     | Geste                        | Preuve                                    |
+| --- | ---------------------------------------------------------- | ------------------------------ | -------------------------------------------- |
+| 1   | Le sélecteur propose les deux variantes                   | GET fiche produit             | options du sélecteur                        |
+| 2   | Variante au prix surchargé : affichage mis à jour         | sélection                     | prix et stock affichés changent              |
+| 3   | Ajout au panier : la ligne porte la variante et son prix  | bouton « Ajouter au panier »  | `OrderItem.variantId` + prix en base         |
+| 4   | Le panier affiche la variante distinctement               | GET `/checkout`               | étiquette de variante + prix dans le récapitulatif |
+
+Administration (même spec) : liste des variantes, édition du stock,
+suppression d'une variante libre acceptée, suppression d'une variante déjà
+commandée refusée (`VariantInUseError`). À part : CLIENT POST
+`?/deleteVariant` — la variante reste.
+
+### Actions groupées (admin) — `e2e/products/admin-bulk.spec.ts`
+
+Vérifie la fonctionnalité générique de `Table.svelte` (`selectable`/
+`bulkActions`, voir [docs/admin](../admin/README.md#actions-groupées)) sur le
+cas d'usage `/admin/products` : sélection multiple, suppression en lot, et un
+produit déjà commandé sélectionné dans le lot est ignoré (`skipped`) sans
+faire échouer la suppression des autres.
 
 ```bash
 npm run test:e2e

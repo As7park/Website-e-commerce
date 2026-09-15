@@ -17,8 +17,16 @@
 		<p class="text-lg mb-6">
 			Votre commande a bien été prise en compte. Un email de confirmation va vous être envoyé.
 		</p>
-		<a href="/" class="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition">
-			Retour à l'accueil
-		</a>
+		<div class="flex flex-wrap items-center justify-center gap-3">
+			<a href="/" class="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition">
+				Retour à l'accueil
+			</a>
+			<a
+				href="/suivi-commande"
+				class="px-6 py-3 rounded-xl border border-black hover:bg-gray-100 transition"
+			>
+				Suivre ma commande
+			</a>
+		</div>
 	</div>
 </div>

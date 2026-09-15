@@ -13,6 +13,8 @@ import {
 } from '$lib/prisma/reviews/reviews';
 import { isInWishlist } from '$lib/prisma/wishlist/wishlist';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { askQuestionSchema } from '$lib/schema/products/questionSchema';
+import { askQuestion, listPublicQuestionsForProduct } from '$lib/prisma/productQuestions/productQuestions';
 
 /**
  * Fiche produit publique.
@@ -31,17 +33,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const userId = locals.user?.id;
-	const { wishlistEnabled, crossSellEnabled } = await getStoreFeatureFlags();
+	const { wishlistEnabled, crossSellEnabled, productQnaEnabled } = await getStoreFeatureFlags();
 	const categoryIds = product.categories.map((link) => link.categoryId);
 
-	const [reviewSummary, reviews, userReview, form, inWishlist, relatedProducts] =
+	const [reviewSummary, reviews, userReview, form, inWishlist, relatedProducts, questions, askForm] =
 		await Promise.all([
 			getReviewSummary(product.id),
 			listReviewsForProduct(product.id),
 			userId ? getUserReviewForProduct(product.id, userId) : null,
 			superValidate(zod(reviewSchema)),
 			wishlistEnabled && userId ? isInWishlist(userId, product.id) : false,
-			crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : []
+			crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : [],
+			productQnaEnabled ? listPublicQuestionsForProduct(product.id) : [],
+			superValidate(zod(askQuestionSchema))
 		]);
 
 	return {
@@ -52,7 +56,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		form,
 		wishlistEnabled,
 		inWishlist,
-		relatedProducts
+		relatedProducts,
+		productQnaEnabled,
+		questions,
+		askForm
 	};
 };
 
@@ -87,6 +94,40 @@ export const actions: Actions = {
 			}
 			console.error('Error creating review:', err);
 			return fail(500, { form, message: "L'avis n'a pas pu être enregistré." });
+		}
+	},
+
+	askQuestion: async (event) => {
+		const { locals, params } = event;
+		if (!locals.user) {
+			return fail(401, { message: 'Connectez-vous pour poser une question.' });
+		}
+
+		const { productQnaEnabled } = await getStoreFeatureFlags();
+		if (!productQnaEnabled) {
+			return fail(404, { message: 'Les questions produit ne sont pas disponibles.' });
+		}
+
+		const askForm = await superValidate(event.request, zod(askQuestionSchema));
+		if (!askForm.valid) {
+			return fail(400, { askForm });
+		}
+
+		const product = await getProductBySlug(params.slug!);
+		if (!product) {
+			error(404, 'Produit introuvable');
+		}
+
+		try {
+			await askQuestion({
+				productId: product.id,
+				userId: locals.user.id,
+				question: askForm.data.question
+			});
+			return message(askForm, "Question envoyée — elle sera publiée une fois répondue par l'équipe.");
+		} catch (err) {
+			console.error('Error creating product question:', err);
+			return fail(500, { askForm, message: "La question n'a pas pu être enregistrée." });
 		}
 	}
 };

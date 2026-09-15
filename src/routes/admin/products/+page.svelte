@@ -8,6 +8,8 @@
 	import Trash from 'lucide-svelte/icons/trash';
 	import { deleteTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema.js';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import { deserialize } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
 	// Props
 	let { data } = $props();
@@ -83,6 +85,44 @@
 		}
 	});
 
+	// Suppression groupée : requête directe vers l'action de forme (pas de
+	// `<form>` à soumettre ici, l'appel vient du bouton de la barre d'actions
+	// groupées de `Table.svelte`) puis on relit `load()` pour rafraîchir la page.
+	async function bulkDeleteProducts(ids: string[]) {
+		const formData = new FormData();
+		for (const id of ids) formData.append('ids', id);
+
+		const response = await fetch('?/bulkDeleteProducts', { method: 'POST', body: formData });
+		const result = deserialize(await response.text());
+
+		if (result.type === 'success' || result.type === 'failure') {
+			const resultData = result.data as { deleted?: number; skipped?: number; message?: string } | undefined;
+			if (result.type === 'failure') {
+				toast.error(resultData?.message ?? 'Échec de la suppression groupée');
+			} else if (resultData?.skipped) {
+				toast.warning(
+					`${resultData.deleted ?? 0} produit(s) supprimé(s), ${resultData.skipped} ignoré(s) (déjà commandés).`
+				);
+			} else {
+				toast.success(`${resultData?.deleted ?? ids.length} produit(s) supprimé(s).`);
+			}
+			await invalidateAll();
+		} else if (result.type === 'error') {
+			toast.error('Échec de la suppression groupée');
+		}
+	}
+
+	const productBulkActions = [
+		{
+			label: 'Supprimer la sélection',
+			icon: Trash,
+			variant: 'destructive' as const,
+			confirmDescription:
+				'Les produits sélectionnés seront définitivement supprimés. Ceux déjà présents dans une commande passée seront ignorés.',
+			onApply: bulkDeleteProducts
+		}
+	];
+
 	// Form handling with superForm
 	const deleteTaxonomy = superForm(data?.IdeleteTaxonomySchema ?? {}, {
 		validators: zodClient(deleteTaxonomySchema),
@@ -146,6 +186,8 @@
 		data={productsData ?? []}
 		actions={productActions}
 		addLink="/admin/products/create"
+		selectable={true}
+		bulkActions={productBulkActions}
 		server={{
 			page: data.page,
 			perPage: data.perPage,

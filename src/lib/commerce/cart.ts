@@ -20,6 +20,12 @@ export type PublicCartItem = {
 		images: string;
 		stock: number;
 	};
+	variant?: {
+		id: string;
+		label: string;
+		price: number;
+		stock: number;
+	};
 	quantity: number;
 	price: number;
 	custom?: Array<{ id: string; image: string; userMessage: string }>;
@@ -53,6 +59,12 @@ export function toPublicCart(order: {
 			images: string[] | string;
 			stock: number;
 		} | null;
+		variant?: {
+			id: string;
+			label: string;
+			price: number | null;
+			stock: number;
+		} | null;
 	}>;
 }): PublicCart {
 	return {
@@ -74,6 +86,14 @@ export function toPublicCart(order: {
 					images: image,
 					stock: item.product?.stock ?? 0
 				},
+				variant: item.variant
+					? {
+							id: item.variant.id,
+							label: item.variant.label,
+							price: item.variant.price ?? item.product?.price ?? item.price,
+							stock: item.variant.stock
+						}
+					: undefined,
 				quantity: item.quantity,
 				price: item.price,
 				custom: item.custom
