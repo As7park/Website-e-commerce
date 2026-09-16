@@ -405,7 +405,10 @@
 				body: JSON.stringify({
 					to_country_code: selectedAddress.stateLetter, // ex: "FR"
 					to_postal_code: selectedAddress.zip, // Code postal
-					radius: 5000, // 20 km en mètres
+					// Pas de `radius` ici : le défaut de 20 km est posé côté endpoint
+					// (`/api/sendcloud/service-points`) — une seule source de vérité,
+					// l'ancienne valeur (5000, soit 5 km malgré son commentaire
+					// « 20 km ») ne correspondait ni à l'une ni à l'autre.
 					carriers: carrierCode // ex: "colisprive"
 				})
 			});

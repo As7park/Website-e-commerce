@@ -14,6 +14,8 @@
 
 import { json, error, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
+import { withCircuitBreaker, CircuitOpenError } from '$lib/server/circuit-breaker';
+import { log } from '$lib/server/log';
 
 // Constante pour activer/désactiver les logs de debug
 const DEBUG = process.env.SENDCLOUD_DEBUG === 'true' || false;
@@ -90,6 +92,45 @@ async function fetchWithTimeout(
 	} finally {
 		clearTimeout(t);
 	}
+}
+
+/**
+ * Appelle `/api/v3/shipping-options` sous disjoncteur (`$lib/server/circuit-breaker.ts`,
+ * même protection que `post-payment.ts`) et traduit chaque échec en une
+ * réponse propre côté client — jamais le texte brut de Sendcloud (fuite
+ * d'information potentielle), toujours loggé côté serveur pour investigation.
+ */
+async function callShippingOptions(
+	fetchFn: typeof fetch,
+	url: string,
+	headers: Record<string, string>,
+	payload: unknown
+) {
+	let res: Response;
+	try {
+		res = await withCircuitBreaker('sendcloud', () =>
+			fetchWithTimeout(fetchFn, url, { method: 'POST', headers, body: JSON.stringify(payload) })
+		);
+	} catch (err) {
+		if (err instanceof CircuitOpenError) {
+			log('WARN', 'sendcloud:shipping-options', 'Disjoncteur ouvert, appel court-circuité');
+			throw error(503, 'Service de livraison temporairement indisponible, réessayez dans une minute.');
+		}
+		if (err instanceof DOMException && err.name === 'AbortError') {
+			log('WARN', 'sendcloud:shipping-options', 'Délai dépassé en contactant Sendcloud');
+			throw error(504, 'Le service de livraison met trop de temps à répondre.');
+		}
+		log('ERROR', 'sendcloud:shipping-options', 'Erreur réseau vers Sendcloud', err);
+		throw error(502, 'Impossible de contacter le service de livraison.');
+	}
+
+	if (res.status === 429) throw error(429, 'Rate limited by Sendcloud');
+	if (!res.ok) {
+		const text = await res.text().catch(() => '');
+		log('ERROR', 'sendcloud:shipping-options', `Sendcloud a répondu ${res.status}`, text);
+		throw error(res.status, 'Le service de livraison a renvoyé une erreur.');
+	}
+	return res.json().catch(() => ({}) as any);
 }
 
 /** Domestic vs international lead-time cap (hours). */
@@ -371,17 +412,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 	};
 
 	// 3) First call
-	let res = await fetchWithTimeout(fetch, url, {
-		method: 'POST',
-		headers,
-		body: JSON.stringify(payloadTry1)
-	});
-	if (res.status === 429) throw error(429, 'Rate limited by Sendcloud');
-	if (!res.ok) {
-		const text = await res.text().catch(() => '');
-		throw error(res.status, text || 'Unexpected Sendcloud error');
-	}
-	let raw = await res.json().catch(() => ({}) as any);
+	let raw = await callShippingOptions(fetch, url, headers, payloadTry1);
 	let all: any[] = Array.isArray(raw?.data) ? raw.data : [];
 
 	debugLog(
@@ -389,7 +420,6 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 			ts: new Date().toISOString(),
 			level: 'info',
 			event: 'sendcloud_v3_fetch_try1',
-			status: res.status,
 			received: all.length
 		})
 	);
@@ -399,30 +429,17 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 	if (!all.length) {
 		usedFallback = true;
 		const payloadTry2 = { ...base }; // no functionalities, no lead_time
-		res = await fetchWithTimeout(fetch, url, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify(payloadTry2)
-		});
-		if (res.status === 429) throw error(429, 'Rate limited by Sendcloud');
-		if (!res.ok) {
-			const text = await res.text().catch(() => '');
-			throw error(res.status, text || 'Unexpected Sendcloud error (fallback)');
-		}
-		raw = await res.json().catch(() => ({}) as any);
+		raw = await callShippingOptions(fetch, url, headers, payloadTry2);
 		all = Array.isArray(raw?.data) ? raw.data : [];
-
 		debugLog(
 			JSON.stringify({
 				ts: new Date().toISOString(),
 				level: 'info',
 				event: 'sendcloud_v3_fetch_try2',
-				status: res.status,
 				received: all.length
 			})
 		);
 	}
-
 	// 5) Filter carriers (whitelist) then summaries for meta/debug
 	const allowedCarriers = input.allowed_carriers?.length
 		? input.allowed_carriers.map((c) => c.toLowerCase())

@@ -50,6 +50,11 @@ export async function POST({ request }: { request: Request }) {
 	}
 
 	if (payload?.action !== 'parcel_status_changed') {
+		// Pas de log ici avant : un test manuel depuis le panneau Sendcloud
+		// ("Test API Webhook") envoie souvent une `action` différente (ping,
+		// test générique...) — sans cette ligne, cette réponse 200 immédiate
+		// était indiscernable d'une requête qui n'était jamais arrivée.
+		log('INFO', 'webhook:sendcloud', `Action non gérée reçue : ${payload?.action ?? '(absente)'}`);
 		return json({ received: true }, { status: 200 });
 	}
 
@@ -60,46 +65,55 @@ export async function POST({ request }: { request: Request }) {
 		return json({ received: true }, { status: 200 });
 	}
 
-	await withLock(`sendcloud:webhook:parcel:${parcelId}`, 30, async () => {
-		const transaction = await prisma.transaction.findFirst({
-			where: { sendcloudParcelId: parcelId }
-		});
-
-		if (!transaction) {
-			log('WARN', 'webhook:sendcloud', `Aucune transaction pour le colis Sendcloud ${parcelId}`);
-			return;
-		}
-
-		const statusCode = Number(parcel.status?.id);
-		const statusUpdatedAt =
-			typeof payload.timestamp === 'number' ? new Date(payload.timestamp) : new Date();
-
-		await prisma.transaction.update({
-			where: { id: transaction.id },
-			data: {
-				shippingStatusCode: Number.isFinite(statusCode) ? statusCode : null,
-				shippingStatusMessage: parcel.status?.message ?? null,
-				shippingStatusUpdatedAt: statusUpdatedAt,
-				// Défensif : normalement déjà posés par `createSendcloudLabel`, mais
-				// ce webhook peut arriver avant la fin de cet appel synchrone.
-				trackingNumber: parcel.tracking_number ?? transaction.trackingNumber,
-				trackingUrl: parcel.label?.label_printer_url ?? transaction.trackingUrl
-			}
-		});
-
-		if (transaction.orderId) {
-			await prisma.order.updateMany({
-				where: { id: transaction.orderId, status: 'PAID' },
-				data: { status: 'SHIPPED' }
+	try {
+		await withLock(`sendcloud:webhook:parcel:${parcelId}`, 30, async () => {
+			const transaction = await prisma.transaction.findFirst({
+				where: { sendcloudParcelId: parcelId }
 			});
-		}
 
-		log('INFO', 'webhook:sendcloud', 'Statut transporteur mis à jour', {
-			transactionId: transaction.id,
-			parcelId,
-			status: parcel.status?.message
+			if (!transaction) {
+				log('WARN', 'webhook:sendcloud', `Aucune transaction pour le colis Sendcloud ${parcelId}`);
+				return;
+			}
+
+			const statusCode = Number(parcel.status?.id);
+			const statusUpdatedAt =
+				typeof payload.timestamp === 'number' ? new Date(payload.timestamp) : new Date();
+
+			await prisma.transaction.update({
+				where: { id: transaction.id },
+				data: {
+					shippingStatusCode: Number.isFinite(statusCode) ? statusCode : null,
+					shippingStatusMessage: parcel.status?.message ?? null,
+					shippingStatusUpdatedAt: statusUpdatedAt,
+					// Défensif : normalement déjà posés par `createSendcloudLabel`, mais
+					// ce webhook peut arriver avant la fin de cet appel synchrone.
+					trackingNumber: parcel.tracking_number ?? transaction.trackingNumber,
+					trackingUrl: parcel.label?.label_printer_url ?? transaction.trackingUrl
+				}
+			});
+
+			if (transaction.orderId) {
+				await prisma.order.updateMany({
+					where: { id: transaction.orderId, status: 'PAID' },
+					data: { status: 'SHIPPED' }
+				});
+			}
+
+			log('INFO', 'webhook:sendcloud', 'Statut transporteur mis à jour', {
+				transactionId: transaction.id,
+				parcelId,
+				status: parcel.status?.message
+			});
 		});
-	});
+	} catch (error) {
+		// Ex. réveil de la base Neon (connexion momentanément fermée) : Sendcloud
+		// retente déjà les webhooks en échec (jusqu'à 10 fois, délai croissant),
+		// mieux vaut donc un 500 franc ici qu'un 200 qui ferait croire à tort
+		// que le statut a été enregistré.
+		log('ERROR', 'webhook:sendcloud', `Échec du traitement du webhook pour le colis ${parcelId}`, error);
+		return json({ error: 'Processing failed' }, { status: 500 });
+	}
 
 	return json({ received: true }, { status: 200 });
 }

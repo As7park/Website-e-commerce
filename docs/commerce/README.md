@@ -124,6 +124,29 @@ l'erreur (donc QStash arrête de retenter) et journalise en `ERROR` + Sentry
 transaction reste identifiable en base (`sendcloudOrderCreatedAt`/
 `sendcloudParcelId` toujours absents) pour un retraitement ultérieur.
 
+**Création d'étiquette : API v3.** `createSendcloudLabel`
+(`src/lib/sendcloud/label.ts`) appelle `POST /api/v3/shipments/announce` —
+migré depuis l'API v2 (`/api/v2/parcels`), que Sendcloud a placée en mode
+maintenance en avril 2026. `Transaction.shippingOption` porte déjà le
+`shipping_option_code` v3 choisi par le client au checkout (posé tel quel
+depuis `/api/sendcloud/shipping-options`) : aucun second appel réseau pour le
+résoudre, contrairement à l'ancien code v2 qui interrogeait
+`GET /api/v2/shipping_methods` avec une correspondance approximative par
+sous-chaîne de nom de transporteur. `from_address` (l'adresse de la boutique,
+mêmes variables d'environnement que l'étiquette de retour ci-dessous) est
+obligatoire sur cet endpoint — absent de la documentation Sendcloud consultée,
+découvert en conditions réelles (réponse `{"source":{"pointer":"/from_address"}}`).
+
+Chaque échec **lève désormais une exception** (avant la migration : un
+`console.error` suivi d'un `return` silencieux) — c'était un bug de
+production réel : le disjoncteur/dead-letter décrits ci-dessus ne protégeait
+jamais la création d'étiquette, une transaction payée pouvait rester sans
+étiquette pour toujours, sans la moindre alerte. Sendcloud autorise 100
+requêtes/min (rafale 15/s) sur les méthodes d'écriture ; cette app appelle
+Sendcloud au plus deux fois par transaction payée (commande + étiquette), le
+disjoncteur et le plafond de tentatives protègent la santé du fournisseur, pas
+le débit de l'app elle-même — tailles largement suffisantes.
+
 ### Suivi de commande côté client
 
 `/auth/settings/factures/[id]` affiche, au-dessus de la facture, un panneau
@@ -171,6 +194,78 @@ webhook reçu (jamais de rétrogradation), `OrderStatus` n'ayant pas de
 granularité plus fine. Toujours répondu 200 une fois la signature validée,
 même si la transaction est introuvable : un code d'erreur ferait retenter
 Sendcloud (jusqu'à 10 fois) un évènement de toute façon non actionnable.
+
+Aucun changement nécessaire ici lors de la migration v3 de la création
+d'étiquette (ci-dessus) : Sendcloud documente explicitement que les webhooks
+sont identiques entre v2 et v3 (même forme d'évènement, même façon de les
+signer) — confirmé, `parcel.id` reste la clé de rapprochement quelle que soit
+l'API utilisée pour créer l'étiquette.
+
+### Tests Sendcloud réels (gratuits)
+
+Sendcloud ne propose **aucun environnement de bac à sable** : une seule paire
+de clés (`SENDCLOUD_PUBLIC_KEY`/`SENDCLOUD_SECRET_KEY`), pas de distinction
+test/prod. Deux mécanismes documentés par Sendcloud permettent malgré tout de
+vérifier le comportement réel sans jamais rien facturer :
+
+- **« Lettre non affranchie »** (`shipping_option_code: 'sendcloud:letter'`) :
+  crée un **vrai** enregistrement dans le compte Sendcloud réel (visible dans
+  le tableau de bord), mais jamais facturé. Utilisé pour vérifier une vraie
+  création d'étiquette de bout en bout. **Ne fonctionne pas pour un retour**
+  (`is_return: true`), refusé par Sendcloud pour ce compte — confirmé en
+  conditions réelles.
+- **`POST /api/v3/returns/validate`** : dry-run documenté par Sendcloud —
+  vérifie qu'une adresse/un payload de retour serait accepté, sans jamais
+  créer le retour ni le transmettre à un transporteur. Aucun coût, aucune
+  trace dans le tableau de bord.
+
+| Fichier                                          | Ce qu'il prouve                                                                                                     |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/sendcloud/label.test.ts`                 | Forme du payload v3 (mocké), chaque échec lève une exception, la bonne donnée est écrite en base sur succès.        |
+| `src/lib/sendcloud/label.live.test.ts`            | Le vrai `createSendcloudLabel` (réseau réel, DB mockée) obtient un vrai `parcelId`/`trackingNumber` de Sendcloud.    |
+| `src/lib/sendcloud/returnValidate.ts`/`.test.ts`  | Le payload d'adresse retour (mêmes variables d'env que `returnLabel.ts`) est bien formé, sans jamais créer de retour. |
+| `e2e/live/sendcloud-label.spec.ts`                | Boucle complète : vraie création d'étiquette → vrai webhook signé → `Order` `PAID` → `SHIPPED`.                     |
+
+Ces tests sont gated par `hasLiveSendcloud()`/`isDummySecret()` (mêmes clés
+que la production, dans `.env`/`.env.test`) : `describe.skipIf`/`test.skip`
+passent instantanément sans clés réelles configurées, jamais bloquant en CI.
+
+⚠️ **Constat en date du 2026-09-17** : le compte Sendcloud réel de ce projet
+est actuellement **suspendu pour suspicion de fraude**
+(`403 account_on_hold`, « Please contact the Sendcloud support desk ») sur
+l'endpoint de création d'étiquette (`shipments/announce`) — vraisemblablement
+déclenché par la rafale de créations réelles effectuées pendant cette session
+de test. `returns/validate` (dry-run, aucun enregistrement créé) continue de
+fonctionner normalement, ce qui confirme que le blocage porte spécifiquement
+sur la création d'enregistrements, pas sur l'API dans son ensemble.
+`label.live.test.ts` et `e2e/live/sendcloud-label.spec.ts` échouent donc
+actuellement à cette étape précise (pas un bug de code — le payload passe la
+validation Sendcloud sans erreur de champ) : **contacter le support Sendcloud
+pour lever la suspension avant la mise en production**, puis rejouer ces deux
+tests pour confirmer une vraie création réussie.
+
+**Checklist avant mise en production :**
+
+- [ ] Suspension du compte levée par le support Sendcloud (ci-dessus) ; rejouer
+      `label.live.test.ts` et `e2e/live/sendcloud-label.spec.ts`.
+- [ ] Capacité de retour activée côté panneau/contrat Sendcloud (voir
+      « Étiquette de retour Sendcloud » plus bas) — sans ça, aucun retour ne
+      peut fonctionner, v2 ou v3.
+- [ ] Aucune configuration panel manuelle requise pour la signature webhook :
+      confirmé — ce compte (intégration `system: "api"`) signe déjà avec
+      `SENDCLOUD_SECRET_KEY`, déjà présent en production.
+- [ ] Lancer une fois `GET /api/v2/parcel-statuses` (ou l'équivalent v3) contre
+      le vrai compte et documenter la table des codes obtenue ici — le code
+      n'interprète aujourd'hui jamais `shippingStatusCode` numériquement
+      (affiché verbatim, voir webhook entrant ci-dessus), ce trou de
+      documentation reste à combler.
+- [ ] Après quelques exécutions des tests réels ci-dessus, une accumulation
+      d'étiquettes « lettre non affranchie » de test est normale dans le
+      tableau de bord Sendcloud (gratuit, cosmétique) — nettoyage manuel
+      optionnel, aucune action API requise.
+- [ ] `SENDCLOUD_SENDER_ADDRESS_ID` est devenu inutile depuis la migration v3
+      (plus aucun appel ne le consomme) — retirer ses dernières références ou
+      le documenter explicitement comme vestige.
 
 ### Débit SMTP sous rafale (facture)
 
@@ -245,10 +340,25 @@ logs. Le compte voit le numéro de suivi sur
 `/auth/settings/returns/[transactionId]` dès qu'il est posé, avec un message
 d'attente sinon.
 
-⚠️ Le champ `is_return` n'a pas été vérifié contre un compte Sendcloud réel
-dans l'environnement de développement de ce projet (pas de sandbox
-disponible) : à valider une fois avant la première utilisation en
-production.
+Reste sur l'API **v2** (`is_return: true`) — non migré vers v3 dans ce lot :
+contrairement à l'envoi aller, aucun `shipping_option_code` n'est choisi par
+le client pour un retour, c'est une décision commerciale (quel
+transporteur/option de retour ?) qui ne se devine pas dans le code (voir
+questions ouvertes plus bas).
+
+⚠️ **Capacité de retour non configurée côté compte Sendcloud, confirmé en
+conditions réelles.** `src/lib/sendcloud/returnValidate.ts` (dry-run
+`POST /api/v3/returns/validate`, voir « Tests Sendcloud réels » ci-dessus)
+confirme que l'adresse construite par `returnLabel.ts` est bien formée
+(aucune erreur de champ sur `from_address`/`to_address`), **mais** aucun code
+transporteur testé — ni l'option gratuite « lettre non affranchie » (de
+toute façon refusée pour un retour), ni un vrai transporteur comme
+`colissimo:home/fr` — n'a été accepté : Sendcloud répond systématiquement
+« No shipping methods for given parameters ». Ce n'est pas un bug de payload,
+mais une capacité de retour qui semble ne jamais avoir été activée au niveau
+du compte/contrat transporteur : **à vérifier et activer côté panneau
+Sendcloud avant qu'un retour (v2 ou v3) puisse fonctionner en production**,
+indépendamment de la suspension pour fraude mentionnée ci-dessus.
 
 ## Cartes cadeaux
 
@@ -393,6 +503,32 @@ Pas de paiement carte. Sendcloud n'est pas appelé (`PUBLIC_ENV=test`).
 `incrementUsage` n'est pas joué : il suit `stripe.checkout.sessions.create`.
 `.env.test` ne renseigne pas `QSTASH_TOKEN` : le job post-paiement (facture)
 s'exécute directement dans la requête webhook, sans file d'attente.
+
+### Webhook Sendcloud — `e2e/commerce/sendcloud-webhook.spec.ts`
+
+| #   | Étape             | Geste                            | Preuve                                             |
+| --- | ----------------- | --------------------------------- | --------------------------------------------------- |
+| 1   | Signature invalide | POST `/api/webhooks/sendcloud`   | 401, `Transaction`/`Order` inchangées               |
+| 2   | Signature valide   | POST signé (`SENDCLOUD_WEBHOOK_SECRET` e2e) | 200, `shippingStatusCode`/`Message`/`trackingNumber` à jour, `Order` `PAID` → `SHIPPED` |
+
+`parcelId` fictif (compteur local), pas d'appel réseau Sendcloud — seule la
+vérification de signature + l'effet en base sont couverts ici. Une navigation
+de chauffe (`page.goto('/')`) précède le premier appel API brut : le premier
+compile SSR de ce projet peut dépasser le budget par défaut de
+`page.request.post()`.
+
+### Sendcloud réel — `e2e/live/sendcloud.spec.ts`, `e2e/live/sendcloud-label.spec.ts`
+
+Réseau réel, gated par `hasLiveSendcloud()` (`describe.skip`/`test.skip`
+instantané sans clés réelles). `sendcloud.spec.ts` couvre devis d'expédition +
+points relais + persistance checkout (pas de création d'étiquette :
+`PUBLIC_ENV=test` coupe `shouldCallSendcloud()`). `sendcloud-label.spec.ts`
+contourne ce blocage volontairement, en appelant Sendcloud directement depuis
+le process de test (même contournement que `e2e/support/db.ts`) : vraie
+création d'étiquette (« lettre non affranchie ») → vrai webhook signé avec le
+`parcelId` réellement renvoyé → `Order` `PAID` → `SHIPPED`. Voir « Tests
+Sendcloud réels (gratuits) » plus haut pour l'état actuel de ce test (bloqué
+par la suspension du compte pour suspicion de fraude, pas un bug de code).
 
 ### Ventes — `e2e/commerce/sales.spec.ts`
 

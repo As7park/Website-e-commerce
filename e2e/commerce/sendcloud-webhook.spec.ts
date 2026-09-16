@@ -28,6 +28,13 @@ test.describe('Commerce — webhook Sendcloud', () => {
 		const { product } = created;
 
 		try {
+			// Chauffe le serveur (premier compile SSR lent sur ce projet, cf.
+			// les autres specs qui démarrent toutes par une navigation) avant le
+			// premier appel API brut ci-dessous — sans page visitée avant, ce
+			// POST payait seul le compile à froid dans le budget de 20s de
+			// `actionTimeout`, plus large que ce qu'il fallait.
+			await page.goto('/', { timeout: 90_000 });
+
 			await occupyEmail(account.email);
 			const user = await requireUser(account.email);
 			const linked = await linkProductToOrder(user.id, product.id);

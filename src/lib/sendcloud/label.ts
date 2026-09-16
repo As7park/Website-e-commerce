@@ -1,661 +1,257 @@
-import dotenv from 'dotenv';
+// SENDCLOUD : création d'étiquette d'expédition (API v3, `shipments/announce`).
+// COMMERCE-PLUGIN y fait appel depuis le job post-paiement ; retirer Sendcloud
+// n'empêche pas d'enregistrer la Transaction.
+//
+// Migré depuis l'API v2 `/api/v2/parcels` (dépréciée, en mode maintenance
+// chez Sendcloud) — voir docs/commerce/README.md pour le détail de la
+// migration. Le `shipping_option_code` v3 attendu ici est déjà celui que le
+// client a choisi au checkout (`Transaction.shippingOption`, posé tel quel
+// depuis `/api/sendcloud/shipping-options` → `Order.shippingOption` →
+// `Transaction.shippingOption`, voir la chaîne complète dans le plan de
+// migration) : pas de second appel réseau pour le résoudre, contrairement à
+// l'ancien code v2.
 import { prisma } from '$lib/server';
+import { log } from '$lib/server/log';
 
-dotenv.config();
+type TransactionForLabel = {
+	id: string;
+	shippingOption: string | null;
+	address_first_name: string;
+	address_last_name: string;
+	address_phone: string;
+	address_company?: string | null;
+	address_street_number: string;
+	address_street: string;
+	address_city: string;
+	address_zip: string;
+	address_country_code: string;
+	customer_details_email?: string | null;
+	package_length: number;
+	package_width: number;
+	package_height: number;
+	package_weight: number;
+	servicePointId?: string | null;
+};
 
-// Constante pour activer/désactiver les logs de debug
-const DEBUG = false;
+function authHeader() {
+	const pub = process.env.SENDCLOUD_PUBLIC_KEY;
+	const sec = process.env.SENDCLOUD_SECRET_KEY;
+	if (!pub || !sec) throw new Error('Sendcloud credentials missing');
+	return 'Basic ' + Buffer.from(`${pub}:${sec}`).toString('base64');
+}
 
-// Fonction helper pour les logs conditionnels
-function debugLog(...args: any[]) {
-	if (DEBUG) {
-		debugLog(...args);
-	}
+function envOr(name: string, fallback: string): string {
+	const value = process.env[name]?.trim();
+	return value && value.length > 0 ? value : fallback;
 }
 
 /**
- * Crée une étiquette d'expédition Sendcloud pour une transaction donnée (SYNCHRONE).
- * Récupère directement l'étiquette PDF dans la réponse.
- * @param {Object} transaction - Les données de la transaction.
+ * Adresse d'expédition de la boutique (`from_address`), obligatoire sur
+ * `shipments/announce` v3 — découvert en conditions réelles (curl direct,
+ * réponse `{"errors":[{"detail":"Field required","source":{"pointer":"/from_address"}}]}`),
+ * absent de la documentation consultée avant l'implémentation initiale.
+ * Mêmes variables d'environnement que `returnValidate.ts`/`returnLabel.ts` :
+ * il s'agit physiquement de la même adresse boutique, seule la direction du
+ * colis change (destinataire pour un retour, expéditeur pour un envoi aller).
  */
-export async function createSendcloudLabel(transaction: any) {
-	debugLog('\n🏷️ === CRÉATION ÉTIQUETTE SENDCLOUD ===');
-	debugLog('📋 Transaction reçue:', {
-		id: transaction.id,
-		shippingOption: transaction.shippingOption,
-		orderId: transaction.orderId
-	});
+function shopFromAddress() {
+	return {
+		name: envOr('INVOICE_COMPANY_NAME', 'MadeInDiamonds'),
+		address_line_1: envOr('INVOICE_COMPANY_ADDRESS', '123 Rue des Affaires'),
+		house_number: envOr('SENDCLOUD_RETURN_HOUSE_NUMBER', '') || undefined,
+		postal_code: envOr('SENDCLOUD_RETURN_POSTAL_CODE', '75000'),
+		city: envOr('SENDCLOUD_RETURN_CITY', 'Paris'),
+		country_code: envOr('SENDCLOUD_RETURN_COUNTRY', 'FR'),
+		email: envOr('INVOICE_COMPANY_EMAIL', 'contact@madeindiamonds.com'),
+		phone_number: envOr('INVOICE_COMPANY_PHONE', '+33123456789')
+	};
+}
 
-	// ✅ LOG COMPLET DE LA TRANSACTION
-	debugLog('🔍 === ANALYSE COMPLÈTE DE LA TRANSACTION ===');
-	debugLog('📋 Transaction complète (JSON):', JSON.stringify(transaction, null, 2));
-	debugLog('📋 Clés disponibles dans transaction:', Object.keys(transaction));
-	debugLog('📋 Type de transaction:', typeof transaction);
-	debugLog('📋 Transaction est un objet:', transaction !== null && typeof transaction === 'object');
-	
-	// ✅ LOG DES CHAMPS SPÉCIFIQUES
-	debugLog('🔍 === CHAMPS SPÉCIFIQUES DE LA TRANSACTION ===');
-	debugLog('📍 servicePointId:', {
-		valeur: transaction.servicePointId,
-		type: typeof transaction.servicePointId,
-		existe: transaction.servicePointId !== undefined,
-		nonVide: transaction.servicePointId && transaction.servicePointId.toString().trim() !== ''
-	});
-	debugLog('📍 servicePointPostNumber:', {
-		valeur: transaction.servicePointPostNumber,
-		type: typeof transaction.servicePointPostNumber,
-		existe: transaction.servicePointPostNumber !== undefined,
-		nonVide: transaction.servicePointPostNumber && transaction.servicePointPostNumber.toString().trim() !== ''
-	});
-	debugLog('📍 servicePointName:', transaction.servicePointName);
-	debugLog('📍 servicePointAddress:', transaction.servicePointAddress);
-	debugLog('📍 servicePointCity:', transaction.servicePointCity);
-	debugLog('📍 servicePointZip:', transaction.servicePointZip);
-	debugLog('📍 servicePointCountry:', transaction.servicePointCountry);
-	debugLog('🏁 === FIN ANALYSE TRANSACTION ===\n');
+/**
+ * Étiquette à un enregistrement Sendcloud v3 précis dans un tableau de
+ * réponse : la doc Sendcloud ne précise pas si `data.id` (l'expédition) ou
+ * `data.parcels[0].id` (le colis) correspond au `parcel.id` que le webhook
+ * entrant rapportera ensuite — les deux sont loggés en INFO au premier appel
+ * réel pour trancher définitivement (voir plan de migration, étape 3).
+ */
+function extractParcelId(data: any): number | null {
+	const fromParcel = Number(data?.parcels?.[0]?.id);
+	if (Number.isFinite(fromParcel)) return fromParcel;
+	const fromShipment = Number(data?.id);
+	return Number.isFinite(fromShipment) ? fromShipment : null;
+}
 
-	const authString = `${process.env.SENDCLOUD_PUBLIC_KEY}:${process.env.SENDCLOUD_SECRET_KEY}`;
-	const base64Auth = Buffer.from(authString).toString('base64');
+function extractTrackingNumber(data: any): string | null {
+	return (
+		data?.tracking_number ??
+		data?.parcels?.[0]?.tracking_number ??
+		data?.tracking_numbers?.[0] ??
+		null
+	);
+}
 
+function extractTrackingUrl(data: any): string | null {
+	const documents = Array.isArray(data?.documents) ? data.documents : [];
+	const label = documents.find((doc: any) => doc?.type === 'label' || doc?.document_type === 'label');
+	return label?.link ?? null;
+}
 
-	debugLog('🔑 Authentification Sendcloud configurée');
-
-	// ✅ Attendre que la commande soit disponible dans Sendcloud
-	debugLog('⏳ Attente que la commande soit disponible dans Sendcloud...');
-	await new Promise(resolve => setTimeout(resolve, 2000)); // Attendre 2 secondes
-
-	// Vérifier que la commande existe et récupérer son ID Sendcloud
-	const orderNumber = `ORDER-${transaction.id}`;
-	debugLog('🔍 Vérification de l\'existence de la commande:', orderNumber);
-
-	let sendcloudOrderId = null;
-	try {
-		const checkResponse = await fetch(`https://panel.sendcloud.sc/api/v3/orders/?order_number=${orderNumber}`, {
-			method: 'GET',
-			headers: {
-				Authorization: `Basic ${base64Auth}`,
-				'Content-Type': 'application/json',
-				Accept: 'application/json'
-			}
+/**
+ * Crée une étiquette d'expédition Sendcloud (v3, synchrone) pour une
+ * transaction payée. Lève une exception sur tout échec (jamais un `return`
+ * silencieux) : c'est ce qui permet au disjoncteur/dead-letter du job
+ * appelant (`$lib/server/jobs/post-payment.ts`) de réellement protéger cette
+ * étape — un échec avalé en silence laissait autrefois une transaction payée
+ * sans étiquette, pour toujours, sans aucune alerte.
+ */
+export async function createSendcloudLabel(transaction: TransactionForLabel) {
+	// Commandes sur-mesure (`Order.shippingOption = 'no_shipping'`) : jamais
+	// expédiées par Sendcloud, rien à faire ici.
+	if (!transaction.shippingOption || transaction.shippingOption === 'no_shipping') {
+		log('DEBUG', 'sendcloud:label', 'Pas de transporteur Sendcloud pour cette transaction', {
+			transactionId: transaction.id,
+			shippingOption: transaction.shippingOption
 		});
-
-		debugLog('📥 Réponse de vérification de commande:', {
-			status: checkResponse.status,
-			statusText: checkResponse.statusText,
-			ok: checkResponse.ok,
-			headers: Object.fromEntries(checkResponse.headers.entries())
-		});
-
-		if (checkResponse.ok) {
-			const checkData = await checkResponse.json();
-			debugLog('✅ Commande trouvée dans Sendcloud:', {
-				status: checkData.status,
-				data_count: checkData.data?.length || 0
-			});
-			
-			// ✅ LOG COMPLET DE LA RÉPONSE SENDCLOUD
-			debugLog('🔍 === ANALYSE COMPLÈTE DE LA RÉPONSE SENDCLOUD ===');
-			debugLog('📋 Réponse complète (JSON):', JSON.stringify(checkData, null, 2));
-			debugLog('📋 Clés disponibles dans checkData:', Object.keys(checkData));
-			debugLog('📋 Type de checkData:', typeof checkData);
-			
-			if (checkData.data && Array.isArray(checkData.data)) {
-				debugLog('📋 checkData.data est un tableau de longueur:', checkData.data.length);
-				checkData.data.forEach((item: any, index: number) => {
-					debugLog(`📋 Item ${index}:`, {
-						id: item.id,
-						type: item.type,
-						clés: Object.keys(item),
-						attributes: item.attributes ? Object.keys(item.attributes) : 'Pas d\'attributs',
-						relationships: item.relationships ? Object.keys(item.relationships) : 'Pas de relations'
-					});
-					
-					// ✅ LOG DÉTAILLÉ DE CHAQUE ITEM
-					if (item.attributes) {
-						debugLog(`🔍 Attributs de l'item ${index}:`, JSON.stringify(item.attributes, null, 2));
-					}
-					if (item.relationships) {
-						debugLog(`🔍 Relations de l'item ${index}:`, JSON.stringify(item.relationships, null, 2));
-					}
-				});
-			} else {
-				debugLog('⚠️ checkData.data n\'est pas un tableau ou est undefined');
-				debugLog('📋 Type de checkData.data:', typeof checkData.data);
-				debugLog('📋 Valeur de checkData.data:', checkData.data);
-			}
-			debugLog('🏁 === FIN ANALYSE RÉPONSE SENDCLOUD ===\n');
-			
-			// Récupérer l'ID interne de la commande Sendcloud
-			if (checkData.data && checkData.data.length > 0) {
-				sendcloudOrderId = checkData.data[0].id;
-				debugLog('🎯 ID de commande Sendcloud récupéré:', sendcloudOrderId);
-				
-				// ✅ LOG DÉTAILLÉ DE LA COMMANDE TROUVÉE
-				const foundOrder = checkData.data[0];
-				debugLog('🔍 === COMMANDE SENDCLOUD TROUVÉE ===');
-				debugLog('📋 Commande complète:', JSON.stringify(foundOrder, null, 2));
-				debugLog('📋 ID de la commande:', foundOrder.id);
-				debugLog('📋 Type de la commande:', foundOrder.type);
-				
-				if (foundOrder.attributes) {
-					debugLog('📋 Attributs de la commande:');
-					Object.entries(foundOrder.attributes).forEach(([key, value]) => {
-						debugLog(`  - ${key}:`, {
-							valeur: value,
-							type: typeof value,
-							existe: value !== undefined && value !== null
-						});
-					});
-				}
-				
-				if (foundOrder.relationships) {
-					debugLog('📋 Relations de la commande:');
-					Object.entries(foundOrder.relationships).forEach(([key, value]) => {
-						debugLog(`  - ${key}:`, {
-							valeur: value,
-							type: typeof value,
-							existe: value !== undefined && value !== null
-						});
-					});
-				}
-				debugLog('🏁 === FIN COMMANDE SENDCLOUD TROUVÉE ===\n');
-			}
-		} else {
-			debugLog('⚠️ Commande pas encore disponible, nouvelle tentative dans 3 secondes...');
-			await new Promise(resolve => setTimeout(resolve, 3000)); // Attendre 3 secondes de plus
-			
-			// Nouvelle tentative
-			const retryResponse = await fetch(`https://panel.sendcloud.sc/api/v3/orders/?order_number=${orderNumber}`, {
-				method: 'GET',
-				headers: {
-					Authorization: `Basic ${base64Auth}`,
-					'Content-Type': 'application/json',
-					Accept: 'application/json'
-				}
-			});
-			
-			debugLog('📥 Réponse de retry:', {
-				status: retryResponse.status,
-				statusText: retryResponse.statusText,
-				ok: retryResponse.ok
-			});
-			
-			if (retryResponse.ok) {
-				const retryData = await retryResponse.json();
-				debugLog('📋 Données de retry:', JSON.stringify(retryData, null, 2));
-				
-				if (retryData.data && retryData.data.length > 0) {
-					sendcloudOrderId = retryData.data[0].id;
-					debugLog('🎯 ID de commande Sendcloud récupéré après retry:', sendcloudOrderId);
-				}
-			}
-		}
-	} catch (error) {
-		debugLog('⚠️ Erreur lors de la vérification, continuation...');
-		console.error('❌ Détail de l\'erreur:', error);
-	}
-
-	if (!sendcloudOrderId) {
-		console.error('❌ Impossible de récupérer l\'ID de commande Sendcloud');
 		return;
 	}
 
-	// ✅ Vérifier si la commande a un point relais
-	const hasServicePoint = transaction.servicePointId;
-	debugLog('📍 Commande avec point relais:', hasServicePoint ? 'Oui' : 'Non');
-	
-	// ✅ LOG DÉTAILLÉ DE LA DÉTECTION DU POINT RELAIS
-	debugLog('🔍 === ANALYSE DÉTECTION POINT RELAIS ===');
-	debugLog('📍 servicePointId brut:', transaction.servicePointId);
-	debugLog('📍 servicePointId type:', typeof transaction.servicePointId);
-	debugLog('📍 servicePointId existe:', transaction.servicePointId !== undefined);
-	debugLog('📍 servicePointId non vide:', transaction.servicePointId && transaction.servicePointId.toString().trim() !== '');
-	debugLog('📍 hasServicePoint calculé:', hasServicePoint);
-	debugLog('📍 hasServicePoint type:', typeof hasServicePoint);
-	debugLog('📍 hasServicePoint truthy:', !!hasServicePoint);
-	debugLog('🏁 === FIN ANALYSE DÉTECTION POINT RELAIS ===\n');
-
-	// ✅ Si la commande a un point relais, on doit l'utiliser correctement avec to_service_point
-	// selon la documentation Sendcloud
-	if (hasServicePoint) {
-		debugLog('✅ Commande avec point relais détectée. Utilisation de to_service_point selon la documentation Sendcloud...');
-		debugLog('🔍 Détails du point relais à utiliser:', {
-			id: transaction.servicePointId,
-			post_number: transaction.servicePointPostNumber,
-			name: transaction.servicePointName,
-			address: transaction.servicePointAddress,
-			city: transaction.servicePointCity,
-			zip: transaction.servicePointZip,
-			country: transaction.servicePointCountry
-		});
-		
-		// ✅ BONNE PRATIQUE SENDCLOUD : Récupérer les méthodes d'expédition compatibles avec ce point relais
-		debugLog('🔍 === RÉCUPÉRATION MÉTHODES COMPATIBLES POINT RELAIS ===');
-		try {
-			const servicePointId = transaction.servicePointId;
-			const senderAddressId = process.env.SENDCLOUD_SENDER_ADDRESS_ID;
-			
-			debugLog('📋 Paramètres de recherche:', {
-				servicePointId,
-				senderAddressId,
-				shippingMethodId: transaction.shippingMethodId
-			});
-			
-			// ✅ Appel à l'API Sendcloud pour récupérer les méthodes compatibles
-			const methodsResponse = await fetch(
-				`https://panel.sendcloud.sc/api/v2/shipping_methods?service_point_id=${servicePointId}${senderAddressId ? `&sender_address=${senderAddressId}` : ''}`,
-				{
-					method: 'GET',
-					headers: {
-						Authorization: `Basic ${base64Auth}`,
-						'Content-Type': 'application/json',
-						Accept: 'application/json'
-					}
-				}
-			);
-			
-			debugLog('📥 Réponse méthodes compatibles:', {
-				status: methodsResponse.status,
-				statusText: methodsResponse.statusText,
-				ok: methodsResponse.ok
-			});
-			
-			if (methodsResponse.ok) {
-				const methodsData = await methodsResponse.json();
-				debugLog('✅ Méthodes compatibles récupérées:', {
-					count: methodsData.shipping_methods?.length || 0
-				});
-				
-				// ✅ LOG COMPLET DES MÉTHODES COMPATIBLES
-				debugLog('🔍 === ANALYSE MÉTHODES COMPATIBLES ===');
-				
-				if (methodsData.shipping_methods && Array.isArray(methodsData.shipping_methods)) {
-					debugLog('📋 Méthodes disponibles:', methodsData.shipping_methods.length);
-					
-					// ✅ Filtrer par poids et trouver la meilleure méthode
-					const currentWeight = transaction.package_weight || 6;
-					const compatibleMethods = methodsData.shipping_methods.filter((method: any) => {
-						const minWeight = parseFloat(method.min_weight || '0');
-						const maxWeight = parseFloat(method.max_weight || '999999');
-						const isCompatible = currentWeight >= minWeight && currentWeight <= maxWeight;
-						
-
-						return isCompatible;
-					});
-					
-					debugLog('✅ Méthodes compatibles après filtrage poids:', compatibleMethods.length);
-					
-					if (compatibleMethods.length > 0) {
-						// ✅ Prendre la première méthode compatible (ou appliquer un scoring)
-						const bestMethod = compatibleMethods[0];
-						debugLog('🎯 Meilleure méthode sélectionnée:', {
-							id: bestMethod.id,
-							name: bestMethod.name,
-							carrier: bestMethod.carrier,
-							price: bestMethod.countries?.[0]?.price
-						});
-						
-						// ✅ Mettre à jour l'ID de méthode d'expédition
-						transaction.shippingMethodId = bestMethod.id;
-						debugLog('🔄 ID de méthode d\'expédition mis à jour:', transaction.shippingMethodId);
-					} else {
-						debugLog('⚠️ Aucune méthode compatible trouvée après filtrage poids');
-					}
-				}
-				debugLog('🏁 === FIN ANALYSE MÉTHODES COMPATIBLES ===\n');
-			} else {
-				debugLog('⚠️ Erreur lors de la récupération des méthodes compatibles');
-				const errorText = await methodsResponse.text();
-				debugLog('📋 Erreur:', errorText);
-			}
-		} catch (error) {
-			debugLog('⚠️ Erreur lors de la récupération des méthodes compatibles:', error);
-		}
-	} else {
-		debugLog('ℹ️ Pas de point relais détecté, création d\'étiquette standard...');
-	}
-
-	const endpoint = 'https://panel.sendcloud.sc/api/v2/parcels';
-
-	// ✅ BONNE PRATIQUE SENDCLOUD : Revalider l'ID de méthode juste avant la création
-	debugLog('🔍 === REVALIDATION ID MÉTHODE AVANT CRÉATION ===');
-	try {
-		const servicePointId = transaction.servicePointId;
-		const senderAddressId = process.env.SENDCLOUD_SENDER_ADDRESS_ID;
-		const currentMethodId = transaction.shippingMethodId;
-		
-		debugLog('📋 Paramètres de revalidation:', {
-			servicePointId,
-			senderAddressId,
-			currentMethodId
-		});
-		
-		// ✅ Revalidation immédiate de la méthode sélectionnée
-		const revalidationResponse = await fetch(
-			`https://panel.sendcloud.sc/api/v2/shipping_methods?service_point_id=${servicePointId}${senderAddressId ? `&sender_address=${senderAddressId}` : ''}`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `Basic ${base64Auth}`,
-					'Content-Type': 'application/json',
-					Accept: 'application/json'
-				}
-			}
+	// Données d'adresse obligatoires côté v3 (`to_address`) : une valeur
+	// manquante lève avant d'appeler Sendcloud, plutôt que d'envoyer une
+	// fausse adresse/coordonnée à un vrai transporteur (SMS/email de livraison
+	// envoyés à un inconnu — préjudice réel, pas une simple erreur cosmétique).
+	const missing = ['address_street', 'address_city', 'address_zip', 'address_country_code'].filter(
+		(key) => !(transaction as any)[key]
+	);
+	if (missing.length > 0) {
+		throw new Error(
+			`Adresse d'expédition incomplète pour la transaction ${transaction.id} (champs manquants : ${missing.join(', ')})`
 		);
-		
-		debugLog('📥 Réponse de revalidation:', {
-			status: revalidationResponse.status,
-			statusText: revalidationResponse.statusText,
-			ok: revalidationResponse.ok
-		});
-		
-		if (revalidationResponse.ok) {
-			const revalidationData = await revalidationResponse.json();
-			debugLog('✅ Méthodes compatibles revalidées:', {
-				count: revalidationData.shipping_methods?.length || 0
-			});
-			
-			// ✅ Vérifier que notre méthode est toujours valide
-			const currentWeight = transaction.package_weight || 6;
-			const validMethods = revalidationData.shipping_methods?.filter((method: any) => {
-				const minWeight = parseFloat(method.min_weight || '0');
-				const maxWeight = parseFloat(method.max_weight || '999999');
-				const isCompatible = currentWeight >= minWeight && currentWeight <= maxWeight;
-
-				return isCompatible;
-			}) || [];
-			
-			debugLog('✅ Méthodes valides après revalidation:', validMethods.length);
-			
-			// ✅ Vérifier si notre méthode actuelle est toujours valide
-			const isCurrentMethodValid = validMethods.some((method: any) => method.id === currentMethodId);
-			
-			if (isCurrentMethodValid) {
-				debugLog('✅ Notre méthode actuelle est toujours valide:', currentMethodId);
-			} else {
-				debugLog('⚠️ Notre méthode actuelle n\'est plus valide, sélection d\'une nouvelle méthode...');
-				
-				if (validMethods.length > 0) {
-					// ✅ Prendre la première méthode valide
-					const newBestMethod = validMethods[0];
-					debugLog('🎯 Nouvelle méthode sélectionnée:', {
-						id: newBestMethod.id,
-						name: newBestMethod.name,
-						carrier: newBestMethod.carrier,
-						price: newBestMethod.countries?.[0]?.price
-					});
-					
-					// ✅ Mettre à jour l'ID de méthode d'expédition
-					transaction.shippingMethodId = newBestMethod.id;
-					debugLog('🔄 ID de méthode d\'expédition mis à jour:', transaction.shippingMethodId);
-				} else {
-					debugLog('❌ Aucune méthode valide trouvée lors de la revalidation');
-				}
-			}
-			
-			// ✅ BONNE PRATIQUE SENDCLOUD : Forcer l'utilisation de la méthode revalidée
-			if (validMethods.length > 0) {
-				// ✅ Prendre la méthode la plus récente et valide
-				const mostRecentValidMethod = validMethods[0];
-				debugLog('🎯 Utilisation de la méthode revalidée:', {
-					id: mostRecentValidMethod.id,
-					name: mostRecentValidMethod.name,
-					carrier: mostRecentValidMethod.carrier,
-					service_point_input: mostRecentValidMethod.service_point_input
-				});
-				
-				// ✅ Vérification stricte que c'est bien une méthode point relais
-				if (mostRecentValidMethod.service_point_input === 'required') {
-					debugLog('✅ Méthode point relais confirmée (service_point_input: required)');
-					
-					// ✅ Mise à jour forcée de l'ID
-					transaction.shippingMethodId = mostRecentValidMethod.id;
-					debugLog('🔄 ID de méthode d\'expédition forcé à:', transaction.shippingMethodId);
-				} else {
-					debugLog('⚠️ Méthode non compatible points relais, recherche d\'une alternative...');
-					
-					// ✅ Chercher une méthode avec service_point_input: required
-					const servicePointMethods = validMethods.filter((method: any) => method.service_point_input === 'required');
-					if (servicePointMethods.length > 0) {
-						const bestServicePointMethod = servicePointMethods[0];
-						debugLog('🎯 Méthode point relais alternative trouvée:', {
-							id: bestServicePointMethod.id,
-							name: bestServicePointMethod.name,
-							carrier: bestServicePointMethod.carrier
-						});
-						
-						transaction.shippingMethodId = bestServicePointMethod.id;
-						debugLog('🔄 ID de méthode d\'expédition mis à jour vers méthode point relais:', transaction.shippingMethodId);
-					}
-				}
-			}
-		} else {
-			debugLog('⚠️ Erreur lors de la revalidation, utilisation de la méthode actuelle');
-		}
-	} catch (error) {
-		debugLog('⚠️ Erreur lors de la revalidation:', error);
 	}
-	debugLog('🏁 === FIN REVALIDATION ID MÉTHODE ===\n');
 
-	// ✅ CONSTRUCTION DU PAYLOAD AVEC LOGS DÉTAILLÉS
-	debugLog('🔨 === CONSTRUCTION DU PAYLOAD ===');
-	
-	// ✅ Utiliser l'API v2 /parcels avec request_label: true pour les points relais
+	const name = `${transaction.address_first_name} ${transaction.address_last_name}`.trim();
+	if (!name) {
+		throw new Error(`Nom du destinataire manquant pour la transaction ${transaction.id}`);
+	}
+
 	const requestBody = {
-		parcels: [{
-			// ✅ Informations du destinataire (depuis la transaction - VRAIES DONNÉES)
-			name: `${transaction.address_first_name || ''} ${transaction.address_last_name || ''}`.trim() || 'Client',
-			company_name: transaction.address_company || '',
-			address: transaction.address_street || 'Adresse par défaut',
-			house_number: transaction.address_street_number || '',
-			city: transaction.address_city || 'Ville par défaut',
-			postal_code: transaction.address_zip || '00000',
-			country: (transaction.address_country_code || 'FR').toUpperCase(), // ✅ Pays en majuscules
-			email: transaction.customer_details_email || 'client@example.com',
-			telephone: transaction.address_phone || '0606060606', // ✅ VRAI TÉLÉPHONE
-
-			// ✅ Méthode d'expédition (ID Sendcloud - mis à jour si point relais)
-			shipment: { 
-				id: transaction.shippingMethodId || 413 // Fallback sur l'ID trouvé précédemment
-			},
-			
-			// ✅ Poids et dimensions (VRAIES DONNÉES)
-			weight: (transaction.package_weight || 6).toString(),
-			
-			// ✅ Création synchrone de l'étiquette
-			request_label: true,
-			
-			// ✅ Point relais (si applicable)
-			...(hasServicePoint ? {
-				to_service_point: parseInt(transaction.servicePointId),
-				to_post_number: transaction.servicePointPostNumber || ''
-			} : {})
-		}]
+		from_address: shopFromAddress(),
+		to_address: {
+			name,
+			company_name: transaction.address_company || undefined,
+			address_line_1: transaction.address_street,
+			house_number: transaction.address_street_number || undefined,
+			postal_code: transaction.address_zip,
+			city: transaction.address_city,
+			country_code: transaction.address_country_code.toUpperCase(),
+			email: transaction.customer_details_email || undefined,
+			phone_number: transaction.address_phone || undefined
+		},
+		ship_with: {
+			type: 'shipping_option_code',
+			properties: { shipping_option_code: transaction.shippingOption }
+		},
+		parcels: [
+			{
+				weight: { value: transaction.package_weight, unit: 'kg' },
+				dimensions: {
+					length: transaction.package_length,
+					width: transaction.package_width,
+					height: transaction.package_height,
+					unit: 'cm'
+				}
+			}
+		],
+		order_number: `ORDER-${transaction.id}`,
+		external_reference_id: transaction.id,
+		...(transaction.servicePointId
+			? { to_service_point: Number(transaction.servicePointId) }
+			: {})
 	};
 
-	// ✅ LOG DÉTAILLÉ DU PAYLOAD CONSTRUIT
-	debugLog('📤 Payload construit:', {
-		parcels_count: requestBody.parcels.length,
-		first_parcel: {
-			name: requestBody.parcels[0].name,
-			shipment_id: requestBody.parcels[0].shipment.id,
-			weight: requestBody.parcels[0].weight,
-			request_label: requestBody.parcels[0].request_label,
-			...(hasServicePoint ? {
-				to_service_point: requestBody.parcels[0].to_service_point,
-				to_post_number: requestBody.parcels[0].to_post_number
-			} : {})
-		}
+	log('INFO', 'sendcloud:label', "Création d'étiquette v3", {
+		transactionId: transaction.id,
+		shippingOption: transaction.shippingOption
 	});
 
-	// ✅ LOG COMPLET DU PAYLOAD
-	debugLog('🔍 Payload complet (JSON):', JSON.stringify(requestBody, null, 2));
-	debugLog('🔍 Structure du payload:', {
-		parcels: {
-			count: requestBody.parcels.length,
-			first_parcel: {
-				name: requestBody.parcels[0].name,
-				company_name: requestBody.parcels[0].company_name,
-				address: requestBody.parcels[0].address,
-				city: requestBody.parcels[0].city,
-				postal_code: requestBody.parcels[0].postal_code,
-				country: requestBody.parcels[0].country,
-				shipment_id: requestBody.parcels[0].shipment.id,
-				weight: requestBody.parcels[0].weight,
-				request_label: requestBody.parcels[0].request_label,
-				to_service_point: requestBody.parcels[0].to_service_point,
-				to_post_number: requestBody.parcels[0].to_post_number
-			}
-		}
-	});
-	debugLog('🏁 === FIN CONSTRUCTION PAYLOAD ===\n');
-
-	// Appel à l'API Sendcloud
-	debugLog('🚀 Envoi de la requête à Sendcloud...');
-	debugLog('🎯 Endpoint:', endpoint);
-	debugLog('🔑 Headers:', {
-		Authorization: `Basic ${base64Auth.substring(0, 20)}...`,
-		'Content-Type': 'application/json',
-		Accept: 'application/json'
-	});
-	
-	const response = await fetch(endpoint, {
+	const response = await fetch('https://panel.sendcloud.sc/api/v3/shipments/announce', {
 		method: 'POST',
 		headers: {
-			Authorization: `Basic ${base64Auth}`,
+			Authorization: authHeader(),
 			'Content-Type': 'application/json',
 			Accept: 'application/json'
 		},
 		body: JSON.stringify(requestBody)
 	});
 
-	debugLog('📥 Réponse reçue:', {
-		status: response.status,
-		statusText: response.statusText,
-		ok: response.ok
-	});
+	const responseData: any = await response.json().catch(() => ({}));
 
 	if (!response.ok) {
-		const txt = await response.text();
-		console.error('❌ Erreur lors de la création de l\'étiquette Sendcloud (sync):', txt);
-		console.error('📋 Status:', response.status, response.statusText);
-		console.error('📤 Payload envoyé:', JSON.stringify(requestBody, null, 2));
-		
-		// ✅ LOG DÉTAILLÉ DE L'ERREUR
-		debugLog('🔍 === ANALYSE DE L\'ERREUR ===');
-		try {
-			const errorJson = JSON.parse(txt);
-			debugLog('📋 Erreur parsée (JSON):', JSON.stringify(errorJson, null, 2));
-			
-			if (errorJson.errors && Array.isArray(errorJson.errors)) {
-				debugLog('📋 Détail des erreurs:');
-				errorJson.errors.forEach((error: any, index: number) => {
-					debugLog(`  Erreur ${index + 1}:`, {
-						status: error.status,
-						code: error.code,
-						detail: error.detail,
-						source: error.source,
-						pointer: error.source?.pointer
-					});
-				});
-			}
-		} catch (parseError) {
-			debugLog('⚠️ Impossible de parser l\'erreur en JSON:', parseError);
-			debugLog('📋 Erreur brute:', txt);
-		}
-		debugLog('🏁 === FIN ANALYSE ERREUR ===\n');
-		
-		return;
+		// Deux formes d'erreur v3 observées en conditions réelles selon
+		// l'endpoint : `{field, detail}` (returns/validate) et
+		// `{source: {pointer: "/from_address"}, detail}` (shipments/announce,
+		// style JSON:API) — les deux sont lues ici pour ne jamais retomber sur
+		// un « Field required » sans nom de champ, illisible en dead-letter.
+		const detail = Array.isArray(responseData?.errors)
+			? responseData.errors
+					.map((e: any) => {
+						const field = e?.field ?? e?.source?.pointer;
+						const message = e?.detail ?? e?.message;
+						return field ? `${field}: ${message}` : message;
+					})
+					.join('; ')
+			: JSON.stringify(responseData);
+		throw new Error(
+			`Sendcloud v3 shipments/announce a échoué (${response.status}) pour la transaction ${transaction.id} : ${detail}`
+		);
 	}
 
-	const responseData = await response.json();
-	debugLog('✅ Réponse Sendcloud reçue:', {
-		status: responseData.status || 'unknown',
-		data_count: responseData.parcels?.length || 0
-	});
-
-	// ✅ LOG COMPLET DE LA RÉPONSE SUCCÈS
-	debugLog('🔍 === ANALYSE RÉPONSE SUCCÈS ===');
-	debugLog('📋 Réponse complète (JSON):', JSON.stringify(responseData, null, 2));
-	debugLog('📋 Clés disponibles dans responseData:', Object.keys(responseData));
-	debugLog('📋 Type de responseData:', typeof responseData);
-	
-	// ✅ L'API v2 /parcels retourne directement un tableau de parcels
-	if (responseData.parcels && Array.isArray(responseData.parcels)) {
-		debugLog('📋 responseData.parcels est un tableau de longueur:', responseData.parcels.length);
-		responseData.parcels.forEach((parcel: any, index: number) => {
-			debugLog(`📋 Parcel ${index}:`, {
-				clés: Object.keys(parcel),
-				type: typeof parcel
-			});
-			debugLog(`📋 Contenu du parcel ${index}:`, JSON.stringify(parcel, null, 2));
-		});
-	} else {
-		debugLog('⚠️ responseData.parcels n\'est pas un tableau ou est undefined');
-		debugLog('📋 Type de responseData.parcels:', typeof responseData.parcels);
-		debugLog('📋 Valeur de responseData.parcels:', responseData.parcels);
-	}
-	debugLog('🏁 === FIN ANALYSE RÉPONSE SUCCÈS ===\n');
-
-	// -- Récupération correcte : responseData.parcels est un tableau contenant les parcels créés
-	const [parcel] = responseData.parcels || [];
-	if (!parcel) {
-		console.error('❌ Pas de parcels dans la réponse Sendcloud');
-		console.error('📋 Réponse complète:', responseData);
-		return;
+	// Un statut HTTP 2xx n'exclut pas un échec d'annonce par colis : Sendcloud
+	// peut accepter la requête mais refuser le colis lui-même.
+	const parcelStatus = responseData?.parcels?.[0]?.status;
+	if (parcelStatus?.code === 'ANNOUNCEMENT_FAILED') {
+		throw new Error(
+			`Sendcloud v3 a refusé l'annonce du colis pour la transaction ${transaction.id} : ${parcelStatus?.message ?? 'raison inconnue'}`
+		);
 	}
 
-	// ✅ LOG DÉTAILLÉ DU COLIS
-	debugLog('🔍 === ANALYSE DU COLIS ===');
-	debugLog('📋 Colis complet:', JSON.stringify(parcel, null, 2));
-	debugLog('📋 Clés disponibles dans parcel:', Object.keys(parcel));
-	debugLog('📋 Type de parcel:', typeof parcel);
-	
-	// ✅ L'API v2 /parcels retourne des champs différents
-	const parcelId = parcel.id || parcel.parcel_id;
-	const trackingNumber = parcel.tracking_number;
-	const trackingUrl = parcel.label?.label_printer_url || parcel.label_url;
-	
-	debugLog('📦 Données de colis extraites:', {
-		parcel_id: parcelId,
-		tracking_number: trackingNumber ? 'Oui' : 'Non',
-		tracking_url: trackingUrl ? 'Oui' : 'Non'
-	});
-	
-	// ✅ LOG DÉTAILLÉ DES CHAMPS DU COLIS
-	debugLog('📋 Tous les champs du colis:');
-	Object.entries(parcel).forEach(([key, value]) => {
-		debugLog(`  - ${key}:`, {
-			valeur: value,
-			type: typeof value,
-			existe: value !== undefined && value !== null
-		});
-	});
-	debugLog('🏁 === FIN ANALYSE COLIS ===\n');
+	const parcelId = extractParcelId(responseData);
+	const trackingNumber = extractTrackingNumber(responseData);
+	const trackingUrl = extractTrackingUrl(responseData);
 
-	// Vérification que la transaction existe vraiment
-	debugLog('🔍 Vérification de l\'existence de la transaction en base...');
+	log('INFO', 'sendcloud:label', 'Étiquette créée', {
+		transactionId: transaction.id,
+		// Les deux id bruts, le temps de confirmer lequel matche `parcel.id`
+		// côté webhook entrant (voir `extractParcelId`).
+		shipmentId: responseData?.id ?? null,
+		parcelIdFromParcelsArray: responseData?.parcels?.[0]?.id ?? null,
+		resolvedParcelId: parcelId,
+		trackingNumber
+	});
+
+	if (!parcelId) {
+		throw new Error(
+			`Réponse Sendcloud v3 sans identifiant de colis exploitable pour la transaction ${transaction.id}`
+		);
+	}
+
 	const existingTransaction = await prisma.transaction.findUnique({
-		where: { id: transaction.id.toString() }
+		where: { id: transaction.id }
 	});
-
 	if (!existingTransaction) {
-		console.error(`❌ La transaction avec l'ID ${transaction.id} n'existe pas.`);
-		return;
+		throw new Error(`Transaction ${transaction.id} introuvable en base après création de l'étiquette`);
 	}
 
-	debugLog('✅ Transaction trouvée en base, mise à jour...');
-
-	// Mise à jour des infos Sendcloud dans la transaction
 	await prisma.transaction.update({
-		where: { id: transaction.id.toString() },
+		where: { id: transaction.id },
 		data: {
 			sendcloudParcelId: parcelId,
-			trackingNumber: trackingNumber,
-			trackingUrl: trackingUrl
+			trackingNumber,
+			trackingUrl
 		}
 	});
 
-	debugLog('✅ Transaction mise à jour avec les informations Sendcloud');
-	debugLog('🏁 === FIN CRÉATION ÉTIQUETTE SENDCLOUD ===\n');
+	log('INFO', 'sendcloud:label', 'Transaction mise à jour avec les informations Sendcloud', {
+		transactionId: transaction.id,
+		parcelId
+	});
 }

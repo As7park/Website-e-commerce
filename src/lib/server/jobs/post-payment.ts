@@ -67,104 +67,19 @@ export function derivePackageEstimate(order: any): PackageEstimate {
 }
 
 /**
- * Récupère l'objet { id, name } directement depuis Sendcloud en utilisant
- * l'API des méthodes d'expédition.
+ * Dimensions/poids du colis pour l'étiquette Sendcloud v3.
+ *
+ * Avant la migration v3, cette fonction appelait `GET /api/v2/shipping_methods`
+ * pour résoudre un ID numérique de méthode d'expédition, avec correspondance
+ * approximative par sous-chaîne de nom de transporteur (fragile). En v3,
+ * `createSendcloudLabel` (`$lib/sendcloud/label.ts`) envoie directement le
+ * `shipping_option_code` choisi par le client au checkout
+ * (`Transaction.shippingOption`) — plus besoin de résoudre quoi que ce soit
+ * ici, ni d'appel réseau supplémentaire. Ne reste que l'estimation locale du
+ * colis, déjà dérivée de `packageEstimate.ts`.
  */
-export async function getShippingMethodData(
-	shippingOption: string,
-	pkg: PackageEstimate,
-	order: any
-) {
-	if (!shouldCallSendcloud()) {
-		return fallbackShippingMethod(shippingOption, pkg);
-	}
-
-	log('DEBUG', 'post-payment:sendcloud-method', 'Paramètres:', { shippingOption, pkg });
-
-	try {
-		const methodsResponse = await fetch('https://panel.sendcloud.sc/api/v2/shipping_methods', {
-			method: 'GET',
-			headers: {
-				Authorization: `Basic ${Buffer.from(`${process.env.SENDCLOUD_PUBLIC_KEY || ''}:${process.env.SENDCLOUD_SECRET_KEY || ''}`).toString('base64')}`,
-				'Content-Type': 'application/json'
-			}
-		});
-
-		if (!methodsResponse.ok) {
-			throw new Error(`Sendcloud Methods API error: ${methodsResponse.status}`);
-		}
-
-		const methodsData = await methodsResponse.json();
-		log(
-			'DEBUG',
-			'post-payment:sendcloud-method',
-			"Méthodes d'expédition reçues:",
-			methodsData.shipping_methods?.length || 0
-		);
-
-		const baseCode = shippingOption.split('/')[0];
-
-		let matchingMethod = null;
-		if (methodsData.shipping_methods && Array.isArray(methodsData.shipping_methods)) {
-			matchingMethod = methodsData.shipping_methods.find((method: any) => {
-				const methodName = method.name?.toLowerCase() || '';
-				const methodCarrier = method.carrier?.toLowerCase() || '';
-				const optionCode = shippingOption.toLowerCase();
-				const baseCodeLower = baseCode.toLowerCase();
-
-				if (methodCarrier && baseCodeLower.includes(methodCarrier)) {
-					return true;
-				}
-
-				if (methodName && optionCode.includes(methodName.replace(/\s+/g, ''))) {
-					return true;
-				}
-
-				return false;
-			});
-		}
-
-		if (matchingMethod) {
-			const dynamicMethod = {
-				id: matchingMethod.id, // ID réel de Sendcloud !
-				name: `${matchingMethod.carrier || 'Unknown'} - ${matchingMethod.name || 'Unknown'}`,
-				length: pkg.lengthCm,
-				width: pkg.widthCm,
-				height: pkg.heightCm,
-				unit: 'cm',
-				weight: pkg.weightKg,
-				weightUnit: 'kg',
-				volume: pkg.lengthCm * pkg.widthCm * pkg.heightCm,
-				volumeUnit: 'cm3'
-			};
-
-			log(
-				'DEBUG',
-				'post-payment:sendcloud-method',
-				"Méthode d'expédition dynamique créée avec ID Sendcloud:",
-				dynamicMethod
-			);
-			return dynamicMethod;
-		}
-
-		log(
-			'WARN',
-			'post-payment:sendcloud-method',
-			'Aucune méthode correspondante trouvée, fallback',
-			{
-				shippingOption
-			}
-		);
-		return fallbackShippingMethod(shippingOption, pkg);
-	} catch (error) {
-		log(
-			'ERROR',
-			'post-payment:sendcloud-method',
-			"Erreur lors de la récupération des méthodes d'expédition, fallback",
-			error
-		);
-		return fallbackShippingMethod(shippingOption, pkg);
-	}
+export function derivePackageForShipping(shippingOption: string, pkg: PackageEstimate) {
+	return fallbackShippingMethod(shippingOption, pkg);
 }
 
 /**
@@ -215,10 +130,9 @@ export async function runPostPaymentJob(transactionId: string): Promise<void> {
 						})
 					: null;
 				const packageEstimate = derivePackageEstimate(orderForShipping);
-				const shippingMethodData = await getShippingMethodData(
+				const shippingMethodData = derivePackageForShipping(
 					transaction.shippingOption || '',
-					packageEstimate,
-					orderForShipping
+					packageEstimate
 				);
 
 				if (shippingMethodData?.id && shippingMethodData.id !== transaction.shippingMethodId) {

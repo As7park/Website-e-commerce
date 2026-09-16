@@ -32,7 +32,12 @@ export default defineConfig({
 		watch: {
 			usePolling: true,
 			interval: 1000
-		}
+		},
+		// Autorise le tunnel `localtunnel` (`npx localtunnel --port 2000`) pour
+		// recevoir un vrai webhook entrant (Sendcloud, etc.) en dev — Vite
+		// bloque sinon toute requête dont le header `Host` n'est pas connu.
+		// Dev uniquement : `vite dev` ne tourne jamais en production.
+		allowedHosts: ['.loca.lt']
 	},
 
 	// `preprocess` retiré : redondant avec svelte.config.js (vitePreprocess()
