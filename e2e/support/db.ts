@@ -299,7 +299,12 @@ async function ensureCatalogTaxonomy() {
 }
 
 /** Catalogue : produit de test isolé (image factice, pas d'upload Cloudinary). */
-export async function createCatalogProduct(overrides?: { name?: string; slug?: string }) {
+export async function createCatalogProduct(overrides?: {
+	name?: string;
+	slug?: string;
+	stock?: number;
+	price?: number;
+}) {
 	const stamp = `${Date.now()}`;
 	const category = await createCatalogCategory();
 	const product = await resilient(() =>
@@ -308,8 +313,8 @@ export async function createCatalogProduct(overrides?: { name?: string; slug?: s
 				name: overrides?.name ?? `e2e-prod-${stamp}`,
 				slug: overrides?.slug ?? `e2e-prod-${stamp}`,
 				description: 'Produit de test e2e pour le catalogue.',
-				price: 12.5,
-				stock: 10,
+				price: overrides?.price ?? 12.5,
+				stock: overrides?.stock ?? 10,
 				images: ['https://example.test/e2e-product.jpg'],
 				colorProduct: '#112233',
 				taxonomyValues: { create: { taxonomyValueId: category.id } }
@@ -705,6 +710,13 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 
 export async function getTransactionById(id: string) {
 	return resilient(() => db.transaction.findUnique({ where: { id } }));
+}
+
+/** Pose `sendcloudParcelId` — clé de rapprochement du webhook Sendcloud entrant. */
+export async function setSendcloudParcelId(transactionId: string, parcelId: number) {
+	await resilient(() =>
+		db.transaction.update({ where: { id: transactionId }, data: { sendcloudParcelId: parcelId } })
+	);
 }
 
 export async function deleteTransaction(id: string) {

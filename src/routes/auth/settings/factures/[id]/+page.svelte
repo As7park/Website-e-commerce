@@ -12,6 +12,7 @@
 		trackingNumber={data.tracking.trackingNumber}
 		trackingUrl={data.tracking.trackingUrl}
 		servicePointId={data.tracking.servicePointId}
+		shippingStatusMessage={data.tracking.shippingStatusMessage}
 	/>
 </div>
 

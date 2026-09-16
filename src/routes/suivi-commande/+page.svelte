@@ -64,6 +64,7 @@
 				trackingNumber={form.tracking.trackingNumber}
 				trackingUrl={form.tracking.trackingUrl}
 				servicePointId={form.tracking.servicePointId}
+				shippingStatusMessage={form.tracking.shippingStatusMessage}
 			/>
 		</div>
 	{/if}

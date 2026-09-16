@@ -544,6 +544,12 @@ model Transaction {
   /// garde d'idempotence contre un retry QStash qui recréerait la commande.
   sendcloudOrderCreatedAt DateTime?
 
+  /// Dernier statut transporteur reçu du webhook Sendcloud (`parcel.status`),
+  /// affiché tel quel dans `OrderTrackingPanel` — jamais interprété côté code.
+  shippingStatusCode      Int?
+  shippingStatusMessage   String?
+  shippingStatusUpdatedAt DateTime?
+
   // Dimensions et poids du colis selon l'API Sendcloud
   package_length         Float
   package_width          Float

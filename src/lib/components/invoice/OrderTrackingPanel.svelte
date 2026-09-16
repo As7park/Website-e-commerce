@@ -13,18 +13,24 @@
 		shippingMethodName,
 		trackingNumber,
 		trackingUrl,
-		servicePointId
+		servicePointId,
+		shippingStatusMessage = null
 	}: {
 		status: string;
 		shippingMethodName: string;
 		trackingNumber: string | null;
 		trackingUrl: string | null;
 		servicePointId: string | null;
+		shippingStatusMessage?: string | null;
 	} = $props();
 
 	const statusLabel = $derived(formatOrderStatus(status));
 	const badgeVariant = $derived(
-		statusLabel.tone === 'success' ? 'default' : statusLabel.tone === 'pending' ? 'secondary' : 'outline'
+		statusLabel.tone === 'success'
+			? 'default'
+			: statusLabel.tone === 'pending'
+				? 'secondary'
+				: 'outline'
 	);
 </script>
 
@@ -57,6 +63,11 @@
 				<div>
 					<p class="text-muted-foreground text-xs">Numéro de suivi</p>
 					<p class="font-mono text-sm">{trackingNumber}</p>
+					{#if shippingStatusMessage}
+						<p class="text-muted-foreground mt-1 text-xs">
+							Statut transporteur : {shippingStatusMessage}
+						</p>
+					{/if}
 				</div>
 				{#if trackingUrl}
 					<Button href={trackingUrl} target="_blank" rel="noopener noreferrer" size="sm">

@@ -34,7 +34,8 @@ export const load = (async ({ params, locals }) => {
 			shippingMethodName: transaction.shippingMethodName,
 			trackingNumber: transaction.trackingNumber,
 			trackingUrl: transaction.trackingUrl,
-			servicePointId: transaction.servicePointId
+			servicePointId: transaction.servicePointId,
+			shippingStatusMessage: transaction.shippingStatusMessage
 		}
 	};
 }) satisfies PageServerLoad;

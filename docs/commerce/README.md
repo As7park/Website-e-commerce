@@ -148,6 +148,30 @@ facture au hasard. Limité par IP (`guestTrackingLimiter`,
 même raison : sans compte ni mot de passe à deviner, seul ce débit protège
 contre l'énumération. Lien affiché sur `/checkout/success`.
 
+### Webhook Sendcloud entrant (statut transporteur)
+
+`POST /api/webhooks/sendcloud` (`src/routes/api/webhooks/sendcloud/+server.ts`)
+reçoit les évènements `parcel_status_changed` de Sendcloud — le pendant
+entrant du flux ci-dessus, qui ne fait que créer commande + étiquette.
+Signature HMAC-SHA256 vérifiée sur le corps brut (header
+`Sendcloud-Signature`, secret `SENDCLOUD_WEBHOOK_SECRET`, à renseigner dans
+les réglages de l'intégration Sendcloud) via
+`$lib/sendcloud/webhookSignature.ts` ; une signature absente ou invalide
+renvoie 401. Les autres actions (`integration_connected`, `return_created`,
+…) sont acquittées (200) sans traitement.
+
+La transaction concernée est retrouvée par `sendcloudParcelId` (posé par
+`createSendcloudLabel`, jamais par parsing de `order_number`). Le statut brut
+Sendcloud (`parcel.status.id`/`.message`) est stocké tel quel
+(`shippingStatusCode`/`shippingStatusMessage`/`shippingStatusUpdatedAt`) et
+affiché verbatim par `OrderTrackingPanel` — volontairement jamais interprété
+côté code, faute de mapping numérique fiable et documenté par Sendcloud.
+Seul effet applicatif : la commande passe de `PAID` à `SHIPPED` au premier
+webhook reçu (jamais de rétrogradation), `OrderStatus` n'ayant pas de
+granularité plus fine. Toujours répondu 200 une fois la signature validée,
+même si la transaction est introuvable : un code d'erreur ferait retenter
+Sendcloud (jusqu'à 10 fois) un évènement de toute façon non actionnable.
+
 ### Débit SMTP sous rafale (facture)
 
 `runInvoiceEmailJob` (`$lib/server/jobs/invoice-email.ts`) consomme un jeton

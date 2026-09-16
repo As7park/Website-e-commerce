@@ -1,0 +1,43 @@
+Read memory 
+
+Updated memory file 
+
+Bilan complet de la situation Sendcloud :
+
+## ✅ Ce qui est fait et solide
+
+| Élément | État |
+|---|---|
+| Schéma + migration (`shippingStatusCode/Message/UpdatedAt`) | Appliqué en base, `npm run check` propre |
+| Signature HMAC-SHA256 | Implémentée, accepte `SENDCLOUD_WEBHOOK_SECRET` **ou** `SENDCLOUD_SECRET_KEY` (voir plus bas pourquoi) |
+| Route `/api/webhooks/sendcloud` | Vérifie signature, met à jour `Transaction`, passe `Order` PAID→SHIPPED au 1er événement |
+| UI (`OrderTrackingPanel` + les 2 pages tracking) | Affiche `shippingStatusMessage` verbatim |
+| Test e2e | Passe — mais **auto-signé localement**, ne parle jamais au vrai Sendcloud (limite assumée d'un webhook entrant) |
+| Doc (`README.md`) | À jour |
+
+## ⚠️ Ce qui reste incertain (pas encore validé en conditions réelles)
+
+1. **Le vrai secret de signature n'est pas confirmé.** La doc Sendcloud dit "Secret Key *ou* Webhook Signature Key selon le type d'intégration" — et l'API réelle de votre intégration (`type: "api"`, boutique "XplicitDrink", id 468353) n'expose **aucun** champ de clé de signature séparée. Donc c'est probablement `SENDCLOUD_SECRET_KEY` (déjà en base) qui sert de secret, pas un `SENDCLOUD_WEBHOOK_SECRET` à part. J'ai rendu le code tolérant aux deux en attendant, et il logue lequel a matché.
+2. **Le webhook n'est pas encore activé côté Sendcloud** (`webhook_active: false` confirmé par API, lecture seule). Il faudra l'activer avec une URL publique valide dans le panneau.
+
+## 🚧 Le blocage réseau (constaté, pas contourné)
+
+Tentative d'ouvrir un tunnel public (`localtunnel`) depuis cette machine :
+- `curl` échoue même vers `panel.sendcloud.sc` avec *"self-signed certificate in certificate chain"* → un proxy/pare-feu inspecte le TLS sortant ici.
+- Le process `localtunnel` reste bloqué indéfiniment sans erreur → le protocole de tunneling est probablement bloqué activement (typique en environnement d'entreprise).
+- Node `fetch` passait (a dû faire confiance au CA du proxy), mais pas les outils de tunneling.
+
+J'ai arrêté de m'acharner et tout nettoyé (process tués, fichiers temp supprimés) — rien n'est resté en arrière-plan.
+
+## 📝 Mémorisé pour la suite
+
+J'ai noté tout ça dans la mémoire du dépôt (secret ambigu, migration via `deploy` pas `dev`, blocage réseau constaté) pour ne pas repartir de zéro sur ta nouvelle machine.
+
+## Prochaine étape (sur ton nouvel ordi)
+
+1. Relancer `npx localtunnel --port 2000` (ou utiliser directement une URL Vercel si déployé).
+2. Coller l'URL + `/api/webhooks/sendcloud` dans le panneau Sendcloud, activer le webhook.
+3. Cliquer "Test API Webhook", regarder les logs `npm run dev` (le champ `matchedSecret` dira si c'est `SENDCLOUD_SECRET_KEY` ou `SENDCLOUD_WEBHOOK_SECRET`).
+4. Me montrer le résultat — je nettoierai le code pour ne garder que le bon secret.
+
+À bientôt sur le nouvel ordi.

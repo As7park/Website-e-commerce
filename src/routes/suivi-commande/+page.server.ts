@@ -46,7 +46,8 @@ export const actions: Actions = {
 				shippingMethodName: transaction.shippingMethodName,
 				trackingNumber: transaction.trackingNumber,
 				trackingUrl: transaction.trackingUrl,
-				servicePointId: transaction.servicePointId
+				servicePointId: transaction.servicePointId,
+				shippingStatusMessage: transaction.shippingStatusMessage
 			}
 		};
 	}
