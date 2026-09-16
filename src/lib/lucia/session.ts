@@ -122,7 +122,7 @@ export async function validateSessionToken(token: string): Promise<SessionValida
 			picture: result.user.picture,
 			role: result.user.role,
 			isMfaEnabled: result.user.isMfaEnabled,
-			totpKey: result.user.totpKey
+			totpKey: result.user.totpKey ? result.user.totpKey.toString() : null
 		};
 
 		return { session, user };
@@ -219,29 +219,23 @@ export async function handleGoogleOAuth(
 	name: string,
 	picture: string
 ): Promise<SessionValidationResult> {
-	let user = await findUserByGoogleId(googleId);
+	const rawUser =
+		(await findUserByGoogleId(googleId)) ??
+		(await createUserWithGoogleOAuth(googleId, email, name, picture));
 
-	if (!user) {
-		const createdUser: any = await createUserWithGoogleOAuth(googleId, email, name, picture);
-		user = {
-			id: createdUser.id,
-			email: createdUser.email,
-			username: createdUser.username,
-			emailVerified: createdUser.emailVerified,
-			registered2FA: createdUser.totpKey !== null,
-			googleId: createdUser.googleId,
-			name: createdUser.name,
-			picture: createdUser.picture,
-			role: createdUser.role,
-			isMfaEnabled: createdUser.isMfaEnabled,
-			totpKey: createdUser.totpKey
-		};
-	}
-
-	if (user === null) {
-		console.error("L'objet utilisateur est null après le traitement OAuth Google.");
-		throw new Error("Échec de la récupération ou de la création de l'utilisateur après OAuth.");
-	}
+	const user: User = {
+		id: rawUser.id,
+		email: rawUser.email,
+		username: rawUser.username,
+		emailVerified: rawUser.emailVerified,
+		registered2FA: rawUser.totpKey !== null,
+		googleId: rawUser.googleId,
+		name: rawUser.name,
+		picture: rawUser.picture,
+		role: rawUser.role,
+		isMfaEnabled: rawUser.isMfaEnabled,
+		totpKey: rawUser.totpKey ? rawUser.totpKey.toString() : null
+	};
 
 	const token = generateSessionToken();
 	const session = await createSession(token, user.id, { twoFactorVerified: false }, 'google');

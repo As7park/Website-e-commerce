@@ -1,5 +1,6 @@
 import { getAllTransactionsDashboard } from '$lib/prisma/transaction/getAllTransactionsDashboard';
 import { latestUsers } from '$lib/prisma/user/user';
+import { getDashboardKpis } from '$lib/prisma/dashboard/dashboardKpis';
 import { assertAdmin } from '$lib/admin/guards';
 
 import type { PageServerLoad } from './$types';
@@ -7,13 +8,16 @@ import type { PageServerLoad } from './$types';
 export const load = (async ({ locals }) => {
 	assertAdmin(locals);
 
-	const transactions = await getAllTransactionsDashboard();
-
-	const latestUsersFetch = await latestUsers();
+	const [transactions, latestUsersFetch, kpis] = await Promise.all([
+		getAllTransactionsDashboard(),
+		latestUsers(),
+		getDashboardKpis()
+	]);
 
 	return {
 		latestUsersFetch,
 		transactions,
+		kpis,
 		// Projection volontairement réduite : `locals.user` porte des données
 		// sensibles (clé TOTP chiffrée) qui ne doivent pas partir vers le client.
 		user: {

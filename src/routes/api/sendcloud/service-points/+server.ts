@@ -14,7 +14,10 @@ export async function POST({ request }) {
 		const payload = await request.json();
 		const parseResult = requestSchema.safeParse(payload);
 		if (!parseResult.success) {
-			throw error(400, { message: 'Invalid request body', issues: parseResult.error.issues });
+			return json(
+				{ message: 'Invalid request body', issues: parseResult.error.issues },
+				{ status: 400 }
+			);
 		}
 
 		const { to_country_code, to_postal_code, radius, carriers } = parseResult.data;

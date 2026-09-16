@@ -91,7 +91,13 @@ export async function validatePasswordResetSessionToken(
 		email: result.user.email,
 		username: result.user.username,
 		emailVerified: result.user.emailVerified,
-		registered2FA: result.user.totpKey !== null
+		registered2FA: result.user.totpKey !== null,
+		googleId: result.user.googleId,
+		name: result.user.name,
+		picture: result.user.picture,
+		role: result.user.role,
+		isMfaEnabled: result.user.isMfaEnabled,
+		totpKey: result.user.totpKey ? result.user.totpKey.toString() : null
 	};
 
 	return { session, user };

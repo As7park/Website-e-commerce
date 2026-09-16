@@ -30,7 +30,7 @@ export const actions: Actions = {
 		// console.log('Received form data:', formData);
 
 		// Convert formData into a flat object
-		const raw = Object.fromEntries(formData);
+		const raw: Record<string, unknown> = Object.fromEntries(formData);
 
 		// Convert tagIds to an array (if not already)
 		if (raw.tagIds) {
@@ -62,7 +62,15 @@ export const actions: Actions = {
 			counter++;
 		}
 
-		await createPost(title, content, authorId, uniqueSlug, published, categoryId, tagIds);
+		await createPost(
+			title,
+			content,
+			authorId,
+			uniqueSlug,
+			published,
+			categoryId ?? undefined,
+			tagIds ?? undefined
+		);
 
 		// console.log('Post created successfully.', form);
 		return message(form, 'Post created successfully');

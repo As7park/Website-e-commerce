@@ -47,7 +47,7 @@
 		}
 	});
 
-	let addressSuggestions = $state<string[]>([]);
+	let addressSuggestions = $state<any[]>([]);
 	let timeoutId: ReturnType<typeof setTimeout>;
 
 	async function fetchAddressSuggestions(query: string) {

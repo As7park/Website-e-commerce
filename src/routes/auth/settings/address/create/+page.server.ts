@@ -1,4 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { createAddressSchema } from '$lib/schema/addresses/addressSchema';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -7,7 +8,7 @@ import { createAddress } from '$lib/prisma/addresses/addresses';
 export const load: PageServerLoad = async (event) => {
 	// Vérification de l'authentification
 	if (!event.locals.user) {
-		return fail(401, { message: 'Unauthorized' });
+		error(401, 'Unauthorized');
 	}
 
 	// Initialisation du formulaire Superform
@@ -41,14 +42,14 @@ export const actions: Actions = {
 			first_name,
 			last_name,
 			phone,
-			company = null,
-			street_number = null,
+			company,
+			street_number,
 			street,
 			city,
-			county = null,
-			state = null,
+			county,
+			state,
 			stateLetter,
-			state_code = null,
+			state_code,
 			zip,
 			country,
 			country_code,

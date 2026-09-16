@@ -20,13 +20,10 @@ import { dev } from '$app/environment';
 const adapter = new PrismaAdapter(prisma.session, prisma.user);
 
 export const auth = new Lucia(adapter, {
-	env: dev ? 'DEV' : 'PROD',
-
 	/* Cookies de session “rolling” */
 	sessionCookie: {
 		attributes: {
 			secure: !dev,
-			httpOnly: true,
 			sameSite: 'lax',
 			path: '/'
 		}

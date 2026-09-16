@@ -22,7 +22,7 @@
 	let categories = $state(data.AllCategoriesPost || []);
 	let tags = $state(data.AllTagsPost || []);
 	// Pour les catégories, seule la sélection du nom est stockée
-	let selectedCategory = $state([]);
+	let selectedCategory = $state('');
 	// Les popovers pour les catégories et tags
 	let openCategory = $state(false);
 	let openTag = $state(false);
@@ -58,7 +58,7 @@
 	 * Sélection d'une catégorie
 	 * Seule une catégorie peut être sélectionnée, on affecte son nom et son ID.
 	 */
-	function handleSelectCategory(category) {
+	function handleSelectCategory(category: { id: string; name: string }) {
 		selectedCategory = category.name;
 		$createPostData.categoryId = category.id;
 		openCategory = false;
@@ -152,12 +152,14 @@
 									name="tagIds"
 									value={tag.id}
 									id={'tag-' + tag.id}
-									checked={$createPostData.tagIds.includes(tag.id)}
+									checked={($createPostData.tagIds ?? []).includes(tag.id)}
 									onchange={(e) => {
-										if (e.target.checked) {
-											$createPostData.tagIds = [...$createPostData.tagIds, tag.id];
+										const checked = (e.target as HTMLInputElement).checked;
+										const currentTagIds = $createPostData.tagIds ?? [];
+										if (checked) {
+											$createPostData.tagIds = [...currentTagIds, tag.id];
 										} else {
-											$createPostData.tagIds = $createPostData.tagIds.filter((id) => id !== tag.id);
+											$createPostData.tagIds = currentTagIds.filter((id) => id !== tag.id);
 										}
 									}}
 								/>
@@ -173,7 +175,7 @@
 						<Form.Control>
 							<Form.Label>Content</Form.Label>
 							<Editor
-								{editorConfig}
+								conf={editorConfig}
 								scriptSrc="/tinymce/tinymce.min.js"
 								apiKey={PUBLIC_TINYMCE_API_KEY}
 								bind:value={$createPostData.content}

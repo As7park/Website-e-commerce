@@ -71,7 +71,7 @@ export const createUserInDatabase = async (
 	recoveryCode: string,
 	role: Role,
 	emailVerified: boolean,
-	totpKey: string | null,
+	totpKey: Buffer | null,
 	googleId?: string | null
 ) => {
 	// console.log('Creating user:', {
@@ -195,7 +195,7 @@ export async function updateUserTOTPKey(userId: string, key: Uint8Array) {
 	await prisma.user.update({
 		where: { id: userId },
 		data: {
-			totpKey: encryptedKey,
+			totpKey: Buffer.from(encryptedKey),
 			isMfaEnabled: true,
 			encryptionVersion: 2
 		},
@@ -205,7 +205,7 @@ export async function updateUserTOTPKey(userId: string, key: Uint8Array) {
 
 export const getUserTotpKey = async (
 	userId: string
-): Promise<{ totpKey: string | null; encryptionVersion: number } | null> => {
+): Promise<{ totpKey: Buffer | null; encryptionVersion: number } | null> => {
 	return await prisma.user.findUnique({
 		where: { id: userId },
 		select: {
@@ -242,7 +242,11 @@ export const getUserPasswordHashPrisma = async (whereClause: {
 
 export const getUserRecoveryAndGoogleId = async (
 	userId: string
-): Promise<{ recoveryCode: string | null; googleId: string | null; encryptionVersion: number } | null> => {
+): Promise<{
+	recoveryCode: string | null;
+	googleId: string | null;
+	encryptionVersion: number;
+} | null> => {
 	return await prisma.user.findUnique({
 		where: { id: userId },
 		select: {

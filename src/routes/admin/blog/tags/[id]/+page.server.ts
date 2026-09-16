@@ -1,6 +1,7 @@
 // src/routes/admin/blog/tag/[id]/+page.server.ts
 
 import type { PageServerLoad, Actions } from './$types';
+import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
@@ -13,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const tag = await getTagById(params.id);
 
 	if (!tag) {
-		return fail(404, { message: 'Tag not found' });
+		error(404, 'Tag not found');
 	}
 
 	// Pré-remplir le formulaire avec les données existantes

@@ -3,6 +3,7 @@
  */
 import type { PageServerLoad } from './$types';
 import type { Actions } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
@@ -21,7 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const AllTagsPost = await getAllTagsPosts();
 
 	if (!blogPost) {
-		return fail(404, { message: 'Blog post not found' });
+		error(404, 'Blog post not found');
 	}
 
 	const initialData = {
@@ -50,7 +51,7 @@ export const actions: Actions = {
 		// console.log('Raw Form data:', formData);
 
 		// Convertir formData en objet exploitable
-		const cleanData = Object.fromEntries(formData.entries());
+		const cleanData: Record<string, unknown> = Object.fromEntries(formData.entries());
 
 		// Vérifier et nettoyer tagIds (éviter [undefined])
 		if (cleanData.tagIds) {
@@ -60,13 +61,13 @@ export const actions: Actions = {
 			}
 
 			// Filtrer les valeurs nulles ou undefined
-			cleanData.tagIds = cleanData.tagIds.filter(Boolean);
+			cleanData.tagIds = (cleanData.tagIds as unknown[]).filter(Boolean);
 		} else {
 			// S'assurer que c'est toujours un tableau vide
 			cleanData.tagIds = [];
 		}
 
-		const raw = Object.fromEntries(formData);
+		const raw: Record<string, unknown> = Object.fromEntries(formData);
 		// Convert the "published" field to a boolean
 		raw.published = raw.published === 'on';
 

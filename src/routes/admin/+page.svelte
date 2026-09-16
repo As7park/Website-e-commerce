@@ -4,8 +4,18 @@
 	import ChartBar from '$lib/components/ChartBar.svelte';
 	import LastInscriptions from '$lib/components/LastInscriptions.svelte';
 	import SEO from '$lib/components/SEO.svelte';
+	import * as Card from '$shadcn/card/index.js';
 
 	let { data } = $props();
+
+	const kpis = $derived(data.kpis);
+
+	/** `null` tant qu'aucune relance n'a été envoyée sur la fenêtre : un taux à
+	 * 0% serait trompeur (laisse penser que les relances ont toutes échoué). */
+	const recoveryRate = $derived.by(() => {
+		if (!kpis || kpis.cartRemindersSentCount === 0) return null;
+		return (kpis.cartRemindersRecoveredCount / kpis.cartRemindersSentCount) * 100;
+	});
 
 	const transactions = $derived(Array.isArray(data.transactions) ? data.transactions : []);
 
@@ -77,9 +87,10 @@
 		for (const tx of transactions) {
 			if (!Array.isArray(tx.products)) continue;
 			for (const product of tx.products) {
-				const productName = product?.name as string;
+				const productName = (product as { name?: string; quantity?: number } | null)?.name;
 				if (!productName) continue;
-				const productQuantity = product?.quantity || 0;
+				const productQuantity =
+					(product as { name?: string; quantity?: number } | null)?.quantity || 0;
 				productSales[productName] = (productSales[productName] ?? 0) + productQuantity;
 			}
 		}
@@ -98,6 +109,154 @@
 
 <div class="csc m-5">
 	<h1 class="mb-4 text-2xl font-bold">Accueil</h1>
+
+	{#if kpis}
+		<div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Panier moyen ({kpis.windowDays}j)</Card.Description>
+					<Card.Title class="text-2xl">{kpis.averageOrderValue.toFixed(2)} €</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-muted-foreground text-sm">
+					{kpis.paidOrdersCount} commande{kpis.paidOrdersCount > 1 ? 's' : ''} payée{kpis.paidOrdersCount >
+					1
+						? 's'
+						: ''}
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Paniers abandonnés ({kpis.windowDays}j)</Card.Description>
+					<Card.Title class="text-2xl">{kpis.abandonedCartsCount}</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-muted-foreground text-sm">
+					{#if recoveryRate !== null}
+						{kpis.cartRemindersRecoveredCount}/{kpis.cartRemindersSentCount} relances converties
+						({recoveryRate.toFixed(0)}%)
+					{:else}
+						Aucune relance envoyée sur la période
+					{/if}
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Stock bas</Card.Description>
+					<Card.Title class="text-2xl">{kpis.lowStockCount}</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-muted-foreground text-sm">
+					{#if kpis.lowStockSample.length > 0}
+						<ul class="space-y-0.5">
+							{#each kpis.lowStockSample as product (product.id)}
+								<li class="truncate">{product.name} — {product.stock} restant{product.stock > 1 ? 's' : ''}</li>
+							{/each}
+						</ul>
+					{:else}
+						Aucun produit sous le seuil
+					{/if}
+				</Card.Content>
+			</Card.Root>
+
+			{#if data.returnsEnabled || data.productQnaEnabled}
+				<Card.Root>
+					<Card.Header class="pb-2">
+						<Card.Description>À traiter</Card.Description>
+					</Card.Header>
+					<Card.Content class="space-y-1 text-sm">
+						{#if data.returnsEnabled}
+							<p>{kpis.pendingReturnsCount} retour{kpis.pendingReturnsCount > 1 ? 's' : ''} en attente</p>
+						{/if}
+						{#if data.productQnaEnabled}
+							<p>
+								{kpis.unansweredQuestionsCount} question{kpis.unansweredQuestionsCount > 1 ? 's' : ''}
+								sans réponse
+							</p>
+						{/if}
+					</Card.Content>
+				</Card.Root>
+			{/if}
+		</div>
+
+		<div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Commandes par statut ({kpis.windowDays}j)</Card.Description>
+				</Card.Header>
+				<Card.Content class="space-y-1 text-sm">
+					<p>{kpis.ordersByStatus.PENDING} en attente</p>
+					<p>{kpis.ordersByStatus.PAID} payée{kpis.ordersByStatus.PAID > 1 ? 's' : ''}</p>
+					<p>{kpis.ordersByStatus.SHIPPED} expédiée{kpis.ordersByStatus.SHIPPED > 1 ? 's' : ''}</p>
+					<p>{kpis.ordersByStatus.CANCELLED} annulée{kpis.ordersByStatus.CANCELLED > 1 ? 's' : ''}</p>
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Clients</Card.Description>
+					<Card.Title class="text-2xl">+{kpis.newCustomersCount}</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-muted-foreground text-sm">
+					nouveaux ({kpis.windowDays}j) — {kpis.recurringCustomersCount}/{kpis.payingCustomersCount}
+					client{kpis.payingCustomersCount > 1 ? 's' : ''} payeur{kpis.payingCustomersCount > 1 ? 's' : ''}
+					récurrent{kpis.recurringCustomersCount > 1 ? 's' : ''}
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Catalogue</Card.Description>
+				</Card.Header>
+				<Card.Content class="space-y-1 text-sm">
+					<p>{kpis.neverSoldProductsCount} produit{kpis.neverSoldProductsCount > 1 ? 's' : ''} jamais vendu{kpis.neverSoldProductsCount > 1 ? 's' : ''}</p>
+					{#if kpis.reviewsCount > 0}
+						<p>
+							Note moyenne {kpis.averageReviewRating.toFixed(1)}/5 ({kpis.reviewsCount} avis, +{kpis.newReviewsCount}
+							sur {kpis.windowDays}j)
+						</p>
+					{:else}
+						<p>Aucun avis pour l'instant</p>
+					{/if}
+				</Card.Content>
+			</Card.Root>
+
+			{#if data.giftCardsEnabled || data.loyaltyEnabled}
+				<Card.Root>
+					<Card.Header class="pb-2">
+						<Card.Description>Marketing & fidélité</Card.Description>
+					</Card.Header>
+					<Card.Content class="space-y-1 text-sm">
+						<p>
+							{kpis.soonExpiringPromoCodesCount} code{kpis.soonExpiringPromoCodesCount > 1 ? 's' : ''}
+							promo expire{kpis.soonExpiringPromoCodesCount > 1 ? 'nt' : ''} sous 7j
+						</p>
+						{#if data.giftCardsEnabled}
+							<p>{kpis.giftCardOutstandingBalance.toFixed(2)} € d'encours cartes cadeaux</p>
+						{/if}
+						{#if data.loyaltyEnabled}
+							<p>
+								{kpis.loyaltyAwardsCount} récompense{kpis.loyaltyAwardsCount > 1 ? 's' : ''} fidélité
+								accordée{kpis.loyaltyAwardsCount > 1 ? 's' : ''} ({kpis.windowDays}j)
+							</p>
+						{/if}
+					</Card.Content>
+				</Card.Root>
+			{/if}
+
+			<Card.Root>
+				<Card.Header class="pb-2">
+					<Card.Description>Contact</Card.Description>
+					<Card.Title class="text-2xl">{kpis.newContactSubmissionsCount}</Card.Title>
+				</Card.Header>
+				<Card.Content class="text-muted-foreground text-sm">
+					message{kpis.newContactSubmissionsCount > 1 ? 's' : ''} reçu{kpis.newContactSubmissionsCount >
+					1
+						? 's'
+						: ''} ({kpis.windowDays}j)
+				</Card.Content>
+			</Card.Root>
+		</div>
+	{/if}
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div class="aspect-video rounded border p-5">

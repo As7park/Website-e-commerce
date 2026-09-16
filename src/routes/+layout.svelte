@@ -34,6 +34,7 @@
 	import { toast } from 'svelte-sonner';
 	import { untrack } from 'svelte';
 	import SmoothScrollBarStore from '$lib/store/SmoothScrollBarStore';
+	import type Scrollbar from 'smooth-scrollbar';
 
 	let { children, data } = $props();
 
@@ -176,19 +177,19 @@
 	});
 
 	function updateSmoothScroll() {
-		let scrollbarInstance;
+		let scrollbarInstance: Scrollbar | null = null;
 		SmoothScrollBarStore.update((state) => {
 			scrollbarInstance = state.smoothScroll;
 			return state;
 		});
 
-		if (scrollbarInstance) {
-			scrollbarInstance.update();
-		}
+		(scrollbarInstance as Scrollbar | null)?.update();
 	}
-</script>
 
-<svelte:document onDOMContentLoaded={() => setDomLoaded(true)} />
+	$effect(() => {
+		document.addEventListener('DOMContentLoaded', () => setDomLoaded(true));
+	});
+</script>
 
 <svelte:head>
 	<link rel="icon" href="/favicon.ico" />

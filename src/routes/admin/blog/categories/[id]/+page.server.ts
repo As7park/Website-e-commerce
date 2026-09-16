@@ -1,6 +1,7 @@
 // src/routes/admin/blog/categories/[id]/+page.server.ts
 
 import type { PageServerLoad, Actions } from './$types';
+import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
@@ -13,14 +14,14 @@ export const load: PageServerLoad = async ({ params }) => {
 	const category = await getCategoryById(params.id);
 
 	if (!category) {
-		return fail(404, { message: 'Category not found' });
+		error(404, 'Category not found');
 	}
 
 	// Pré-remplir le formulaire avec les données existantes
 	const initialData = {
 		id: category.id,
 		name: category.name,
-		description: category.description
+		description: category.description ?? undefined
 		// description: category.description, si vous gérez la description
 	};
 

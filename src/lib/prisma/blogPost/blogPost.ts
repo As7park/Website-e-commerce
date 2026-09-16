@@ -20,9 +20,7 @@ export const getAllPosts = async (params: ListParams = {}) => {
 		sortable: POST_SORTABLE
 	});
 
-	const where = search
-		? { title: { contains: search, mode: 'insensitive' as const } }
-		: undefined;
+	const where = search ? { title: { contains: search, mode: 'insensitive' as const } } : undefined;
 
 	try {
 		const [items, total] = await Promise.all([
@@ -70,8 +68,8 @@ export const updatePost = async (data: {
 	title: string;
 	content: string;
 	authorId: string;
-	categoryId: string;
-	tagIds: string[];
+	categoryId?: string;
+	tagIds?: string[];
 	published: boolean;
 }) => {
 	try {

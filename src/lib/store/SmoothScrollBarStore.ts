@@ -14,7 +14,7 @@ const initialState: ScrollState = {
 	smoothScroll: null
 };
 
-function createSmoothScrollBarStore(enableLogging) {
+function createSmoothScrollBarStore(enableLogging: boolean) {
 	const { subscribe, set, update } = writable<ScrollState>(initialState);
 
 	return {

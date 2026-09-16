@@ -3,7 +3,7 @@
 	import maplibregl from 'maplibre-gl';
 
 	import * as Card from '$shadcn/card/index.js';
-	import { loadStripe } from '@stripe/stripe-js';
+	import { loadStripe, type Stripe } from '@stripe/stripe-js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
@@ -13,9 +13,7 @@
 	import CartSummary from '$lib/components/checkout/CartSummary.svelte';
 	import PromoCodeInput from '$lib/components/checkout/PromoCodeInput.svelte'; // PROMO-PLUGIN
 	import GiftCardInput from '$lib/components/checkout/GiftCardInput.svelte';
-	import {
-		CreditCard
-	} from 'lucide-svelte';
+	import { CreditCard } from 'lucide-svelte';
 	import Button from '$shadcn/button/button.svelte';
 	import { OrderSchema } from '$lib/schema/order/order.js';
 	import { toast } from 'svelte-sonner';
@@ -26,7 +24,7 @@
 		updateCartItemQuantity
 	} from '$lib/store/Data/cartStore';
 	import SEO from '$lib/components/SEO.svelte';
-	
+
 	let { data } = $props();
 
 	// Options de quantité pour les articles non-personnalisés
@@ -44,25 +42,29 @@
 	// Calculer le total des quantités pour les commandes non-personnalisées
 	let totalNonCustomQuantity = $derived(
 		$cartStore.items
-			.filter(item => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
+			.filter((item) => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
 			.reduce((acc, item) => acc + item.quantity, 0)
 	);
 
 	// Fonction pour vérifier si on peut ajouter une quantité
-	function canAddQuantity(newQuantity: number, currentQuantity: number, isCustom: boolean): boolean {
+	function canAddQuantity(
+		newQuantity: number,
+		currentQuantity: number,
+		isCustom: boolean
+	): boolean {
 		if (isCustom) return true; // Pas de limite pour les personnalisées
-		
+
 		const otherItemsQuantity = totalNonCustomQuantity - currentQuantity;
-		return (otherItemsQuantity + newQuantity) <= 72;
+		return otherItemsQuantity + newQuantity <= 72;
 	}
 
 	// Fonction pour calculer le prix des projets sur-mesure
 	function getCustomCanPrice(quantity: number): number {
 		switch (quantity) {
 			case 576:
-				return 1.60;
+				return 1.6;
 			case 720:
-				return 1.40;
+				return 1.4;
 			case 1440:
 				return 0.99;
 			case 2880:
@@ -70,12 +72,12 @@
 			case 8640:
 				return 0.69;
 			default:
-				return 1.60;
+				return 1.6;
 		}
 	}
 
 	// Runes Svelte 5
-	let stripe = $state(null);
+	let stripe = $state<Stripe | null>(null);
 	let selectedAddressId = $state<string | undefined>(undefined);
 
 	// Plus de cartValue local, on utilise $cartStore directement.
@@ -136,8 +138,8 @@
 	}
 
 	// Détecter si la commande contient des projets sur-mesure
-	let hasCustomItems = $derived($cartStore.items.some(item => item.custom?.length > 0));
-	
+	let hasCustomItems = $derived($cartStore.items.some((item) => (item.custom?.length ?? 0) > 0));
+
 	// Si la commande contient des personnalisations, on désactive la livraison
 	$effect(() => {
 		if (hasCustomItems) {
@@ -294,19 +296,17 @@
 
 			// Préparer la requête pour Sendcloud
 			const requestBody = {
-				from_country_code: 'FR',                        // Expéditeur (toujours France)
-				to_country_code: selectedAddress.stateLetter,    // ex: 'FR'
-				from_postal_code: '31620',                      // Code postal expéditeur
-				to_postal_code: selectedAddress.zip,             // ex: '31500'
+				from_country_code: 'FR', // Expéditeur (toujours France)
+				to_country_code: selectedAddress.stateLetter, // ex: 'FR'
+				from_postal_code: '31620', // Code postal expéditeur
+				to_postal_code: selectedAddress.zip, // ex: '31500'
 				weight: {
-					value: totalWeight,                          // Poids en kg (ex: 9.0)
-					unit: 'kilogram'                             // Unité attendue par Sendcloud
+					value: totalWeight, // Poids en kg (ex: 9.0)
+					unit: 'kilogram' // Unité attendue par Sendcloud
 				},
-				prefer_service_point: false,                     // Préférence point relais
-				max_options: 10                                  // Nombre max d'options
+				prefer_service_point: false, // Préférence point relais
+				max_options: 10 // Nombre max d'options
 			};
-
-	
 
 			const res = await fetch('/api/sendcloud/shipping-options', {
 				method: 'POST',
@@ -319,7 +319,7 @@
 			}
 
 			const result = await res.json();
-			
+
 			shippingOptions = result.data || [];
 
 			if (!shippingOptions.length) {
@@ -335,7 +335,6 @@
 	let selectedCarrierCode = '';
 
 	function chooseShippingOption(chosenOption: any) {
-
 		selectedShippingOption = chosenOption.id; // Nouvelle structure : option.id au lieu de option.code
 
 		const costHT = parseFloat(chosenOption.price || 0);
@@ -381,7 +380,7 @@
 
 		try {
 			isLoadingServicePoints = true; // ✅ Début du chargement
-			
+
 			const res = await fetch('/api/sendcloud/service-points', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -446,15 +445,13 @@
 		console.log('📦 Après mise à jour - Store:', $cartStore.items);
 		console.log('💰 Nouveau sous-total:', $cartStore.subtotal);
 		console.log('🧾 Nouvelle TVA:', $cartStore.tax);
-		
+
 		// Recharger les options de livraison après changement de quantité
 		if (selectedAddressId && !hasCustomItems) {
 			resetShippingState();
 			fetchSendcloudShippingOptions();
 		}
 	}
-
-
 
 	function handleCheckout(event: Event) {
 		const pendingId = data.pendingOrder?.id;
@@ -493,8 +490,6 @@
 			$createPaymentData.addressId = selectedAddressId;
 		}
 	});
-
-
 </script>
 
 <!-- SEO pour la page checkout -->
@@ -508,16 +503,15 @@
 				<div class="space-y-6">
 					<AddressSelector
 						addresses={data?.addresses || []}
-						selectedAddressId={selectedAddressId}
+						{selectedAddressId}
 						onAddressSelect={selectAddress}
 					/>
 
-					
 					<ShippingOptions
-						shippingOptions={shippingOptions}
-						selectedShippingOption={selectedShippingOption}
+						{shippingOptions}
+						{selectedShippingOption}
 						onShippingOptionSelect={chooseShippingOption}
-						hasCustomItems={hasCustomItems}
+						{hasCustomItems}
 					/>
 				</div>
 
@@ -528,7 +522,7 @@
 						{isLoadingServicePoints}
 						{servicePoints}
 						{selectedPoint}
-										{zoom}
+						{zoom}
 						{centerCoordinates}
 						{offsets}
 						onMarkerClick={handleMarkerClick}

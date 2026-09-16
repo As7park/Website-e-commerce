@@ -46,7 +46,7 @@ export async function resetUser2FAWithRecoveryCode(
 	// Générer un nouveau code de récupération chiffré (toujours en AES-256 :
 	// ce chemin régénère systématiquement le code, donc s'auto-migre).
 	const newRecoveryCode = generateRandomRecoveryCode();
-	const encryptedNewRecoveryCode = encryptString(newRecoveryCode).toString('base64');
+	const encryptedNewRecoveryCode = Buffer.from(encryptString(newRecoveryCode)).toString('base64');
 
 	// Mettre à jour le code de récupération et réinitialiser la 2FA
 	const result = await prisma.$transaction([

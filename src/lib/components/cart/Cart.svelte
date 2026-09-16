@@ -18,7 +18,8 @@
 	import * as Sheet from '$shadcn/sheet/index.js';
 	import { Trash, ShoppingCart } from 'lucide-svelte';
 	import Input from '../shadcn/ui/input/input.svelte';
-	import { enhance, type SubmitFunction } from '$app/forms';
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 
 	/*  👉 le store 'mode'  */
 	import { mode as modeStore } from 'mode-watcher';
@@ -182,7 +183,9 @@
 											<h3 class="text-lg font-semibold">
 												{item.product.name}
 												{#if item.variant}
-													<span class="text-sm font-normal text-gray-500">— {item.variant.label}</span>
+													<span class="text-sm font-normal text-gray-500"
+														>— {item.variant.label}</span
+													>
 												{/if}
 												{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
 													<span class="text-sm font-normal text-gray-500">Custom</span>
@@ -233,7 +236,12 @@
 																: ''}"
 															onclick={() =>
 																canAddQuantity(option, item.quantity, false) &&
-																changeQuantity(item.product.id, option, undefined, item.variant?.id)}
+																changeQuantity(
+																	item.product.id,
+																	option,
+																	undefined,
+																	item.variant?.id
+																)}
 															disabled={!canAddQuantity(option, item.quantity, false)}
 														>
 															{option}
@@ -257,7 +265,11 @@
 											</p>
 											<button
 												onclick={() =>
-													handleRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
+													handleRemoveFromCart(
+														item.product.id,
+														item.custom?.[0]?.id,
+														item.variant?.id
+													)}
 												class="text-red-600 hover:text-red-800"
 											>
 												<Trash />

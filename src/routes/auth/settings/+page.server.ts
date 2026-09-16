@@ -115,6 +115,9 @@ export const actions: Actions = {
 		const { password, new_password } = form.data;
 
 		const passwordHash = await getUserPasswordHash(event.locals.user.id);
+		if (passwordHash === null) {
+			return message(form, 'Incorrect password', { status: 400 });
+		}
 		const validPassword = await verifyPasswordHash(passwordHash, password);
 		if (!validPassword) {
 			return message(form, 'Incorrect password', { status: 400 });
@@ -174,11 +177,18 @@ export const actions: Actions = {
 	isMfaEnabled: async (event: RequestEvent) => {
 		const form = await superValidate(event, zod(isMfaEnabledSchema));
 
+		if (event.locals.user === null) {
+			return message(form, 'Not authenticated', { status: 401 });
+		}
+
 		if (!form.valid) {
 			return fail(400, { form });
 		}
 		// Récupérer l'état actuel
 		const currentStatus = await getUserMFA(event.locals.user.id);
+		if (currentStatus === null) {
+			return message(form, 'Not authenticated', { status: 401 });
+		}
 
 		// Inverser la propriété isMfaEnabled
 		const newMfaStatus = !currentStatus.isMfaEnabled;
@@ -195,6 +205,9 @@ export const actions: Actions = {
 	},
 
 	marketingEmailsOptIn: async (event: RequestEvent) => {
+		if (event.locals.user === null) {
+			return fail(401);
+		}
 		const current = await getMarketingEmailsOptIn(event.locals.user.id);
 		const next = !current;
 		await updateMarketingEmailsOptIn(event.locals.user.id, next);

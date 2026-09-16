@@ -173,7 +173,7 @@ export const actions: Actions = {
 			}
 
 			// 2. Mise à jour de la sécurité (MFA & mot de passe chiffré)
-			if (passwordHash !== null && passwordHash.trim() !== '') {
+			if (passwordHash != null && passwordHash.trim() !== '') {
 				await updateUserSecurity(id, { isMfaEnabled, passwordHash });
 			} else {
 				// Met à jour uniquement le MFA si le password est vide ou nul

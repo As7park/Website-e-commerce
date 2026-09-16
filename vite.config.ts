@@ -1,6 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
 import { dropStalePwa } from './vite-plugin-drop-stale-pwa';
@@ -36,7 +35,8 @@ export default defineConfig({
 		}
 	},
 
-	preprocess: [vitePreprocess()],
+	// `preprocess` retiré : redondant avec svelte.config.js (vitePreprocess()
+	// y est déjà déclaré, seul endroit pertinent pour cette option).
 
 	clearScreen: false
 });

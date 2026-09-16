@@ -44,7 +44,7 @@
 				<label class="text-sm font-medium text-muted-foreground">Date de création</label>
 				<p class="text-lg flex items-center gap-2">
 					<Calendar class="h-4 w-4" />
-					{formatDate(contactSubmission.createdAt)}
+					{formatDate(contactSubmission.createdAt.toISOString())}
 				</p>
 			</div>
 		</CardContent>
@@ -74,15 +74,17 @@
 
 	<!-- Actions -->
 	<div class="flex gap-4">
-		<Button 
-			on:click={() => window.open(`mailto:${contactSubmission.email}?subject=Re: ${contactSubmission.subject}`, '_blank')}
+		<Button
+			onclick={() =>
+				window.open(
+					`mailto:${contactSubmission.email}?subject=Re: ${contactSubmission.subject}`,
+					'_blank'
+				)}
 			class="flex items-center gap-2"
 		>
 			<Mail class="h-4 w-4" />
 			Répondre par email
 		</Button>
-		<Button variant="outline" on:click={() => goto('/admin/contacts')}>
-			Retour à la liste
-		</Button>
+		<Button variant="outline" onclick={() => goto('/admin/contacts')}>Retour à la liste</Button>
 	</div>
-</div> 
+</div>

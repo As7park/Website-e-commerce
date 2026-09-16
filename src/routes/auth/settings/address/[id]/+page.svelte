@@ -28,7 +28,7 @@
 		message: updateAddressMessage
 	} = updateAddress;
 
-	let addressSuggestions: string[] = $state([]);
+	let addressSuggestions: any[] = $state([]);
 	let timeoutId: ReturnType<typeof setTimeout>;
 
 	$effect(() => {
@@ -233,7 +233,11 @@
 
 		<input type="hidden" name="id" bind:value={$updateAddressData.id} />
 		{#each Object.keys($updateAddressData) as key}
-			<input type="hidden" name={key} value={$updateAddressData[key] ?? ''} />
+			<input
+				type="hidden"
+				name={key}
+				value={$updateAddressData[key as keyof typeof $updateAddressData] ?? ''}
+			/>
 		{/each}
 		<div class="mt-6">
 			<Button type="submit">update address</Button>

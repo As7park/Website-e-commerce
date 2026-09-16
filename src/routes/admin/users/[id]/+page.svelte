@@ -20,9 +20,12 @@
 		validators: zodClient(updateUserAndAddressSchema),
 		id: 'updateUserAndAddresses',
 		dataType: 'json',
-		onResult: (data) => {
-			if (data.result.data.form.message === 'User and addresses updated successfully') {
-				toast.success(data.result.data.form.message);
+		onResult: (event) => {
+			if (
+				event.result.type === 'success' &&
+				event.result.data?.form.message === 'User and addresses updated successfully'
+			) {
+				toast.success(event.result.data.form.message);
 				setTimeout(() => goto('/admin/users'), 0);
 			}
 		}
@@ -86,8 +89,7 @@
 		}, 1000);
 	}
 
-	const roleOptions = ['ADMIN', 'CLIENT'];
-
+	const roleOptions = ['ADMIN', 'CLIENT'] as const;
 </script>
 
 <div class="min-h-screen min-w-[100vw] absolute">
@@ -167,7 +169,7 @@
 							</div>
 						{/if}
 						<!-- Prénom -->
-						<Form.Field name="first_name" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].first_name" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Prénom</Form.Label>
 								<Input name="first_name" type="text" bind:value={address.first_name} />
@@ -176,7 +178,7 @@
 						</Form.Field>
 
 						<!-- Nom -->
-						<Form.Field name="last_name" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].last_name" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Nom</Form.Label>
 								<Input name="last_name" type="text" bind:value={address.last_name} />
@@ -185,7 +187,7 @@
 						</Form.Field>
 
 						<!-- Téléphone -->
-						<Form.Field name="phone" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].phone" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Téléphone</Form.Label>
 								<Input name="phone" type="tel" bind:value={address.phone} />
@@ -194,7 +196,7 @@
 						</Form.Field>
 
 						<!-- Entreprise -->
-						<Form.Field name="company" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].company" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Entreprise</Form.Label>
 								<Input name="company" type="text" bind:value={address.company} />
@@ -203,7 +205,7 @@
 						</Form.Field>
 
 						<!-- Numéro de rue -->
-						<Form.Field name="street_number" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].street_number" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Numéro</Form.Label>
 								<Input name="street_number" type="text" bind:value={address.street_number} />
@@ -212,7 +214,7 @@
 						</Form.Field>
 
 						<!-- Rue -->
-						<Form.Field name="street" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].street" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Rue</Form.Label>
 								<Input
@@ -226,7 +228,7 @@
 						</Form.Field>
 
 						<!-- Ville -->
-						<Form.Field name="city" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].city" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Ville</Form.Label>
 								<Input name="city" type="text" bind:value={address.city} />
@@ -235,7 +237,7 @@
 						</Form.Field>
 
 						<!-- Code postal -->
-						<Form.Field name="zip" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].zip" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Code Postal</Form.Label>
 								<Input name="zip" type="text" bind:value={address.zip} />
@@ -244,7 +246,7 @@
 						</Form.Field>
 
 						<!-- Pays -->
-						<Form.Field name="country" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].country" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Pays</Form.Label>
 								<Input name="country" type="text" bind:value={address.country} />
@@ -252,7 +254,7 @@
 							<Form.FieldErrors />
 						</Form.Field>
 
-						<Form.Field name="type" form={updateUserAndAddresses}>
+						<Form.Field name="addresses[{index}].type" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Type d'adresse</Form.Label>
 								<Select.Root bind:value={address.type} type="single">
@@ -271,7 +273,7 @@
 
 						<input type="hidden" name="id" bind:value={address.id} />
 						{#each Object.keys(address) as key}
-							<input type="hidden" name={key} value={address[key] ?? ''} />
+							<input type="hidden" name={key} value={address[key as keyof typeof address] ?? ''} />
 						{/each}
 
 						<input type="hidden" name={`addresses[${index}].id`} bind:value={address.id} />

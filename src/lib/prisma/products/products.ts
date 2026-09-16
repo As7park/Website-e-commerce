@@ -12,7 +12,7 @@ const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
  * en continu : `reportIfRepeated` (déjà utilisé pour les 5xx et la
  * contention de verrous) borne à une alerte par produit et par jour.
  */
-const LOW_STOCK_THRESHOLD = 5;
+export const LOW_STOCK_THRESHOLD = 5;
 const LOW_STOCK_WINDOW_SECONDS = 24 * 60 * 60;
 
 async function checkLowStockAlert(product: { id: string; name: string; stock: number }) {

@@ -75,7 +75,7 @@ export async function createUser(email: string, username: string, password: stri
 		picture: createdUser.picture,
 		role: createdUser.role,
 		isMfaEnabled: createdUser.isMfaEnabled,
-		totpKey: createdUser.totpKey
+		totpKey: createdUser.totpKey ? createdUser.totpKey.toString() : null
 	};
 }
 
@@ -95,7 +95,7 @@ export async function getUserFromEmail(email: string): Promise<User | null> {
 		picture: prismaUser.picture,
 		role: prismaUser.role,
 		isMfaEnabled: prismaUser.isMfaEnabled,
-		totpKey: prismaUser.totpKey
+		totpKey: prismaUser.totpKey ? prismaUser.totpKey.toString() : null
 	};
 }
 
@@ -115,7 +115,7 @@ export async function getUserFromGoogleId(googleId: string): Promise<User | null
 		picture: prismaUser.picture,
 		role: prismaUser.role,
 		isMfaEnabled: prismaUser.isMfaEnabled,
-		totpKey: prismaUser.totpKey
+		totpKey: prismaUser.totpKey ? prismaUser.totpKey.toString() : null
 	};
 }
 
@@ -157,7 +157,7 @@ export async function resetUserRecoveryCode(userId: string): Promise<string> {
 		throw new Error('Invalid user ID format');
 	}
 	const recoveryCode = generateRandomRecoveryCode();
-	const encryptedCode = encryptString(recoveryCode);
+	const encryptedCode = Buffer.from(encryptString(recoveryCode)).toString('base64');
 	await updateUserRecoveryCode(userId, encryptedCode);
 	return recoveryCode;
 }
@@ -184,7 +184,7 @@ export async function handleGoogleOAuth(
 			picture: createdGoogleUser.picture,
 			role: createdGoogleUser.role,
 			isMfaEnabled: createdGoogleUser.isMfaEnabled,
-			totpKey: createdGoogleUser.totpKey
+			totpKey: createdGoogleUser.totpKey ? createdGoogleUser.totpKey.toString() : null
 		};
 	}
 

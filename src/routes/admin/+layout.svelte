@@ -48,7 +48,7 @@
 						<Sidebar.Menu>
 							{#each group.items as item}
 								<Sidebar.MenuItem>
-									<Sidebar.MenuButton isActive={item.isActive}>
+									<Sidebar.MenuButton>
 										<a href={item.url}>{item.title}</a>
 									</Sidebar.MenuButton>
 								</Sidebar.MenuItem>

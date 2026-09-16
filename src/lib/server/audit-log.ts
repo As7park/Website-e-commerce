@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '$lib/server';
 import { log } from '$lib/server/log';
 
@@ -20,7 +21,7 @@ export async function logAdminAction(params: {
 				action: params.action,
 				targetType: params.targetType,
 				targetId: params.targetId,
-				metadata: params.metadata
+				metadata: params.metadata as Prisma.InputJsonValue | undefined
 			}
 		});
 	} catch (error) {

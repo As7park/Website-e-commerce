@@ -108,7 +108,7 @@
 	let openCategory = $state(false);
 	let openTag = $state(false);
 
-	function handleSelectCategory(cat) {
+	function handleSelectCategory(cat: { id: string; name: string }) {
 		selectedCategoryName = cat.name;
 		$updateData.categoryId = cat.id;
 		openCategory = false;
@@ -160,7 +160,7 @@
 		<!-- Tags Popover -->
 		<Popover.Root bind:open={openTag}>
 			<Popover.Trigger>
-				<Button>Tags: {$updateData.tagIds.length} selected</Button>
+				<Button>Tags: {$updateData.tagIds?.length ?? 0} selected</Button>
 			</Popover.Trigger>
 			<Popover.Content class="p-4 space-y-2">
 				{#each tags as tag, i}
@@ -171,7 +171,7 @@
 							checked={tag.checked}
 							onchange={(e) => {
 								// Immutable update to force Svelte to register changes
-								tags[i] = { ...tag, checked: e.target.checked };
+								tags[i] = { ...tag, checked: (e.target as HTMLInputElement).checked };
 							}}
 						/>
 						<Label for={'tag-' + tag.id}>{tag.name}</Label>
@@ -186,7 +186,7 @@
 		<Form.Control>
 			<Form.Label>Content</Form.Label>
 			<Editor
-				{editorConfig}
+				conf={editorConfig}
 				scriptSrc="/tinymce/tinymce.min.js"
 				apiKey={PUBLIC_TINYMCE_API_KEY}
 				bind:value={$updateData.content}
