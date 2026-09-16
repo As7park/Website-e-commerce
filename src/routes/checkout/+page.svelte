@@ -160,10 +160,14 @@
 		}
 	});
 
-	// Surveiller les changements du panier pour recharger les options de livraison
+	// Ne réagit qu'aux changements de longueur du panier (ajout/suppression d'article) ou
+	// d'adresse — une modification de quantité sur un article existant ne change pas cette
+	// longueur, d'où l'appel explicite dans changeQuantity(). selectAddress() et
+	// handleRemoveFromCart() déclenchent aussi cet effet (adresse/longueur modifiée) en plus
+	// de leur propre appel explicite ; le garde-fou de requestId dans
+	// fetchSendcloudShippingOptions() évite qu'une réponse obsolète écrase la plus récente.
 	$effect(() => {
 		if (selectedAddressId && !hasCustomItems && $cartStore.items.length > 0) {
-			// Recharger les options de livraison quand le panier change
 			fetchSendcloudShippingOptions();
 		}
 	});
@@ -271,7 +275,10 @@
 
 		resetShippingState();
 
-		// Ne pas récupérer les options de livraison si la commande contient des personnalisations
+		// Ne pas récupérer les options de livraison si la commande contient des personnalisations.
+		// (L'effet réactif ci-dessus refera aussi cet appel puisque selectedAddressId change ;
+		// on le garde ici pour couvrir le cas où l'utilisateur reclique la même adresse, qui ne
+		// déclenche pas l'effet faute de changement de valeur.)
 		if (!hasCustomItems) {
 			fetchSendcloudShippingOptions();
 		}
@@ -316,6 +323,10 @@
 		);
 	}
 
+	// Incrémenté à chaque appel : permet à une réponse de vérifier qu'elle est toujours la
+	// plus récente avant de mettre à jour l'état (cf. double déclenchement effet + appel direct).
+	let shippingRequestId = 0;
+
 	async function fetchSendcloudShippingOptions() {
 		const selectedAddress = getSelectedAddress();
 		if (!selectedAddress) {
@@ -326,6 +337,8 @@
 			toast.error('Votre panier est vide.');
 			return;
 		}
+
+		const requestId = ++shippingRequestId;
 
 		try {
 			// Calculer le colis
@@ -362,12 +375,17 @@
 
 			const result = await res.json();
 
+			// Une requête plus récente a déjà été lancée entre-temps : sa réponse a priorité.
+			if (requestId !== shippingRequestId) return;
+
 			shippingOptions = result.data || [];
 
 			if (!shippingOptions.length) {
 				toast.error("Aucune option de livraison n'a été trouvée.");
 			}
 		} catch (err) {
+			// Idem : une requête plus récente en cours/résolue masque l'échec de celle-ci.
+			if (requestId !== shippingRequestId) return;
 			console.error('❌ Erreur API Sendcloud:', err);
 			toast.error('Impossible de récupérer les options de livraison.');
 		}
@@ -465,7 +483,11 @@
 			// Pas de recalcul, on vide juste les infos
 			resetShippingState();
 		} else {
-			// Relance la requête pour mettre à jour les tarifs et options
+			// Le colis a changé (poids/dimensions) : l'option encore "sélectionnée" et son prix
+			// sont périmés tant que l'utilisateur n'en a pas repris une dans la liste rafraîchie.
+			// (L'effet réactif ci-dessus refera aussi cet appel puisque items.length change ; le
+			// garde-fou de requestId dans fetchSendcloudShippingOptions évite tout conflit.)
+			resetShippingState();
 			fetchSendcloudShippingOptions();
 		}
 	}

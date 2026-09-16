@@ -140,10 +140,10 @@
 											<!-- 📝 DESCRIPTION pour autres transporteurs -->
 											{#if option.carrierCode === 'chronopost'}
 												<div class="mt-2 text-xs text-muted-foreground">
-													{#if option.productName.includes('Express')}
-														<p>✓ Service express - Livraison en 24h</p>
-													{:else if option.productName.includes('Relais')}
+													{#if option.type === 'service_point'}
 														<p>✓ Point relais - Retrait en point de collecte</p>
+													{:else if option.productName.includes('Express')}
+														<p>✓ Service express - Livraison en 24h</p>
 													{:else}
 														<p>✓ Service standard - Livraison en 2-3 jours</p>
 													{/if}
@@ -160,9 +160,13 @@
 												</div>
 											{:else if option.carrierCode === 'mondial_relay'}
 												<div class="mt-2 text-xs text-muted-foreground">
-													<p>✓ Point relais - Retrait en point de collecte</p>
-													{#if option.productName.includes('QR')}
-														<p>✓ Code QR pour retrait simplifié</p>
+													{#if option.type === 'service_point'}
+														<p>✓ Point relais - Retrait en point de collecte</p>
+														{#if option.productName.includes('QR')}
+															<p>✓ Code QR pour retrait simplifié</p>
+														{/if}
+													{:else}
+														<p>✓ Livraison à domicile</p>
 													{/if}
 												</div>
 											{/if}
