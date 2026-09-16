@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Card from '$shadcn/card';
 	import { Button } from '$shadcn/button';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 	import Heart from 'lucide-svelte/icons/heart';
 
 	let { data } = $props();
-	let products = $state([...data.products]);
+	let products = $state(untrack(() => [...data.products]));
 
 	async function remove(productId: string) {
 		const res = await fetch('/api/wishlist', {

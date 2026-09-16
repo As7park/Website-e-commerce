@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -13,10 +14,13 @@
 	let { data } = $props();
 	let valueId = $derived(page.params.valueId);
 
-	const updateTaxonomyValue = superForm(data.IupdateTaxonomyValueSchema, {
-		validators: zodClient(updateTaxonomyValueSchema),
-		id: 'updateTaxonomyValue'
-	});
+	const updateTaxonomyValue = superForm(
+		untrack(() => data.IupdateTaxonomyValueSchema),
+		{
+			validators: zodClient(updateTaxonomyValueSchema),
+			id: 'updateTaxonomyValue'
+		}
+	);
 
 	const {
 		form: updateTaxonomyValueData,
@@ -24,7 +28,9 @@
 		message: updateTaxonomyValueMessage
 	} = updateTaxonomyValue;
 
-	let parentSelectValue: string = $state(data.IupdateTaxonomyValueSchema.data.parentId || 'none');
+	let parentSelectValue: string = $state(
+		untrack(() => data.IupdateTaxonomyValueSchema.data.parentId || 'none')
+	);
 
 	function setParentSelectValue(value: string) {
 		parentSelectValue = value;

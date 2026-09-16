@@ -46,6 +46,7 @@
 </script>
 
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { Button, buttonVariants } from '$shadcn/button';
 	import { cn } from '$lib/components/shadcn/utils.js';
 	import * as Table from '$shadcn/table';
@@ -110,9 +111,9 @@
 	let bulkApplying = $state(false);
 
 	let dialogOpenId = $state<string | null>(null);
-	let searchQuery = $state(server?.search ?? '');
-	let currentPage = $state(server?.page ?? 1);
-	let itemsPerPage = $state(server?.perPage ?? 5);
+	let searchQuery = $state(untrack(() => server?.search ?? ''));
+	let currentPage = $state(untrack(() => server?.page ?? 1));
+	let itemsPerPage = $state(untrack(() => server?.perPage ?? 5));
 
 	const optionPage = $state([
 		{ label: '5', value: 5 },
@@ -121,14 +122,16 @@
 		{ label: '20', value: 20 }
 	]);
 
-	let itemsPerPageString = $state(String(server?.perPage ?? 5));
-	let sortColumn = $state(server?.sort ?? '');
-	let sortDirection = $state(server?.dir ?? 'asc');
+	let itemsPerPageString = $state(untrack(() => String(server?.perPage ?? 5)));
+	let sortColumn = $state(untrack(() => server?.sort ?? ''));
+	let sortDirection = $state(untrack(() => server?.dir ?? 'asc'));
 	let columnsVisibility = $state(
-		columns.reduce<Record<string, boolean>>((acc, col) => {
-			acc[col.key] = true;
-			return acc;
-		}, {})
+		untrack(() =>
+			columns.reduce<Record<string, boolean>>((acc, col) => {
+				acc[col.key] = true;
+				return acc;
+			}, {})
+		)
 	);
 
 	// Recharge `currentPage`/`itemsPerPage`/`searchQuery`/tri depuis le prop

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import * as Form from '$shadcn/form';
 	import Button from '$shadcn/button/button.svelte';
@@ -10,7 +11,7 @@
 
 	let { data } = $props();
 
-	const verifyCodeForm = superForm(data.verifyCode, {
+	const verifyCodeForm = superForm(untrack(() => data.verifyCode), {
 		validators: zodClient(verifyCodeSchema),
 		id: 'verifyCodeForm'
 	});

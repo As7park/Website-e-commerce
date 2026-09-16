@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	// ----- Imports -----
 	import * as Form from '$shadcn/form';
 	import * as Popover from '$shadcn/popover';
@@ -20,9 +21,12 @@
 	let { data } = $props();
 
 	// ----- Prepare superForm for update -----
-	const updateForm = superForm(data.IupdateBlogPostSchema, {
-		validators: zodClient(updateBlogPostSchema)
-	});
+	const updateForm = superForm(
+		untrack(() => data.IupdateBlogPostSchema),
+		{
+			validators: zodClient(updateBlogPostSchema)
+		}
+	);
 
 	const {
 		form: updateData, // The reactive form data
@@ -39,7 +43,7 @@
 	});
 
 	// ----- Categories -----
-	let categories = $state(data.AllCategoriesPost || []);
+	let categories = $state(untrack(() => data.AllCategoriesPost || []));
 	let selectedCategoryName = $state('');
 
 	$effect(() => {
@@ -50,7 +54,7 @@
 	});
 
 	// ----- Tags -----
-	let allTags = $state(data.AllTagsPost || []);
+	let allTags = $state(untrack(() => data.AllTagsPost || []));
 
 	/**
 	 * Initialize local `tags` array with a `checked` property

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
@@ -10,7 +11,7 @@
 
 	let { data } = $props();
 
-	const updateVariantForm = superForm(data.updateVariantForm, {
+	const updateVariantForm = superForm(untrack(() => data.updateVariantForm), {
 		validators: zodClient(updateVariantSchema),
 		id: 'updateVariant'
 	});

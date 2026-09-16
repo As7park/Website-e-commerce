@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
 	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -16,17 +17,17 @@
 	//console.log(data, 'data');
 
 	// Form handling with superForm
-	const deleteBlogPost = superForm(data?.IdeleteBlogPostSchema ?? {}, {
+	const deleteBlogPost = superForm(untrack(() => data?.IdeleteBlogPostSchema ?? {}), {
 		validators: zodClient(deleteBlogPostSchema),
 		id: 'deleteBlogPost'
 	});
 
-	const deleteBlogCategory = superForm(data?.IdeleteBlogCategorySchema ?? {}, {
+	const deleteBlogCategory = superForm(untrack(() => data?.IdeleteBlogCategorySchema ?? {}), {
 		validators: zodClient(deleteBlogCategorySchema),
 		id: 'deleteBlogCategory'
 	});
 
-	const deleteBlogTag = superForm(data?.IdeleteBlogTagSchema ?? {}, {
+	const deleteBlogTag = superForm(untrack(() => data?.IdeleteBlogTagSchema ?? {}), {
 		validators: zodClient(deleteBlogTagSchema),
 		id: 'deleteBlogTag'
 	});

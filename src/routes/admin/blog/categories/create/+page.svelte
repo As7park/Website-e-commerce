@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Textarea } from '$shadcn/textarea';
 	import { Input } from '$shadcn/input';
@@ -11,7 +12,7 @@
 
 	let { data } = $props();
 
-	const createBlogCategory = superForm(data?.createCategoryForm ?? {}, {
+	const createBlogCategory = superForm(untrack(() => data?.createCategoryForm ?? {}), {
 		validators: zodClient(createBlogCategorySchema),
 		id: 'createBlogCategory'
 	});

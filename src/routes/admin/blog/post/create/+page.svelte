@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import * as Popover from '$shadcn/popover';
 	import * as Command from '$shadcn/command';
@@ -19,8 +20,8 @@
 	let { data } = $props();
 
 	// Variables pour catégories et tags
-	let categories = $state(data.AllCategoriesPost || []);
-	let tags = $state(data.AllTagsPost || []);
+	let categories = $state(untrack(() => data.AllCategoriesPost || []));
+	let tags = $state(untrack(() => data.AllTagsPost || []));
 	// Pour les catégories, seule la sélection du nom est stockée
 	let selectedCategory = $state('');
 	// Les popovers pour les catégories et tags
@@ -28,9 +29,12 @@
 	let openTag = $state(false);
 
 	// Initialisation du formulaire via SuperForm
-	const createPost = superForm(data.IcreateBlogPostSchema, {
-		validators: zodClient(createBlogPostSchema)
-	});
+	const createPost = superForm(
+		untrack(() => data.IcreateBlogPostSchema),
+		{
+			validators: zodClient(createBlogPostSchema)
+		}
+	);
 
 	const {
 		form: createPostData,
@@ -41,7 +45,7 @@
 	// L'auteur de l'article est l'administrateur connecté.
 	// AUTH-PLUGIN : `data.user` vient de `+layout.server.ts` ; sans
 	// authentification, choisir l'auteur dans une liste (`BlogAuthor`).
-	$createPostData.authorId = data.user.id;
+	$createPostData.authorId = untrack(() => data.user.id);
 	if (!$createPostData.tagIds) {
 		$createPostData.tagIds = [];
 	}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
 	import type { TableAction, TableColumn, BulkAction } from '$components/Table.svelte';
 	import { deleteProductSchema } from '$lib/schema/products/productSchema.js';
@@ -39,7 +40,7 @@
 	);
 
 	// Form handling with superForm
-	const deleteProduct = superForm(data?.IdeleteProductSchema ?? {}, {
+	const deleteProduct = superForm(untrack(() => data?.IdeleteProductSchema ?? {}), {
 		validators: zodClient(deleteProductSchema),
 		id: 'deleteProduct'
 	});
@@ -126,7 +127,7 @@
 	];
 
 	// Form handling with superForm
-	const deleteTaxonomy = superForm(data?.IdeleteTaxonomySchema ?? {}, {
+	const deleteTaxonomy = superForm(untrack(() => data?.IdeleteTaxonomySchema ?? {}), {
 		validators: zodClient(deleteTaxonomySchema),
 		id: 'deleteTaxonomy'
 	});

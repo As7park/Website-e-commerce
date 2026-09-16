@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -16,11 +17,14 @@
 
 	//console.log(data);
 
-	const updateProduct = superForm(data.IupdateProductSchema, {
-		validators: zodClient(updateProductSchema),
-		id: 'updateProduct',
-		resetForm: false
-	});
+	const updateProduct = superForm(
+		untrack(() => data.IupdateProductSchema),
+		{
+			validators: zodClient(updateProductSchema),
+			id: 'updateProduct',
+			resetForm: false
+		}
+	);
 
 	const {
 		form: updateProductData,
@@ -28,19 +32,21 @@
 		message: updateProductMessage
 	} = updateProduct;
 
-	let DataPrice: number = $state(data.IupdateProductSchema.data.price);
-	let DataStock: number = $state(data.IupdateProductSchema.data.stock);
+	let DataPrice: number = $state(untrack(() => data.IupdateProductSchema.data.price));
+	let DataStock: number = $state(untrack(() => data.IupdateProductSchema.data.stock));
 	// `0` = pas de prix barré : champ vide, sinon `min="0.01"` du <input> bloque
 	// la sauvegarde de tout produit sans prix barré (0 n'est pas >= 0.01).
 	let DataCompareAtPrice: string = $state(
-		data.IupdateProductSchema.data.compareAtPrice
-			? String(data.IupdateProductSchema.data.compareAtPrice)
-			: ''
+		untrack(() =>
+			data.IupdateProductSchema.data.compareAtPrice
+				? String(data.IupdateProductSchema.data.compareAtPrice)
+				: ''
+		)
 	);
-	let existingImages = $state(data.IupdateProductSchema.data.existingImages);
+	let existingImages = $state(untrack(() => data.IupdateProductSchema.data.existingImages));
 
 	let selectedTaxonomyValueIds: string[] = $state(
-		data.IupdateProductSchema.data.taxonomyValueIds ?? []
+		untrack(() => data.IupdateProductSchema.data.taxonomyValueIds ?? [])
 	);
 
 	const files = filesFieldProxy(updateProduct, 'images');

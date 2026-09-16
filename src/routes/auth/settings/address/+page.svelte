@@ -1,5 +1,6 @@
 <!-- File: AddressCards.svelte -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	/* ───────────────────────────── Imports ───────────────────────────── */
 	import * as Card from '$shadcn/card/index.js';
 	import { Button } from '$shadcn/button/index.js'; // Shadcn button
@@ -18,7 +19,7 @@
 	//console.log('[AddressPage] Data loaded:', data);
 
 	/* ───────────────────────────── Forms ─────────────────────────────── */
-	const deleteAddress = superForm(data?.IdeleteAddressSchema ?? {}, {
+	const deleteAddress = superForm(untrack(() => data?.IdeleteAddressSchema ?? {}), {
 		validators: zodClient(deleteAddressSchema),
 		id: 'deleteAddress'
 	});

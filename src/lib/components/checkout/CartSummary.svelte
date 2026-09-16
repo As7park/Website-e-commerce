@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Card from '$shadcn/card/index.js';
 	import { ShoppingCart, Trash } from 'lucide-svelte';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
@@ -45,9 +46,9 @@
 	} = $props();
 
 	// État local pour forcer le re-rendu
-	let localItems = $state(items);
-	let localSubtotal = $state(subtotal);
-	let localTax = $state(tax);
+	let localItems = $state(untrack(() => items));
+	let localSubtotal = $state(untrack(() => subtotal));
+	let localTax = $state(untrack(() => tax));
 
 	// Calculer le total TTC (remise déduite)
 	let totalTTC = $derived(Math.max(0, localSubtotal + localTax + shippingCost - discountAmount));
@@ -108,11 +109,14 @@
 								<h3 class="font-medium">
 									{item.product.name}
 									{#if item.variant}
-										<span class="text-sm font-normal text-muted-foreground">— {item.variant.label}</span>
+										<span class="text-sm font-normal text-muted-foreground"
+											>— {item.variant.label}</span
+										>
 									{/if}
 								</h3>
 								<button
-									onclick={() => onRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
+									onclick={() =>
+										onRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
 									class="text-destructive hover:text-destructive/80"
 								>
 									<Trash class="w-4 h-4" />

@@ -1,5 +1,6 @@
 <!-- src/routes/dashboard/users/[id]/+page.svelte -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { updateUserAndAddressSchema } from '$lib/schema/addresses/updateUserAndAddressSchema.js';
@@ -16,20 +17,23 @@
 
 	let { data } = $props();
 
-	const updateUserAndAddresses = superForm(data.IupdateUserAndAddressSchema, {
-		validators: zodClient(updateUserAndAddressSchema),
-		id: 'updateUserAndAddresses',
-		dataType: 'json',
-		onResult: (event) => {
-			if (
-				event.result.type === 'success' &&
-				event.result.data?.form.message === 'User and addresses updated successfully'
-			) {
-				toast.success(event.result.data.form.message);
-				setTimeout(() => goto('/admin/users'), 0);
+	const updateUserAndAddresses = superForm(
+		untrack(() => data.IupdateUserAndAddressSchema),
+		{
+			validators: zodClient(updateUserAndAddressSchema),
+			id: 'updateUserAndAddresses',
+			dataType: 'json',
+			onResult: (event) => {
+				if (
+					event.result.type === 'success' &&
+					event.result.data?.form.message === 'User and addresses updated successfully'
+				) {
+					toast.success(event.result.data.form.message);
+					setTimeout(() => goto('/admin/users'), 0);
+				}
 			}
 		}
-	});
+	);
 
 	const { form, enhance, message } = updateUserAndAddresses;
 

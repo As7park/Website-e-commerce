@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Textarea } from '$shadcn/textarea';
@@ -11,7 +12,7 @@
 
 	let { data } = $props();
 
-	const contactForm = superForm(data.form, {
+	const contactForm = superForm(untrack(() => data.form), {
 		validators: zodClient(contactSchema),
 		id: 'contactForm'
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { createAddressSchema } from '$lib/schema/addresses/addressSchema.js';
@@ -15,10 +16,13 @@
 
 	let { data } = $props();
 
-	const createAddress = superForm(data.IcreateAddressSchema, {
-		validators: zodClient(createAddressSchema),
-		id: 'createAddress'
-	});
+	const createAddress = superForm(
+		untrack(() => data.IcreateAddressSchema),
+		{
+			validators: zodClient(createAddressSchema),
+			id: 'createAddress'
+		}
+	);
 
 	const {
 		form: createAddressData,

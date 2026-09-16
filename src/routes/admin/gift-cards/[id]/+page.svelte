@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import * as Card from '$shadcn/card';
 	import { Input } from '$shadcn/input';
@@ -16,7 +17,7 @@
 
 	let { data } = $props();
 
-	const updateGiftCardForm = superForm(data.updateGiftCardForm, {
+	const updateGiftCardForm = superForm(untrack(() => data.updateGiftCardForm), {
 		validators: zodClient(updateGiftCardSchema),
 		id: 'updateGiftCard'
 	});
@@ -26,7 +27,7 @@
 		message: updateGiftCardMessage
 	} = updateGiftCardForm;
 
-	const adjustBalanceForm = superForm(data.adjustBalanceForm, {
+	const adjustBalanceForm = superForm(untrack(() => data.adjustBalanceForm), {
 		validators: zodClient(adjustGiftCardBalanceSchema),
 		id: 'adjustBalance'
 	});

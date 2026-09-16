@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -20,7 +21,7 @@
 	let { data } = $props();
 	let id = $derived(page.params.id);
 
-	const updateTaxonomy = superForm(data.IupdateTaxonomySchema, {
+	const updateTaxonomy = superForm(untrack(() => data.IupdateTaxonomySchema), {
 		validators: zodClient(updateTaxonomySchema),
 		id: 'updateTaxonomy'
 	});
@@ -51,7 +52,7 @@
 		}
 	});
 
-	const deleteTaxonomyValue = superForm(data.IdeleteTaxonomyValueSchema, {
+	const deleteTaxonomyValue = superForm(untrack(() => data.IdeleteTaxonomyValueSchema), {
 		validators: zodClient(deleteTaxonomyValueSchema),
 		id: 'deleteTaxonomyValue'
 	});

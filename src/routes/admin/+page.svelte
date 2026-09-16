@@ -132,8 +132,9 @@
 				</Card.Header>
 				<Card.Content class="text-muted-foreground text-sm">
 					{#if recoveryRate !== null}
-						{kpis.cartRemindersRecoveredCount}/{kpis.cartRemindersSentCount} relances converties
-						({recoveryRate.toFixed(0)}%)
+						{kpis.cartRemindersRecoveredCount}/{kpis.cartRemindersSentCount} relances converties ({recoveryRate.toFixed(
+							0
+						)}%)
 					{:else}
 						Aucune relance envoyée sur la période
 					{/if}
@@ -148,8 +149,10 @@
 				<Card.Content class="text-muted-foreground text-sm">
 					{#if kpis.lowStockSample.length > 0}
 						<ul class="space-y-0.5">
-							{#each kpis.lowStockSample as product (product.id)}
-								<li class="truncate">{product.name} — {product.stock} restant{product.stock > 1 ? 's' : ''}</li>
+							{#each kpis.lowStockSample as product}
+								<li class="truncate">
+									{product.name} — {product.stock} restant{product.stock > 1 ? 's' : ''}
+								</li>
 							{/each}
 						</ul>
 					{:else}
@@ -165,11 +168,15 @@
 					</Card.Header>
 					<Card.Content class="space-y-1 text-sm">
 						{#if data.returnsEnabled}
-							<p>{kpis.pendingReturnsCount} retour{kpis.pendingReturnsCount > 1 ? 's' : ''} en attente</p>
+							<p>
+								{kpis.pendingReturnsCount} retour{kpis.pendingReturnsCount > 1 ? 's' : ''} en attente
+							</p>
 						{/if}
 						{#if data.productQnaEnabled}
 							<p>
-								{kpis.unansweredQuestionsCount} question{kpis.unansweredQuestionsCount > 1 ? 's' : ''}
+								{kpis.unansweredQuestionsCount} question{kpis.unansweredQuestionsCount > 1
+									? 's'
+									: ''}
 								sans réponse
 							</p>
 						{/if}
@@ -187,7 +194,9 @@
 					<p>{kpis.ordersByStatus.PENDING} en attente</p>
 					<p>{kpis.ordersByStatus.PAID} payée{kpis.ordersByStatus.PAID > 1 ? 's' : ''}</p>
 					<p>{kpis.ordersByStatus.SHIPPED} expédiée{kpis.ordersByStatus.SHIPPED > 1 ? 's' : ''}</p>
-					<p>{kpis.ordersByStatus.CANCELLED} annulée{kpis.ordersByStatus.CANCELLED > 1 ? 's' : ''}</p>
+					<p>
+						{kpis.ordersByStatus.CANCELLED} annulée{kpis.ordersByStatus.CANCELLED > 1 ? 's' : ''}
+					</p>
 				</Card.Content>
 			</Card.Root>
 
@@ -198,7 +207,9 @@
 				</Card.Header>
 				<Card.Content class="text-muted-foreground text-sm">
 					nouveaux ({kpis.windowDays}j) — {kpis.recurringCustomersCount}/{kpis.payingCustomersCount}
-					client{kpis.payingCustomersCount > 1 ? 's' : ''} payeur{kpis.payingCustomersCount > 1 ? 's' : ''}
+					client{kpis.payingCustomersCount > 1 ? 's' : ''} payeur{kpis.payingCustomersCount > 1
+						? 's'
+						: ''}
 					récurrent{kpis.recurringCustomersCount > 1 ? 's' : ''}
 				</Card.Content>
 			</Card.Root>
@@ -208,7 +219,10 @@
 					<Card.Description>Catalogue</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-1 text-sm">
-					<p>{kpis.neverSoldProductsCount} produit{kpis.neverSoldProductsCount > 1 ? 's' : ''} jamais vendu{kpis.neverSoldProductsCount > 1 ? 's' : ''}</p>
+					<p>
+						{kpis.neverSoldProductsCount} produit{kpis.neverSoldProductsCount > 1 ? 's' : ''} jamais
+						vendu{kpis.neverSoldProductsCount > 1 ? 's' : ''}
+					</p>
 					{#if kpis.reviewsCount > 0}
 						<p>
 							Note moyenne {kpis.averageReviewRating.toFixed(1)}/5 ({kpis.reviewsCount} avis, +{kpis.newReviewsCount}
@@ -227,7 +241,9 @@
 					</Card.Header>
 					<Card.Content class="space-y-1 text-sm">
 						<p>
-							{kpis.soonExpiringPromoCodesCount} code{kpis.soonExpiringPromoCodesCount > 1 ? 's' : ''}
+							{kpis.soonExpiringPromoCodesCount} code{kpis.soonExpiringPromoCodesCount > 1
+								? 's'
+								: ''}
 							promo expire{kpis.soonExpiringPromoCodesCount > 1 ? 'nt' : ''} sous 7j
 						</p>
 						{#if data.giftCardsEnabled}
@@ -260,11 +276,7 @@
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<div class="aspect-video rounded border p-5">
-			<Chart
-				data={transactionPoints}
-				title="Transactions"
-				valueLabel="Montant"
-			/>
+			<Chart data={transactionPoints} title="Transactions" valueLabel="Montant" />
 		</div>
 
 		<div class="aspect-video rounded border p-5">

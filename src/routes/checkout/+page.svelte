@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	// COMMERCE-PLUGIN : UI du tunnel. SENDCLOUD = carte / options. PROMO = champ code.
 	import maplibregl from 'maplibre-gl';
 
@@ -174,21 +175,24 @@
 	});
 
 	// superForm
-	let createPayment = superForm(data.IOrderSchema, {
-		validators: zodClient(OrderSchema),
-		id: 'createPayment',
-		resetForm: false,
-		onUpdated({ form }) {
-			if (form.valid) return;
-			const first = Object.values(form.errors)
-				.flat()
-				.find((message) => typeof message === 'string' && message.length > 0);
-			if (first) toast.error(first);
-		},
-		onError({ result }) {
-			toast.error(result.error.message || 'Le paiement n’a pas pu démarrer.');
+	let createPayment = superForm(
+		untrack(() => data.IOrderSchema),
+		{
+			validators: zodClient(OrderSchema),
+			id: 'createPayment',
+			resetForm: false,
+			onUpdated({ form }) {
+				if (form.valid) return;
+				const first = Object.values(form.errors)
+					.flat()
+					.find((message) => typeof message === 'string' && message.length > 0);
+				if (first) toast.error(first);
+			},
+			onError({ result }) {
+				toast.error(result.error.message || 'Le paiement n’a pas pu démarrer.');
+			}
 		}
-	});
+	);
 
 	const { form: createPaymentData, enhance: createPaymentEnhance } = createPayment;
 

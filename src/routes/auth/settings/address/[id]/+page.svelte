@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Button } from '$shadcn/button';
 	import { Input } from '$shadcn/input';
@@ -17,10 +18,13 @@
 
 	//console.log(data);
 
-	const updateAddress = superForm(data.IupdateAddressSchema, {
-		validators: zodClient(updateAddressSchema),
-		id: 'updateAddress'
-	});
+	const updateAddress = superForm(
+		untrack(() => data.IupdateAddressSchema),
+		{
+			validators: zodClient(updateAddressSchema),
+			id: 'updateAddress'
+		}
+	);
 
 	const {
 		form: updateAddressData,

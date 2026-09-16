@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import * as Card from '$shadcn/card';
 	import { Input } from '$shadcn/input';
@@ -27,23 +28,32 @@
 
 	let { data } = $props();
 
-	let marketingOptIn = $state(data.marketingEmailsOptIn);
+	let marketingOptIn = $state(untrack(() => data.marketingEmailsOptIn));
 
 	// Initialiser les formulaires Superform
-	const emailForm = superForm(data.emailForm, {
-		validators: zodClient(emailSchema),
-		id: 'emailForm'
-	});
+	const emailForm = superForm(
+		untrack(() => data.emailForm),
+		{
+			validators: zodClient(emailSchema),
+			id: 'emailForm'
+		}
+	);
 
-	const passwordForm = superForm(data.passwordForm, {
-		validators: zodClient(passwordSchema),
-		id: 'passwordForm'
-	});
+	const passwordForm = superForm(
+		untrack(() => data.passwordForm),
+		{
+			validators: zodClient(passwordSchema),
+			id: 'passwordForm'
+		}
+	);
 
-	const isMfaEnabledForm = superForm(data.isMfaEnabledForm, {
-		validators: zodClient(isMfaEnabledSchema),
-		id: 'isMfaEnabledForm'
-	});
+	const isMfaEnabledForm = superForm(
+		untrack(() => data.isMfaEnabledForm),
+		{
+			validators: zodClient(isMfaEnabledSchema),
+			id: 'isMfaEnabledForm'
+		}
+	);
 
 	const { form: emailData, enhance: emailEnhance, message: emailMessage } = emailForm;
 	const { form: passwordData, enhance: passwordEnhance, message: passwordMessage } = passwordForm;
@@ -195,8 +205,8 @@
 						<span>Communications</span>
 					</Card.Title>
 					<Card.Description>
-						Les emails liés à vos commandes (facture, confirmation) sont toujours envoyés,
-						quel que soit ce réglage.
+						Les emails liés à vos commandes (facture, confirmation) sont toujours envoyés, quel que
+						soit ce réglage.
 					</Card.Description>
 				</Card.Header>
 				<Card.Content class="flex-grow">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { addToCart } from '$lib/store/Data/cartStore';
 	import Button from '$shadcn/button/button.svelte';
 	import { Textarea } from '$shadcn/textarea';
@@ -38,7 +39,7 @@
 		product.categories.map((link) => link.category.name).filter(Boolean)
 	);
 
-	let inWishlist = $state(data.inWishlist);
+	let inWishlist = $state(untrack(() => data.inWishlist));
 	let wishlistBusy = $state(false);
 	let hasDiscount = $derived(
 		Boolean(product.compareAtPrice) && (product.compareAtPrice as number) > product.price
@@ -71,10 +72,8 @@
 	// Variantes (`ProductVariant`) : un produit sans variante se comporte
 	// exactement comme avant leur introduction (`selectedVariant` reste
 	// `null`, jamais de sélection imposée).
-	let selectedVariantId = $state<string | null>(product.variants[0]?.id ?? null);
-	let selectedVariant = $derived(
-		product.variants.find((v) => v.id === selectedVariantId) ?? null
-	);
+	let selectedVariantId = $state<string | null>(untrack(() => product.variants[0]?.id ?? null));
+	let selectedVariant = $derived(product.variants.find((v) => v.id === selectedVariantId) ?? null);
 	let displayedPrice = $derived(selectedVariant?.price ?? product.price);
 	let displayedStock = $derived(selectedVariant?.stock ?? product.stock);
 
@@ -110,11 +109,14 @@
 		});
 	}
 
-	const reviewFormCtx = superForm(data.form, {
-		validators: zodClient(reviewSchema),
-		id: 'reviewForm',
-		resetForm: true
-	});
+	const reviewFormCtx = superForm(
+		untrack(() => data.form),
+		{
+			validators: zodClient(reviewSchema),
+			id: 'reviewForm',
+			resetForm: true
+		}
+	);
 	const { form: reviewData, enhance: reviewEnhance, message: reviewMessage } = reviewFormCtx;
 
 	$effect(() => {
@@ -126,11 +128,14 @@
 		}
 	});
 
-	const askQuestionFormCtx = superForm(data.askForm, {
-		validators: zodClient(askQuestionSchema),
-		id: 'askQuestionForm',
-		resetForm: true
-	});
+	const askQuestionFormCtx = superForm(
+		untrack(() => data.askForm),
+		{
+			validators: zodClient(askQuestionSchema),
+			id: 'askQuestionForm',
+			resetForm: true
+		}
+	);
 	const {
 		form: askQuestionData,
 		enhance: askQuestionEnhance,

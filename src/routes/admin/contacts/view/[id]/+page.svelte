@@ -8,7 +8,7 @@
 	// Props
 	let { data } = $props();
 
-	const { contactSubmission } = data;
+	const contactSubmission = $derived(data.contactSubmission);
 </script>
 
 <div class="container mx-auto p-6 max-w-4xl">
@@ -32,16 +32,16 @@
 		<CardContent class="space-y-4">
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
-					<label class="text-sm font-medium text-muted-foreground">Nom</label>
+					<span class="text-sm font-medium text-muted-foreground">Nom</span>
 					<p class="text-lg">{contactSubmission.name}</p>
 				</div>
 				<div>
-					<label class="text-sm font-medium text-muted-foreground">Email</label>
+					<span class="text-sm font-medium text-muted-foreground">Email</span>
 					<p class="text-lg">{contactSubmission.email}</p>
 				</div>
 			</div>
 			<div>
-				<label class="text-sm font-medium text-muted-foreground">Date de création</label>
+				<span class="text-sm font-medium text-muted-foreground">Date de création</span>
 				<p class="text-lg flex items-center gap-2">
 					<Calendar class="h-4 w-4" />
 					{formatDate(contactSubmission.createdAt.toISOString())}
@@ -60,11 +60,11 @@
 		</CardHeader>
 		<CardContent>
 			<div class="mb-4">
-				<label class="text-sm font-medium text-muted-foreground">Sujet</label>
+				<span class="text-sm font-medium text-muted-foreground">Sujet</span>
 				<p class="text-lg font-semibold">{contactSubmission.subject}</p>
 			</div>
 			<div>
-				<label class="text-sm font-medium text-muted-foreground">Contenu</label>
+				<span class="text-sm font-medium text-muted-foreground">Contenu</span>
 				<div class="mt-2 p-4 bg-muted rounded-lg">
 					<p class="whitespace-pre-wrap">{contactSubmission.message}</p>
 				</div>

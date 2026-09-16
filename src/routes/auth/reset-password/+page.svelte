@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
@@ -10,7 +11,7 @@
 	let { data } = $props();
 
 	// Initialiser le formulaire Superform avec le schéma Zod
-	const resetPasswordForm = superForm(data?.resetPasswordForm ?? {}, {
+	const resetPasswordForm = superForm(untrack(() => data?.resetPasswordForm ?? {}), {
 		validators: zodClient(resetPasswordSchema),
 		id: 'resetPasswordForm'
 	});

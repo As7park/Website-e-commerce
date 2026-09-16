@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
@@ -13,7 +14,7 @@
 
 	let { data } = $props();
 
-	const createTaxonomy = superForm(data.IcreateTaxonomySchema, {
+	const createTaxonomy = superForm(untrack(() => data.IcreateTaxonomySchema), {
 		validators: zodClient(createTaxonomySchema),
 		id: 'createTaxonomy'
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import Input from '$shadcn/input/input.svelte';
 	import Button from '$shadcn/button/button.svelte';
@@ -9,7 +10,7 @@
 
 	let { data } = $props();
 
-	const twoFactorForm = superForm(data.totpForm, {
+	const twoFactorForm = superForm(untrack(() => data.totpForm), {
 		validators: zodClient(totpSchema),
 		id: 'twoFactorForm'
 	});

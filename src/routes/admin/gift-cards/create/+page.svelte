@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Textarea } from '$shadcn/textarea/index.js';
@@ -10,7 +11,7 @@
 
 	let { data } = $props();
 
-	const createGiftCardForm = superForm(data?.createGiftCardForm ?? {}, {
+	const createGiftCardForm = superForm(untrack(() => data?.createGiftCardForm ?? {}), {
 		validators: zodClient(createGiftCardSchema),
 		id: 'createGiftCard'
 	});

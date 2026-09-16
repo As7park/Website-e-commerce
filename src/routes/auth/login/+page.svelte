@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
@@ -12,7 +13,7 @@
 	//console.log(data);
 
 	// Initialiser le formulaire Superform avec Zod
-	const loginForm = superForm(data?.loginForm ?? {}, {
+	const loginForm = superForm(untrack(() => data?.loginForm ?? {}), {
 		validators: zodClient(loginSchema),
 		id: 'loginForm'
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
@@ -12,12 +13,12 @@
 	let { data } = $props();
 
 	// Initialiser les formulaires Superform
-	const totpForm = superForm(data?.totpForm ?? {}, {
+	const totpForm = superForm(untrack(() => data?.totpForm ?? {}), {
 		validators: zodClient(totpCodeSchema),
 		id: 'totpForm'
 	});
 
-	const recoveryCodeForm = superForm(data?.recoveryCodeForm ?? {}, {
+	const recoveryCodeForm = superForm(untrack(() => data?.recoveryCodeForm ?? {}), {
 		validators: zodClient(recoveryCodeSchema),
 		id: 'recoveryCodeForm'
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
 	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -10,7 +11,7 @@
 
 	let { data } = $props();
 
-	const deletePromo = superForm(data?.IdeletePromoSchema ?? {}, {
+	const deletePromo = superForm(untrack(() => data?.IdeletePromoSchema ?? {}), {
 		validators: zodClient(deletePromoSchema),
 		id: 'deletePromo'
 	});

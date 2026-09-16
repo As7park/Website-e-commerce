@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { superForm } from 'sveltekit-superforms';
@@ -11,7 +12,7 @@
 
 	let { data } = $props();
 
-	const deleteQuestion = superForm(data.deleteForm, {
+	const deleteQuestion = superForm(untrack(() => data.deleteForm), {
 		validators: zodClient(deleteQuestionSchema),
 		id: 'deleteQuestion'
 	});

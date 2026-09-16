@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
 	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { deleteUserSchema } from '$lib/schema/users/userSchema.js';
@@ -12,7 +13,7 @@
 	let { data } = $props();
 
 	// Form handling with superForm
-	const deleteUser = superForm(data?.IdeleteUserSchema ?? {}, {
+	const deleteUser = superForm(untrack(() => data?.IdeleteUserSchema ?? {}), {
 		validators: zodClient(deleteUserSchema)
 	});
 
