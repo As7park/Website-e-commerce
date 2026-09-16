@@ -112,7 +112,9 @@ export const actions: Actions = {
 
 		const { giftCardsEnabled } = await getStoreFeatureFlags();
 		if (!giftCardsEnabled) {
-			return fail(400, { message: 'Le module cartes cadeaux doit être activé pour créditer un compte' });
+			return fail(400, {
+				message: 'Le module cartes cadeaux doit être activé pour créditer un compte'
+			});
 		}
 
 		const returnRequest = await getReturnRequestById(id);

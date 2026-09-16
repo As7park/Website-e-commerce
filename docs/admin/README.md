@@ -62,20 +62,20 @@ naissent par inscription.
 
 ## Sections
 
-| Route               | Rôle                                                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/admin`            | tableau de bord (ventes récentes, dernières inscriptions)                                                                             |
-| `/admin/sales`      | transactions, factures, bordereaux                                                                                                    |
-| `/admin/users`      | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                            |
-| `/admin/products`   | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                              |
-| `/admin/blog`       | articles, catégories, tags                                                                                                            |
-| `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
-| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                   |
+| Route               | Rôle                                                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin`            | tableau de bord (ventes récentes, dernières inscriptions)                                                                                                         |
+| `/admin/sales`      | transactions, factures, bordereaux                                                                                                                                |
+| `/admin/users`      | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                                                        |
+| `/admin/products`   | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                                                          |
+| `/admin/blog`       | articles, catégories, tags                                                                                                                                        |
+| `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                                               |
+| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                                               |
 | `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique ou crédit compte alternatif (voir [docs/commerce](../commerce/README.md#retours--sav)) |
-| `/admin/contacts`   | messages du formulaire de contact                                                                                                     |
-| `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
-| `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                |
-| `/admin/settings`   | activation des modules e-commerce optionnels (voir ci-dessous)                                                                        |
+| `/admin/contacts`   | messages du formulaire de contact                                                                                                                                 |
+| `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                                                  |
+| `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                                            |
+| `/admin/settings`   | activation des modules e-commerce optionnels (voir ci-dessous)                                                                                                    |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.

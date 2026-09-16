@@ -121,15 +121,19 @@
 
 							{#if data.giftCardsEnabled}
 								<AlertDialog.Root>
-									<AlertDialog.Trigger class={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+									<AlertDialog.Trigger
+										class={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+									>
 										Créditer le compte
 									</AlertDialog.Trigger>
 									<AlertDialog.Content>
 										<AlertDialog.Header>
-											<AlertDialog.Title>Créditer le compte au lieu de rembourser ?</AlertDialog.Title>
+											<AlertDialog.Title
+												>Créditer le compte au lieu de rembourser ?</AlertDialog.Title
+											>
 											<AlertDialog.Description>
-												Une carte cadeau de {formatMoney(item.transaction.amount)} sera émise et
-												envoyée par e-mail au client — aucun remboursement Stripe ne sera effectué.
+												Une carte cadeau de {formatMoney(item.transaction.amount)} sera émise et envoyée
+												par e-mail au client — aucun remboursement Stripe ne sera effectué.
 											</AlertDialog.Description>
 										</AlertDialog.Header>
 										<AlertDialog.Footer>

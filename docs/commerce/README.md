@@ -386,15 +386,15 @@ On vérifie que l'échec est géré proprement (`fail(500)`), pas le rembourseme
 Le crédit compte (`?/creditStore`), lui, n'appelle jamais Stripe : entièrement
 rejouable, y compris l'e-mail avec le code de la carte cadeau émise.
 
-| #   | Étape                                                    | Geste                                  | Preuve                            |
-| --- | -------------------------------------------------------- | -------------------------------------- | --------------------------------- |
-| 1   | Module désactivé : routes compte fermées                 | GET `/auth/settings/returns[...]`      | 404                               |
-| 2   | Demande de retour envoyée                                | formulaire motif → Envoyer             | `ReturnRequest` `REQUESTED`       |
-| 3   | Une seconde demande n'est pas proposée                   | revisite de la page                    | formulaire absent, statut affiché |
-| 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer | statut `REJECTED`                 |
-| 5   | Admin : crédit compte au lieu du remboursement           | Créditer le compte → Confirmer         | statut `CREDITED`, `GiftCard` émise, e-mail avec le code |
-| 6   | Crédit indisponible si cartes cadeaux désactivées        | bouton absent, `giftCardsEnabled` à `false` | statut inchangé `REQUESTED`   |
-| 7   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
+| #   | Étape                                                    | Geste                                       | Preuve                                                   |
+| --- | -------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
+| 1   | Module désactivé : routes compte fermées                 | GET `/auth/settings/returns[...]`           | 404                                                      |
+| 2   | Demande de retour envoyée                                | formulaire motif → Envoyer                  | `ReturnRequest` `REQUESTED`                              |
+| 3   | Une seconde demande n'est pas proposée                   | revisite de la page                         | formulaire absent, statut affiché                        |
+| 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer      | statut `REJECTED`                                        |
+| 5   | Admin : crédit compte au lieu du remboursement           | Créditer le compte → Confirmer              | statut `CREDITED`, `GiftCard` émise, e-mail avec le code |
+| 6   | Crédit indisponible si cartes cadeaux désactivées        | bouton absent, `giftCardsEnabled` à `false` | statut inchangé `REQUESTED`                              |
+| 7   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer          | message d'échec, statut inchangé                         |
 
 Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
 Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`.

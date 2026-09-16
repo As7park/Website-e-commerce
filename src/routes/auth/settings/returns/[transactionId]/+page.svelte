@@ -67,7 +67,12 @@
 							<p class="font-mono text-sm">{data.returnRequest.returnTrackingNumber}</p>
 						</div>
 						{#if data.returnRequest.returnTrackingUrl}
-							<Button href={data.returnRequest.returnTrackingUrl} target="_blank" rel="noopener noreferrer" size="sm">
+							<Button
+								href={data.returnRequest.returnTrackingUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								size="sm"
+							>
 								Télécharger l'étiquette
 							</Button>
 						{/if}
