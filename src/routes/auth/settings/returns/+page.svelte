@@ -10,7 +10,8 @@
 		REQUESTED: 'Demande en attente',
 		APPROVED: 'Approuvée',
 		REJECTED: 'Refusée',
-		REFUNDED: 'Remboursée'
+		REFUNDED: 'Remboursée',
+		CREDITED: 'Créditée'
 	};
 </script>
 

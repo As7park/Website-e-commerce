@@ -358,6 +358,8 @@ Sendcloud dès que `PUBLIC_ENV=test`.
 Le remboursement Stripe réel (`?/approve`) n'est pas rejouable : les transactions
 de test viennent de `simulatePaidOrder`, sans vraie Checkout Session Stripe.
 On vérifie que l'échec est géré proprement (`fail(500)`), pas le remboursement.
+Le crédit compte (`?/creditStore`) n'appelle jamais Stripe : entièrement
+rejouable.
 
 | #   | Étape                                                    | Geste                                  | Preuve                            |
 | --- | -------------------------------------------------------- | -------------------------------------- | --------------------------------- |
@@ -365,7 +367,9 @@ On vérifie que l'échec est géré proprement (`fail(500)`), pas le rembourseme
 | 2   | Demande de retour envoyée                                | formulaire motif → Envoyer             | `ReturnRequest` `REQUESTED`       |
 | 3   | Une seconde demande n'est pas proposée                   | revisite de la page                    | formulaire absent, statut affiché |
 | 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer | statut `REJECTED`                 |
-| 5   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
+| 5   | Admin : crédit compte au lieu du remboursement           | Créditer le compte → Confirmer         | statut `CREDITED`, `GiftCard` émise, e-mail avec le code |
+| 6   | Crédit indisponible si cartes cadeaux désactivées        | bouton absent, `giftCardsEnabled` à `false` | statut inchangé `REQUESTED`   |
+| 7   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
 
 Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
 Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`

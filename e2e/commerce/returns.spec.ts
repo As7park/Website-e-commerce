@@ -4,8 +4,10 @@ import { signUpAndVerify } from '../support/admin';
 import {
 	createCatalogProduct,
 	deleteCatalogProduct,
+	deleteGiftCard,
 	deleteTransaction,
 	deleteUser,
+	getGiftCardById,
 	getReturnRequestByTransactionId,
 	getStoreFeatureFlags,
 	linkProductToOrder,
@@ -15,6 +17,7 @@ import {
 	setStoreFeatureFlags,
 	simulatePaidOrder
 } from '../support/db';
+import { clearMailbox, waitForEmailContaining } from '../support/mailbox';
 
 /**
  * Retours/SAV : module activable (`StoreSettings.returnsEnabled`, 404 partout
@@ -97,6 +100,97 @@ test.describe('Retours / SAV', () => {
 				const request = await getReturnRequestByTransactionId(transactionId!);
 				expect(request?.status).toBe('REJECTED');
 			});
+		} finally {
+			await setStoreFeatureFlags(originalFlags);
+			if (transactionId) await deleteTransaction(transactionId);
+			await deleteCatalogProduct(product.id);
+		}
+	});
+
+	test('crédit compte : avoir émis, e-mail envoyé, aucun appel Stripe', async ({
+		page,
+		account
+	}) => {
+		const originalFlags = await getStoreFeatureFlags();
+		const created = await createCatalogProduct();
+		const { product } = created;
+		let transactionId: string | undefined;
+		let giftCardId: string | undefined;
+
+		try {
+			await setStoreFeatureFlags({ returnsEnabled: true, giftCardsEnabled: true });
+			await signUpAndVerify(page, account);
+			const user = await requireUser(account.email);
+			const linked = await linkProductToOrder(user.id, product.id);
+			const sale = await simulatePaidOrder(linked.order.id, user.id, account.email);
+			transactionId = sale.id;
+
+			await page.goto(`/auth/settings/returns/${transactionId}`);
+			await page.locator('textarea[name="reason"]').fill('Taille ne convient pas.');
+			await page.getByRole('button', { name: 'Envoyer la demande' }).click();
+			await expect(page.getByText('En attente de traitement')).toBeVisible();
+
+			await promoteToAdmin(account.email);
+			await page.goto('/admin/returns');
+			await waitForPath(page, '/admin/returns');
+
+			await clearMailbox();
+			await page.getByRole('button', { name: 'Créditer le compte' }).click();
+			await page.getByRole('button', { name: 'Confirmer le crédit' }).click();
+			await expect(page.getByText('Créditée')).toBeVisible();
+
+			const request = await getReturnRequestByTransactionId(transactionId!);
+			expect(request?.status).toBe('CREDITED');
+			expect(request?.stripeRefundId).toBeNull();
+			expect(request?.giftCardId).not.toBeNull();
+			giftCardId = request!.giftCardId!;
+
+			const giftCard = await getGiftCardById(giftCardId);
+			expect(giftCard?.initialValue).toBe(sale.amount);
+			expect(giftCard?.balance).toBe(sale.amount);
+			expect(giftCard?.active).toBe(true);
+			expect(giftCard?.recipientEmail).toBe(account.email);
+
+			// Needle ASCII (pas de caractère accentué) : le corps décodé en quoted-printable
+			// mélange l'encodage UTF-8 sur un accent, voir e2e/support/mailbox.ts.
+			await waitForEmailContaining(account.email, giftCard!.code);
+		} finally {
+			await setStoreFeatureFlags(originalFlags);
+			if (giftCardId) await deleteGiftCard(giftCardId);
+			if (transactionId) await deleteTransaction(transactionId);
+			await deleteCatalogProduct(product.id);
+		}
+	});
+
+	test('crédit compte indisponible si le module cartes cadeaux est désactivé', async ({
+		page,
+		account
+	}) => {
+		const originalFlags = await getStoreFeatureFlags();
+		const created = await createCatalogProduct();
+		const { product } = created;
+		let transactionId: string | undefined;
+
+		try {
+			await setStoreFeatureFlags({ returnsEnabled: true, giftCardsEnabled: false });
+			await signUpAndVerify(page, account);
+			const user = await requireUser(account.email);
+			const linked = await linkProductToOrder(user.id, product.id);
+			const sale = await simulatePaidOrder(linked.order.id, user.id, account.email);
+			transactionId = sale.id;
+
+			await page.goto(`/auth/settings/returns/${transactionId}`);
+			await page.locator('textarea[name="reason"]').fill('Erreur de commande.');
+			await page.getByRole('button', { name: 'Envoyer la demande' }).click();
+
+			await promoteToAdmin(account.email);
+			await page.goto('/admin/returns');
+			await waitForPath(page, '/admin/returns');
+
+			await expect(page.getByRole('button', { name: 'Créditer le compte' })).toHaveCount(0);
+
+			const request = await getReturnRequestByTransactionId(transactionId!);
+			expect(request?.status).toBe('REQUESTED');
 		} finally {
 			await setStoreFeatureFlags(originalFlags);
 			if (transactionId) await deleteTransaction(transactionId);

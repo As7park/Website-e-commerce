@@ -71,7 +71,7 @@ naissent par inscription.
 | `/admin/blog`       | articles, catégories, tags                                                                                                            |
 | `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
 | `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                   |
-| `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique (voir [docs/commerce](../commerce/README.md#retours--sav)) |
+| `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique ou crédit compte alternatif (voir [docs/commerce](../commerce/README.md#retours--sav)) |
 | `/admin/contacts`   | messages du formulaire de contact                                                                                                     |
 | `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
 | `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                |
@@ -128,8 +128,9 @@ lui-même lit toujours la valeur non mise en cache.
 
 Au 16/09/2026, les huit modules ont une implémentation complète derrière leur
 interrupteur : liste d'envies, ventes croisées (`e2e/products/wishlist.spec.ts`,
-`e2e/products/cross-sell.spec.ts`), espace retour/SAV avec remboursement Stripe
-automatique, moyen de paiement enregistré (Stripe Elements), palier de
+`e2e/products/cross-sell.spec.ts`), espace retour/SAV avec remboursement
+Stripe automatique ou crédit compte alternatif (carte cadeau), moyen de
+paiement enregistré (Stripe Elements), palier de
 fidélité intégré à la section promo, cartes cadeaux à solde décroissant
 (`e2e/gift-cards/*.spec.ts`), questions & réponses produit modérées
 (`e2e/products/questions.spec.ts`) et relance panier abandonné par e-mail

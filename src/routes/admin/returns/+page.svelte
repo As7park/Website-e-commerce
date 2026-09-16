@@ -14,7 +14,8 @@
 		REQUESTED: 'En attente',
 		APPROVED: 'Approuvée',
 		REJECTED: 'Refusée',
-		REFUNDED: 'Remboursée'
+		REFUNDED: 'Remboursée',
+		CREDITED: 'Créditée'
 	};
 </script>
 
@@ -117,6 +118,43 @@
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
 							</AlertDialog.Root>
+
+							{#if data.giftCardsEnabled}
+								<AlertDialog.Root>
+									<AlertDialog.Trigger class={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+										Créditer le compte
+									</AlertDialog.Trigger>
+									<AlertDialog.Content>
+										<AlertDialog.Header>
+											<AlertDialog.Title>Créditer le compte au lieu de rembourser ?</AlertDialog.Title>
+											<AlertDialog.Description>
+												Une carte cadeau de {formatMoney(item.transaction.amount)} sera émise et
+												envoyée par e-mail au client — aucun remboursement Stripe ne sera effectué.
+											</AlertDialog.Description>
+										</AlertDialog.Header>
+										<AlertDialog.Footer>
+											<AlertDialog.Cancel>Annuler</AlertDialog.Cancel>
+											<form
+												method="POST"
+												action="?/creditStore"
+												use:enhance={() => {
+													return async ({ update, result }) => {
+														await update();
+														if (result.type === 'failure') {
+															toast.error(String(result.data?.message ?? 'Échec'));
+														} else {
+															toast.success('Compte crédité');
+														}
+													};
+												}}
+											>
+												<input type="hidden" name="id" value={item.id} />
+												<AlertDialog.Action type="submit">Confirmer le crédit</AlertDialog.Action>
+											</form>
+										</AlertDialog.Footer>
+									</AlertDialog.Content>
+								</AlertDialog.Root>
+							{/if}
 						{:else}
 							<div class="text-right">
 								<span class="text-sm font-medium">{STATUS_LABELS[item.status] ?? item.status}</span>

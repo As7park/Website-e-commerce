@@ -22,7 +22,7 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 | `src/routes/api/jobs/post-payment/`                                                           | endpoint appelé par la queue (QStash)                                                             |
 | `src/routes/admin/sales/`                                                                     | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
 | `src/routes/auth/settings/returns/`                                                           | demande de retour côté compte                                                                     |
-| `src/routes/admin/returns/`                                                                   | approbation/refus + remboursement Stripe (double marqueur ADMIN)                                  |
+| `src/routes/admin/returns/`                                                                   | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN)                 |
 | `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts`                           | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
 | `src/routes/auth/settings/saved-payments/`                                                    | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
 | `src/lib/prisma/giftCards/`                                                                   | DAO cartes cadeaux (solde décroissant)                                                            |
@@ -185,19 +185,32 @@ composant `Table.svelte` générique — son dialogue de confirmation est câbl�
 pour une suppression, pas pour approuver/refuser) :
 
 - **Refuser** : passe `status` à `REJECTED`, aucun appel Stripe.
-- **Approuver** : émet un remboursement Stripe **intégral et immédiat**.
-  `Transaction.stripePaymentId` est l'id de la Checkout Session (pas du
-  PaymentIntent) : il faut d'abord la relire
+- **Approuver + rembourser** : émet un remboursement Stripe **intégral et
+  immédiat**. `Transaction.stripePaymentId` est l'id de la Checkout Session
+  (pas du PaymentIntent) : il faut d'abord la relire
   (`stripe.checkout.sessions.retrieve(id, { expand: ['payment_intent'] })`)
   pour obtenir le PaymentIntent avant `stripe.refunds.create`. Le statut passe
   à `REFUNDED` et `stripeRefundId` est conservé.
+- **Créditer le compte** (`?/creditStore`, alternative au remboursement) :
+  n'appelle jamais Stripe — évite les frais de transaction sur un retour et
+  incite au rachat. Émet une `GiftCard` (`createGiftCard`, même génération de
+  code que l'admin cartes cadeaux) pour le montant intégral de la
+  transaction, associée au compte par `recipientEmail`, puis envoie le code
+  par e-mail. Le statut passe à `CREDITED` et `ReturnRequest.giftCardId`
+  conserve l'id de la carte émise (pas de relation formelle, même découplage
+  que `stripeRefundId`/`PromoCode` ailleurs dans le schéma). N'apparaît que
+  si `StoreSettings.giftCardsEnabled` est actif — ce chemin s'appuie
+  entièrement sur le module cartes cadeaux, il n'a pas son propre
+  interrupteur.
 
 Pas de remboursement partiel, pas de ré-expédition/échange : uniquement un
-remboursement complet vers le moyen de paiement d'origine.
+remboursement complet (Stripe ou crédit compte) vers le moyen choisi par
+l'admin.
 
 ### Étiquette de retour Sendcloud
 
-À l'approbation, `createSendcloudReturnLabel`
+À l'approbation — Stripe ou crédit compte, les deux traitements appellent la
+même fonction — `createSendcloudReturnLabel`
 (`src/lib/sendcloud/returnLabel.ts`) génère une étiquette retour (`is_return:
 true`, destination = l'adresse de la boutique plutôt que celle du client —
 inverse de l'étiquette d'envoi) et pose `returnTrackingNumber`/
@@ -370,6 +383,8 @@ s'exécute directement dans la requête webhook, sans file d'attente.
 Le remboursement Stripe réel (`?/approve`) n'est pas rejouable : les
 transactions viennent de `simulatePaidOrder`, sans vraie Checkout Session.
 On vérifie que l'échec est géré proprement (`fail(500)`), pas le remboursement.
+Le crédit compte (`?/creditStore`), lui, n'appelle jamais Stripe : entièrement
+rejouable, y compris l'e-mail avec le code de la carte cadeau émise.
 
 | #   | Étape                                                    | Geste                                  | Preuve                            |
 | --- | -------------------------------------------------------- | -------------------------------------- | --------------------------------- |
@@ -377,7 +392,9 @@ On vérifie que l'échec est géré proprement (`fail(500)`), pas le rembourseme
 | 2   | Demande de retour envoyée                                | formulaire motif → Envoyer             | `ReturnRequest` `REQUESTED`       |
 | 3   | Une seconde demande n'est pas proposée                   | revisite de la page                    | formulaire absent, statut affiché |
 | 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer | statut `REJECTED`                 |
-| 5   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
+| 5   | Admin : crédit compte au lieu du remboursement           | Créditer le compte → Confirmer         | statut `CREDITED`, `GiftCard` émise, e-mail avec le code |
+| 6   | Crédit indisponible si cartes cadeaux désactivées        | bouton absent, `giftCardsEnabled` à `false` | statut inchangé `REQUESTED`   |
+| 7   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer     | message d'échec, statut inchangé  |
 
 Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
 Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`.

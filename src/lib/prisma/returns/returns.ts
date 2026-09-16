@@ -49,7 +49,7 @@ export const getAllReturnRequests = async (params: ListParams = {}) => {
 
 export async function getReturnRequestById(id: string) {
 	return prisma.returnRequest.findUnique({
-		include: { transaction: true },
+		include: { transaction: true, user: { select: { email: true } } },
 		where: { id }
 	});
 }
@@ -58,6 +58,14 @@ export async function markReturnApproved(id: string, stripeRefundId: string) {
 	return prisma.returnRequest.update({
 		where: { id },
 		data: { status: 'REFUNDED', stripeRefundId }
+	});
+}
+
+/** Alternative à `markReturnApproved` : crédit compte (`GiftCard`) au lieu d'un remboursement Stripe. */
+export async function markReturnCredited(id: string, giftCardId: string) {
+	return prisma.returnRequest.update({
+		where: { id },
+		data: { status: 'CREDITED', giftCardId }
 	});
 }
 

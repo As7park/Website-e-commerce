@@ -12,7 +12,8 @@
 		REQUESTED: 'En attente de traitement',
 		APPROVED: 'Approuvée',
 		REJECTED: 'Refusée',
-		REFUNDED: 'Remboursée'
+		REFUNDED: 'Remboursée',
+		CREDITED: 'Créditée'
 	};
 
 	$effect(() => {
@@ -53,6 +54,11 @@
 					<p class="mt-2 text-sm text-muted-foreground">
 						Le remboursement a été émis auprès de votre moyen de paiement.
 					</p>
+				{:else if data.returnRequest.status === 'CREDITED'}
+					<p class="mt-2 text-sm text-muted-foreground">
+						Un avoir a été crédité sur votre compte, sous forme de carte cadeau — le code vous a été
+						envoyé par e-mail.
+					</p>
 				{/if}
 				{#if data.returnRequest.returnTrackingNumber}
 					<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
@@ -66,7 +72,7 @@
 							</Button>
 						{/if}
 					</div>
-				{:else if data.returnRequest.status === 'REFUNDED'}
+				{:else if data.returnRequest.status === 'REFUNDED' || data.returnRequest.status === 'CREDITED'}
 					<p class="mt-2 text-sm text-muted-foreground">
 						L'étiquette de retour n'est pas encore disponible — contactez-nous si elle tarde à
 						apparaître.

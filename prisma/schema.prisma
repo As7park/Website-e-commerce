@@ -48,6 +48,9 @@ enum ReturnStatus {
   APPROVED
   REJECTED
   REFUNDED
+  /// Alternative à REFUNDED : crédité sous forme de solde `GiftCard` au lieu
+  /// d'un remboursement Stripe (voir `ReturnRequest.giftCardId`).
+  CREDITED
 }
 
 // AUTH __________________________________________________________________________________
@@ -856,6 +859,11 @@ model ReturnRequest {
   reason         String
   status         ReturnStatus @default(REQUESTED)
   stripeRefundId String?
+  /// Posé à la place de `stripeRefundId` quand l'admin choisit de créditer le
+  /// compte (`?/creditStore`, status CREDITED) plutôt que de rembourser via
+  /// Stripe. Pas de relation formelle vers `GiftCard` — même découplage par
+  /// id/code en texte que `PromoCode`/`GiftCard` ailleurs dans le schéma.
+  giftCardId     String?
   /// Étiquette de retour Sendcloud — posée à l'approbation, best-effort : un
   /// échec Sendcloud ne bloque jamais le remboursement (voir la route admin).
   returnTrackingNumber String?
