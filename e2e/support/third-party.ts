@@ -2,8 +2,8 @@ import { isDummySecret } from '../../src/lib/server/dummy-secrets';
 
 export { isDummySecret };
 
-export function hasLiveOpenCage(): boolean {
-	return !isDummySecret(process.env.SECRET_OPENCAGEDATA_KEY);
+export function hasLiveAddressSearch(): boolean {
+	return !isDummySecret(process.env.SECRET_ADDRESS_SEARCH_MODE);
 }
 
 export function hasLiveGoogleOAuth(): boolean {

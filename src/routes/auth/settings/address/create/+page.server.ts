@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { createAddressSchema } from '$lib/schema/addresses/addressSchema';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -16,7 +16,9 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		IcreateAddressSchema,
-		userId: event.locals.user.id
+		userId: event.locals.user.id,
+		// Permet au formulaire de revenir au checkout une fois l'adresse créée.
+		redirectTarget: event.url.searchParams.get('redirect')
 	};
 };
 
@@ -60,8 +62,9 @@ export const actions: Actions = {
 		// 🔥 **Forcer l'ajout de `userId` côté serveur**
 		const userId = event.locals.user.id;
 
+		let created;
 		try {
-			await createAddress({
+			created = await createAddress({
 				first_name,
 				last_name,
 				phone,
@@ -82,11 +85,16 @@ export const actions: Actions = {
 				createdAt: new Date(),
 				updatedAt: new Date()
 			});
-
-			return message(form, 'Address created successfully');
-		} catch (error) {
-			console.error('Error creating address:', error);
+		} catch (err) {
+			console.error('Error creating address:', err);
 			return fail(500, { message: 'Address creation failed' });
 		}
+
+		// Retour au checkout : on y revient directement, adresse pré-sélectionnée.
+		if (event.url.searchParams.get('redirect') === 'checkout') {
+			redirect(303, `/checkout?addressId=${created.id}`);
+		}
+
+		return message(form, 'Address created successfully');
 	}
 };

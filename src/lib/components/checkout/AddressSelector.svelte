@@ -86,10 +86,12 @@
 											/>
 
 											<span class="text-sm">
-												{address.first_name} {address.last_name}
+												{address.first_name}
+												{address.last_name}
 											</span>
 											<span class="text-xs text-muted-foreground">
-												{address.street}, {address.city} {address.zip}, {address.country}
+												{address.street}, {address.city}
+												{address.zip}, {address.country}
 											</span>
 										</Command.Item>
 									{/each}
@@ -108,7 +110,7 @@
 			<Button variant="outline" class="w-full">
 				<a
 					data-sveltekit-preload-data
-					href="/auth/settings/address"
+					href="/auth/settings/address/create?redirect=checkout"
 					class="flex items-center gap-2"
 				>
 					<MapPin class="w-4 h-4" />

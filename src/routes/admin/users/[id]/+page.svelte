@@ -9,11 +9,11 @@
 	import * as DropdownMenu from '$shadcn/dropdown-menu';
 	import * as Select from '$shadcn/select';
 	import { Input } from '$shadcn/input';
-	import { Card } from '$shadcn/card';
-	import ScrollArea from '$shadcn/scroll-area/scroll-area.svelte';
 	import { Button } from '$shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
+	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '$lib/addresses/types';
 
 	let { data } = $props();
 
@@ -37,60 +37,20 @@
 
 	const { form, enhance, message } = updateUserAndAddresses;
 
-	let addressSuggestions: any[] = $state([]);
-
 	let selectedAddressIndex: number | null = $state(null);
-	let timeoutId: ReturnType<typeof setTimeout>;
 
-	async function fetchAddressSuggestions(query: string) {
-		if (query.length < 3) {
-			addressSuggestions = [];
-			return;
-		}
-
-		try {
-			const response = await fetch(`/api/open-cage-data?q=${encodeURIComponent(query)}`);
-			const { suggestions } = await response.json();
-
-			if (Array.isArray(suggestions) && suggestions.length > 0) {
-				addressSuggestions = suggestions;
-			} else {
-				addressSuggestions = []; // Aucun résultat
-			}
-		} catch (error) {
-			console.error('Error fetching address suggestions:', error);
-			addressSuggestions = [];
-		}
-	}
-
-	function selectSuggestion(suggestion: any, index: number) {
-		// Conversion en objet standard
-		const components = JSON.parse(JSON.stringify(suggestion.components));
-
-		// Mises à jour ciblant l'adresse à la position "index"
-		$form.addresses[index].street_number = components.house_number || '';
-		$form.addresses[index].street = components.road || '';
-		$form.addresses[index].city = components.city || components.town || components.village || '';
-		$form.addresses[index].county = components.county || '';
-		$form.addresses[index].state = components.state || '';
-		$form.addresses[index].state_code = components.state_code || '';
-		$form.addresses[index].zip = components.postcode || '';
-		$form.addresses[index].country = components.country || '';
-		$form.addresses[index].country_code = components.country_code || '';
-		$form.addresses[index].stateLetter = components['ISO_3166-1_alpha-2'] || '';
-		$form.addresses[index].ISO_3166_1_alpha_3 = components['ISO_3166-1_alpha-3'] || '';
-
-		// Réinitialiser les suggestions
-		addressSuggestions = [];
-	}
-
-	function handleInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		clearTimeout(timeoutId);
-
-		timeoutId = setTimeout(() => {
-			fetchAddressSuggestions(input.value);
-		}, 1000);
+	function handleAddressSelect(suggestion: AddressSuggestion, index: number) {
+		$form.addresses[index].street_number = suggestion.street_number;
+		$form.addresses[index].street = suggestion.street;
+		$form.addresses[index].city = suggestion.city;
+		$form.addresses[index].county = suggestion.county;
+		$form.addresses[index].state = suggestion.state;
+		$form.addresses[index].state_code = suggestion.state_code;
+		$form.addresses[index].zip = suggestion.zip;
+		$form.addresses[index].country = suggestion.country;
+		$form.addresses[index].country_code = suggestion.country_code;
+		$form.addresses[index].stateLetter = suggestion.stateLetter;
+		$form.addresses[index].ISO_3166_1_alpha_3 = suggestion.ISO_3166_1_alpha_3;
 	}
 
 	const roleOptions = ['ADMIN', 'CLIENT'] as const;
@@ -148,30 +108,13 @@
 			<div class="rts">
 				{#each $form.addresses as address, index}
 					<div class="address-form rounded border m-5 p-5 min-w-[500px]">
-						{#if addressSuggestions.length > 0}
-							<h2 class="text-xl font-semibold mb-4">Suggestions d'adresse</h2>
-							<div class="space-y-4">
-								<ScrollArea class="h-[200px]">
-									{#each addressSuggestions as suggestion}
-										<Card
-											class="border border-gray-300 shadow-md hover:shadow-lg transition-shadow p-1"
-										>
-											<div class="rcb">
-												{suggestion.formatted}
-												<Button
-													class="cursor-pointer"
-													onclick={() => selectSuggestion(suggestion, index)}
-													onkeydown={(event) =>
-														event.code === 'Enter' && selectSuggestion(suggestion, index)}
-												>
-													Selectionner
-												</Button>
-											</div>
-										</Card>
-									{/each}
-								</ScrollArea>
-							</div>
-						{/if}
+						<div class="mb-4">
+							<AddressAutocomplete
+								id={`address-search-${index}`}
+								name={`address_search_${index}`}
+								onSelect={(suggestion) => handleAddressSelect(suggestion, index)}
+							/>
+						</div>
 						<!-- Prénom -->
 						<Form.Field name="addresses[{index}].first_name" form={updateUserAndAddresses}>
 							<Form.Control>
@@ -221,12 +164,7 @@
 						<Form.Field name="addresses[{index}].street" form={updateUserAndAddresses}>
 							<Form.Control>
 								<Form.Label>Rue</Form.Label>
-								<Input
-									name="street"
-									type="text"
-									oninput={handleInput}
-									bind:value={address.street}
-								/>
+								<Input name="street" type="text" bind:value={address.street} />
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

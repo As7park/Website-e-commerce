@@ -25,6 +25,8 @@
 		updateCartItemQuantity
 	} from '$lib/store/Data/cartStore';
 	import SEO from '$lib/components/SEO.svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 
 	let { data } = $props();
 
@@ -268,6 +270,22 @@
 			fetchSendcloudShippingOptions();
 		}
 	}
+
+	// Retour du formulaire de création d'adresse (voir AddressSelector) : on
+	// sélectionne directement l'adresse tout juste créée, sans repasser par le
+	// combobox.
+	$effect(() => {
+		const addressIdFromUrl = page.url.searchParams.get('addressId');
+		if (
+			addressIdFromUrl &&
+			!selectedAddressId &&
+			data.addresses?.some((a) => a.id === addressIdFromUrl)
+		) {
+			selectAddress(addressIdFromUrl);
+			toast.success('Adresse ajoutée avec succès');
+			replaceState(page.url.pathname, {});
+		}
+	});
 
 	// Calcul dynamique du poids, directement depuis $cartStore
 	function computeTotalWeight() {

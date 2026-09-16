@@ -5,8 +5,8 @@
 	import { Input } from '$shadcn/input';
 	import * as Select from '$shadcn/select';
 	import { toast } from 'svelte-sonner';
-	import { Card } from '$shadcn/card';
-	import ScrollArea from '$shadcn/scroll-area/scroll-area.svelte';
+	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '$lib/addresses/types';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -33,58 +33,23 @@
 	} = updateAddress;
 
 	let addressSuggestions: any[] = $state([]);
-	let timeoutId: ReturnType<typeof setTimeout>;
 
 	$effect(() => {
 		$updateAddressData.id = data.IupdateAddressSchema?.data.id;
 	});
 
-	async function fetchAddressSuggestions(query: string) {
-		if (query.length < 3) {
-			addressSuggestions = [];
-			return;
-		}
-
-		try {
-			const response = await fetch(`/api/open-cage-data?q=${encodeURIComponent(query)}`);
-			const { suggestions } = await response.json();
-
-			if (Array.isArray(suggestions) && suggestions.length > 0) {
-				addressSuggestions = suggestions;
-			} else {
-				addressSuggestions = []; // Aucun résultat
-			}
-		} catch (error) {
-			console.error('Error fetching address suggestions:', error);
-			addressSuggestions = [];
-		}
-	}
-
-	function selectSuggestion(suggestion: any) {
-		//console.log('Suggestion sélectionnée :', suggestion);
-
-		// Force la conversion du Proxy en objet standard
-		const components = JSON.parse(JSON.stringify(suggestion.components));
-
-		//console.log('Données extraites après transformation :', components); // Vérification
-
-		// Extraction sécurisée des données avec les bons noms de clés
-		$updateAddressData.street_number = components.house_number || '';
-		$updateAddressData.street = components.road || '';
-		$updateAddressData.city = components.city || components.town || components.village || '';
-		$updateAddressData.county = components.county || '';
-		$updateAddressData.state = components.state || '';
-		$updateAddressData.state_code = components.state_code || '';
-		$updateAddressData.zip = components.postcode || '';
-		$updateAddressData.country = components.country || '';
-		$updateAddressData.country_code = components.country_code || '';
-
-		// 🛠 Corrige l'accès aux clés avec des tirets !
-		$updateAddressData.stateLetter = components['ISO_3166-1_alpha-2'] || '';
-		$updateAddressData.ISO_3166_1_alpha_3 = components['ISO_3166-1_alpha-3'] || '';
-
-		// Réinitialisation des suggestions après la sélection
-		addressSuggestions = [];
+	function handleAddressSelect(suggestion: AddressSuggestion) {
+		$updateAddressData.street_number = suggestion.street_number;
+		$updateAddressData.street = suggestion.street;
+		$updateAddressData.city = suggestion.city;
+		$updateAddressData.county = suggestion.county;
+		$updateAddressData.state = suggestion.state;
+		$updateAddressData.state_code = suggestion.state_code;
+		$updateAddressData.zip = suggestion.zip;
+		$updateAddressData.country = suggestion.country;
+		$updateAddressData.country_code = suggestion.country_code;
+		$updateAddressData.stateLetter = suggestion.stateLetter;
+		$updateAddressData.ISO_3166_1_alpha_3 = suggestion.ISO_3166_1_alpha_3;
 	}
 
 	$effect(() => {
@@ -95,41 +60,14 @@
 			setTimeout(() => goto('/auth/settings/address'), 0);
 		}
 	});
-
-	function handleInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		clearTimeout(timeoutId);
-
-		timeoutId = setTimeout(() => {
-			fetchAddressSuggestions(input.value);
-		}, 1000);
-	}
 </script>
 
 <div class="w-[100vw] h-[100%] mx-auto px-4 py-6 space-y-6 ccc my-10">
 	<h1 class="text-4xl font-s text-[#fe3d00]">Update the address</h1>
 
-	{#if addressSuggestions.length > 0}
-		<h2 class="text-xl font-semibold mb-4">Suggestions d'adresse</h2>
-		<div class="space-y-4">
-			<ScrollArea class="h-[200px]">
-				{#each addressSuggestions as suggestion}
-					<Card class="border border-gray-300 shadow-md hover:shadow-lg transition-shadow p-1">
-						<div class="rcb">
-							{suggestion.formatted}
-							<Button
-								class="cursor-pointer"
-								onclick={() => selectSuggestion(suggestion)}
-								onkeydown={(event) => event.code === 'Enter' && selectSuggestion(suggestion)}
-							>
-								Selectionner
-							</Button>
-						</div>
-					</Card>
-				{/each}
-			</ScrollArea>
-		</div>
-	{/if}
+	<div class="mb-6">
+		<AddressAutocomplete onSelect={handleAddressSelect} />
+	</div>
 
 	<form method="POST" action="?/updateAddress" use:updateAddressEnhance>
 		<!-- Prénom -->
@@ -181,12 +119,7 @@
 		<Form.Field name="street" form={updateAddress}>
 			<Form.Control>
 				<Form.Label>Rue</Form.Label>
-				<Input
-					name="street"
-					type="text"
-					oninput={handleInput}
-					bind:value={$updateAddressData.street}
-				/>
+				<Input name="street" type="text" bind:value={$updateAddressData.street} />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

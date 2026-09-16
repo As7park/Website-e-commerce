@@ -1,7 +1,7 @@
 /**
  * Détecte les secrets factices de `.env.test.example`.
  *
- * Un mock e2e (OpenCage, Google, Cloudinary, …) ne doit s'activer que dans ce
+ * Un mock e2e (recherche d'adresse, Google, Cloudinary, …) ne doit s'activer que dans ce
  * cas : `PUBLIC_ENV=test` tout seul ne suffit plus, sinon on ne parle jamais
  * aux vrais services même avec des clés réelles.
  */

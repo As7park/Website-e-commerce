@@ -1,12 +1,18 @@
 import { test, expect } from '../support/fixtures';
-import { clickThroughOverlay, fillStable, requestSubmitForm, visibleNamedInput, waitForPath } from '../support/flows';
+import {
+	clickThroughOverlay,
+	fillStable,
+	requestSubmitForm,
+	visibleNamedInput,
+	waitForPath
+} from '../support/flows';
 import { pageOrigin, signUpAndVerify, sveltekitActionHeaders } from '../support/admin';
 import {
-	E2E_OPENCAGE_QUERY,
-	E2E_OPENCAGE_SUGGESTIONS,
-	LIVE_OPENCAGE_QUERY
-} from '../../src/lib/addresses/opencage-e2e';
-import { hasLiveOpenCage } from '../support/third-party';
+	E2E_ADDRESS_QUERY,
+	E2E_ADDRESS_SUGGESTIONS,
+	LIVE_ADDRESS_QUERY
+} from '../../src/lib/addresses/address-search-e2e';
+import { hasLiveAddressSearch } from '../support/third-party';
 import {
 	createUserAddress,
 	deleteUser,
@@ -17,58 +23,59 @@ import {
 } from '../support/db';
 
 /**
- * Carnet d'adresses : OpenCage réel si la clé n'est pas factice, sinon fixture.
+ * Carnet d'adresses : Base Adresse Nationale (BAN) réelle si le mode n'est pas
+ * factice, sinon fixture.
  */
 test.describe('Auth — adresses', () => {
 	test.setTimeout(6 * 60_000);
 
 	test('géocodage, création, IDOR, suppression', async ({ page, account }) => {
-		const live = hasLiveOpenCage();
-		const query = live ? LIVE_OPENCAGE_QUERY : E2E_OPENCAGE_QUERY;
+		const live = hasLiveAddressSearch();
+		const query = live ? LIVE_ADDRESS_QUERY : E2E_ADDRESS_QUERY;
 
 		await test.step('1. Anonyme GET /auth/settings/address', async () => {
 			await page.goto('/auth/settings/address', { waitUntil: 'domcontentloaded' });
 			await waitForPath(page, '/auth/login');
 		});
 
-		await test.step('2. OpenCage refuse une requête vide', async () => {
-			const missing = await page.request.get('/api/open-cage-data');
+		await test.step("2. La recherche d'adresse refuse une requête vide", async () => {
+			const missing = await page.request.get('/api/address-search');
 			expect(missing.status()).toBe(400);
 		});
 
 		await signUpAndVerify(page, account);
 		const user = await requireUser(account.email);
 
-		await test.step('3. Création via suggestions OpenCage', async () => {
+		await test.step('3. Création via suggestions BAN', async () => {
 			await page.goto('/auth/settings/address/create', { waitUntil: 'domcontentloaded' });
 			await expect(page.getByRole('heading', { name: 'Créer une adresse' })).toBeVisible();
 
 			await fillStable(visibleNamedInput(page, 'first_name'), 'Pierre');
 			await fillStable(visibleNamedInput(page, 'last_name'), 'Test');
 			await fillStable(visibleNamedInput(page, 'phone', 'tel'), '+33612345678');
-			await visibleNamedInput(page, 'street').fill(query);
+			await page.locator('input[name="address_search"]').fill(query);
 
 			if (live) {
-				const probe = await page.request.get(
-					`/api/open-cage-data?q=${encodeURIComponent(query)}`
-				);
+				const probe = await page.request.get(`/api/address-search?q=${encodeURIComponent(query)}`);
 				expect(probe.ok()).toBeTruthy();
 				const body = (await probe.json()) as { suggestions?: { formatted: string }[] };
 				expect(body.suggestions?.length ?? 0).toBeGreaterThan(0);
-				expect(body.suggestions?.[0]?.formatted).not.toBe(
-					E2E_OPENCAGE_SUGGESTIONS[0].formatted
+				expect(body.suggestions?.[0]?.formatted).not.toBe(E2E_ADDRESS_SUGGESTIONS[0].formatted);
+
+				await expect(
+					page.getByRole('button', { name: body.suggestions![0].formatted })
+				).toBeVisible({ timeout: 20_000 });
+				await clickThroughOverlay(
+					page.getByRole('button', { name: body.suggestions![0].formatted }).first()
 				);
-
-				await expect(page.getByRole('button', { name: 'Selectionner' }).first()).toBeVisible({
-					timeout: 20_000
-				});
 			} else {
-				await expect(page.getByText(E2E_OPENCAGE_SUGGESTIONS[0].formatted)).toBeVisible({
-					timeout: 15_000
-				});
+				await expect(
+					page.getByRole('button', { name: E2E_ADDRESS_SUGGESTIONS[0].formatted })
+				).toBeVisible({ timeout: 15_000 });
+				await clickThroughOverlay(
+					page.getByRole('button', { name: E2E_ADDRESS_SUGGESTIONS[0].formatted }).first()
+				);
 			}
-
-			await clickThroughOverlay(page.getByRole('button', { name: 'Selectionner' }).first());
 
 			const fillIfEmpty = async (name: string, value: string) => {
 				const field = visibleNamedInput(page, name);
@@ -87,7 +94,6 @@ test.describe('Auth — adresses', () => {
 			expect(addresses[0].city.toLowerCase()).toContain('toulouse');
 			if (!live) {
 				expect(addresses[0].zip).toBe('31000');
-				await expect(page.getByText(E2E_OPENCAGE_QUERY)).toBeVisible();
 			} else {
 				expect(addresses[0].zip).toMatch(/^31/);
 			}
@@ -122,9 +128,7 @@ test.describe('Auth — adresses', () => {
 				// le formulaire (confirmé : un clic normal, qui attend que l'élément
 				// soit stable, réussit systématiquement).
 				await page.getByRole('button', { name: 'Delete address' }).click();
-				await expect
-					.poll(async () => findAddressById(own.id), { timeout: 15_000 })
-					.toBeNull();
+				await expect.poll(async () => findAddressById(own.id), { timeout: 15_000 }).toBeNull();
 			});
 		} finally {
 			await deleteUser(victimEmail);

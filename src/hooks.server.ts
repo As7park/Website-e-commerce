@@ -16,7 +16,7 @@
 // supposé). Les 6 routes `/api/*` custom ont chacune leur propre garde :
 // `webhooks`/`jobs/post-payment` vérifient une signature (Stripe/QStash),
 // `save-cart` exige une session authentifiée, et `promo/validate`,
-// `open-cage-data`, `sendcloud/*` sont des lectures/validations JSON sans
+// `address-search`, `sendcloud/*` sont des lectures/validations JSON sans
 // effet de bord — aucune n'accepte de mutation via un `<form>` HTML classique.
 // -----------------------------------------------------------------------------
 

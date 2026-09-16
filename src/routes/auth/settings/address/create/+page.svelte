@@ -9,8 +9,8 @@
 	import { Input } from '$shadcn/input';
 	import * as Select from '$shadcn/select';
 	import { toast } from 'svelte-sonner';
-	import { Card } from '$shadcn/card';
-	import ScrollArea from '$shadcn/scroll-area/scroll-area.svelte';
+	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '$lib/addresses/types';
 
 	import { goto } from '$app/navigation';
 
@@ -51,77 +51,18 @@
 		}
 	});
 
-	let addressSuggestions = $state<any[]>([]);
-	let timeoutId: ReturnType<typeof setTimeout>;
-
-	async function fetchAddressSuggestions(query: string) {
-		if (query.length < 3) {
-			addressSuggestions = [];
-			return;
-		}
-
-		try {
-			const response = await fetch(`/api/open-cage-data?q=${encodeURIComponent(query)}`);
-			const { suggestions } = await response.json();
-
-			if (Array.isArray(suggestions) && suggestions.length > 0) {
-				addressSuggestions = suggestions;
-			} else {
-				addressSuggestions = []; // Aucun résultat
-			}
-		} catch (error) {
-			console.error('Error fetching address suggestions:', error);
-			addressSuggestions = [];
-		}
-	}
-
-	function handleInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		clearTimeout(timeoutId);
-
-		timeoutId = setTimeout(() => {
-			fetchAddressSuggestions(input.value);
-		}, 1000);
-	}
-
-	function selectSuggestion(suggestion: any) {
-		//console.log('Suggestion sélectionnée :', suggestion);
-
-		// Force la conversion du Proxy en objet standard
-		const components = JSON.parse(JSON.stringify(suggestion.components));
-
-		//console.log('Données extraites après transformation :', components); // Vérification
-
-		// Extraction sécurisée des données avec les bons noms de clés
-		$createAddressData.street_number = components.house_number || '';
-		$createAddressData.street = components.road || '';
-		$createAddressData.city = components.city || components.town || components.village || '';
-		$createAddressData.county = components.county || components.state || '';
-		$createAddressData.state = components.state || components.county || '';
-		$createAddressData.state_code = (components.state_code || components.state || 'NA')
-			.toString()
-			.slice(0, 10);
-		$createAddressData.zip = components.postcode || '';
-		$createAddressData.country = components.country || '';
-		$createAddressData.country_code = (components.country_code || 'fr')
-			.toString()
-			.toUpperCase()
-			.slice(0, 2);
-		$createAddressData.stateLetter = (
-			components['ISO_3166-1_alpha-2'] || $createAddressData.country_code
-		)
-			.toString()
-			.toUpperCase()
-			.slice(0, 2);
-		$createAddressData.ISO_3166_1_alpha_3 = (
-			components['ISO_3166-1_alpha-3'] || ($createAddressData.country_code === 'FR' ? 'FRA' : '')
-		)
-			.toString()
-			.toUpperCase()
-			.slice(0, 3);
-
-		// Réinitialisation des suggestions après la sélection
-		addressSuggestions = [];
+	function handleAddressSelect(suggestion: AddressSuggestion) {
+		$createAddressData.street_number = suggestion.street_number;
+		$createAddressData.street = suggestion.street;
+		$createAddressData.city = suggestion.city;
+		$createAddressData.county = suggestion.county;
+		$createAddressData.state = suggestion.state;
+		$createAddressData.state_code = suggestion.state_code;
+		$createAddressData.zip = suggestion.zip;
+		$createAddressData.country = suggestion.country;
+		$createAddressData.country_code = suggestion.country_code;
+		$createAddressData.stateLetter = suggestion.stateLetter;
+		$createAddressData.ISO_3166_1_alpha_3 = suggestion.ISO_3166_1_alpha_3;
 	}
 </script>
 
@@ -129,27 +70,16 @@
 	<div class="max-w-xl border mx-auto rounded-md p-6">
 		<h2 class="text-2xl font-semibold mb-4">Créer une adresse</h2>
 
-		{#if addressSuggestions.length > 0}
-			<h2 class="text-xl font-semibold mb-4">Suggestions d'adresse</h2>
-			<div class="space-y-4">
-				{#each addressSuggestions as suggestion}
-					<Card class="border border-gray-300 shadow-md hover:shadow-lg transition-shadow p-1">
-						<div class="rcb">
-							{suggestion.formatted}
-							<Button
-								class="cursor-pointer"
-								onclick={() => selectSuggestion(suggestion)}
-								onkeydown={(event) => event.code === 'Enter' && selectSuggestion(suggestion)}
-							>
-								Selectionner
-							</Button>
-						</div>
-					</Card>
-				{/each}
-			</div>
-		{/if}
+		<div class="mb-6">
+			<AddressAutocomplete onSelect={handleAddressSelect} />
+		</div>
 
-		<form method="POST" action="?/createAddress" use:createAddressEnhance class="space-y-4">
+		<form
+			method="POST"
+			action={`?/createAddress${data.redirectTarget ? `&redirect=${data.redirectTarget}` : ''}`}
+			use:createAddressEnhance
+			class="space-y-4"
+		>
 			<!-- Prénom -->
 			<Form.Field name="first_name" form={createAddress}>
 				<Form.Control>
@@ -199,12 +129,7 @@
 			<Form.Field name="street" form={createAddress}>
 				<Form.Control>
 					<Form.Label>Rue</Form.Label>
-					<Input
-						name="street"
-						type="text"
-						oninput={handleInput}
-						bind:value={$createAddressData.street}
-					/>
+					<Input name="street" type="text" bind:value={$createAddressData.street} />
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

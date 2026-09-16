@@ -253,16 +253,17 @@ Test à part : un anonyme POST `/api/wishlist` — 401.
 
 ### Auth adresses — `e2e/auth/address.spec.ts`
 
-OpenCage est appelé pour de vrai dès que `SECRET_OPENCAGEDATA_KEY` n'est pas
-`e2e`. Sinon la fixture `Rue des Tests` est renvoyée.
+La Base Adresse Nationale (BAN, `api-adresse.data.gouv.fr`) est appelée pour de
+vrai dès que `SECRET_ADDRESS_SEARCH_MODE` n'est pas `e2e`. Sinon la fixture
+`Rue des Tests` est renvoyée.
 
-| #   | Étape        | Geste                              | Preuve                       |
-| --- | ------------ | ---------------------------------- | ---------------------------- |
-| 1   | Anonyme      | GET `/auth/settings/address`       | `/auth/login`                |
-| 2   | Requête vide | GET `/api/open-cage-data`          | 400                          |
-| 3   | Création     | suggestions OpenCage → Enregistrer | 1 adresse, ville Toulouse    |
-| 4   | IDOR         | GET/POST une adresse étrangère     | 404 / adresse encore en base |
-| 5   | Suppression  | Delete address                     | ligne absente                |
+| #   | Étape        | Geste                          | Preuve                       |
+| --- | ------------ | ------------------------------ | ---------------------------- |
+| 1   | Anonyme      | GET `/auth/settings/address`   | `/auth/login`                |
+| 2   | Requête vide | GET `/api/address-search`      | 400                          |
+| 3   | Création     | suggestions BAN → Enregistrer  | 1 adresse, ville Toulouse    |
+| 4   | IDOR         | GET/POST une adresse étrangère | 404 / adresse encore en base |
+| 5   | Suppression  | Delete address                 | ligne absente                |
 
 ### Auth Google — `e2e/auth/google.spec.ts`
 
