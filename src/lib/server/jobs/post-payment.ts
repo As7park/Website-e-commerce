@@ -7,6 +7,7 @@ import { withCircuitBreaker } from '$lib/server/circuit-breaker';
 import { recordJobAttempt, resetJobAttempts } from '$lib/server/job-attempts';
 import { withDuration } from '$lib/server/metrics';
 import * as Sentry from '@sentry/sveltekit';
+import { estimatePackage, type PackageEstimate } from '$lib/commerce/packageEstimate';
 
 /** Au-delà, on arrête de retenter cette transaction (dead-letter) : voir `runPostPaymentJob`. */
 const MAX_SENDCLOUD_ATTEMPTS = 5;
@@ -30,36 +31,39 @@ export function shouldCallSendcloud(): boolean {
 	return pub.length > 0 && sec.length > 0;
 }
 
-export function fallbackShippingMethod(shippingOption: string, weightBracket: number) {
+export function fallbackShippingMethod(shippingOption: string, pkg: PackageEstimate) {
 	return {
 		id: 9999,
 		name: `Méthode: ${shippingOption}`,
-		length: weightBracket <= 3 ? 30 : weightBracket <= 6 ? 40 : 50,
-		width: weightBracket <= 3 ? 20 : weightBracket <= 6 ? 30 : 30,
-		height: weightBracket <= 3 ? 15 : weightBracket <= 6 ? 20 : 30,
+		length: pkg.lengthCm,
+		width: pkg.widthCm,
+		height: pkg.heightCm,
 		unit: 'cm',
-		weight: weightBracket,
+		weight: pkg.weightKg,
 		weightUnit: 'kg',
-		volume: weightBracket <= 3 ? 9000 : weightBracket <= 6 ? 24000 : 45000,
+		volume: pkg.lengthCm * pkg.widthCm * pkg.heightCm,
 		volumeUnit: 'cm3'
 	};
 }
 
-export function deduceWeightBracket(order: any): number {
+/**
+ * Estimation réelle du colis (poids + dimensions) à partir des produits de la
+ * commande — même module que le devis checkout (`packageEstimate.ts`), pour
+ * que le colis créé chez Sendcloud corresponde au devis affiché au client.
+ */
+export function derivePackageEstimate(order: any): PackageEstimate {
 	if (!order || !order.items || !Array.isArray(order.items)) {
-		log('WARN', 'post-payment', "Impossible de calculer le poids : 'order.items' est invalide.");
-		return 3; // Valeur par défaut pour éviter que tout crashe
+		log('WARN', 'post-payment', "Impossible d'estimer le colis : 'order.items' est invalide.");
+		return estimatePackage([{ quantity: 1 }]);
 	}
 
-	const totalWeight = order.items.reduce((acc: number, item: any) => {
-		const productWeight = item.product?.weight ?? 0.124; // Poids par défaut si non défini
-		const customExtra = item.custom?.length > 0 ? 0.666 : 0; // Poids supplémentaire si custom
-		return acc + productWeight * item.quantity + customExtra;
-	}, 0);
-
-	if (totalWeight <= 3) return 3;
-	if (totalWeight <= 6) return 6;
-	return 9;
+	return estimatePackage(
+		order.items.map((item: any) => ({
+			quantity: item.quantity,
+			hasCustom: (item.custom?.length ?? 0) > 0,
+			product: item.product
+		}))
+	);
 }
 
 /**
@@ -68,14 +72,14 @@ export function deduceWeightBracket(order: any): number {
  */
 export async function getShippingMethodData(
 	shippingOption: string,
-	weightBracket: number,
+	pkg: PackageEstimate,
 	order: any
 ) {
 	if (!shouldCallSendcloud()) {
-		return fallbackShippingMethod(shippingOption, weightBracket);
+		return fallbackShippingMethod(shippingOption, pkg);
 	}
 
-	log('DEBUG', 'post-payment:sendcloud-method', 'Paramètres:', { shippingOption, weightBracket });
+	log('DEBUG', 'post-payment:sendcloud-method', 'Paramètres:', { shippingOption, pkg });
 
 	try {
 		const methodsResponse = await fetch('https://panel.sendcloud.sc/api/v2/shipping_methods', {
@@ -124,13 +128,13 @@ export async function getShippingMethodData(
 			const dynamicMethod = {
 				id: matchingMethod.id, // ID réel de Sendcloud !
 				name: `${matchingMethod.carrier || 'Unknown'} - ${matchingMethod.name || 'Unknown'}`,
-				length: weightBracket <= 3 ? 30 : weightBracket <= 6 ? 40 : 50,
-				width: weightBracket <= 3 ? 20 : weightBracket <= 6 ? 30 : 30,
-				height: weightBracket <= 3 ? 15 : weightBracket <= 6 ? 20 : 30,
+				length: pkg.lengthCm,
+				width: pkg.widthCm,
+				height: pkg.heightCm,
 				unit: 'cm',
-				weight: weightBracket,
+				weight: pkg.weightKg,
 				weightUnit: 'kg',
-				volume: weightBracket <= 3 ? 9000 : weightBracket <= 6 ? 24000 : 45000,
+				volume: pkg.lengthCm * pkg.widthCm * pkg.heightCm,
 				volumeUnit: 'cm3'
 			};
 
@@ -151,7 +155,7 @@ export async function getShippingMethodData(
 				shippingOption
 			}
 		);
-		return fallbackShippingMethod(shippingOption, weightBracket);
+		return fallbackShippingMethod(shippingOption, pkg);
 	} catch (error) {
 		log(
 			'ERROR',
@@ -159,7 +163,7 @@ export async function getShippingMethodData(
 			"Erreur lors de la récupération des méthodes d'expédition, fallback",
 			error
 		);
-		return fallbackShippingMethod(shippingOption, weightBracket);
+		return fallbackShippingMethod(shippingOption, pkg);
 	}
 }
 
@@ -210,10 +214,10 @@ export async function runPostPaymentJob(transactionId: string): Promise<void> {
 							include: { items: { include: { product: true, custom: true } } }
 						})
 					: null;
-				const weightBracket = deduceWeightBracket(orderForShipping);
+				const packageEstimate = derivePackageEstimate(orderForShipping);
 				const shippingMethodData = await getShippingMethodData(
 					transaction.shippingOption || '',
-					weightBracket,
+					packageEstimate,
 					orderForShipping
 				);
 

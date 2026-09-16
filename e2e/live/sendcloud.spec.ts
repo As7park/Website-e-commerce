@@ -17,6 +17,7 @@ const SHIPPING_BODY = {
 	from_postal_code: '31000',
 	to_postal_code: '31500',
 	weight: { value: 1, unit: 'kilogram' as const },
+	dimensions: { length: 20, width: 15, height: 10, unit: 'cm' as const },
 	prefer_service_point: true,
 	max_per_type: 5
 };

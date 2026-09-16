@@ -77,6 +77,10 @@ const PRODUCTS = [
 		material: 'Numérique',
 		price: 2900,
 		stock: 24,
+		weight: 0.3,
+		length: 32,
+		width: 24,
+		height: 3,
 		image:
 			'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=800&q=80',
 		description:
@@ -90,6 +94,10 @@ const PRODUCTS = [
 		material: 'Numérique',
 		price: 5900,
 		stock: 12,
+		weight: 0.3,
+		length: 32,
+		width: 24,
+		height: 3,
 		image:
 			'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
 		description:
@@ -103,6 +111,10 @@ const PRODUCTS = [
 		material: 'Papier',
 		price: 1800,
 		stock: 30,
+		weight: 0.5,
+		length: 32,
+		width: 24,
+		height: 5,
 		image:
 			'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80',
 		description:
@@ -116,6 +128,10 @@ const PRODUCTS = [
 		material: 'Numérique',
 		price: 12000,
 		stock: 6,
+		weight: 0.3,
+		length: 32,
+		width: 24,
+		height: 3,
 		image:
 			'https://images.unsplash.com/photo-1551650975-87deedd944c8?auto=format&fit=crop&w=800&q=80',
 		description:
@@ -129,6 +145,10 @@ const PRODUCTS = [
 		material: null,
 		price: 960,
 		stock: 40,
+		weight: 0.2,
+		length: 30,
+		width: 22,
+		height: 2,
 		image:
 			'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=800&q=80',
 		description:
@@ -598,6 +618,10 @@ async function main() {
 				description: product.description,
 				price: product.price,
 				stock: product.stock,
+				weight: product.weight ?? null,
+				length: product.length ?? null,
+				width: product.width ?? null,
+				height: product.height ?? null,
 				images: [product.image],
 				slug: product.slug,
 				colorProduct: product.colorProduct,

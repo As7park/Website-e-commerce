@@ -35,6 +35,12 @@ const createProductSchema = z.object({
 	compareAtPrice: z.coerce.number().min(0).default(0),
 	// Vente flash : datetime-local (`YYYY-MM-DDTHH:mm`), vide = pas de vente flash.
 	flashSaleEndsAt: z.string().optional(),
+	// Poids (kg) / dimensions (cm) unitaires réelles, pour le colis Sendcloud
+	// (`$lib/commerce/packageEstimate.ts`). Vide = estimation par défaut.
+	weight: z.coerce.number().positive().optional(),
+	length: z.coerce.number().positive().optional(),
+	width: z.coerce.number().positive().optional(),
+	height: z.coerce.number().positive().optional(),
 	// Valeurs de taxonomie (Matière/Catégorie/... génériques) assignées au produit.
 	taxonomyValueIds: z.array(z.string()).default([])
 });
@@ -64,6 +70,10 @@ const updateProductSchema = z.object({
 	sku: z.string().trim().max(64).optional().or(z.literal('')),
 	compareAtPrice: z.coerce.number().min(0).default(0),
 	flashSaleEndsAt: z.string().optional(),
+	weight: z.coerce.number().positive().optional(),
+	length: z.coerce.number().positive().optional(),
+	width: z.coerce.number().positive().optional(),
+	height: z.coerce.number().positive().optional(),
 	taxonomyValueIds: z.array(z.string()).default([])
 });
 

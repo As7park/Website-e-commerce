@@ -45,6 +45,27 @@
 	);
 	let existingImages = $state(untrack(() => data.IupdateProductSchema.data.existingImages));
 
+	let DataWeight: string = $state(
+		untrack(() =>
+			data.IupdateProductSchema.data.weight ? String(data.IupdateProductSchema.data.weight) : ''
+		)
+	);
+	let DataLength: string = $state(
+		untrack(() =>
+			data.IupdateProductSchema.data.length ? String(data.IupdateProductSchema.data.length) : ''
+		)
+	);
+	let DataWidth: string = $state(
+		untrack(() =>
+			data.IupdateProductSchema.data.width ? String(data.IupdateProductSchema.data.width) : ''
+		)
+	);
+	let DataHeight: string = $state(
+		untrack(() =>
+			data.IupdateProductSchema.data.height ? String(data.IupdateProductSchema.data.height) : ''
+		)
+	);
+
 	let selectedTaxonomyValueIds: string[] = $state(
 		untrack(() => data.IupdateProductSchema.data.taxonomyValueIds ?? [])
 	);
@@ -56,6 +77,10 @@
 		$updateProductData.price = Number(DataPrice);
 		$updateProductData.stock = Number(DataStock);
 		$updateProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
+		$updateProductData.weight = DataWeight === '' ? undefined : Number(DataWeight);
+		$updateProductData.length = DataLength === '' ? undefined : Number(DataLength);
+		$updateProductData.width = DataWidth === '' ? undefined : Number(DataWidth);
+		$updateProductData.height = DataHeight === '' ? undefined : Number(DataHeight);
 	});
 
 	$effect(() => {
@@ -159,6 +184,46 @@
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
+					</div>
+
+					<div class="w-[100%]">
+						<Form.Label>Poids et dimensions du colis (facultatif)</Form.Label>
+						<div class="rtb" style="gap: 0.5rem;">
+							<Form.Field name="weight" form={updateProduct}>
+								<Form.Control>
+									<Form.Label>Poids (kg)</Form.Label>
+									<Input
+										name="weight"
+										type="number"
+										bind:value={DataWeight}
+										step="0.001"
+										min="0.001"
+									/>
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="length" form={updateProduct}>
+								<Form.Control>
+									<Form.Label>Longueur (cm)</Form.Label>
+									<Input name="length" type="number" bind:value={DataLength} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="width" form={updateProduct}>
+								<Form.Control>
+									<Form.Label>Largeur (cm)</Form.Label>
+									<Input name="width" type="number" bind:value={DataWidth} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="height" form={updateProduct}>
+								<Form.Control>
+									<Form.Label>Hauteur (cm)</Form.Label>
+									<Input name="height" type="number" bind:value={DataHeight} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+						</div>
 					</div>
 
 					{#if data.flashSaleEnabled}

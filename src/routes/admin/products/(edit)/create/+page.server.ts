@@ -93,7 +93,11 @@ export const actions: Actions = {
 				colorProduct: form.data.colorProduct,
 				sku: form.data.sku || null,
 				compareAtPrice: form.data.compareAtPrice || null,
-				flashSaleEndsAt: form.data.flashSaleEndsAt || null
+				flashSaleEndsAt: form.data.flashSaleEndsAt || null,
+				weight: form.data.weight ?? null,
+				length: form.data.length ?? null,
+				width: form.data.width ?? null,
+				height: form.data.height ?? null
 			});
 
 			await connectProductToTaxonomyValues(product.id, taxonomyValueIds);

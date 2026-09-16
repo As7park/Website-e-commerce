@@ -371,6 +371,15 @@ model Product {
   /// Système générique de taxonomies (Matière, Catégorie, Couleur, ...) —
   /// remplace à terme `materialId`/`categories` ci-dessus.
   taxonomyValues  ProductTaxonomyValue[]
+  /// Poids réel de l'unité en kg. `null` = pas encore renseigné par l'admin,
+  /// `$lib/commerce/packageEstimate.ts` retombe alors sur une estimation par
+  /// défaut (bijou standard) pour ne pas casser le calcul de colis Sendcloud
+  /// tant que le catalogue n'est pas rempli.
+  weight          Float?
+  /// Dimensions unitaires en cm, mêmes règles de repli que `weight` ci-dessus.
+  length          Float?
+  width           Float?
+  height          Float?
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 

@@ -95,7 +95,11 @@
 				name: product.name,
 				price: product.price,
 				images: product.images[0] ?? '',
-				stock: product.stock
+				stock: product.stock,
+				weight: product.weight,
+				length: product.length,
+				width: product.width,
+				height: product.height
 			},
 			variant: selectedVariant
 				? {

@@ -30,6 +30,10 @@
 	let DataPrice: number = $state(0);
 	let DataStock: number = $state(0);
 	let DataCompareAtPrice: string = $state('');
+	let DataWeight: string = $state('');
+	let DataLength: string = $state('');
+	let DataWidth: string = $state('');
+	let DataHeight: string = $state('');
 
 	let selectedTaxonomyValueIds: string[] = $state([]);
 
@@ -41,6 +45,10 @@
 		$createProductData.price = Number(DataPrice);
 		$createProductData.stock = Number(DataStock);
 		$createProductData.compareAtPrice = DataCompareAtPrice === '' ? 0 : Number(DataCompareAtPrice);
+		$createProductData.weight = DataWeight === '' ? undefined : Number(DataWeight);
+		$createProductData.length = DataLength === '' ? undefined : Number(DataLength);
+		$createProductData.width = DataWidth === '' ? undefined : Number(DataWidth);
+		$createProductData.height = DataHeight === '' ? undefined : Number(DataHeight);
 	});
 
 	$effect(() => {
@@ -146,6 +154,46 @@
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
+					</div>
+
+					<div class="w-[100%]">
+						<Form.Label>Poids et dimensions du colis (facultatif)</Form.Label>
+						<div class="rtb" style="gap: 0.5rem;">
+							<Form.Field name="weight" form={createProduct}>
+								<Form.Control>
+									<Form.Label>Poids (kg)</Form.Label>
+									<Input
+										name="weight"
+										type="number"
+										bind:value={DataWeight}
+										step="0.001"
+										min="0.001"
+									/>
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="length" form={createProduct}>
+								<Form.Control>
+									<Form.Label>Longueur (cm)</Form.Label>
+									<Input name="length" type="number" bind:value={DataLength} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="width" form={createProduct}>
+								<Form.Control>
+									<Form.Label>Largeur (cm)</Form.Label>
+									<Input name="width" type="number" bind:value={DataWidth} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+							<Form.Field name="height" form={createProduct}>
+								<Form.Control>
+									<Form.Label>Hauteur (cm)</Form.Label>
+									<Input name="height" type="number" bind:value={DataHeight} step="0.1" min="0.1" />
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+						</div>
 					</div>
 
 					{#if data.flashSaleEnabled}

@@ -12,6 +12,10 @@ export type OrderItem = {
 		price: number;
 		images: string;
 		stock: number;
+		weight?: number | null;
+		length?: number | null;
+		width?: number | null;
+		height?: number | null;
 	};
 	/**
 	 * Variante sélectionnée (`ProductVariant`), absente pour un produit sans
@@ -67,9 +71,9 @@ export const cart = writable<CartState>({
 function getCustomCanPrice(quantity: number): number {
 	switch (quantity) {
 		case 576:
-			return 1.60;
+			return 1.6;
 		case 720:
-			return 1.40;
+			return 1.4;
 		case 1440:
 			return 0.99;
 		case 2880:
@@ -78,7 +82,7 @@ function getCustomCanPrice(quantity: number): number {
 			return 0.69;
 		default:
 			// Prix par défaut si la quantité ne correspond pas aux paliers
-			return 1.60;
+			return 1.6;
 	}
 }
 
@@ -211,8 +215,7 @@ export const addToCart = (product: OrderItem) => {
 		const quantityToAdd = Math.min(product.quantity, availableStock);
 
 		const itemIndex = currentCart.items.findIndex(
-			(item) =>
-				sameLine(item) && JSON.stringify(item.custom) === JSON.stringify(product.custom)
+			(item) => sameLine(item) && JSON.stringify(item.custom) === JSON.stringify(product.custom)
 		);
 
 		if (itemIndex !== -1) {
@@ -337,7 +340,9 @@ export const updateCartItemQuantity = (
 		// Recalc product subtotal with custom pricing for personalized items
 		const newSubtotal = currentCart.items.reduce((sum, i) => {
 			const isCustom = Array.isArray(i.custom) && i.custom.length > 0;
-			const unitPrice = isCustom ? getCustomCanPrice(i.quantity) : (i.variant?.price ?? i.product.price);
+			const unitPrice = isCustom
+				? getCustomCanPrice(i.quantity)
+				: (i.variant?.price ?? i.product.price);
 			return sum + unitPrice * i.quantity;
 		}, 0);
 		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));

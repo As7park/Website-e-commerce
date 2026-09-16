@@ -38,6 +38,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		flashSaleEndsAt: product.flashSaleEndsAt
 			? product.flashSaleEndsAt.toISOString().slice(0, 16)
 			: undefined,
+		weight: product.weight ?? undefined,
+		length: product.length ?? undefined,
+		width: product.width ?? undefined,
+		height: product.height ?? undefined,
 		taxonomyValueIds: product.taxonomyValues.map((tv) => tv.taxonomyValueId),
 		images: [],
 		existingImages: product.images
@@ -135,7 +139,11 @@ export const actions: Actions = {
 					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages,
 					sku: form.data.sku || null,
 					compareAtPrice: form.data.compareAtPrice || null,
-					flashSaleEndsAt: form.data.flashSaleEndsAt || null
+					flashSaleEndsAt: form.data.flashSaleEndsAt || null,
+					weight: form.data.weight ?? null,
+					length: form.data.length ?? null,
+					width: form.data.width ?? null,
+					height: form.data.height ?? null
 				});
 
 				await deleteProductTaxonomyValues(productId);

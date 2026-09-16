@@ -19,6 +19,10 @@ export type PublicCartItem = {
 		price: number;
 		images: string;
 		stock: number;
+		weight: number | null;
+		length: number | null;
+		width: number | null;
+		height: number | null;
 	};
 	variant?: {
 		id: string;
@@ -58,6 +62,10 @@ export function toPublicCart(order: {
 			price: number;
 			images: string[] | string;
 			stock: number;
+			weight?: number | null;
+			length?: number | null;
+			width?: number | null;
+			height?: number | null;
 		} | null;
 		variant?: {
 			id: string;
@@ -84,7 +92,11 @@ export function toPublicCart(order: {
 					name: item.product?.name ?? '',
 					price: item.product?.price ?? item.price,
 					images: image,
-					stock: item.product?.stock ?? 0
+					stock: item.product?.stock ?? 0,
+					weight: item.product?.weight ?? null,
+					length: item.product?.length ?? null,
+					width: item.product?.width ?? null,
+					height: item.product?.height ?? null
 				},
 				variant: item.variant
 					? {
@@ -108,11 +120,7 @@ export function toPublicCart(order: {
  * Refuse une commande d'un autre compte, une commande déjà payée, et un id
  * absent. Les prix sont revalidés dans `updateOrderItems`.
  */
-export async function saveCartForUser(
-	userId: string,
-	orderId: string,
-	items: unknown[]
-) {
+export async function saveCartForUser(userId: string, orderId: string, items: unknown[]) {
 	const order = await prisma.order.findUnique({
 		where: { id: orderId },
 		select: { id: true, userId: true, status: true }

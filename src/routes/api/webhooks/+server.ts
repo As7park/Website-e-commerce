@@ -11,7 +11,7 @@ import {
 	enqueueInvoiceEmailJob,
 	enqueueLoyaltyCheckJob
 } from '$lib/server/qstash';
-import { deduceWeightBracket, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
+import { derivePackageEstimate, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { log } from '$lib/server/log';
 
@@ -137,9 +137,12 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				throw new Error(`⚠️ Order ${orderId} has no associated billing address`);
 			}
 
-			const weightBracket = deduceWeightBracket(order);
+			const packageEstimate = derivePackageEstimate(order);
 			// Dimensions de secours uniquement : aucun fetch Sendcloud ici.
-			const shippingMethodData = fallbackShippingMethod(order.shippingOption || '', weightBracket);
+			const shippingMethodData = fallbackShippingMethod(
+				order.shippingOption || '',
+				packageEstimate
+			);
 
 			const invoiceNumber = await nextInvoiceNumber(prismaTx);
 			const invoiceTotals = snapshotInvoiceTotals({
@@ -178,11 +181,11 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				package_width: shippingMethodData?.width ?? 40, // Valeur par défaut si null
 				package_height: shippingMethodData?.height ?? 30, // Valeur par défaut si null
 				package_dimension_unit: shippingMethodData?.unit ?? 'cm',
-				package_weight: shippingMethodData?.weight ?? weightBracket, // Utilise le bracket de poids si null
+				package_weight: shippingMethodData?.weight ?? packageEstimate.weightKg,
 				package_weight_unit: shippingMethodData?.weightUnit ?? 'kg',
 				package_volume:
 					shippingMethodData?.volume ??
-					(weightBracket <= 3 ? 9000 : weightBracket <= 6 ? 24000 : 45000), // Volume calculé si null
+					packageEstimate.lengthCm * packageEstimate.widthCm * packageEstimate.heightCm,
 				package_volume_unit: shippingMethodData?.volumeUnit ?? 'cm3',
 
 				// Adresse (expédition — Sendcloud / bordereau)

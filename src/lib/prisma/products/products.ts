@@ -61,6 +61,10 @@ export const createProduct = async (productData: {
 	materialId?: string | null;
 	compareAtPrice?: number | null;
 	flashSaleEndsAt?: string | null;
+	weight?: number | null;
+	length?: number | null;
+	width?: number | null;
+	height?: number | null;
 }) => {
 	const { flashSaleEndsAt, ...rest } = productData;
 	const product = await prisma.product.create({
@@ -188,6 +192,10 @@ export const updateProductById = async (
 		materialId?: string | null;
 		compareAtPrice?: number | null;
 		flashSaleEndsAt?: string | null;
+		weight?: number | null;
+		length?: number | null;
+		width?: number | null;
+		height?: number | null;
 	}
 ) => {
 	const { flashSaleEndsAt, ...rest } = data;

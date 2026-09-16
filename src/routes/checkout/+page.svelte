@@ -27,6 +27,7 @@
 	import SEO from '$lib/components/SEO.svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
+	import { estimatePackage } from '$lib/commerce/packageEstimate';
 
 	let { data } = $props();
 
@@ -302,17 +303,17 @@
 		}
 	});
 
-	// Calcul dynamique du poids, directement depuis $cartStore
-	function computeTotalWeight() {
-		return $cartStore.items.reduce((acc, item) => {
-			const baseWeight = item.quantity * 0.125;
-			const customExtra = (item.custom?.length ?? 0) > 0 ? 0.666 : 0;
-			return acc + baseWeight + customExtra;
-		}, 0);
-	}
-
-	function computeTotalQuantity() {
-		return $cartStore.items.reduce((acc, item) => acc + item.quantity, 0);
+	// Estimation du colis (poids + dimensions), depuis les poids/dimensions
+	// réels des produits du panier quand ils sont renseignés — même logique
+	// que la commande Sendcloud réelle créée après paiement (post-payment.ts).
+	function computePackageEstimate() {
+		return estimatePackage(
+			$cartStore.items.map((item) => ({
+				quantity: item.quantity,
+				hasCustom: (item.custom?.length ?? 0) > 0,
+				product: item.product
+			}))
+		);
 	}
 
 	async function fetchSendcloudShippingOptions() {
@@ -327,9 +328,8 @@
 		}
 
 		try {
-			// Calculer le poids et la quantité totaux
-			const totalWeight = computeTotalWeight();
-			const totalQuantity = computeTotalQuantity();
+			// Calculer le colis
+			const packageEstimate = computePackageEstimate();
 
 			// Préparer la requête pour Sendcloud
 			const requestBody = {
@@ -338,11 +338,16 @@
 				from_postal_code: '31620', // Code postal expéditeur
 				to_postal_code: selectedAddress.zip, // ex: '31500'
 				weight: {
-					value: totalWeight, // Poids en kg (ex: 9.0)
+					value: packageEstimate.weightKg, // Poids en kg (ex: 9.0)
 					unit: 'kilogram' // Unité attendue par Sendcloud
 				},
-				prefer_service_point: false, // Préférence point relais
-				max_options: 10 // Nombre max d'options
+				dimensions: {
+					length: packageEstimate.lengthCm,
+					width: packageEstimate.widthCm,
+					height: packageEstimate.heightCm,
+					unit: 'cm'
+				},
+				prefer_service_point: false // Préférence point relais
 			};
 
 			const res = await fetch('/api/sendcloud/shipping-options', {
