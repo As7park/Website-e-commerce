@@ -62,20 +62,20 @@ naissent par inscription.
 
 ## Sections
 
-| Route             | Rôle                                                                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/admin`          | tableau de bord (ventes récentes, dernières inscriptions)                                                                             |
-| `/admin/sales`    | transactions, factures, bordereaux                                                                                                    |
-| `/admin/users`    | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                            |
-| `/admin/products` | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                             |
-| `/admin/blog`     | articles, catégories, tags                                                                                                            |
-| `/admin/promo`    | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
-| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                 |
-| `/admin/returns`  | approbation/refus des demandes de retour, remboursement Stripe automatique (voir [docs/commerce](../commerce/README.md#retours--sav)) |
-| `/admin/contacts` | messages du formulaire de contact                                                                                                     |
-| `/admin/metrics`  | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
-| `/admin/exports`  | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                |
-| `/admin/settings` | activation des modules e-commerce optionnels (voir ci-dessous)                                                                        |
+| Route               | Rôle                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin`            | tableau de bord (ventes récentes, dernières inscriptions)                                                                             |
+| `/admin/sales`      | transactions, factures, bordereaux                                                                                                    |
+| `/admin/users`      | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                            |
+| `/admin/products`   | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                              |
+| `/admin/blog`       | articles, catégories, tags                                                                                                            |
+| `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                   |
+| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                   |
+| `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique (voir [docs/commerce](../commerce/README.md#retours--sav)) |
+| `/admin/contacts`   | messages du formulaire de contact                                                                                                     |
+| `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                      |
+| `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                |
+| `/admin/settings`   | activation des modules e-commerce optionnels (voir ci-dessous)                                                                        |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -102,15 +102,18 @@ commentaires de blog). Indisponible pour les ventes.
 
 ### Modules e-commerce optionnels — `/admin/settings`
 
-Sept modules de la roadmap post-audit sont derrière un interrupteur plutôt
+Huit modules de la roadmap post-audit sont derrière un interrupteur plutôt
 qu'activés en dur : liste d'envies, ventes croisées, espace retour/SAV,
 moyen de paiement enregistré, palier de fidélité, cartes cadeaux, questions
-& réponses produit. Réglage unique
+& réponses produit, relance panier abandonné. Réglage unique
 (`StoreSettings`, ligne `id = "singleton"`, `$lib/server/storeSettings.ts`),
 lu par chaque route publique concernée — un module désactivé ne se contente
 pas d'être masqué à l'écran, sa route reste fermée (ex. `/auth/settings/wishlist`
 répond 404, `POST /api/wishlist` répond 404) : un accès direct à l'URL ne
-contourne pas l'interrupteur.
+contourne pas l'interrupteur. Exception : la relance panier abandonné n'a pas
+de route publique à fermer — c'est un job planifié
+(`$lib/server/jobs/cartRecovery.ts`) qui vérifie le flag lui-même avant
+d'agir.
 
 Chaque interrupteur s'enregistre immédiatement au clic (pas de bouton
 « Enregistrer ») : `onCheckedChange` bascule l'état local puis soumet aussitôt
@@ -123,18 +126,21 @@ une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
 répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
 lui-même lit toujours la valeur non mise en cache.
 
-Au 16/09/2026, les sept modules ont une implémentation complète derrière leur
+Au 16/09/2026, les huit modules ont une implémentation complète derrière leur
 interrupteur : liste d'envies, ventes croisées (`e2e/products/wishlist.spec.ts`,
 `e2e/products/cross-sell.spec.ts`), espace retour/SAV avec remboursement Stripe
 automatique, moyen de paiement enregistré (Stripe Elements), palier de
 fidélité intégré à la section promo, cartes cadeaux à solde décroissant
-(`e2e/gift-cards/*.spec.ts`) et questions & réponses produit modérées
-(`e2e/products/questions.spec.ts`) — voir
+(`e2e/gift-cards/*.spec.ts`), questions & réponses produit modérées
+(`e2e/products/questions.spec.ts`) et relance panier abandonné par e-mail
+(`e2e/commerce/cart-recovery.spec.ts`) — voir
 [docs/commerce](../commerce/README.md#retours--sav) et
 [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9) pour le détail des trois
 premiers, [docs/commerce#cartes-cadeaux](../commerce/README.md#cartes-cadeaux)
 et [docs/products#questions--réponses-produit](../products/README.md#questions--r%C3%A9ponses-produit)
-pour les deux derniers.
+pour les deux suivants, et
+[docs/commerce#relance-panier-abandonné](../commerce/README.md#relance-panier-abandonn%C3%A9)
+pour le dernier.
 
 ### Actions groupées
 
@@ -216,11 +222,11 @@ Routes : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
 
 ### Modules e-commerce — `e2e/admin/settings.spec.ts`
 
-| #   | Étape                                  | Geste                 | Preuve                   |
-| --- | -------------------------------------- | --------------------- | ------------------------ |
+| #   | Étape                                  | Geste                 | Preuve                                                                                              |
+| --- | -------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | 1   | Modules désactivés au départ           | GET `/admin/settings` | 5 des 7 switches à `unchecked` (couverture historique, cartes cadeaux/Q&A non vérifiés par ce spec) |
-| 2   | Activation d'un module (pas de bouton) | switch                | `StoreSettings` en base  |
-| 3   | Rechargée, l'état enregistré persiste  | reload                | switch reflète la base   |
+| 2   | Activation d'un module (pas de bouton) | switch                | `StoreSettings` en base                                                                             |
+| 3   | Rechargée, l'état enregistré persiste  | reload                | switch reflète la base                                                                              |
 
 À part : CLIENT POST `/admin/settings` — réglages inchangés.
 

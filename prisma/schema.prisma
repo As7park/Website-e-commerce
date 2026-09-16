@@ -220,6 +220,11 @@ model Order {
   /// l'audit du détail de la remise.
   giftCardCode   String?
   giftCardAmount Float       @default(0)
+  /// Relance panier abandonné (`StoreSettings.cartRecoveryEnabled`,
+  /// `$lib/server/jobs/cartRecovery.ts`) : horodatage de chaque email envoyé,
+  /// pour ne jamais relancer deux fois le même palier sur la même commande.
+  cartReminder1SentAt DateTime?
+  cartReminder2SentAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]
@@ -758,6 +763,7 @@ model StoreSettings {
   loyaltyEnabled       Boolean  @default(false)
   giftCardsEnabled     Boolean  @default(false)
   productQnaEnabled    Boolean  @default(false)
+  cartRecoveryEnabled  Boolean  @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

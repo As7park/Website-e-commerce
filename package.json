@@ -25,6 +25,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:report": "playwright show-report",
 		"jobs:register-cleanup-schedule": "node scripts/register-cleanup-schedule.mjs",
+		"jobs:register-cart-recovery-schedule": "node scripts/register-cart-recovery-schedule.mjs",
 		"check:legacy-encryption": "node scripts/check-legacy-encryption.mjs",
 		"load:catalog": "k6 run k6/catalog.js",
 		"load:login": "k6 run k6/login.js",

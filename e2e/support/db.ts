@@ -146,6 +146,11 @@ export async function deletePromoCode(id: string) {
 	});
 }
 
+/** Nettoie un code généré par un job (ex. relance panier), pas connu à l'avance. */
+export async function deletePromoCodeByCode(code: string) {
+	await resilient(() => db.promoCode.deleteMany({ where: { code } }));
+}
+
 /** Carte cadeau de test — code fourni explicitement (généré côté app en usage réel). */
 export async function createGiftCard(
 	code: string,
@@ -453,6 +458,34 @@ export async function linkProductToOrder(
 		})
 	);
 	return { order, item };
+}
+
+/**
+ * Recule `Order.updatedAt` de `hoursAgo` heures — nécessaire pour simuler un
+ * panier abandonné sans attendre réellement 1h/24h. `@updatedAt` est
+ * réécrit par le moteur Prisma sur tout `update()` classique (la valeur
+ * fournie est ignorée), d'où le passage par `$executeRaw`. Table
+ * explicitement qualifiée `"e2e"."orders"` : contrairement aux requêtes
+ * générées par le client Prisma, le SQL brut ne suit pas le paramètre
+ * `schema=e2e` de `DATABASE_URL` (pas de `search_path` positionné côté
+ * session) — sans ce préfixe, la commande s'exécute silencieusement dans
+ * `public` et ne trouve jamais la ligne (0 ligne affectée, aucune erreur).
+ */
+export async function backdateOrder(orderId: string, hoursAgo: number) {
+	await resilient(
+		() =>
+			db.$executeRaw`UPDATE "e2e"."orders" SET "updatedAt" = NOW() - (${hoursAgo}::float * interval '1 hour') WHERE id = ${orderId}`
+	);
+}
+
+/** Relance panier abandonné : horodatages d'envoi, pour les assertions. */
+export async function getOrderReminderState(orderId: string) {
+	return resilient(() =>
+		db.order.findUniqueOrThrow({
+			where: { id: orderId },
+			select: { cartReminder1SentAt: true, cartReminder2SentAt: true }
+		})
+	);
 }
 
 export async function deleteCatalogProduct(productId: string) {
@@ -778,7 +811,8 @@ export async function getStoreFeatureFlags() {
 				savedPaymentsEnabled: true,
 				loyaltyEnabled: true,
 				giftCardsEnabled: true,
-				productQnaEnabled: true
+				productQnaEnabled: true,
+				cartRecoveryEnabled: true
 			}
 		})
 	);
@@ -793,6 +827,7 @@ export async function setStoreFeatureFlags(patch: {
 	loyaltyEnabled?: boolean;
 	giftCardsEnabled?: boolean;
 	productQnaEnabled?: boolean;
+	cartRecoveryEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

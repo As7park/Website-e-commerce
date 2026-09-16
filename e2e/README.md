@@ -388,6 +388,21 @@ réussi — seules lecture, carte par défaut et suppression sont couvertes.
 Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre
 (POST direct, ligne toujours en base ensuite).
 
+### Commerce relance panier abandonné — `e2e/commerce/cart-recovery.spec.ts`
+
+Scan périodique (`$lib/server/jobs/cartRecovery.ts`), pas un job déclenché
+par une action utilisateur : le job est appelé directement via
+`POST /api/jobs/cart-recovery` (en-tête `CRON_SECRET`, comme Vercel Cron en
+repli sans QStash). `Order.updatedAt` est reculé via une écriture SQL directe
+(`backdateOrder`) pour simuler l'ancienneté du panier sans attendre 1h/24h.
+
+| #   | Étape                                         | Geste                      | Preuve                                                    |
+| --- | --------------------------------------------- | -------------------------- | --------------------------------------------------------- |
+| 1   | Module désactivé : aucune relance même à 30h  | flag à `false` + job       | `cartReminder1/2SentAt` restent `null`, aucun e-mail      |
+| 2   | Palier 1 (10 %) à 1h30                        | `backdateOrder(1.5)` + job | e-mail avec code `RELANCE-…`, `cartReminder1SentAt` posé  |
+| 3   | Rejouer le job tout de suite : pas de doublon | job une seconde fois       | aucun nouvel e-mail                                       |
+| 4   | Palier 2 (15 %) à 25h                         | `backdateOrder(25)` + job  | second e-mail, code différent, `cartReminder2SentAt` posé |
+
 ### Fidélité — `e2e/promo/loyalty.spec.ts`
 
 Pas de système séparé : un `PromoCode` actif avec `loyaltyThreshold` est

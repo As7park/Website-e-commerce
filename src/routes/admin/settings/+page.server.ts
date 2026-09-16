@@ -15,7 +15,8 @@ const FLAG_KEYS = [
 	'savedPaymentsEnabled',
 	'loyaltyEnabled',
 	'giftCardsEnabled',
-	'productQnaEnabled'
+	'productQnaEnabled',
+	'cartRecoveryEnabled'
 ] as const satisfies readonly (keyof StoreFeatureFlags)[];
 
 /**

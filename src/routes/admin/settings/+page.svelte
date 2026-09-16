@@ -14,7 +14,8 @@
 		| 'savedPaymentsEnabled'
 		| 'loyaltyEnabled'
 		| 'giftCardsEnabled'
-		| 'productQnaEnabled';
+		| 'productQnaEnabled'
+		| 'cartRecoveryEnabled';
 
 	const MODULES: { key: FlagKey; label: string; description: string }[] = [
 		{
@@ -58,6 +59,12 @@
 			label: 'Questions & réponses produit',
 			description:
 				'Formulaire de question sur la fiche produit. Une question reste invisible du public tant qu’un admin n’y a pas répondu depuis /admin/products/questions.'
+		},
+		{
+			key: 'cartRecoveryEnabled',
+			label: 'Relance panier abandonné',
+			description:
+				'Envoie un e-mail avec un code promo dégressif (10% puis 15%) aux clients qui laissent une commande en attente 1h puis 24h, sur le moteur de codes promo déjà existant.'
 		}
 	];
 
