@@ -18,6 +18,7 @@
 	import SEO from '$lib/components/SEO.svelte';
 	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
+	import QuantityInput from '$lib/components/QuantityInput.svelte';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -77,6 +78,7 @@
 	let selectedVariant = $derived(product.variants.find((v) => v.id === selectedVariantId) ?? null);
 	let displayedPrice = $derived(selectedVariant?.price ?? product.price);
 	let displayedStock = $derived(selectedVariant?.stock ?? product.stock);
+	let quantity = $state(1);
 
 	function handleAddToCart() {
 		if (product.variants.length > 0 && !selectedVariant) {
@@ -85,6 +87,15 @@
 		}
 		if (displayedStock <= 0) {
 			toast.error('Rupture de stock.');
+			return;
+		}
+		const requestedQuantity = Math.trunc(quantity);
+		if (!Number.isFinite(requestedQuantity) || requestedQuantity < 1) {
+			toast.error('Quantité invalide.');
+			return;
+		}
+		if (requestedQuantity > displayedStock) {
+			toast.error(`Quantité indisponible (stock : ${displayedStock}).`);
 			return;
 		}
 
@@ -109,7 +120,7 @@
 						stock: selectedVariant.stock
 					}
 				: undefined,
-			quantity: 1,
+			quantity: requestedQuantity,
 			price: displayedPrice
 		});
 	}
@@ -245,6 +256,16 @@
 
 			<p class="mb-3 text-muted-foreground">Stock : {displayedStock}</p>
 			<p class="mb-6 leading-normal">{product.description}</p>
+			<div class="mb-4">
+				<label for="quantity-input" class="mb-1 block text-sm font-medium">Quantité</label>
+				<QuantityInput
+					id="quantity-input"
+					value={quantity}
+					max={displayedStock}
+					onCommit={(v) => (quantity = v)}
+					class="w-24"
+				/>
+			</div>
 			<div class="flex items-center gap-3">
 				<!-- COMMERCE-PLUGIN : entrée du tunnel depuis le catalogue. -->
 				<Button type="button" onclick={handleAddToCart} disabled={displayedStock <= 0}>

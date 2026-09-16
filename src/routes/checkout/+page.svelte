@@ -31,54 +31,12 @@
 
 	let { data } = $props();
 
-	// Options de quantité pour les articles non-personnalisés
-	let quantityOptions = $state([24, 48, 72]);
-
-	// Options de quantité pour les articles personnalisés
-	let customQuantityOptions = $state([
-		{ label: 'Offre Essentielle', value: 576 },
-		{ label: 'Offre Studio', value: 720 },
-		{ label: 'Offre Agence', value: 1440 },
-		{ label: 'Offre Premium', value: 2880 },
-		{ label: 'Offre Entreprise', value: 8640 }
-	]);
-
 	// Calculer le total des quantités pour les commandes non-personnalisées
 	let totalNonCustomQuantity = $derived(
 		$cartStore.items
 			.filter((item) => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
 			.reduce((acc, item) => acc + item.quantity, 0)
 	);
-
-	// Fonction pour vérifier si on peut ajouter une quantité
-	function canAddQuantity(
-		newQuantity: number,
-		currentQuantity: number,
-		isCustom: boolean
-	): boolean {
-		if (isCustom) return true; // Pas de limite pour les personnalisées
-
-		const otherItemsQuantity = totalNonCustomQuantity - currentQuantity;
-		return otherItemsQuantity + newQuantity <= 72;
-	}
-
-	// Fonction pour calculer le prix des projets sur-mesure
-	function getCustomCanPrice(quantity: number): number {
-		switch (quantity) {
-			case 576:
-				return 1.6;
-			case 720:
-				return 1.4;
-			case 1440:
-				return 0.99;
-			case 2880:
-				return 0.79;
-			case 8640:
-				return 0.69;
-			default:
-				return 1.6;
-		}
-	}
 
 	// Runes Svelte 5
 	let stripe = $state<Stripe | null>(null);
@@ -628,11 +586,7 @@
 						{hasCustomItems}
 						{shippingCost}
 						{selectedShippingOption}
-						{quantityOptions}
-						{customQuantityOptions}
 						{totalNonCustomQuantity}
-						{canAddQuantity}
-						{getCustomCanPrice}
 						{discountAmount}
 						{promoCode}
 						onRemoveFromCart={handleRemoveFromCart}

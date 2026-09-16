@@ -3,19 +3,17 @@
 	import * as Card from '$shadcn/card/index.js';
 	import { ShoppingCart, Trash } from 'lucide-svelte';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import QuantityInput from '$lib/components/QuantityInput.svelte';
+	import { getCustomCanPrice, type OrderItem } from '$lib/store/Data/cartStore';
 
 	interface Props {
-		items: any[];
+		items: OrderItem[];
 		subtotal: number;
 		tax: number;
 		hasCustomItems: boolean;
 		shippingCost: number;
 		selectedShippingOption: string | null;
-		quantityOptions: number[];
-		customQuantityOptions: { label: string; value: number }[];
 		totalNonCustomQuantity: number;
-		canAddQuantity: (newQuantity: number, currentQuantity: number, isCustom: boolean) => boolean;
-		getCustomCanPrice: (quantity: number) => number;
 		onRemoveFromCart: (productId: string, customId?: string, variantId?: string) => void;
 		onChangeQuantity: (
 			productId: string,
@@ -34,16 +32,22 @@
 		hasCustomItems,
 		shippingCost,
 		selectedShippingOption,
-		quantityOptions,
-		customQuantityOptions,
 		totalNonCustomQuantity,
-		canAddQuantity,
-		getCustomCanPrice,
 		onRemoveFromCart,
 		onChangeQuantity,
 		discountAmount = 0,
 		promoCode = ''
 	} = $props();
+
+	// Borne haute du champ libre : stock dispo, et pour le non-custom, le
+	// reliquat sous le plafond global de 72 unités (pas de plafond en custom).
+	function maxQuantityFor(item: OrderItem, isCustom: boolean): number {
+		const stockLimit = item.variant?.stock ?? item.product.stock;
+		if (isCustom) return stockLimit;
+
+		const otherItemsQuantity = totalNonCustomQuantity - item.quantity;
+		return Math.max(0, Math.min(stockLimit, 72 - otherItemsQuantity));
+	}
 
 	// État local pour forcer le re-rendu
 	let localItems = $state(untrack(() => items));
@@ -91,6 +95,7 @@
 		{#if localItems.length > 0}
 			<div class="space-y-4">
 				{#each localItems as item (item.id + '-' + item.quantity)}
+					{@const isCustomItem = Boolean(item.custom?.length > 0)}
 					<div class="flex gap-4 p-4 rounded-lg border bg-background">
 						<img
 							src={optimizedImageUrl(
@@ -130,50 +135,16 @@
 								{/if}
 							</p>
 
-							{#if item.custom?.length > 0}
-								<!-- Custom items: Use predefined quantity options -->
-								<div class="flex gap-2 flex-wrap">
-									{#each customQuantityOptions as option}
-										<button
-											class="px-3 py-1 border rounded text-sm {item.quantity === option.value
-												? 'bg-blue-500 text-white'
-												: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'}"
-											onclick={() =>
-												onChangeQuantity(item.product.id, option.value, item.custom[0]?.id)}
-										>
-											{option.value}
-											{item.quantity === option.value ? '✓' : ''}
-										</button>
-									{/each}
-								</div>
-							{:else}
-								<!-- Non-custom items: Use buttons with quantity limit -->
-								<div class="flex gap-2">
-									{#each quantityOptions as option}
-										<button
-											class="px-3 py-1 border rounded text-sm {item.quantity === option
-												? 'bg-blue-500 text-white'
-												: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:border-gray-600'} {!canAddQuantity(
-												option,
-												item.quantity,
-												false
-											)
-												? 'opacity-50 cursor-not-allowed'
-												: ''}"
-											onclick={() =>
-												canAddQuantity(option, item.quantity, false) &&
-												onChangeQuantity(item.product.id, option, undefined, item.variant?.id)}
-											disabled={!canAddQuantity(option, item.quantity, false)}
-										>
-											{option}
-										</button>
-									{/each}
-								</div>
-								{#if totalNonCustomQuantity > 72}
-									<p class="text-xs text-red-500 mt-1">
-										Limite de 72 unités atteinte pour les commandes non-personnalisées
-									</p>
-								{/if}
+							<QuantityInput
+								value={item.quantity}
+								max={maxQuantityFor(item, isCustomItem)}
+								onCommit={(v) =>
+									onChangeQuantity(item.product.id, v, item.custom?.[0]?.id, item.variant?.id)}
+							/>
+							{#if !isCustomItem && totalNonCustomQuantity > 72}
+								<p class="text-xs text-red-500 mt-1">
+									Limite de 72 unités atteinte pour les commandes non-personnalisées
+								</p>
 							{/if}
 
 							<p class="text-right font-medium">

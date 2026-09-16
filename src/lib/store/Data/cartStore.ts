@@ -4,6 +4,10 @@
 import { toast } from 'svelte-sonner';
 import { writable } from 'svelte/store';
 
+// Plafond de quantité cumulée pour les commandes non-personnalisées.
+const NATIVE_ORDER_MAX_QUANTITY = 72;
+const VAT_RATE = 0.055;
+
 export type OrderItem = {
 	id: string;
 	product: {
@@ -38,7 +42,7 @@ export type OrderItem = {
 	}>;
 };
 
-type CartState = {
+export type CartState = {
 	id: string;
 	userId: string;
 	items: OrderItem[];
@@ -68,7 +72,7 @@ export const cart = writable<CartState>({
  * @param quantity - Volume de la prestation
  * @returns Prix unitaire en euros
  */
-function getCustomCanPrice(quantity: number): number {
+export function getCustomCanPrice(quantity: number): number {
 	switch (quantity) {
 		case 576:
 			return 1.6;
@@ -84,6 +88,22 @@ function getCustomCanPrice(quantity: number): number {
 			// Prix par défaut si la quantité ne correspond pas aux paliers
 			return 1.6;
 	}
+}
+
+/**
+ * Recalcule le sous-total HT et la TVA à partir des lignes du panier
+ * (prix par palier pour les articles personnalisés, prix variante/produit
+ * sinon). Ne touche pas au total final, qui dépend aussi de la livraison.
+ */
+function recalcSubtotalAndTax(c: CartState) {
+	c.subtotal = c.items.reduce((sum, item) => {
+		const isCustom = Array.isArray(item.custom) && item.custom.length > 0;
+		const unitPrice = isCustom
+			? getCustomCanPrice(item.quantity)
+			: (item.variant?.price ?? item.product.price);
+		return sum + unitPrice * item.quantity;
+	}, 0);
+	c.tax = parseFloat((c.subtotal * VAT_RATE).toFixed(2));
 }
 
 /**
@@ -121,17 +141,6 @@ export const setCart = (
 };
 
 function calcTotal(subtotal = 0, tax = 0, shippingCost = 0, shippingTax = 0) {
-	// console.log(
-	// 	'subtotal:',
-	// 	subtotal,
-	// 	'tax:',
-	// 	tax,
-	// 	'shippingCost:',
-	// 	shippingCost,
-	// 	'shippingTax:',
-	// 	shippingTax
-	// );
-
 	return parseFloat((subtotal + tax + shippingCost + shippingTax).toFixed(2));
 }
 
@@ -141,7 +150,7 @@ function calcTotal(subtotal = 0, tax = 0, shippingCost = 0, shippingTax = 0) {
 export function setShippingCostHT(newShippingCost: number) {
 	cart.update((c) => {
 		c.shippingCost = newShippingCost;
-		c.shippingTax = parseFloat((newShippingCost * 0.055).toFixed(2)); // 5.5% vat
+		c.shippingTax = parseFloat((newShippingCost * VAT_RATE).toFixed(2));
 		recalcFinalTotal(c);
 		return c;
 	});
@@ -186,7 +195,7 @@ export const addToCart = (product: OrderItem) => {
 				.filter((item) => !Array.isArray(item.custom) || item.custom.length === 0)
 				.reduce((sum, item) => sum + item.quantity, 0);
 
-			if (totalNativeQuantity + product.quantity > 72) {
+			if (totalNativeQuantity + product.quantity > NATIVE_ORDER_MAX_QUANTITY) {
 				console.error('Cannot add product: limit is 72 units for native orders.');
 				toast.error('Limite de 72 unités pour les commandes non personnalisées.');
 				return currentCart;
@@ -227,20 +236,7 @@ export const addToCart = (product: OrderItem) => {
 			});
 		}
 
-		// Recalc product subtotal with custom pricing for personalized items
-		const newSubtotal = currentCart.items.reduce((sum, item) => {
-			const isCustom = Array.isArray(item.custom) && item.custom.length > 0;
-			const unitPrice = isCustom
-				? getCustomCanPrice(item.quantity)
-				: (item.variant?.price ?? item.product.price);
-			return sum + unitPrice * item.quantity;
-		}, 0);
-		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));
-
-		currentCart.subtotal = newSubtotal;
-		currentCart.tax = newTax;
-
-		// Recalc final total (including shipping cost/tax)
+		recalcSubtotalAndTax(currentCart);
 		recalcFinalTotal(currentCart);
 
 		return currentCart;
@@ -266,19 +262,7 @@ export const removeFromCart = (productId: string, customId?: string, variantId?:
 
 		currentCart.items = currentCart.items.filter((item) => !matchesLine(item));
 
-		// Recalc product subtotal with custom pricing for personalized items
-		const newSubtotal = currentCart.items.reduce((sum, item) => {
-			const isCustom = Array.isArray(item.custom) && item.custom.length > 0;
-			const unitPrice = isCustom
-				? getCustomCanPrice(item.quantity)
-				: (item.variant?.price ?? item.product.price);
-			return sum + unitPrice * item.quantity;
-		}, 0);
-		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));
-
-		currentCart.subtotal = newSubtotal;
-		currentCart.tax = newTax;
-
+		recalcSubtotalAndTax(currentCart);
 		recalcFinalTotal(currentCart);
 
 		toast.success('Produit supprimé du panier.');
@@ -329,27 +313,14 @@ export const updateCartItemQuantity = (
 				.filter((i, idx) => !i.custom && idx !== itemIndex)
 				.reduce((sum, i) => sum + i.quantity, 0);
 
-			const maxNativeAllowed = 72;
-			const allowedForThisItem = maxNativeAllowed - nativeItemsTotal;
+			const allowedForThisItem = NATIVE_ORDER_MAX_QUANTITY - nativeItemsTotal;
 
 			newQuantity = Math.min(newQuantity, allowedForThisItem);
 		}
 
 		currentItem.quantity = newQuantity;
 
-		// Recalc product subtotal with custom pricing for personalized items
-		const newSubtotal = currentCart.items.reduce((sum, i) => {
-			const isCustom = Array.isArray(i.custom) && i.custom.length > 0;
-			const unitPrice = isCustom
-				? getCustomCanPrice(i.quantity)
-				: (i.variant?.price ?? i.product.price);
-			return sum + unitPrice * i.quantity;
-		}, 0);
-		const newTax = parseFloat((newSubtotal * 0.055).toFixed(2));
-
-		currentCart.subtotal = newSubtotal;
-		currentCart.tax = newTax;
-
+		recalcSubtotalAndTax(currentCart);
 		recalcFinalTotal(currentCart);
 		return currentCart;
 	});
@@ -368,11 +339,4 @@ export function resetCart() {
 		c.lastModified = Date.now();
 		return c;
 	});
-
-	// toast.success('Commande validée, panier vidé.');
 }
-
-// Debug
-// cart.subscribe((currentCart) => {
-// 	console.log('Cart updated =>', JSON.stringify(currentCart, null, 2));
-// });
