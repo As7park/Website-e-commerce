@@ -88,7 +88,8 @@ async function run() {
 		const order = await prisma.order.create({
 			data: {
 				userId: user.id,
-				addressId: address.id,
+				shippingAddressId: address.id,
+				billingAddressId: address.id,
 				status: 'PENDING',
 				subtotal: product.price,
 				tax: 0,

@@ -198,7 +198,11 @@ model Address {
   type               AddressType
   userId             String
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders             Order[]
+  // Une même adresse peut servir de livraison et/ou de facturation selon la
+  // commande (choix fait au checkout, indépendant du `type` ci-dessus qui
+  // n'est qu'un libellé de rangement dans le carnet d'adresses de l'utilisateur).
+  shippingOrders     Order[]     @relation("OrderShippingAddress")
+  billingOrders      Order[]     @relation("OrderBillingAddress")
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
@@ -208,29 +212,35 @@ model Address {
 
 // COMMERCE-PLUGIN : commande PENDING (panier) puis PAID après webhook Stripe.
 model Order {
-  id             String      @id @default(cuid())
-  userId         String
-  addressId      String?
-  subtotal       Float       @default(0)
-  tax            Float       @default(0)
-  total          Float       @default(0)
-  status         OrderStatus @default(PENDING)
-  promoCode      String?
-  discountAmount Float       @default(0)
+  id                  String      @id @default(cuid())
+  userId              String
+  // Adresse de livraison (colis Sendcloud) et adresse de facturation
+  // (facture PDF) : deux champs distincts depuis la séparation shipping/billing
+  // — jusque là une seule adresse servait aux deux usages. Peuvent pointer
+  // vers la même `Address` (cas « identique à l'adresse de livraison », le
+  // défaut au checkout).
+  shippingAddressId   String?
+  billingAddressId    String?
+  subtotal            Float       @default(0)
+  tax                 Float       @default(0)
+  total               Float       @default(0)
+  status              OrderStatus @default(PENDING)
+  promoCode           String?
+  discountAmount      Float       @default(0)
   /// Carte cadeau appliquée : `giftCardAmount` est déjà inclus dans
   /// `discountAmount` ci-dessus (qui reste la remise totale utilisée par le
   /// calcul de facture) — ces deux champs ne servent qu'à l'affichage /
   /// l'audit du détail de la remise.
-  giftCardCode   String?
-  giftCardAmount Float       @default(0)
+  giftCardCode        String?
+  giftCardAmount      Float       @default(0)
   /// Relance panier abandonné (`StoreSettings.cartRecoveryEnabled`,
   /// `$lib/server/jobs/cartRecovery.ts`) : horodatage de chaque email envoyé,
   /// pour ne jamais relancer deux fois le même palier sur la même commande.
   cartReminder1SentAt DateTime?
   cartReminder2SentAt DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  items          OrderItem[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  items               OrderItem[]
 
   shippingOption String?
   shippingCost   Float?
@@ -246,10 +256,11 @@ model Order {
 
   // Une commande est conservée si son utilisateur est supprimé : l'effacement
   // se fait par anonymisation, pas par suppression (obligation comptable).
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
-  address       Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  statusHistory OrderStatusHistory[]
-  transactions  Transaction[]
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  shippingAddress Address?             @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  billingAddress  Address?             @relation("OrderBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
+  statusHistory   OrderStatusHistory[]
+  transactions    Transaction[]
 
   @@index([userId])
   @@index([status])
@@ -277,7 +288,7 @@ model OrderItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   // PRODUCT-PLUGIN / COMMERCE-PLUGIN : Restrict — un produit déjà commandé ne
   // doit pas pouvoir détruire l'historique de vente. OrderItem.productId est
   // le couplage catalogue → tunnel.
@@ -329,46 +340,46 @@ model OrderStatusHistory {
 
 model Product {
   // PRODUCT-PLUGIN : cœur du catalogue. Les OrderItem du commerce y font référence.
-  id             String                 @id @default(cuid())
-  name           String
-  description    String
-  price          Float
-  stock          Int
-  images         String[]
-  slug           String                 @unique
-  colorProduct   String
+  id              String                 @id @default(cuid())
+  name            String
+  description     String
+  price           Float
+  stock           Int
+  images          String[]
+  slug            String                 @unique
+  colorProduct    String
   /// Référence interne, distincte de `id` (cuid non lisible) — affichée en
   /// admin et sur la facture, jamais utilisée comme clé de recherche Prisma.
-  sku            String?                @unique
+  sku             String?                @unique
   /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
   /// prix réellement facturé — pas de logique de remise appliquée ici).
-  compareAtPrice Float?
+  compareAtPrice  Float?
   /// Fin de vente flash : bandeau + compte à rebours vitrine tant que cette
   /// date est dans le futur. Se combine avec `compareAtPrice` pour le prix
   /// barré, mais fonctionne aussi seul (juste l'urgence du minuteur).
   flashSaleEndsAt DateTime?
-  categories     ProductCategory[]
-  orderItems     OrderItem[]
-  reviews        Review[]
-  questions      ProductQuestion[]
-  wishlistedBy   WishlistItem[]
+  categories      ProductCategory[]
+  orderItems      OrderItem[]
+  reviews         Review[]
+  questions       ProductQuestion[]
+  wishlistedBy    WishlistItem[]
   /// Variantes simples (étiquette libre : « Taille 54 », « Or blanc »...),
   /// chacune avec son propre stock et un prix optionnel qui surcharge
   /// `price` ci-dessus. Un produit sans variante se comporte exactement
   /// comme avant leur introduction — jamais de variante implicite créée.
-  variants       ProductVariant[]
+  variants        ProductVariant[]
   /// Facette catalogue « Matière » — taxonomie gérée depuis
   /// `/admin/products` (section Matières), pas un champ libre : évite que
   /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
   /// Legacy : remplacé par `taxonomyValues` (voir `Taxonomy`), retiré en migration B
   /// une fois la bascule vérifiée.
-  materialId     String?
-  material       Material?              @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  materialId      String?
+  material        Material?              @relation(fields: [materialId], references: [id], onDelete: SetNull)
   /// Système générique de taxonomies (Matière, Catégorie, Couleur, ...) —
   /// remplace à terme `materialId`/`categories` ci-dessus.
-  taxonomyValues ProductTaxonomyValue[]
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  taxonomyValues  ProductTaxonomyValue[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@index([materialId])
   @@map("products")
@@ -558,6 +569,26 @@ model Transaction {
   address_country_code       String
   address_ISO_3166_1_alpha_3 String
   address_type               AddressType
+
+  // Adresse de facturation figée au moment du paiement (facture PDF) — peut
+  // différer de l'adresse d'expédition ci-dessus depuis la séparation
+  // shipping/billing du checkout.
+  billing_first_name         String
+  billing_last_name          String
+  billing_phone              String
+  billing_company            String?
+  billing_street_number      String
+  billing_street             String
+  billing_city               String
+  billing_county             String
+  billing_state              String
+  billing_stateLetter        String
+  billing_state_code         String
+  billing_zip                String
+  billing_country            String
+  billing_country_code       String
+  billing_ISO_3166_1_alpha_3 String
+  billing_type               AddressType
 
   // Point relais
   servicePointId           String?
@@ -858,23 +889,23 @@ model SavedPaymentMethod {
 /// payée. `stripeRefundId` posé une fois le remboursement Stripe confirmé par
 /// l'admin (`?/approve`) — jamais avant, `?/reject` n'en crée pas.
 model ReturnRequest {
-  id             String       @id @default(cuid())
-  transactionId  String
-  userId         String
-  reason         String
-  status         ReturnStatus @default(REQUESTED)
-  stripeRefundId String?
+  id                   String       @id @default(cuid())
+  transactionId        String
+  userId               String
+  reason               String
+  status               ReturnStatus @default(REQUESTED)
+  stripeRefundId       String?
   /// Posé à la place de `stripeRefundId` quand l'admin choisit de créditer le
   /// compte (`?/creditStore`, status CREDITED) plutôt que de rembourser via
   /// Stripe. Pas de relation formelle vers `GiftCard` — même découplage par
   /// id/code en texte que `PromoCode`/`GiftCard` ailleurs dans le schéma.
-  giftCardId     String?
+  giftCardId           String?
   /// Étiquette de retour Sendcloud — posée à l'approbation, best-effort : un
   /// échec Sendcloud ne bloque jamais le remboursement (voir la route admin).
   returnTrackingNumber String?
   returnTrackingUrl    String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

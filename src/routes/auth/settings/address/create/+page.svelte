@@ -76,7 +76,7 @@
 
 		<form
 			method="POST"
-			action={`?/createAddress${data.redirectTarget ? `&redirect=${data.redirectTarget}` : ''}`}
+			action={`?/createAddress${data.redirectTarget ? `&redirect=${data.redirectTarget}` : ''}${data.addressTarget ? `&target=${data.addressTarget}` : ''}`}
 			use:createAddressEnhance
 			class="space-y-4"
 		>

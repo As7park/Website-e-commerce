@@ -104,7 +104,8 @@ test.describe('Live — Sendcloud', () => {
 				await page.request.post('/checkout?/checkout', {
 					form: {
 						orderId: pending!.id,
-						addressId: address.id,
+						shippingAddressId: address.id,
+						billingAddressId: address.id,
 						shippingOption: relayOption.id,
 						shippingCost: '0',
 						servicePointId: String(point.id),

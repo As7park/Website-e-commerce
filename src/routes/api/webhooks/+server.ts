@@ -121,7 +121,8 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				where: { id: orderId },
 				include: {
 					user: true,
-					address: true,
+					shippingAddress: true,
+					billingAddress: true,
 					items: { include: { product: true, custom: true } }
 				}
 			});
@@ -129,8 +130,11 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 			if (!order) {
 				throw new Error(`⚠️ Order ${orderId} not found`);
 			}
-			if (!order.address) {
-				throw new Error(`⚠️ Order ${orderId} has no associated address`);
+			if (!order.shippingAddress) {
+				throw new Error(`⚠️ Order ${orderId} has no associated shipping address`);
+			}
+			if (!order.billingAddress) {
+				throw new Error(`⚠️ Order ${orderId} has no associated billing address`);
 			}
 
 			const weightBracket = deduceWeightBracket(order);
@@ -181,23 +185,41 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 					(weightBracket <= 3 ? 9000 : weightBracket <= 6 ? 24000 : 45000), // Volume calculé si null
 				package_volume_unit: shippingMethodData?.volumeUnit ?? 'cm3',
 
-				// Adresse
-				address_first_name: order.address.first_name,
-				address_last_name: order.address.last_name,
-				address_phone: order.address.phone,
-				address_company: order.address.company,
-				address_street_number: order.address.street_number,
-				address_street: order.address.street,
-				address_city: order.address.city,
-				address_county: order.address.county,
-				address_state: order.address.state,
-				address_stateLetter: order.address.stateLetter,
-				address_state_code: order.address.state_code,
-				address_zip: order.address.zip,
-				address_country: order.address.country,
-				address_country_code: order.address.country_code,
-				address_ISO_3166_1_alpha_3: order.address.ISO_3166_1_alpha_3,
-				address_type: order.address.type,
+				// Adresse (expédition — Sendcloud / bordereau)
+				address_first_name: order.shippingAddress.first_name,
+				address_last_name: order.shippingAddress.last_name,
+				address_phone: order.shippingAddress.phone,
+				address_company: order.shippingAddress.company,
+				address_street_number: order.shippingAddress.street_number,
+				address_street: order.shippingAddress.street,
+				address_city: order.shippingAddress.city,
+				address_county: order.shippingAddress.county,
+				address_state: order.shippingAddress.state,
+				address_stateLetter: order.shippingAddress.stateLetter,
+				address_state_code: order.shippingAddress.state_code,
+				address_zip: order.shippingAddress.zip,
+				address_country: order.shippingAddress.country,
+				address_country_code: order.shippingAddress.country_code,
+				address_ISO_3166_1_alpha_3: order.shippingAddress.ISO_3166_1_alpha_3,
+				address_type: order.shippingAddress.type,
+
+				// Adresse de facturation (facture PDF)
+				billing_first_name: order.billingAddress.first_name,
+				billing_last_name: order.billingAddress.last_name,
+				billing_phone: order.billingAddress.phone,
+				billing_company: order.billingAddress.company,
+				billing_street_number: order.billingAddress.street_number,
+				billing_street: order.billingAddress.street,
+				billing_city: order.billingAddress.city,
+				billing_county: order.billingAddress.county,
+				billing_state: order.billingAddress.state,
+				billing_stateLetter: order.billingAddress.stateLetter,
+				billing_state_code: order.billingAddress.state_code,
+				billing_zip: order.billingAddress.zip,
+				billing_country: order.billingAddress.country,
+				billing_country_code: order.billingAddress.country_code,
+				billing_ISO_3166_1_alpha_3: order.billingAddress.ISO_3166_1_alpha_3,
+				billing_type: order.billingAddress.type,
 
 				// 📍 Point Relais
 				servicePointId: order.servicePointId ?? null,

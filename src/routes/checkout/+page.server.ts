@@ -59,7 +59,8 @@ export const actions: Actions = {
 
 		const {
 			orderId,
-			addressId,
+			shippingAddressId,
+			billingAddressId,
 			shippingOption,
 			shippingCost,
 			promoCode,
@@ -73,7 +74,7 @@ export const actions: Actions = {
 			servicePointExtraShopRef
 		} = form.data;
 
-		if (!orderId || !addressId) {
+		if (!orderId || !shippingAddressId || !billingAddressId) {
 			error(400, 'Veuillez sélectionner une adresse.');
 		}
 
@@ -126,7 +127,9 @@ export const actions: Actions = {
 			? await validateGiftCard(giftCardCode, Math.max(0, productTotalTTC - promoDiscount))
 			: { valid: false, amount: 0, giftCard: null };
 		const appliedGiftCardAmount = giftCardResult.valid ? giftCardResult.amount : 0;
-		const appliedGiftCardCode = giftCardResult.valid ? (giftCardResult.giftCard?.code ?? null) : null;
+		const appliedGiftCardCode = giftCardResult.valid
+			? (giftCardResult.giftCard?.code ?? null)
+			: null;
 
 		const appliedDiscount = parseFloat((promoDiscount + appliedGiftCardAmount).toFixed(2));
 
@@ -141,7 +144,8 @@ export const actions: Actions = {
 			order,
 			userId,
 			origin: request.headers.get('origin') ?? '',
-			addressId,
+			shippingAddressId,
+			billingAddressId,
 			shippingOption: hasCustomItems ? 'no_shipping' : shippingOption || 'no_shipping',
 			trustedShippingCost,
 			hasCustomItems,

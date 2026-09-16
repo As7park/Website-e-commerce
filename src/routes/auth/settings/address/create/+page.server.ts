@@ -18,7 +18,9 @@ export const load: PageServerLoad = async (event) => {
 		IcreateAddressSchema,
 		userId: event.locals.user.id,
 		// Permet au formulaire de revenir au checkout une fois l'adresse créée.
-		redirectTarget: event.url.searchParams.get('redirect')
+		redirectTarget: event.url.searchParams.get('redirect'),
+		// Quel champ du checkout doit récupérer l'adresse créée (livraison / facturation).
+		addressTarget: event.url.searchParams.get('target')
 	};
 };
 
@@ -90,9 +92,11 @@ export const actions: Actions = {
 			return fail(500, { message: 'Address creation failed' });
 		}
 
-		// Retour au checkout : on y revient directement, adresse pré-sélectionnée.
+		// Retour au checkout : on y revient directement, adresse pré-sélectionnée
+		// dans le bon champ (livraison ou facturation selon d'où vient la demande).
 		if (event.url.searchParams.get('redirect') === 'checkout') {
-			redirect(303, `/checkout?addressId=${created.id}`);
+			const target = event.url.searchParams.get('target') === 'billing' ? 'billing' : 'shipping';
+			redirect(303, `/checkout?addressId=${created.id}&target=${target}`);
 		}
 
 		return message(form, 'Address created successfully');

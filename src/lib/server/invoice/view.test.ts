@@ -17,14 +17,14 @@ const source = {
 	discountAmount: 0,
 	customer_details_name: 'Pierre Test',
 	customer_details_email: 'pierre@example.test',
-	address_phone: '0600000000',
-	address_street_number: '12',
-	address_street: 'Rue des Tests',
-	address_zip: '82000',
-	address_city: 'Montauban',
-	address_state: 'Occitanie',
-	address_state_code: 'OC',
-	address_country: 'France',
+	billing_phone: '0600000000',
+	billing_street_number: '12',
+	billing_street: 'Rue des Tests',
+	billing_zip: '82000',
+	billing_city: 'Montauban',
+	billing_state: 'Occitanie',
+	billing_state_code: 'OC',
+	billing_country: 'France',
 	products: [{ name: 'Bague', price: 100, quantity: 1 }]
 };
 
@@ -57,9 +57,7 @@ describe('buildInvoiceView', () => {
 		expect(invoice.taxAmount).toBe(5.5);
 		expect(invoice.totalTtc).toBe(109.09);
 		expect(invoice.filename).toBe('Facture_FAC-2026-00001.pdf');
-		expect(invoice.lines).toEqual([
-			{ name: 'Bague', quantity: 1, unitPrice: 100, lineTotal: 100 }
-		]);
+		expect(invoice.lines).toEqual([{ name: 'Bague', quantity: 1, unitPrice: 100, lineTotal: 100 }]);
 	});
 });
 

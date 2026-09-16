@@ -80,7 +80,8 @@ export async function createCheckoutSession(params: {
 	order: OrderWithItems;
 	userId: string;
 	origin: string;
-	addressId: string;
+	shippingAddressId: string;
+	billingAddressId: string;
 	shippingOption: string;
 	trustedShippingCost: number;
 	hasCustomItems: boolean;
@@ -109,7 +110,8 @@ export async function createCheckoutSession(params: {
 		order,
 		userId,
 		origin,
-		addressId,
+		shippingAddressId,
+		billingAddressId,
 		hasCustomItems,
 		promoCode,
 		discountAmount,
@@ -134,7 +136,8 @@ export async function createCheckoutSession(params: {
 
 	const updatedOrder = await updateOrder(
 		order.id,
-		addressId,
+		shippingAddressId,
+		billingAddressId,
 		finalShippingOption,
 		String(params.trustedShippingCost),
 		servicePoint.id,

@@ -552,7 +552,8 @@ export async function attachOrderAddress(orderId: string, addressId: string) {
 		db.order.update({
 			where: { id: orderId },
 			data: {
-				addressId,
+				shippingAddressId: addressId,
+				billingAddressId: addressId,
 				shippingOption: 'no_shipping',
 				shippingCost: 0
 			}
@@ -682,6 +683,21 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 				address_country_code: 'FR',
 				address_ISO_3166_1_alpha_3: 'FRA',
 				address_type: 'SHIPPING',
+				billing_first_name: 'E2e',
+				billing_last_name: 'Tester',
+				billing_phone: '+33600000000',
+				billing_street_number: '1',
+				billing_street: 'Rue des Tests',
+				billing_city: 'Toulouse',
+				billing_county: 'Haute-Garonne',
+				billing_state: 'Occitanie',
+				billing_stateLetter: 'FR',
+				billing_state_code: 'OC',
+				billing_zip: '31000',
+				billing_country: 'France',
+				billing_country_code: 'FR',
+				billing_ISO_3166_1_alpha_3: 'FRA',
+				billing_type: 'SHIPPING',
 				products: []
 			}
 		})

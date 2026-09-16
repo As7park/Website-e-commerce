@@ -9,9 +9,19 @@
 		addresses: any[];
 		selectedAddressId?: string;
 		onAddressSelect: (addressId: string) => void;
+		/** Titre affiché en en-tête (ex. "Adresse de livraison" / "Adresse de facturation"). */
+		title?: string;
+		/** Propagé au retour du formulaire de création d'adresse pour resélectionner le bon champ. */
+		target?: 'shipping' | 'billing';
 	}
 
-	let { addresses, selectedAddressId, onAddressSelect } = $props();
+	let {
+		addresses,
+		selectedAddressId,
+		onAddressSelect,
+		title = 'Adresse de livraison',
+		target = 'shipping'
+	}: Props = $props();
 
 	let addressOpen = $state(false);
 	let addressTriggerRef = $state<HTMLButtonElement>(null!);
@@ -44,7 +54,7 @@
 	<div class="p-6 flex flex-col space-y-1.5">
 		<h3 class="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2">
 			<MapPin class="w-5 h-5" />
-			Adresse de livraison
+			{title}
 		</h3>
 	</div>
 	<div class="p-6 pt-0">
@@ -110,7 +120,7 @@
 			<Button variant="outline" class="w-full">
 				<a
 					data-sveltekit-preload-data
-					href="/auth/settings/address/create?redirect=checkout"
+					href={`/auth/settings/address/create?redirect=checkout&target=${target}`}
 					class="flex items-center gap-2"
 				>
 					<MapPin class="w-4 h-4" />

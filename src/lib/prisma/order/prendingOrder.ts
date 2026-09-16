@@ -258,7 +258,8 @@ function extractPublicId(imageUrl: string): string {
 
 export async function updateOrder(
 	orderId: string,
-	addressId: string,
+	shippingAddressId: string,
+	billingAddressId: string,
 	shippingOption: string,
 	shippingCost: string,
 	servicePointId?: string,
@@ -295,7 +296,8 @@ export async function updateOrder(
 	return await prisma.order.update({
 		where: { id: orderId },
 		data: {
-			addressId,
+			shippingAddressId,
+			billingAddressId,
 			shippingOption,
 			shippingCost: shippingCostFloat,
 			promoCode: promoCode || null,

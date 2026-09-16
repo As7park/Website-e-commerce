@@ -25,13 +25,21 @@ export type InvoiceSource = {
 	promoCode?: string | null;
 	customer_details_name?: string | null;
 	customer_details_email?: string | null;
-	address_phone?: string | null;
+	billing_phone?: string | null;
+	billing_street_number?: string | null;
+	billing_street?: string | null;
+	billing_zip?: string | null;
+	billing_city?: string | null;
+	billing_state?: string | null;
+	billing_state_code?: string | null;
+	billing_country?: string | null;
+	// Adresse d'expédition (shipping) : utilisée par le bordereau (`bordereau.ts`),
+	// pas par la facture (qui affiche l'adresse de facturation ci-dessus).
 	address_street_number?: string | null;
 	address_street?: string | null;
 	address_zip?: string | null;
 	address_city?: string | null;
 	address_state?: string | null;
-	address_state_code?: string | null;
 	address_country?: string | null;
 	products?: unknown;
 };
@@ -74,9 +82,7 @@ export function buildInvoiceView(source: InvoiceSource): InvoiceView {
 
 	const hasSnapshot = asNumber(source.subtotalHt, 0) > 0;
 	const shippingCost = hasSnapshot ? asNumber(source.shippingCost, 0) : computed.shippingCost;
-	const discountAmount = hasSnapshot
-		? asNumber(source.discountAmount, 0)
-		: computed.discountAmount;
+	const discountAmount = hasSnapshot ? asNumber(source.discountAmount, 0) : computed.discountAmount;
 	const subtotalHt = hasSnapshot ? asNumber(source.subtotalHt, 0) : computed.subtotalHt;
 	const taxRate = hasSnapshot ? asNumber(source.taxRate, computed.taxRate) : computed.taxRate;
 	const taxAmount = hasSnapshot ? asNumber(source.taxAmount, 0) : computed.taxAmount;
@@ -84,19 +90,22 @@ export function buildInvoiceView(source: InvoiceSource): InvoiceView {
 	const issued = source.createdAt instanceof Date ? source.createdAt : new Date(source.createdAt);
 	const number = source.invoiceNumber?.trim() || source.id;
 
-	const street = [source.address_street_number, source.address_street]
+	const street = [source.billing_street_number, source.billing_street]
 		.filter((part) => part && String(part).trim())
 		.join(' ')
 		.trim();
-	const zipCity = [source.address_zip, source.address_city]
+	const zipCity = [source.billing_zip, source.billing_city]
 		.filter((part) => part && String(part).trim())
 		.join(' ')
 		.trim();
-	const region = [source.address_state, source.address_state_code ? `(${source.address_state_code})` : '']
+	const region = [
+		source.billing_state,
+		source.billing_state_code ? `(${source.billing_state_code})` : ''
+	]
 		.filter((part) => part && String(part).trim())
 		.join(' ')
 		.trim();
-	const country = source.address_country?.trim() ?? '';
+	const country = source.billing_country?.trim() ?? '';
 
 	return {
 		id: source.id,
@@ -104,7 +113,7 @@ export function buildInvoiceView(source: InvoiceSource): InvoiceView {
 		issuedAt: issued.toISOString(),
 		customerName: source.customer_details_name?.trim() || 'N/A',
 		customerEmail: source.customer_details_email?.trim() || 'N/A',
-		customerPhone: source.address_phone?.trim() || 'N/A',
+		customerPhone: source.billing_phone?.trim() || 'N/A',
 		addressLines: [street, zipCity, region, country].filter((line) => line.length > 0),
 		lines,
 		shippingCost,

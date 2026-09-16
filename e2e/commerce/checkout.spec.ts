@@ -60,7 +60,8 @@ test.describe('Commerce — checkout', () => {
 				const missingAddress = await page.request.post('/checkout?/checkout', {
 					form: {
 						orderId: pending!.id,
-						addressId: ''
+						shippingAddressId: '',
+						billingAddressId: ''
 					},
 					headers: { Origin: origin }
 				});
@@ -69,7 +70,8 @@ test.describe('Commerce — checkout', () => {
 				const stolen = await page.request.post('/checkout?/checkout', {
 					form: {
 						orderId: foreign.order.id,
-						addressId: address.id,
+						shippingAddressId: address.id,
+						billingAddressId: address.id,
 						shippingOption: 'no_shipping',
 						shippingCost: '0'
 					},

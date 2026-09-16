@@ -82,6 +82,11 @@
 	// Runes Svelte 5
 	let stripe = $state<Stripe | null>(null);
 	let selectedAddressId = $state<string | undefined>(undefined);
+	// Facturation : par défaut identique à la livraison (cas le plus courant,
+	// zéro clic supplémentaire) — décoché uniquement si l'utilisateur veut une
+	// adresse de facturation différente.
+	let billingSameAsShipping = $state(true);
+	let selectedBillingAddressId = $state<string | undefined>(undefined);
 
 	// Plus de cartValue local, on utilise $cartStore directement.
 	let shippingOptions = $state<any[]>([]);
@@ -271,16 +276,26 @@
 		}
 	}
 
+	function selectBillingAddress(addressId: string) {
+		selectedBillingAddressId = addressId;
+	}
+
 	// Retour du formulaire de création d'adresse (voir AddressSelector) : on
 	// sélectionne directement l'adresse tout juste créée, sans repasser par le
-	// combobox.
+	// combobox. `target` indique si elle vient du sélecteur livraison ou facturation.
 	$effect(() => {
 		const addressIdFromUrl = page.url.searchParams.get('addressId');
-		if (
-			addressIdFromUrl &&
-			!selectedAddressId &&
-			data.addresses?.some((a) => a.id === addressIdFromUrl)
-		) {
+		const targetFromUrl = page.url.searchParams.get('target');
+		if (!addressIdFromUrl || !data.addresses?.some((a) => a.id === addressIdFromUrl)) return;
+
+		if (targetFromUrl === 'billing') {
+			if (!selectedBillingAddressId) {
+				billingSameAsShipping = false;
+				selectBillingAddress(addressIdFromUrl);
+				toast.success('Adresse de facturation ajoutée avec succès');
+				replaceState(page.url.pathname, {});
+			}
+		} else if (!selectedAddressId) {
 			selectAddress(addressIdFromUrl);
 			toast.success('Adresse ajoutée avec succès');
 			replaceState(page.url.pathname, {});
@@ -478,11 +493,18 @@
 	function handleCheckout(event: Event) {
 		const pendingId = data.pendingOrder?.id;
 		if (pendingId) $createPaymentData.orderId = pendingId;
-		if (selectedAddressId) $createPaymentData.addressId = selectedAddressId;
+		if (selectedAddressId) $createPaymentData.shippingAddressId = selectedAddressId;
+		const billingId = billingSameAsShipping ? selectedAddressId : selectedBillingAddressId;
+		if (billingId) $createPaymentData.billingAddressId = billingId;
 
 		if (!selectedAddressId || !$createPaymentData.orderId) {
 			event.preventDefault();
 			toast.error('Veuillez choisir une adresse.');
+			return;
+		}
+		if (!billingSameAsShipping && !selectedBillingAddressId) {
+			event.preventDefault();
+			toast.error('Veuillez choisir une adresse de facturation.');
 			return;
 		}
 		if (!selectedShippingOption && !hasCustomItems) {
@@ -509,7 +531,11 @@
 			$createPaymentData.orderId = data.pendingOrder.id;
 		}
 		if (selectedAddressId) {
-			$createPaymentData.addressId = selectedAddressId;
+			$createPaymentData.shippingAddressId = selectedAddressId;
+		}
+		const billingId = billingSameAsShipping ? selectedAddressId : selectedBillingAddressId;
+		if (billingId) {
+			$createPaymentData.billingAddressId = billingId;
 		}
 	});
 </script>
@@ -528,6 +554,25 @@
 						{selectedAddressId}
 						onAddressSelect={selectAddress}
 					/>
+
+					<div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-4">
+						<label class="flex items-center gap-2 cursor-pointer select-none">
+							<input type="checkbox" class="h-4 w-4" bind:checked={billingSameAsShipping} />
+							<span class="text-sm font-medium"
+								>Adresse de facturation identique à l'adresse de livraison</span
+							>
+						</label>
+
+						{#if !billingSameAsShipping}
+							<AddressSelector
+								addresses={data?.addresses || []}
+								selectedAddressId={selectedBillingAddressId}
+								onAddressSelect={selectBillingAddress}
+								title="Adresse de facturation"
+								target="billing"
+							/>
+						{/if}
+					</div>
 
 					<ShippingOptions
 						{shippingOptions}
@@ -596,7 +641,16 @@
 									onsubmit={handleCheckout}
 								>
 									<input type="hidden" name="orderId" bind:value={$createPaymentData.orderId} />
-									<input type="hidden" name="addressId" bind:value={$createPaymentData.addressId} />
+									<input
+										type="hidden"
+										name="shippingAddressId"
+										bind:value={$createPaymentData.shippingAddressId}
+									/>
+									<input
+										type="hidden"
+										name="billingAddressId"
+										bind:value={$createPaymentData.billingAddressId}
+									/>
 									<input
 										type="hidden"
 										name="shippingOption"

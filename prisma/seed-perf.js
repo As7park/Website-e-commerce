@@ -140,22 +140,60 @@ async function seedTransactions(users) {
 			shippingOption: 'colissimo/domicile',
 			shippingCost: faker.number.float({ min: 0, max: 15, fractionDigits: 2 }),
 			...PACKAGE_DEFAULTS,
-			address_first_name: faker.person.firstName(),
-			address_last_name: faker.person.lastName(),
-			address_phone: faker.phone.number(),
-			address_company: null,
-			address_street_number: faker.location.buildingNumber(),
-			address_street: faker.location.street(),
-			address_city: faker.location.city(),
-			address_county: faker.location.county(),
-			address_state: faker.location.state(),
-			address_stateLetter: faker.location.state({ abbreviated: true }),
-			address_state_code: faker.location.state({ abbreviated: true }),
-			address_zip: faker.location.zipCode(),
-			address_country: 'France',
-			address_country_code: 'FR',
-			address_ISO_3166_1_alpha_3: 'FRA',
-			address_type: 'SHIPPING',
+			...(() => {
+				const address = {
+					first_name: faker.person.firstName(),
+					last_name: faker.person.lastName(),
+					phone: faker.phone.number(),
+					company: null,
+					street_number: faker.location.buildingNumber(),
+					street: faker.location.street(),
+					city: faker.location.city(),
+					county: faker.location.county(),
+					state: faker.location.state(),
+					stateLetter: faker.location.state({ abbreviated: true }),
+					state_code: faker.location.state({ abbreviated: true }),
+					zip: faker.location.zipCode(),
+					country: 'France',
+					country_code: 'FR',
+					ISO_3166_1_alpha_3: 'FRA',
+					type: 'SHIPPING'
+				};
+				return {
+					address_first_name: address.first_name,
+					address_last_name: address.last_name,
+					address_phone: address.phone,
+					address_company: address.company,
+					address_street_number: address.street_number,
+					address_street: address.street,
+					address_city: address.city,
+					address_county: address.county,
+					address_state: address.state,
+					address_stateLetter: address.stateLetter,
+					address_state_code: address.state_code,
+					address_zip: address.zip,
+					address_country: address.country,
+					address_country_code: address.country_code,
+					address_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
+					address_type: address.type,
+					billing_first_name: address.first_name,
+					billing_last_name: address.last_name,
+					billing_phone: address.phone,
+					billing_company: address.company,
+					billing_street_number: address.street_number,
+					billing_street: address.street,
+					billing_city: address.city,
+					billing_county: address.county,
+					billing_state: address.state,
+					billing_stateLetter: address.stateLetter,
+					billing_state_code: address.state_code,
+					billing_zip: address.zip,
+					billing_country: address.country,
+					billing_country_code: address.country_code,
+					billing_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
+					billing_type: address.type
+				};
+			})(),
 			products: [
 				{
 					id: randomUUID(),
@@ -192,8 +230,13 @@ async function seedPromoCodes() {
 			id: randomUUID(),
 			code: `PERF-${i}-${randomUUID().slice(0, 6).toUpperCase()}`,
 			type,
-			value: type === 'PERCENTAGE' ? faker.number.int({ min: 5, max: 50 }) : faker.number.int({ min: 5, max: 100 }),
-			minAmount: faker.datatype.boolean() ? faker.number.float({ min: 10, max: 200, fractionDigits: 2 }) : null,
+			value:
+				type === 'PERCENTAGE'
+					? faker.number.int({ min: 5, max: 50 })
+					: faker.number.int({ min: 5, max: 100 }),
+			minAmount: faker.datatype.boolean()
+				? faker.number.float({ min: 10, max: 200, fractionDigits: 2 })
+				: null,
 			usageLimit: faker.datatype.boolean() ? faker.number.int({ min: 10, max: 500 }) : null,
 			usageCount: faker.number.int({ min: 0, max: 50 }),
 			active: faker.datatype.boolean(),
@@ -212,7 +255,11 @@ async function seedBlog() {
 	const category = await prisma.blogCategory.upsert({
 		where: { name: 'Perf' },
 		update: {},
-		create: { id: randomUUID(), name: 'Perf', description: 'Articles générés pour les tests de charge.' }
+		create: {
+			id: randomUUID(),
+			name: 'Perf',
+			description: 'Articles générés pour les tests de charge.'
+		}
 	});
 
 	const rows = Array.from({ length: COUNTS.blogPosts }, (_, i) => ({
@@ -247,7 +294,9 @@ async function main() {
 	console.log('\nSeed perf terminé :');
 	console.log(`  ${products.length} produits, ${categories.length} catégories perf`);
 	console.log(`  ${users.length} utilisateurs (mot de passe : ${PERF_PASSWORD})`);
-	console.log(`  ${COUNTS.transactions} transactions, ${COUNTS.contacts} messages, ${COUNTS.promoCodes} codes promo, ${COUNTS.blogPosts} articles`);
+	console.log(
+		`  ${COUNTS.transactions} transactions, ${COUNTS.contacts} messages, ${COUNTS.promoCodes} codes promo, ${COUNTS.blogPosts} articles`
+	);
 	console.log('\nPour nettoyer : node prisma/seed-perf.js --clean');
 }
 
