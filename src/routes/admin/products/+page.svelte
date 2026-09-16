@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn, BulkAction } from '$components/Table.svelte';
 	import { deleteProductSchema } from '$lib/schema/products/productSchema.js';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
@@ -50,7 +51,7 @@
 	} = deleteProduct;
 
 	// Define table columns
-	const productColumns = $state([
+	const productColumns = $state<TableColumn[]>([
 		{ key: 'stock', label: 'Stock' },
 		{ key: 'name', label: 'Nom' },
 		{ key: 'price', label: 'Prix' },
@@ -61,18 +62,17 @@
 	]);
 
 	// Define actions with icons
-	const productActions = $state([
+	const productActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/products/${item.id}`,
+			url: (item) => `/admin/products/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteProduct',
-			dataForm: deleteProductData.id,
 			enhanceAction: deleteProductEnhance,
 			icon: Trash
 		}
@@ -96,7 +96,9 @@
 		const result = deserialize(await response.text());
 
 		if (result.type === 'success' || result.type === 'failure') {
-			const resultData = result.data as { deleted?: number; skipped?: number; message?: string } | undefined;
+			const resultData = result.data as
+				| { deleted?: number; skipped?: number; message?: string }
+				| undefined;
 			if (result.type === 'failure') {
 				toast.error(resultData?.message ?? 'Échec de la suppression groupée');
 			} else if (resultData?.skipped) {
@@ -112,7 +114,7 @@
 		}
 	}
 
-	const productBulkActions = [
+	const productBulkActions: BulkAction[] = [
 		{
 			label: 'Supprimer la sélection',
 			icon: Trash,
@@ -143,7 +145,7 @@
 	);
 
 	// Table columns
-	const taxonomyColumns = [
+	const taxonomyColumns: TableColumn[] = [
 		{ key: 'name', label: 'Nom' },
 		{ key: 'slug', label: 'Slug' },
 		{ key: 'type', label: 'Type' },
@@ -151,18 +153,17 @@
 	];
 
 	// Table actions
-	const taxonomyActions = [
+	const taxonomyActions: TableAction[] = [
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/products/taxonomies/${item.id}`,
+			url: (item) => `/admin/products/taxonomies/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteTaxonomy',
-			dataForm: deleteTaxonomyData.id,
 			enhanceAction: deleteTaxonomyEnhance,
 			icon: Trash
 		}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { deleteUserSchema } from '$lib/schema/users/userSchema.js';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
@@ -22,25 +23,24 @@
 	} = deleteUser;
 
 	// Define table columns
-	const userColumns = $state([
+	const userColumns = $state<TableColumn[]>([
 		{ key: 'name', label: 'Nom' },
 		{ key: 'email', label: 'Email' },
 		{ key: 'role', label: 'Role' }
 	]);
 
 	// Define actions with icons
-	const userActions = $state([
+	const userActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/users/${item.id}`,
+			url: (item) => `/admin/users/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteUser',
-			dataForm: deleteUserData.id,
 			enhanceAction: deleteUserEnhance,
 			icon: Trash
 		}

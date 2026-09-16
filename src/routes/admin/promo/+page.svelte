@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
@@ -35,7 +36,7 @@
 		}));
 	});
 
-	const PromoColumns = $state([
+	const PromoColumns = $state<TableColumn[]>([
 		{ key: 'code', label: 'Code' },
 		{ key: 'typeLabel', label: 'Type' },
 		{ key: 'valueLabel', label: 'Valeur' },
@@ -46,11 +47,11 @@
 		{ key: 'loyaltyLabel', label: 'Fidélité' }
 	]);
 
-	const PromoActions = $state([
+	const PromoActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/promo/${item.id}`,
+			url: (item) => `/admin/promo/${item.id}`,
 			icon: Pencil
 		},
 		{

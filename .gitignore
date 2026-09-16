@@ -10,6 +10,9 @@ node_modules
 /build
 .vite_cache
 
+# TinyMCE self-hosted — copié depuis node_modules/tinymce par scripts/copy-tinymce.mjs (postinstall)
+/static/tinymce
+
 # OS
 .DS_Store
 Thumbs.db

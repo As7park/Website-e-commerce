@@ -26,10 +26,7 @@ e2e, documentés dans `docs/`.
 - **Vente flash avec compte à rebours** — `flashSaleEndsAt` sur `Product`
   ou une catégorie, bandeau + minuteur vitrine, prix barré. Urgence
   d'achat, réutilise le système de prix de `ProductVariant`.
-- **Upsell post-achat en un clic** — sur la page de remerciement, une
-  offre complémentaire ajoutable sans ressaisir la carte (PaymentIntent
-  off-session Stripe sur le moyen de paiement déjà utilisé). Se branche
-  naturellement sur le module Moyens de paiement enregistrés.
+- **Upsell post-achat en un clic** — sur la page de remerciement, uneù offre complémentaire ajoutable sans ressaisir la carte (PaymentIntent off-session Stripe sur le moyen de paiement déjà utilisé). Se branche naturellement sur le module Moyens de paiement enregistrés.
 - **Abonnements / réachat automatique** — pour les produits consommables,
   Stripe Subscriptions avec pause/annulation depuis `/auth/settings`.
   Revenu récurrent, forte rétention.

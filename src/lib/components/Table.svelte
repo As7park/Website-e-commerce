@@ -1,3 +1,50 @@
+<script lang="ts" module>
+	import type { Action } from 'svelte/action';
+
+	export type TableColumn = {
+		key: string;
+		label: string;
+		formatter?: (value: any) => unknown;
+	};
+
+	export type TableItem = {
+		id: string;
+		[key: string]: unknown;
+	};
+
+	export type TableAction =
+		| {
+				type: 'link';
+				name: string;
+				url: (item: any) => string;
+				icon?: any;
+				condition?: (item: any) => boolean;
+		  }
+		| {
+				type: 'form';
+				name: string;
+				url: string;
+				enhanceAction: Action<HTMLFormElement>;
+				icon?: any;
+				condition?: (item: any) => boolean;
+		  };
+
+	/**
+	 * Action groupée, appliquée à un lot d'ids sélectionnés (checkboxes).
+	 * `variant: 'destructive'` affiche le bouton en rouge et exige une
+	 * confirmation (`AlertDialog`) avant d'appeler `onApply` — même esprit que
+	 * les actions de ligne `type: 'form'` existantes, mais un seul appel pour
+	 * tout le lot plutôt qu'un formulaire par ligne.
+	 */
+	export type BulkAction = {
+		label: string;
+		icon?: any;
+		variant?: 'default' | 'destructive';
+		confirmDescription?: string;
+		onApply: (ids: string[]) => void | Promise<void>;
+	};
+</script>
+
 <script lang="ts">
 	import { Button, buttonVariants } from '$shadcn/button';
 	import { cn } from '$lib/components/shadcn/utils.js';
@@ -14,40 +61,10 @@
 	import * as Tooltip from '$shadcn/tooltip/index.js';
 	import { Checkbox } from '$shadcn/checkbox/index.js';
 
-	import type { Component } from 'svelte';
-	import type { Action } from 'svelte/action';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { Plus, Search, X, SearchX, LoaderCircle, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { goto, beforeNavigate } from '$app/navigation';
 	import { page as appPage, navigating } from '$app/state';
-
-	type TableColumn = {
-		key: string;
-		label: string;
-		formatter?: (value: unknown) => unknown;
-	};
-
-	type TableItem = {
-		id: string;
-		[key: string]: unknown;
-	};
-
-	type TableAction =
-		| {
-				type: 'link';
-				name: string;
-				url: (item: TableItem) => string;
-				icon?: Component;
-				condition?: (item: TableItem) => boolean;
-		  }
-		| {
-				type: 'form';
-				name: string;
-				url: string;
-				enhanceAction: Action<HTMLFormElement>;
-				icon?: Component;
-				condition?: (item: TableItem) => boolean;
-		  };
 
 	/**
 	 * Pagination pilotée par le serveur : `data` est déjà la bonne page,
@@ -64,21 +81,6 @@
 		sort?: string;
 		dir?: 'asc' | 'desc';
 	}
-
-	/**
-	 * Action groupée, appliquée à un lot d'ids sélectionnés (checkboxes).
-	 * `variant: 'destructive'` affiche le bouton en rouge et exige une
-	 * confirmation (`AlertDialog`) avant d'appeler `onApply` — même esprit que
-	 * les actions de ligne `type: 'form'` existantes, mais un seul appel pour
-	 * tout le lot plutôt qu'un formulaire par ligne.
-	 */
-	type BulkAction = {
-		label: string;
-		icon?: Component;
-		variant?: 'default' | 'destructive';
-		confirmDescription?: string;
-		onApply: (ids: string[]) => void | Promise<void>;
-	};
 
 	interface Props {
 		data: TableItem[];

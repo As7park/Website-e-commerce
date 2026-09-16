@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
@@ -80,67 +81,64 @@
 	});
 
 	// Define table columns
-	const PostsColumns = $state([
+	const PostsColumns = $state<TableColumn[]>([
 		{ key: 'title', label: 'Title' },
 		{ key: 'category', label: 'Category' },
 		{ key: 'tagsString', label: 'Tags' },
 		{ key: 'published', label: 'Published' }
 	]);
 
-	const CategoriesColumns = $state([
+	const CategoriesColumns = $state<TableColumn[]>([
 		{ key: 'name', label: 'Name' },
 		{ key: 'description', label: 'Description' }
 	]);
 
-	const TagsColumns = $state([{ key: 'name', label: 'Name' }]);
+	const TagsColumns = $state<TableColumn[]>([{ key: 'name', label: 'Name' }]);
 
 	// Define actions with icons
-	const PostsActions = $state([
+	const PostsActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/blog/post/${item.id}`,
+			url: (item) => `/admin/blog/post/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteBlogPost',
-			dataForm: deleteBlogPostData.id,
 			enhanceAction: deleteBlogPostEnhance,
 			icon: Trash
 		}
 	]);
 
-	const CategoriesActions = $state([
+	const CategoriesActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/blog/categories/${item.id}`,
+			url: (item) => `/admin/blog/categories/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteBlogCategory',
-			dataForm: deleteBlogCategoryData.id,
 			enhanceAction: deleteBlogCategoryEnhance,
 			icon: Trash
 		}
 	]);
 
-	const TagsActions = $state([
+	const TagsActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/blog/tags/${item.id}`,
+			url: (item) => `/admin/blog/tags/${item.id}`,
 			icon: Pencil
 		},
 		{
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteBlogTag',
-			dataForm: deleteBlogTagData.id,
 			enhanceAction: deleteBlogTagEnhance,
 			icon: Trash
 		}

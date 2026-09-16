@@ -7,6 +7,7 @@
 	import { Label } from '$shadcn/label';
 	import * as Select from '$shadcn/select';
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { updateTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
@@ -77,14 +78,14 @@
 		}))
 	);
 
-	const valueColumns = [
+	const valueColumns: TableColumn[] = [
 		{ key: 'value', label: 'Valeur' },
 		{ key: 'label', label: 'Libellé' },
 		{ key: 'parentName', label: 'Parent' },
 		{ key: 'code', label: 'Code' }
 	];
 
-	const valueActions = [
+	const valueActions: TableAction[] = [
 		{
 			type: 'link',
 			name: 'edit',
@@ -95,7 +96,6 @@
 			type: 'form',
 			name: 'delete',
 			url: '?/deleteTaxonomyValue',
-			dataForm: deleteTaxonomyValueData.id,
 			enhanceAction: deleteTaxonomyValueEnhance,
 			icon: Trash
 		}

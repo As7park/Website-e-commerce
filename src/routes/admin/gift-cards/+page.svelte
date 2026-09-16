@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
@@ -29,7 +30,7 @@
 		}));
 	});
 
-	const giftCardColumns = $state([
+	const giftCardColumns = $state<TableColumn[]>([
 		{ key: 'code', label: 'Code' },
 		{ key: 'initialValueLabel', label: 'Valeur initiale' },
 		{ key: 'balanceLabel', label: 'Solde restant' },
@@ -38,11 +39,11 @@
 		{ key: 'activeLabel', label: 'Statut' }
 	]);
 
-	const giftCardActions = $state([
+	const giftCardActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/gift-cards/${item.id}`,
+			url: (item) => `/admin/gift-cards/${item.id}`,
 			icon: Pencil
 		},
 		{

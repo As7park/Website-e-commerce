@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableAction, TableColumn } from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import Mail from 'lucide-svelte/icons/mail';
 	import Eye from 'lucide-svelte/icons/eye';
@@ -9,27 +10,31 @@
 	let { data } = $props();
 
 	// Define table columns
-	const contactColumns = $state([
+	const contactColumns = $state<TableColumn[]>([
 		{ key: 'name', label: 'Nom' },
 		{ key: 'email', label: 'Email' },
 		{ key: 'subject', label: 'Sujet' },
-		{ key: 'message', label: 'Message', formatter: (value: string) => value.length > 50 ? value.substring(0, 50) + '...' : value },
+		{
+			key: 'message',
+			label: 'Message',
+			formatter: (value: string) => (value.length > 50 ? value.substring(0, 50) + '...' : value)
+		},
 		{ key: 'createdAt', label: 'Date de création', formatter: formatDate }
 	]);
 
 	// Define actions for each contact submission
-	const contactActions = $state([
+	const contactActions = $state<TableAction[]>([
 		{
 			type: 'link',
 			name: 'voir',
-			url: (item: any) => `/admin/contacts/view/${item.id}`,
+			url: (item) => `/admin/contacts/view/${item.id}`,
 			icon: Eye,
 			condition: () => true // Toujours afficher le lien pour voir les détails
 		},
 		{
 			type: 'link',
 			name: 'répondre',
-			url: (item: any) => `mailto:${item.email}?subject=Re: ${item.subject}`,
+			url: (item) => `mailto:${item.email}?subject=Re: ${item.subject}`,
 			icon: Mail,
 			condition: () => true // Toujours afficher le lien pour répondre
 		}
@@ -54,4 +59,4 @@
 			dir: data.dir
 		}}
 	/>
-</div> 
+</div>
