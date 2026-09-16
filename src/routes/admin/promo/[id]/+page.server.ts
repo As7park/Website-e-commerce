@@ -6,6 +6,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { updatePromoSchema } from '$lib/schema/promo/promoSchema';
 import { getPromoCodeById, updatePromoCode, getPromoCodeByCode } from '$lib/prisma/promo/promo';
 import { requireAdmin } from '$lib/admin/guards';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const promo = await getPromoCodeById(params.id);
@@ -27,8 +28,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 
 	const updatePromoForm = await superValidate(initialData, zod(updatePromoSchema));
+	const { loyaltyEnabled } = await getStoreFeatureFlags();
 
-	return { updatePromoForm };
+	return { updatePromoForm, loyaltyEnabled };
 };
 
 export const actions: Actions = {

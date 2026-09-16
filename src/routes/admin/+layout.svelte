@@ -4,33 +4,37 @@
 	import { Search } from 'lucide-svelte';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
 
-	let { children } = $props();
+	let { data, children } = $props();
 
-	// Données de navigation
-	const data = {
-		versions: ['1.0.1', '1.1.0-alpha', '2.0.0-beta1'],
-		navMain: [
-			{
-				title: 'Dashboard',
-				items: [
-					{ title: 'Accueil', url: '/admin' },
-					{ title: 'ventes', url: '/admin/sales' }, // COMMERCE-PLUGIN
-					{ title: 'utilisateurs', url: '/admin/users' },
-					{ title: 'produits', url: '/admin/products' }, // PRODUCT-PLUGIN
-					{ title: 'avis', url: '/admin/products/reviews' }, // PRODUCT-PLUGIN
-				{ title: 'questions produits', url: '/admin/products/questions' }, // PRODUCT-PLUGIN
-					{ title: 'blog', url: '/admin/blog' }, // BLOG-PLUGIN
-					{ title: 'promo', url: '/admin/promo' }, // PROMO-PLUGIN
-					{ title: 'cartes cadeaux', url: '/admin/gift-cards' },
-					{ title: 'retours', url: '/admin/returns' }, // COMMERCE-PLUGIN
-					{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN
-					{ title: 'métriques', url: '/admin/metrics' },
-					{ title: 'exports', url: '/admin/exports' },
-					{ title: 'modules', url: '/admin/settings' }
-				]
-			}
-		]
-	};
+	// Données de navigation — les entrées liées à un module optionnel ne
+	// sont incluses que si `StoreSettings.<flag>` est actif (voir
+	// `+layout.server.ts`), sinon un admin verrait un lien vers un module
+	// désactivé côté client.
+	const navMain = $derived([
+		{
+			title: 'Dashboard',
+			items: [
+				{ title: 'Accueil', url: '/admin' },
+				{ title: 'ventes', url: '/admin/sales' }, // COMMERCE-PLUGIN
+				{ title: 'utilisateurs', url: '/admin/users' },
+				{ title: 'produits', url: '/admin/products' }, // PRODUCT-PLUGIN
+				{ title: 'avis', url: '/admin/products/reviews' }, // PRODUCT-PLUGIN
+				...(data.productQnaEnabled
+					? [{ title: 'questions produits', url: '/admin/products/questions' }] // PRODUCT-PLUGIN
+					: []),
+				{ title: 'blog', url: '/admin/blog' }, // BLOG-PLUGIN
+				{ title: 'promo', url: '/admin/promo' }, // PROMO-PLUGIN
+				...(data.giftCardsEnabled ? [{ title: 'cartes cadeaux', url: '/admin/gift-cards' }] : []),
+				...(data.returnsEnabled
+					? [{ title: 'retours', url: '/admin/returns' }] // COMMERCE-PLUGIN
+					: []),
+				{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN
+				{ title: 'métriques', url: '/admin/metrics' },
+				{ title: 'exports', url: '/admin/exports' },
+				{ title: 'modules', url: '/admin/settings' }
+			]
+		}
+	]);
 </script>
 
 <div class="w-screen h-screen">
@@ -38,7 +42,7 @@
 		<Sidebar.Root class="border-none">
 			<!-- Contenu de la Sidebar -->
 			<Sidebar.Content>
-				{#each data.navMain as group}
+				{#each navMain as group}
 					<Sidebar.Group>
 						<Sidebar.GroupLabel>{group.title}</Sidebar.GroupLabel>
 						<Sidebar.Menu>

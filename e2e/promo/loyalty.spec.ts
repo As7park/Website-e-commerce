@@ -32,6 +32,46 @@ import { clearMailbox, waitForEmailContaining } from '../support/mailbox';
 test.describe('Fidélité', () => {
 	test.setTimeout(6 * 60_000);
 
+	test('module désactivé : aucune récompense même au seuil atteint', async ({ page, account }) => {
+		const originalFlags = await getStoreFeatureFlags();
+		const created = await createCatalogProduct();
+		const { product } = created;
+		const promoCode = `E2ELOYOFF${Date.now().toString(36).toUpperCase()}`;
+		const promo = await createPromoCode(promoCode, { loyaltyThreshold: 1 });
+
+		try {
+			await setStoreFeatureFlags({ loyaltyEnabled: false });
+			await signUpAndVerify(page, account);
+			const user = await requireUser(account.email);
+			const address = await createUserAddress(user.id);
+
+			const linked = await linkProductToOrder(user.id, product.id);
+			await attachOrderAddress(linked.order.id, address.id);
+			const sessionId = `e2e-cs-loyalty-off-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+			const payload = checkoutSessionCompletedPayload({
+				sessionId,
+				orderId: linked.order.id,
+				email: account.email
+			});
+			const response = await page.request.post('/api/webhooks', {
+				headers: {
+					'content-type': 'application/json',
+					'stripe-signature': signStripePayload(payload)
+				},
+				data: payload
+			});
+			expect(response.status()).toBe(200);
+
+			// Seuil atteint dès la première commande (loyaltyThreshold: 1) mais le
+			// module est désactivé : le webhook ne doit pas enfiler la vérification.
+			expect(await getLoyaltyAward(user.id, promo.id)).toBeNull();
+		} finally {
+			await setStoreFeatureFlags(originalFlags);
+			await deletePromoCode(promo.id);
+			await deleteCatalogProduct(product.id);
+		}
+	});
+
 	test('récompense accordée au seuil, jamais deux fois', async ({ page, account }) => {
 		const originalFlags = await getStoreFeatureFlags();
 		const created = await createCatalogProduct();

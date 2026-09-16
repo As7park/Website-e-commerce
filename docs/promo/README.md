@@ -119,9 +119,10 @@ en e2e).
 
 | #   | Étape                                              | Geste            | Preuve                                   |
 | --- | -------------------------------------------------- | ---------------- | ---------------------------------------- |
-| 1   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
-| 2   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
-| 3   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
+| 1   | Module désactivé : aucune récompense même au seuil | webhook signé    | `LoyaltyAward` absent                    |
+| 2   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
+| 3   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
+| 4   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
 
 ```bash
 npm run test:e2e

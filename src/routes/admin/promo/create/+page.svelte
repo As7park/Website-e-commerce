@@ -123,24 +123,32 @@
 				<Form.FieldErrors />
 			</Form.Field>
 
-			<Form.Field name="loyaltyThreshold" form={createPromo}>
-				<Form.Control>
-					<Form.Label>Seuil fidélité (optionnel)</Form.Label>
-					<Input
-						name="loyaltyThreshold"
-						type="number"
-						step="1"
-						min="1"
-						placeholder="ex: 5"
-						bind:value={$createPromoData.loyaltyThreshold}
-					/>
-					<p class="text-sm text-muted-foreground">
-						Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
-						commandes payées (module « Fidélité », voir /admin/settings).
-					</p>
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
+			{#if data.loyaltyEnabled}
+				<Form.Field name="loyaltyThreshold" form={createPromo}>
+					<Form.Control>
+						<Form.Label>Seuil fidélité (optionnel)</Form.Label>
+						<Input
+							name="loyaltyThreshold"
+							type="number"
+							step="1"
+							min="1"
+							placeholder="ex: 5"
+							bind:value={$createPromoData.loyaltyThreshold}
+						/>
+						<p class="text-sm text-muted-foreground">
+							Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
+							commandes payées.
+						</p>
+					</Form.Control>
+					<Form.FieldErrors />
+				</Form.Field>
+			{:else}
+				<p class="text-sm text-muted-foreground">
+					Module « Fidélité » désactivé — active-le dans <a href="/admin/settings" class="underline"
+						>/admin/settings</a
+					> pour définir un seuil sur ce code.
+				</p>
+			{/if}
 
 			<Form.Field name="active" form={createPromo} class="rcc">
 				<Form.Control>
