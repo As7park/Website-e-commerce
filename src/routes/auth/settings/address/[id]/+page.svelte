@@ -3,7 +3,6 @@
 	import * as Form from '$shadcn/form';
 	import { Button } from '$shadcn/button';
 	import { Input } from '$shadcn/input';
-	import * as Select from '$shadcn/select';
 	import { toast } from 'svelte-sonner';
 	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
 	import type { AddressSuggestion } from '$lib/addresses/types';
@@ -147,23 +146,6 @@
 			<Form.Control>
 				<Form.Label>Pays</Form.Label>
 				<Input name="country" type="text" bind:value={$updateAddressData.country} />
-			</Form.Control>
-			<Form.FieldErrors />
-		</Form.Field>
-
-		<Form.Field name="type" form={updateAddress}>
-			<Form.Control>
-				<Form.Label>Type d'adresse</Form.Label>
-				<Select.Root bind:value={$updateAddressData.type} type="single">
-					<Select.Trigger class="w-full">
-						<span>{$updateAddressData.type || 'Sélectionner un type'}</span>
-						<!-- 👈 Affiche la valeur sélectionnée -->
-					</Select.Trigger>
-					<Select.Content>
-						<Select.Item value="SHIPPING">Livraison</Select.Item>
-						<Select.Item value="BILLING">Facturation</Select.Item>
-					</Select.Content>
-				</Select.Root>
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

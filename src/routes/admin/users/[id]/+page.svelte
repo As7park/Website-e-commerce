@@ -7,7 +7,6 @@
 	// Importation des composants nécessaires de Shadcn
 	import * as Form from '$shadcn/form';
 	import * as DropdownMenu from '$shadcn/dropdown-menu';
-	import * as Select from '$shadcn/select';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
 	import { toast } from 'svelte-sonner';
@@ -192,23 +191,6 @@
 							<Form.Control>
 								<Form.Label>Pays</Form.Label>
 								<Input name="country" type="text" bind:value={address.country} />
-							</Form.Control>
-							<Form.FieldErrors />
-						</Form.Field>
-
-						<Form.Field name="addresses[{index}].type" form={updateUserAndAddresses}>
-							<Form.Control>
-								<Form.Label>Type d'adresse</Form.Label>
-								<Select.Root bind:value={address.type} type="single">
-									<Select.Trigger class="w-full">
-										<span>{address.type || 'Sélectionner un type'}</span>
-										<!-- 👈 Affiche la valeur sélectionnée -->
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Item value="SHIPPING">Livraison</Select.Item>
-										<Select.Item value="BILLING">Facturation</Select.Item>
-									</Select.Content>
-								</Select.Root>
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

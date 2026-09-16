@@ -156,8 +156,7 @@ async function seedTransactions(users) {
 					zip: faker.location.zipCode(),
 					country: 'France',
 					country_code: 'FR',
-					ISO_3166_1_alpha_3: 'FRA',
-					type: 'SHIPPING'
+					ISO_3166_1_alpha_3: 'FRA'
 				};
 				return {
 					address_first_name: address.first_name,
@@ -175,7 +174,6 @@ async function seedTransactions(users) {
 					address_country: address.country,
 					address_country_code: address.country_code,
 					address_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-					address_type: address.type,
 					billing_first_name: address.first_name,
 					billing_last_name: address.last_name,
 					billing_phone: address.phone,
@@ -190,8 +188,7 @@ async function seedTransactions(users) {
 					billing_zip: address.zip,
 					billing_country: address.country,
 					billing_country_code: address.country_code,
-					billing_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-					billing_type: address.type
+					billing_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3
 				};
 			})(),
 			products: [

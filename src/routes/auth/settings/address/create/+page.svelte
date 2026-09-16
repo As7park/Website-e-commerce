@@ -7,7 +7,6 @@
 	import * as Form from '$shadcn/form';
 	import { Button } from '$shadcn/button';
 	import { Input } from '$shadcn/input';
-	import * as Select from '$shadcn/select';
 	import { toast } from 'svelte-sonner';
 	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
 	import type { AddressSuggestion } from '$lib/addresses/types';
@@ -43,12 +42,6 @@
 
 	$effect(() => {
 		//console.log($createAddressData);
-	});
-
-	$effect(() => {
-		if (!$createAddressData.type || Array.isArray($createAddressData.type)) {
-			$createAddressData.type = 'SHIPPING'; // 👈 Définit une valeur par défaut correcte
-		}
 	});
 
 	function handleAddressSelect(suggestion: AddressSuggestion) {
@@ -157,23 +150,6 @@
 				<Form.Control>
 					<Form.Label>Pays</Form.Label>
 					<Input name="country" type="text" bind:value={$createAddressData.country} />
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
-
-			<Form.Field name="type" form={createAddress}>
-				<Form.Control>
-					<Form.Label>Type d'adresse</Form.Label>
-					<Select.Root bind:value={$createAddressData.type} type="single">
-						<Select.Trigger class="w-full">
-							<span>{$createAddressData.type || 'Sélectionner un type'}</span>
-							<!-- 👈 Affiche la valeur sélectionnée -->
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Item value="SHIPPING">Livraison</Select.Item>
-							<Select.Item value="BILLING">Facturation</Select.Item>
-						</Select.Content>
-					</Select.Root>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

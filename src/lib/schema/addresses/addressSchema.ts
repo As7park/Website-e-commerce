@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-// Enum pour différencier les adresses de Livraison et de Facturation
-export const AddressTypeEnum = z.enum(['SHIPPING', 'BILLING']);
-
 // Schéma de validation pour une adresse complète
 export const createAddressSchema = z.object({
 	first_name: z.string().min(2, 'Le prénom est requis').max(50, 'Le prénom est trop long'),
@@ -28,7 +25,6 @@ export const createAddressSchema = z.object({
 	country: z.string().min(2, 'Le pays est requis').max(100),
 	country_code: z.string().length(2, 'Format invalide (ex: FR, US, DE)'),
 	ISO_3166_1_alpha_3: z.string().length(3, 'Format invalide (ex: FRA, USA, CAN)'),
-	type: AddressTypeEnum, // SHIPPING ou BILLING
 	userId: z.string(), // L'adresse doit être liée à un utilisateur
 	createdAt: z.date().optional(),
 	updatedAt: z.date().optional()

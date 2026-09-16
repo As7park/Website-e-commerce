@@ -32,8 +32,7 @@ export const load: PageServerLoad = async (event) => {
 		zip: address.zip,
 		country: address.country,
 		country_code: address.country_code,
-		ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-		type: address.type
+		ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3
 	};
 
 	const IupdateAddressSchema = await superValidate(initialData, zod(updateAddressSchema));
@@ -73,8 +72,7 @@ export const actions: Actions = {
 			zip,
 			country,
 			country_code,
-			ISO_3166_1_alpha_3,
-			type
+			ISO_3166_1_alpha_3
 		} = form.data;
 
 		try {
@@ -97,7 +95,6 @@ export const actions: Actions = {
 					country,
 					country_code,
 					ISO_3166_1_alpha_3,
-					type,
 					updatedAt: new Date()
 				},
 				userId

@@ -399,7 +399,6 @@ async function createPaidFlow({
 			address_country: address.country,
 			address_country_code: address.country_code,
 			address_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-			address_type: address.type,
 			billing_first_name: address.first_name,
 			billing_last_name: address.last_name,
 			billing_phone: address.phone,
@@ -415,7 +414,6 @@ async function createPaidFlow({
 			billing_country: address.country,
 			billing_country_code: address.country_code,
 			billing_ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-			billing_type: address.type,
 			servicePointId: shipping.servicePointId ?? null,
 			servicePointPostNumber: shipping.servicePointPostNumber ?? null,
 			servicePointLatitude: shipping.servicePointLatitude ?? null,
@@ -516,7 +514,6 @@ async function main() {
 			company: 'Atelier Nord',
 			street_number: '18',
 			street: 'Rue de la Folie-Méricourt',
-			type: 'SHIPPING',
 			createdAt: atUtc(2026, 4, 12, 11),
 			...PARIS
 		}
@@ -531,7 +528,6 @@ async function main() {
 			company: 'Atelier Nord',
 			street_number: '18',
 			street: 'Rue de la Folie-Méricourt',
-			type: 'BILLING',
 			createdAt: atUtc(2026, 4, 12, 11),
 			...PARIS
 		}
@@ -546,7 +542,6 @@ async function main() {
 			company: 'Durand Conseil',
 			street_number: '4',
 			street: 'Place des Jacobins',
-			type: 'SHIPPING',
 			createdAt: atUtc(2026, 5, 4),
 			...LYON
 		}
@@ -560,7 +555,6 @@ async function main() {
 			phone: '+33612004567',
 			street_number: '9',
 			street: 'Rue des Archives',
-			type: 'SHIPPING',
 			createdAt: atUtc(2026, 6, 18, 12),
 			...PARIS,
 			zip: '75004'

@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 
-// Enum to differentiate Shipping and Billing addresses
-export const AddressTypeEnum = z.enum(['SHIPPING', 'BILLING']);
-
 // Schéma de validation pour une adresse complète
 const addressSchema = z.object({
 	id: z.string(),
@@ -30,7 +27,6 @@ const addressSchema = z.object({
 	country: z.string().min(2, 'Le pays est requis').max(100),
 	country_code: z.string().length(2, 'Format invalide (ex: FR, US, DE)'),
 	ISO_3166_1_alpha_3: z.string().length(3, 'Format invalide (ex: FRA, USA, CAN)'),
-	type: AddressTypeEnum, // SHIPPING ou BILLING
 	userId: z.string(), // L'adresse doit être liée à un utilisateur
 	createdAt: z.date().optional(),
 	updatedAt: z.date().optional()

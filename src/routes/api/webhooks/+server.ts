@@ -201,7 +201,6 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				address_country: order.shippingAddress.country,
 				address_country_code: order.shippingAddress.country_code,
 				address_ISO_3166_1_alpha_3: order.shippingAddress.ISO_3166_1_alpha_3,
-				address_type: order.shippingAddress.type,
 
 				// Adresse de facturation (facture PDF)
 				billing_first_name: order.billingAddress.first_name,
@@ -219,7 +218,6 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				billing_country: order.billingAddress.country,
 				billing_country_code: order.billingAddress.country_code,
 				billing_ISO_3166_1_alpha_3: order.billingAddress.ISO_3166_1_alpha_3,
-				billing_type: order.billingAddress.type,
 
 				// 📍 Point Relais
 				servicePointId: order.servicePointId ?? null,

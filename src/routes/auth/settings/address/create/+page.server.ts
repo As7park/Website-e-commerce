@@ -57,8 +57,7 @@ export const actions: Actions = {
 			zip,
 			country,
 			country_code,
-			ISO_3166_1_alpha_3,
-			type
+			ISO_3166_1_alpha_3
 		} = form.data;
 
 		// 🔥 **Forcer l'ajout de `userId` côté serveur**
@@ -82,7 +81,6 @@ export const actions: Actions = {
 				country,
 				country_code,
 				ISO_3166_1_alpha_3,
-				type,
 				userId,
 				createdAt: new Date(),
 				updatedAt: new Date()

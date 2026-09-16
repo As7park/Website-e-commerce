@@ -80,8 +80,7 @@ async function run() {
 				zip: '75000',
 				country: 'France',
 				country_code: 'FR',
-				ISO_3166_1_alpha_3: 'FRA',
-				type: 'SHIPPING'
+				ISO_3166_1_alpha_3: 'FRA'
 			}
 		});
 

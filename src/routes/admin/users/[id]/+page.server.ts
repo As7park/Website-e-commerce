@@ -59,7 +59,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			country: address.country,
 			country_code: address.country_code,
 			ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-			type: address.type,
 			userId: address.userId, // Ajouté pour respecter le schéma
 			createdAt: address.createdAt ?? new Date(),
 			updatedAt: address.updatedAt ?? new Date()
@@ -126,10 +125,9 @@ export const actions: Actions = {
 					country: parsedData[index + 14],
 					country_code: parsedData[index + 15],
 					ISO_3166_1_alpha_3: parsedData[index + 16],
-					type: parsedData[index + 17],
 					userId: userId,
-					createdAt: new Date(parsedData[index + 18][1]), // Conversion en Date
-					updatedAt: new Date(parsedData[index + 19][1])
+					createdAt: new Date(parsedData[index + 17][1]), // Conversion en Date
+					updatedAt: new Date(parsedData[index + 18][1])
 				}))
 			: [];
 
@@ -200,7 +198,6 @@ export const actions: Actions = {
 						country: address.country,
 						country_code: address.country_code,
 						ISO_3166_1_alpha_3: address.ISO_3166_1_alpha_3,
-						type: address.type,
 						updatedAt: new Date() // Mise à jour automatique
 					})
 				)

@@ -635,8 +635,7 @@ export async function createUserAddress(userId: string) {
 				zip: '31000',
 				country: 'France',
 				country_code: 'FR',
-				ISO_3166_1_alpha_3: 'FRA',
-				type: 'SHIPPING'
+				ISO_3166_1_alpha_3: 'FRA'
 			}
 		})
 	);
@@ -682,7 +681,6 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 				address_country: 'France',
 				address_country_code: 'FR',
 				address_ISO_3166_1_alpha_3: 'FRA',
-				address_type: 'SHIPPING',
 				billing_first_name: 'E2e',
 				billing_last_name: 'Tester',
 				billing_phone: '+33600000000',
@@ -697,7 +695,6 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 				billing_country: 'France',
 				billing_country_code: 'FR',
 				billing_ISO_3166_1_alpha_3: 'FRA',
-				billing_type: 'SHIPPING',
 				products: []
 			}
 		})
