@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getCatalogFacets, listProducts, type ProductSort } from '$lib/products/catalog';
 import { getAllTaxonomies } from '$lib/prisma/taxonomies/taxonomies';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 const SORTS: ProductSort[] = ['pertinence', 'prix-asc', 'prix-desc', 'nouveaute'];
 
@@ -37,7 +38,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		if (values.length > 0) taxonomyFilters[taxonomy.slug] = values;
 	}
 
-	const [{ products, total, perPage }, facets] = await Promise.all([
+	const [{ products, total, perPage }, facets, { flashSaleEnabled }] = await Promise.all([
 		listProducts({
 			page,
 			search: search || undefined,
@@ -47,7 +48,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			inStockOnly,
 			sort
 		}),
-		getCatalogFacets(taxonomyFilters, search || undefined)
+		getCatalogFacets(taxonomyFilters, search || undefined),
+		getStoreFeatureFlags()
 	]);
 
 	return {
@@ -61,6 +63,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		sort,
 		page,
 		perPage,
-		total
+		total,
+		flashSaleEnabled
 	};
 };

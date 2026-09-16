@@ -14,7 +14,10 @@ import {
 import { isInWishlist } from '$lib/prisma/wishlist/wishlist';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { askQuestionSchema } from '$lib/schema/products/questionSchema';
-import { askQuestion, listPublicQuestionsForProduct } from '$lib/prisma/productQuestions/productQuestions';
+import {
+	askQuestion,
+	listPublicQuestionsForProduct
+} from '$lib/prisma/productQuestions/productQuestions';
 
 /**
  * Fiche produit publique.
@@ -33,20 +36,29 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const userId = locals.user?.id;
-	const { wishlistEnabled, crossSellEnabled, productQnaEnabled } = await getStoreFeatureFlags();
+	const { wishlistEnabled, crossSellEnabled, productQnaEnabled, flashSaleEnabled } =
+		await getStoreFeatureFlags();
 	const categoryIds = product.categories.map((link) => link.categoryId);
 
-	const [reviewSummary, reviews, userReview, form, inWishlist, relatedProducts, questions, askForm] =
-		await Promise.all([
-			getReviewSummary(product.id),
-			listReviewsForProduct(product.id),
-			userId ? getUserReviewForProduct(product.id, userId) : null,
-			superValidate(zod(reviewSchema)),
-			wishlistEnabled && userId ? isInWishlist(userId, product.id) : false,
-			crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : [],
-			productQnaEnabled ? listPublicQuestionsForProduct(product.id) : [],
-			superValidate(zod(askQuestionSchema))
-		]);
+	const [
+		reviewSummary,
+		reviews,
+		userReview,
+		form,
+		inWishlist,
+		relatedProducts,
+		questions,
+		askForm
+	] = await Promise.all([
+		getReviewSummary(product.id),
+		listReviewsForProduct(product.id),
+		userId ? getUserReviewForProduct(product.id, userId) : null,
+		superValidate(zod(reviewSchema)),
+		wishlistEnabled && userId ? isInWishlist(userId, product.id) : false,
+		crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : [],
+		productQnaEnabled ? listPublicQuestionsForProduct(product.id) : [],
+		superValidate(zod(askQuestionSchema))
+	]);
 
 	return {
 		product,
@@ -58,6 +70,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		inWishlist,
 		relatedProducts,
 		productQnaEnabled,
+		flashSaleEnabled,
 		questions,
 		askForm
 	};
@@ -124,7 +137,10 @@ export const actions: Actions = {
 				userId: locals.user.id,
 				question: askForm.data.question
 			});
-			return message(askForm, "Question envoyée — elle sera publiée une fois répondue par l'équipe.");
+			return message(
+				askForm,
+				"Question envoyée — elle sera publiée une fois répondue par l'équipe."
+			);
 		} catch (err) {
 			console.error('Error creating product question:', err);
 			return fail(500, { askForm, message: "La question n'a pas pu être enregistrée." });

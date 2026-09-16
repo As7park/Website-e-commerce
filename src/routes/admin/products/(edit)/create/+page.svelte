@@ -13,10 +13,13 @@
 
 	let { data } = $props();
 
-	const createProduct = superForm(untrack(() => data.IcreateProductSchema), {
-		validators: zodClient(createProductSchema),
-		id: 'createProduct'
-	});
+	const createProduct = superForm(
+		untrack(() => data.IcreateProductSchema),
+		{
+			validators: zodClient(createProductSchema),
+			id: 'createProduct'
+		}
+	);
 
 	const {
 		form: createProductData,
@@ -144,6 +147,22 @@
 							<Form.FieldErrors />
 						</Form.Field>
 					</div>
+
+					{#if data.flashSaleEnabled}
+						<div class="w-[100%]">
+							<Form.Field name="flashSaleEndsAt" form={createProduct}>
+								<Form.Control>
+									<Form.Label>Fin de vente flash (facultatif)</Form.Label>
+									<Input
+										name="flashSaleEndsAt"
+										type="datetime-local"
+										bind:value={$createProductData.flashSaleEndsAt}
+									/>
+								</Form.Control>
+								<Form.FieldErrors />
+							</Form.Field>
+						</div>
+					{/if}
 
 					<TaxonomyValuePicker
 						taxonomies={data.taxonomies}

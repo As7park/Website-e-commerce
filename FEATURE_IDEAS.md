@@ -13,19 +13,6 @@ e2e, documentés dans `docs/`.
 
 ## Commerce & paiement
 
-- ⭐ **Relance panier abandonné** — job différé (QStash, comme les jobs
-  post-paiement existants) qui détecte les `Order` en `PENDING` non payées
-  depuis 30 min / 24 h et envoie un e-mail avec un code promo dégressif
-  (10 % puis 15 %), généré via le module Promo existant. Fort ROI, quasi
-  aucune nouvelle brique technique.
-- **Store credit indépendant du remboursement Stripe** — à l'approbation
-  d'un retour, l'admin choisit « rembourser Stripe » _ou_ « créditer le
-  compte » (nouveau solde interne, réutilisable comme un gift card). Évite
-  les frais de transaction Stripe sur les retours, incite au rachat.
-  S'appuie sur `ReturnRequest` + le modèle `GiftCard` déjà existants.
-- **Vente flash avec compte à rebours** — `flashSaleEndsAt` sur `Product`
-  ou une catégorie, bandeau + minuteur vitrine, prix barré. Urgence
-  d'achat, réutilise le système de prix de `ProductVariant`.
 - **Upsell post-achat en un clic** — sur la page de remerciement, uneù offre complémentaire ajoutable sans ressaisir la carte (PaymentIntent off-session Stripe sur le moyen de paiement déjà utilisé). Se branche naturellement sur le module Moyens de paiement enregistrés.
 - **Abonnements / réachat automatique** — pour les produits consommables,
   Stripe Subscriptions avec pause/annulation depuis `/auth/settings`.

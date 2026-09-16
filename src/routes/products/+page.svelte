@@ -14,6 +14,7 @@
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
+	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 
 	let { data } = $props();
 
@@ -299,6 +300,11 @@
 										<Badge variant="destructive" class="absolute top-2 left-2">
 											-{discountPercent(product.price, product.compareAtPrice)}%
 										</Badge>
+									{/if}
+									{#if product.flashSaleEndsAt && data.flashSaleEnabled}
+										<div class="absolute bottom-2 left-2">
+											<FlashSaleCountdown endsAt={product.flashSaleEndsAt} variant="compact" />
+										</div>
 									{/if}
 									{#if product.stock === 0}
 										<Badge variant="outline" class="absolute top-2 right-2 bg-background">

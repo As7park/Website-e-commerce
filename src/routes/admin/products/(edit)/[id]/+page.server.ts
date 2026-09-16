@@ -14,6 +14,7 @@ import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
 import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
 import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const product = await getProductById(params.id);
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const taxonomies = await getAllTaxonomiesWithValues();
+	const { flashSaleEnabled } = await getStoreFeatureFlags();
 
 	const initialData = {
 		_id: product.id,
@@ -33,6 +35,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		colorProduct: product.colorProduct,
 		sku: product.sku ?? '',
 		compareAtPrice: product.compareAtPrice ?? 0,
+		flashSaleEndsAt: product.flashSaleEndsAt
+			? product.flashSaleEndsAt.toISOString().slice(0, 16)
+			: undefined,
 		taxonomyValueIds: product.taxonomyValues.map((tv) => tv.taxonomyValueId),
 		images: [],
 		existingImages: product.images
@@ -42,7 +47,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		taxonomies,
-		IupdateProductSchema
+		IupdateProductSchema,
+		flashSaleEnabled
 	};
 };
 
@@ -128,7 +134,8 @@ export const actions: Actions = {
 					colorProduct: form.data.colorProduct,
 					images: uploadedImageUrls.length > 0 ? uploadedImageUrls : existingImages,
 					sku: form.data.sku || null,
-					compareAtPrice: form.data.compareAtPrice || null
+					compareAtPrice: form.data.compareAtPrice || null,
+					flashSaleEndsAt: form.data.flashSaleEndsAt || null
 				});
 
 				await deleteProductTaxonomyValues(productId);

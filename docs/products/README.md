@@ -5,11 +5,18 @@ Cloudinary. Réservé en écriture au rôle `ADMIN` ; la lecture (`/products`) e
 ouverte.
 
 En plus des champs de base (nom, description, prix, stock, images,
-taxonomies), `Product` porte deux attributs facultatifs, éditables depuis le
+taxonomies), `Product` porte trois attributs facultatifs, éditables depuis le
 formulaire admin (`/admin/products/create`, `/admin/products/[id]`) : `sku`
-(référence interne, unique, jamais utilisée comme clé de recherche) et
+(référence interne, unique, jamais utilisée comme clé de recherche),
 `compareAtPrice` (prix barré affiché à côté du prix réel — `price` reste le
-seul montant facturé, aucune logique de remise n'en découle).
+seul montant facturé, aucune logique de remise n'en découle) et
+`flashSaleEndsAt` (date/heure de fin de vente flash). Ce dernier est un module
+activable/désactivable depuis `/admin/settings` (`flashSaleEnabled`) : le
+champ n'apparaît dans le formulaire produit que si le module est actif, et le
+bandeau/badge avec compte à rebours (`FlashSaleCountdown.svelte`) ne
+s'affiche sur la vitrine (`/products` et la fiche produit) que si le module
+est actif ET que la date est dans le futur — indépendant de `compareAtPrice`
+mais généralement combiné avec lui pour le prix barré.
 
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
@@ -43,12 +50,12 @@ retirées par migration une fois tous les produits reportés sur des
 
 ## Frontière du module
 
-| Emplacement                                                                                                                                                | Contenu                                                                                      |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/lib/products/`                                                                                                                                        | lecture publique et chemins de tests                                                         |
-| `src/lib/prisma/products/`, `src/lib/prisma/taxonomies/`, `src/lib/prisma/reviews/`, `src/lib/prisma/productQuestions/`, `src/lib/prisma/productVariants/` | DAO Prisma                                                                                    |
-| `src/lib/store/recentlyViewed.ts`                                                                                                                          | historique « récemment consultés », 100 % client (`localStorage`, aucun backend)             |
-| `src/routes/products/`                                                                                                                                     | vitrine (fiche produit inclut avis, questions/réponses et sélecteur de variante)             |
+| Emplacement                                                                                                                                                | Contenu                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/lib/products/`                                                                                                                                        | lecture publique et chemins de tests                                                        |
+| `src/lib/prisma/products/`, `src/lib/prisma/taxonomies/`, `src/lib/prisma/reviews/`, `src/lib/prisma/productQuestions/`, `src/lib/prisma/productVariants/` | DAO Prisma                                                                                  |
+| `src/lib/store/recentlyViewed.ts`                                                                                                                          | historique « récemment consultés », 100 % client (`localStorage`, aucun backend)            |
+| `src/routes/products/`                                                                                                                                     | vitrine (fiche produit inclut avis, questions/réponses et sélecteur de variante)            |
 | `src/routes/admin/products/`                                                                                                                               | CRUD back-office (produits, taxonomies, avis, questions, variantes — gardes = module admin) |
 
 Le catalogue a un hook dédié dans `hooks.server.ts` : `catalogAntiScraping`,
@@ -158,6 +165,7 @@ choix délibéré pour rester simple à administrer, une taxonomie plus riche
 serait à construire séparément si le besoin apparaît. Un produit sans
 variante se comporte exactement comme avant leur introduction : le
 sélecteur n'apparaît sur `/products/[slug]` que si `product.variants.length
+
 > 0`, et aucune variante n'est créée implicitement à la création d'un produit.
 
 Gérées depuis une section dédiée, volontairement séparée du formulaire
@@ -327,24 +335,24 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 
 ### Questions & réponses — `e2e/products/questions.spec.ts`
 
-| #   | Étape                                          | Geste                          | Preuve                                |
-| --- | ----------------------------------------------- | ------------------------------- | --------------------------------------- |
-| 1   | Module désactivé : section absente             | GET fiche produit               | pas de heading « Questions & réponses » |
-| 2   | Anonyme invité à se connecter                  | GET fiche produit               | pas de formulaire `?/askQuestion`       |
-| 3   | Question envoyée, pas encore publique          | formulaire → Envoyer            | absente de la fiche, message de confirmation |
-| 4   | Modération admin : réponse publiée             | `/admin/products/questions/[id]` | réponse visible sur la fiche ensuite   |
-| 5   | Modération admin : suppression                 | dialogue Continue               | réponse retirée de la fiche             |
+| #   | Étape                                 | Geste                            | Preuve                                       |
+| --- | ------------------------------------- | -------------------------------- | -------------------------------------------- |
+| 1   | Module désactivé : section absente    | GET fiche produit                | pas de heading « Questions & réponses »      |
+| 2   | Anonyme invité à se connecter         | GET fiche produit                | pas de formulaire `?/askQuestion`            |
+| 3   | Question envoyée, pas encore publique | formulaire → Envoyer             | absente de la fiche, message de confirmation |
+| 4   | Modération admin : réponse publiée    | `/admin/products/questions/[id]` | réponse visible sur la fiche ensuite         |
+| 5   | Modération admin : suppression        | dialogue Continue                | réponse retirée de la fiche                  |
 
 À part : CLIENT POST `?/deleteQuestion` sur la question d'un autre — la question reste.
 
 ### Variantes — `e2e/products/variants.spec.ts`
 
-| #   | Étape                                                     | Geste                        | Preuve                                    |
-| --- | ---------------------------------------------------------- | ------------------------------ | -------------------------------------------- |
-| 1   | Le sélecteur propose les deux variantes                   | GET fiche produit             | options du sélecteur                        |
-| 2   | Variante au prix surchargé : affichage mis à jour         | sélection                     | prix et stock affichés changent              |
-| 3   | Ajout au panier : la ligne porte la variante et son prix  | bouton « Ajouter au panier »  | `OrderItem.variantId` + prix en base         |
-| 4   | Le panier affiche la variante distinctement               | GET `/checkout`               | étiquette de variante + prix dans le récapitulatif |
+| #   | Étape                                                    | Geste                        | Preuve                                             |
+| --- | -------------------------------------------------------- | ---------------------------- | -------------------------------------------------- |
+| 1   | Le sélecteur propose les deux variantes                  | GET fiche produit            | options du sélecteur                               |
+| 2   | Variante au prix surchargé : affichage mis à jour        | sélection                    | prix et stock affichés changent                    |
+| 3   | Ajout au panier : la ligne porte la variante et son prix | bouton « Ajouter au panier » | `OrderItem.variantId` + prix en base               |
+| 4   | Le panier affiche la variante distinctement              | GET `/checkout`              | étiquette de variante + prix dans le récapitulatif |
 
 Administration (même spec) : liste des variantes, édition du stock,
 suppression d'une variante libre acceptée, suppression d'une variante déjà

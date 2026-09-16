@@ -17,6 +17,7 @@
 	import { Badge } from '$shadcn/badge';
 	import SEO from '$lib/components/SEO.svelte';
 	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
+	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -209,6 +210,12 @@
 					<Badge variant="destructive">-{discountPercent}%</Badge>
 				{/if}
 			</div>
+
+			{#if product.flashSaleEndsAt && data.flashSaleEnabled}
+				<div class="mb-4">
+					<FlashSaleCountdown endsAt={product.flashSaleEndsAt} variant="full" />
+				</div>
+			{/if}
 
 			{#if product.variants.length > 0}
 				<div class="mb-4">

@@ -10,14 +10,17 @@ import { connectProductToTaxonomyValues, createProduct } from '$lib/prisma/produ
 import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
 import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
 import { requireAdmin } from '$lib/admin/guards';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));
 	const taxonomies = await getAllTaxonomiesWithValues();
+	const { flashSaleEnabled } = await getStoreFeatureFlags();
 
 	return {
 		taxonomies,
-		IcreateProductSchema
+		IcreateProductSchema,
+		flashSaleEnabled
 	};
 };
 
@@ -89,7 +92,8 @@ export const actions: Actions = {
 				slug: slug,
 				colorProduct: form.data.colorProduct,
 				sku: form.data.sku || null,
-				compareAtPrice: form.data.compareAtPrice || null
+				compareAtPrice: form.data.compareAtPrice || null,
+				flashSaleEndsAt: form.data.flashSaleEndsAt || null
 			});
 
 			await connectProductToTaxonomyValues(product.id, taxonomyValueIds);

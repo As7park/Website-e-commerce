@@ -343,6 +343,10 @@ model Product {
   /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
   /// prix réellement facturé — pas de logique de remise appliquée ici).
   compareAtPrice Float?
+  /// Fin de vente flash : bandeau + compte à rebours vitrine tant que cette
+  /// date est dans le futur. Se combine avec `compareAtPrice` pour le prix
+  /// barré, mais fonctionne aussi seul (juste l'urgence du minuteur).
+  flashSaleEndsAt DateTime?
   categories     ProductCategory[]
   orderItems     OrderItem[]
   reviews        Review[]
@@ -767,6 +771,7 @@ model StoreSettings {
   giftCardsEnabled     Boolean  @default(false)
   productQnaEnabled    Boolean  @default(false)
   cartRecoveryEnabled  Boolean  @default(false)
+  flashSaleEnabled     Boolean  @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

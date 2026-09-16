@@ -33,6 +33,8 @@ const createProductSchema = z.object({
 	// (nécessaire ici pour les champs fichier Cloudinary). `0` vaut « pas de
 	// prix barré » — displays et conversions DB traitent déjà 0 comme absent.
 	compareAtPrice: z.coerce.number().min(0).default(0),
+	// Vente flash : datetime-local (`YYYY-MM-DDTHH:mm`), vide = pas de vente flash.
+	flashSaleEndsAt: z.string().optional(),
 	// Valeurs de taxonomie (Matière/Catégorie/... génériques) assignées au produit.
 	taxonomyValueIds: z.array(z.string()).default([])
 });
@@ -61,6 +63,7 @@ const updateProductSchema = z.object({
 	colorProduct: z.string().regex(hexColorRegex, 'Color must be a valid hexadecimal color code'), // Validate color
 	sku: z.string().trim().max(64).optional().or(z.literal('')),
 	compareAtPrice: z.coerce.number().min(0).default(0),
+	flashSaleEndsAt: z.string().optional(),
 	taxonomyValueIds: z.array(z.string()).default([])
 });
 

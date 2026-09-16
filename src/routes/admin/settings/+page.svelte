@@ -17,7 +17,8 @@
 		| 'loyaltyEnabled'
 		| 'giftCardsEnabled'
 		| 'productQnaEnabled'
-		| 'cartRecoveryEnabled';
+		| 'cartRecoveryEnabled'
+		| 'flashSaleEnabled';
 
 	type ModuleInfo = { key: FlagKey; label: string; description: string; details: string };
 
@@ -85,6 +86,14 @@
 				'Envoie un e-mail avec un code promo dégressif (10% puis 15%) aux clients qui laissent une commande en attente 1h puis 24h, sur le moteur de codes promo déjà existant.',
 			details:
 				"Un client qui laisse une commande en attente reçoit un e-mail de relance avec un code promo dégressif : 10% après 1h, puis 15% après 24h si la première relance n'a pas suffi. Le lien renvoie vers /checkout, où son panier est déjà rattaché automatiquement — aucun lien ni jeton spécial à gérer."
+		},
+		{
+			key: 'flashSaleEnabled',
+			label: 'Vente flash',
+			description:
+				'Bandeau et compte à rebours vitrine sur les fiches produit et le catalogue, tant que la date de fin de vente flash du produit est dans le futur.',
+			details:
+				"Chaque produit peut recevoir une date de fin de vente flash depuis /admin/products. Tant que ce module est actif et que la date est dans le futur, un badge (catalogue) et un bandeau avec compte à rebours (fiche produit) s'affichent automatiquement. Se combine avec le prix barré (compareAtPrice) mais fonctionne aussi seul."
 		}
 	];
 

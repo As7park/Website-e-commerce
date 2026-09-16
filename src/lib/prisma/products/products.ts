@@ -60,9 +60,11 @@ export const createProduct = async (productData: {
 	sku?: string | null;
 	materialId?: string | null;
 	compareAtPrice?: number | null;
+	flashSaleEndsAt?: string | null;
 }) => {
+	const { flashSaleEndsAt, ...rest } = productData;
 	const product = await prisma.product.create({
-		data: productData
+		data: { ...rest, flashSaleEndsAt: flashSaleEndsAt ? new Date(flashSaleEndsAt) : null }
 	});
 	await bumpCacheVersion('catalog');
 	await checkLowStockAlert(product);
@@ -185,11 +187,18 @@ export const updateProductById = async (
 		sku?: string | null;
 		materialId?: string | null;
 		compareAtPrice?: number | null;
+		flashSaleEndsAt?: string | null;
 	}
 ) => {
+	const { flashSaleEndsAt, ...rest } = data;
 	const product = await prisma.product.update({
 		where: { id: productId },
-		data
+		data: {
+			...rest,
+			...(flashSaleEndsAt !== undefined
+				? { flashSaleEndsAt: flashSaleEndsAt ? new Date(flashSaleEndsAt) : null }
+				: {})
+		}
 	});
 	await bumpCacheVersion('catalog');
 	await checkLowStockAlert(product);
