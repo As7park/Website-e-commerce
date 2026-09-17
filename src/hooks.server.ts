@@ -223,11 +223,20 @@ const catalogAntiScraping: Handle = async ({ event, resolve }) => {
  * AUTH-PLUGIN : dépend de `locals.user`. Sans authentification, il faut soit
  * supprimer ce hook (panier purement client), soit rattacher la commande à un
  * identifiant de visiteur anonyme stocké en cookie.
+ *
+ * `/admin` (autre layout, jamais de panier affiché) et `/api` (aucune route
+ * ne lit `locals.pendingOrder` — `checkout`/`save-cart` le rechargent eux-mêmes
+ * si besoin) n'ont pas besoin de cette requête : évite un aller-retour DB avec
+ * `include` lourd (items + produit + variante + custom) à chaque hit sur ces
+ * chemins.
  */
 const pendingOrderHandle: Handle = async ({ event, resolve }) => {
 	const userId = event.locals.user?.id;
+	const pathname = event.url.pathname;
+	const needsPendingOrder =
+		userId && !pathname.startsWith('/admin') && !pathname.startsWith('/api');
 
-	if (userId) {
+	if (needsPendingOrder) {
 		try {
 			event.locals.pendingOrder =
 				(await findPendingOrder(userId)) ?? (await createPendingOrder(userId));
