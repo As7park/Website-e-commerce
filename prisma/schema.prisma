@@ -848,6 +848,10 @@ model StoreSettings {
   flashSaleEnabled     Boolean  @default(false)
   referralEnabled      Boolean  @default(false)
   stockAlertsEnabled   Boolean  @default(false)
+  /// Bundle « Souvent achetés ensemble » (`$lib/prisma/bundles/bundles.ts`) :
+  /// suggestion panier + petite remise automatique, basées sur la
+  /// co-occurrence réelle dans `OrderItem` — pas de table dédiée.
+  frequentlyBoughtTogetherEnabled Boolean @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

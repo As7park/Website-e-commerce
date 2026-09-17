@@ -81,8 +81,16 @@
 			: 0
 	);
 
+	// BUNDLE-PLUGIN : même principe, aperçu seulement — `computeBundleDiscount`
+	// côté serveur fait foi au moment du paiement.
+	let bundleDiscountAmount = $derived(
+		data.bundleDiscountEligible
+			? parseFloat((productTotalTTC * data.bundleDiscountPercent).toFixed(2))
+			: 0
+	);
+
 	let giftCardMaxApplicable = $derived(
-		Math.max(0, productTotalTTC - discountAmount - referralDiscountAmount)
+		Math.max(0, productTotalTTC - discountAmount - bundleDiscountAmount - referralDiscountAmount)
 	);
 
 	let totalTTC = $derived(
@@ -93,6 +101,7 @@
 				shippingCost -
 				discountAmount -
 				giftCardAmount -
+				bundleDiscountAmount -
 				referralDiscountAmount
 		)
 	);
@@ -617,6 +626,15 @@
 							class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
 						>
 							🎉 Remise de bienvenue parrainage appliquée automatiquement : -{referralDiscountAmount.toFixed(
+								2
+							)}€
+						</div>
+					{/if}
+					{#if $cartStore.items.length > 0 && bundleDiscountAmount > 0}
+						<div
+							class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+						>
+							🎁 Remise « Souvent achetés ensemble » appliquée automatiquement : -{bundleDiscountAmount.toFixed(
 								2
 							)}€
 						</div>

@@ -4,10 +4,8 @@ Propositions d'améliorations pour aller au-delà des modules déjà en place
 (wishlist, cross-sell, retours/SAV, moyens de paiement enregistrés, fidélité,
 cartes cadeaux, variantes produit, questions produit, suivi de commande).
 
-Chaque idée précise sur quelle brique existante elle s'appuie (Stripe, QStash,
-`StoreSettings` pour le flag on/off, jobs post-paiement...) pour rester dans
-l'esprit du reste du projet : modules activables indépendamment, testés en
-e2e, documentés dans `docs/`.
+**Chaque idée précise sur quelle brique existante elle s'appuie (Stripe, QStash,**
+`StoreSettings` **pour le flag on/off, jobs post-paiement...) pour rester dans**`docs/`**.**
 
 ⭐ = coup de cœur / meilleur ratio effort-impact.
 
@@ -40,13 +38,7 @@ e2e, documentés dans `docs/`.
 
 ## Produits & découverte
 
-- ⭐ **« Souvent achetés ensemble »** — bundle suggéré au niveau du panier,
-  basé sur la co-occurrence réelle dans `OrderItem` (pas seulement la
-  catégorie comme le cross-sell actuel), avec petite remise si les
-  produits du bundle sont pris ensemble.
-- **Historique de navigation « vu récemment »** — liste des derniers
-  produits consultés, visible en vitrine et relancée par e-mail si
-  abandon sans achat.
+- **Historique de navigation « vu récemment »** — liste des derniersù produits consultés, visible en vitrine et relancée par e-mail si abandon sans achat.
 - **Wishlist partageable publiquement** — lien en lecture seule vers une
   liste de cadeaux, extension directe du module Wishlist existant.
 - **Recherche visuelle** — upload d'une photo pour retrouver des produits

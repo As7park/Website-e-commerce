@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
+	import { Label } from '$shadcn/label';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
 	import { Textarea } from '$shadcn/textarea';
@@ -157,7 +158,7 @@
 					</div>
 
 					<div class="w-[100%]">
-						<Form.Label>Poids et dimensions du colis (facultatif)</Form.Label>
+						<Label>Poids et dimensions du colis (facultatif)</Label>
 						<div class="rtb" style="gap: 0.5rem;">
 							<Form.Field name="weight" form={createProduct}>
 								<Form.Control>

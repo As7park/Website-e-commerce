@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { signUpAndVerify } from '../support/admin';
-import { waitForPath } from '../support/flows';
+import { waitForPath, waitForAppReady } from '../support/flows';
 import {
 	createCatalogProduct,
 	deleteCatalogProduct,
@@ -74,16 +74,9 @@ test.describe('Alertes réassort', () => {
 			});
 
 			await test.step('2. Réassort admin déclenche la notification', async () => {
-				await page.goto(`/admin/products/${product.id}`);
-				try {
-					await expect(page.getByText('Price', { exact: true })).toBeVisible({ timeout: 10_000 });
-				} catch {
-					// Course d'hydratation cliente occasionnelle (formsnap) après
-					// plusieurs navigations successives : un reload repart d'un
-					// graphe de modules propre, comme dans reviews.spec.ts.
-					await page.reload();
-					await expect(page.getByText('Price', { exact: true })).toBeVisible({ timeout: 30_000 });
-				}
+				await page.goto(`/admin/products/${product.id}`, { waitUntil: 'domcontentloaded' });
+				await waitForAppReady(page);
+				await expect(page.getByText('Price', { exact: true })).toBeVisible({ timeout: 30_000 });
 				await page.locator('input[name="stock"]').fill('5');
 				await page.getByRole('button', { name: 'Save changes' }).click();
 				await waitForPath(page, '/admin/products');

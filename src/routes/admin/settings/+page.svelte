@@ -19,13 +19,32 @@
 		| 'productQnaEnabled'
 		| 'cartRecoveryEnabled'
 		| 'referralEnabled'
-		| 'stockAlertsEnabled';
+		| 'stockAlertsEnabled'
+		| 'frequentlyBoughtTogetherEnabled';
 
-	type ModuleInfo = { key: FlagKey; label: string; description: string; details: string };
+	type ModuleCategory =
+		| 'Produits & découverte'
+		| 'Paiement & après-vente'
+		| 'Marketing & fidélisation';
+
+	const CATEGORY_ORDER: ModuleCategory[] = [
+		'Produits & découverte',
+		'Paiement & après-vente',
+		'Marketing & fidélisation'
+	];
+
+	type ModuleInfo = {
+		key: FlagKey;
+		category: ModuleCategory;
+		label: string;
+		description: string;
+		details: string;
+	};
 
 	const MODULES: ModuleInfo[] = [
 		{
 			key: 'wishlistEnabled',
+			category: 'Produits & découverte',
 			label: 'Liste d’envies',
 			description:
 				'Un cœur sur chaque fiche produit pour enregistrer un article à retrouver plus tard, visible depuis le compte client.',
@@ -34,6 +53,7 @@
 		},
 		{
 			key: 'crossSellEnabled',
+			category: 'Produits & découverte',
 			label: 'Ventes croisées',
 			description:
 				'Bloc « Vous aimerez aussi » sur la fiche produit, basé sur la catégorie de l’article consulté.',
@@ -42,6 +62,7 @@
 		},
 		{
 			key: 'returnsEnabled',
+			category: 'Paiement & après-vente',
 			label: 'Espace retour / SAV',
 			description:
 				'Permet à un client de déclarer un retour depuis l’historique de ses commandes plutôt que par le formulaire de contact générique.',
@@ -50,6 +71,7 @@
 		},
 		{
 			key: 'savedPaymentsEnabled',
+			category: 'Paiement & après-vente',
 			label: 'Moyen de paiement enregistré',
 			description:
 				'Carte Stripe mémorisée pour accélérer un prochain achat, sans ressaisie au tunnel de commande.',
@@ -58,6 +80,7 @@
 		},
 		{
 			key: 'loyaltyEnabled',
+			category: 'Marketing & fidélisation',
 			label: 'Palier de fidélité',
 			description:
 				'Code promo automatique après un nombre de commandes payées, sur le moteur de codes promo déjà existant.',
@@ -66,6 +89,7 @@
 		},
 		{
 			key: 'giftCardsEnabled',
+			category: 'Paiement & après-vente',
 			label: 'Cartes cadeaux',
 			description:
 				'Champ dédié au tunnel de commande pour appliquer une carte cadeau (solde décroissant), en plus d’un éventuel code promo. Émission depuis /admin/gift-cards.',
@@ -74,6 +98,7 @@
 		},
 		{
 			key: 'productQnaEnabled',
+			category: 'Produits & découverte',
 			label: 'Questions & réponses produit',
 			description:
 				'Formulaire de question sur la fiche produit. Une question reste invisible du public tant qu’un admin n’y a pas répondu depuis /admin/products/questions.',
@@ -82,6 +107,7 @@
 		},
 		{
 			key: 'cartRecoveryEnabled',
+			category: 'Marketing & fidélisation',
 			label: 'Relance panier abandonné',
 			description:
 				'Envoie un e-mail avec un code promo dégressif (10% puis 15%) aux clients qui laissent une commande en attente 1h puis 24h, sur le moteur de codes promo déjà existant.',
@@ -90,6 +116,7 @@
 		},
 		{
 			key: 'referralEnabled',
+			category: 'Marketing & fidélisation',
 			label: 'Parrainage',
 			description:
 				'Lien unique par compte : le filleul obtient une remise à sa première commande, le parrain reçoit une carte cadeau une fois cette commande payée.',
@@ -98,13 +125,30 @@
 		},
 		{
 			key: 'stockAlertsEnabled',
+			category: 'Produits & découverte',
 			label: 'Alertes réassort',
 			description:
 				'Bouton « Me prévenir » sur une fiche produit en rupture : e-mail automatique dès que le stock repasse au-dessus de 0.',
 			details:
 				"Un client connecté clique sur « Me prévenir » sur une fiche produit en rupture (stock à 0) ; son inscription rejoint une file d'attente. Dès qu'un admin remet ce produit en stock depuis /admin/products, chaque compte inscrit reçoit automatiquement un e-mail — une seule fois par rupture, sans action admin supplémentaire à effectuer."
+		},
+		{
+			key: 'frequentlyBoughtTogetherEnabled',
+			category: 'Produits & découverte',
+			label: 'Souvent achetés ensemble',
+			description:
+				'Suggestion dans le panier basée sur les achats réels passés ensemble, avec une petite remise automatique si les deux produits restent dans le panier.',
+			details:
+				"Le tiroir panier suggère, pour chaque article ajouté, le produit le plus souvent commandé avec lui dans l'historique des ventes payées (au moins deux commandes en commun, jamais une simple coïncidence). Si les deux produits suggérés sont toujours dans le panier au moment de payer, une remise de 10% est appliquée automatiquement sur le total — recalculée côté serveur au paiement, jamais une simple promesse d'affichage. Aucune association manuelle à saisir : la sélection vient uniquement de l'historique des commandes."
 		}
 	];
+
+	let modulesByCategory = $derived(
+		CATEGORY_ORDER.map((category) => ({
+			category,
+			modules: MODULES.filter((module) => module.category === category)
+		}))
+	);
 
 	let flags = $state(untrack(() => ({ ...data.flags })));
 	let formEl: HTMLFormElement;
@@ -154,28 +198,37 @@
 				await update();
 			};
 		}}
-		class="flex flex-wrap gap-4"
+		class="space-y-6"
 	>
-		{#each MODULES as module (module.key)}
-			<div class="flex min-w-[240px] flex-1 basis-64 flex-col gap-3 rounded-lg border p-4">
-				<div class="flex items-start justify-between gap-2">
-					<Label for={module.key} class="text-sm font-medium">{module.label}</Label>
-					<input type="hidden" name={module.key} value={flags[module.key] ? 'on' : 'off'} />
-					<Switch
-						id={module.key}
-						checked={flags[module.key]}
-						disabled={pending}
-						onCheckedChange={(checked) => toggleFlag(module.key, checked)}
-					/>
+		{#each modulesByCategory as group (group.category)}
+			<div class="space-y-3">
+				<h2 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+					{group.category}
+				</h2>
+				<div class="flex flex-wrap gap-4">
+					{#each group.modules as module (module.key)}
+						<div class="flex min-w-[240px] flex-1 basis-64 flex-col gap-3 rounded-lg border p-4">
+							<div class="flex items-start justify-between gap-2">
+								<Label for={module.key} class="text-sm font-medium">{module.label}</Label>
+								<input type="hidden" name={module.key} value={flags[module.key] ? 'on' : 'off'} />
+								<Switch
+									id={module.key}
+									checked={flags[module.key]}
+									disabled={pending}
+									onCheckedChange={(checked) => toggleFlag(module.key, checked)}
+								/>
+							</div>
+							<p class="text-muted-foreground text-xs">{module.description}</p>
+							<Button
+								variant="link"
+								class="h-auto self-start p-0 text-xs"
+								onclick={() => openDetails(module)}
+							>
+								Comment ça marche ?
+							</Button>
+						</div>
+					{/each}
 				</div>
-				<p class="text-muted-foreground text-xs">{module.description}</p>
-				<Button
-					variant="link"
-					class="h-auto self-start p-0 text-xs"
-					onclick={() => openDetails(module)}
-				>
-					Comment ça marche ?
-				</Button>
 			</div>
 		{/each}
 	</form>

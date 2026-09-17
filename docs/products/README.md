@@ -216,6 +216,34 @@ Deux modules activables depuis `/admin/settings` (voir
   `/products/[slug]` uniquement quand le module est actif et qu'au moins un
   produit correspond.
 
+### Souvent achetés ensemble
+
+Module activable depuis `/admin/settings`
+(`StoreSettings.frequentlyBoughtTogetherEnabled`,
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)) :
+suggère, dans le panier, un produit historiquement acheté avec ceux déjà
+présents, et applique une petite remise automatique au paiement si ces
+produits restent liés dans le panier.
+
+- **Historique de co-achat** (`src/lib/prisma/bundles/bundles.ts`,
+  `getFrequentlyBoughtTogether`) — lit directement `OrderItem`, aucune table
+  dédiée. Un produit n'est suggéré que s'il a été acheté avec le produit du
+  panier dans au moins deux commandes distinctes au statut `PAID` ou
+  `SHIPPED` (les commandes en attente ou annulées ne comptent pas).
+- **API publique** (`GET /api/bundles?productIds=<csv>`,
+  `src/routes/api/bundles/+server.ts`) — répond 404 si le module est
+  désactivé. Utilisée par le panier (`Cart.svelte`) pour afficher jusqu'à 3
+  suggestions avec un bouton « Ajouter ».
+- **Remise automatique** (`computeBundleDiscount`, `BUNDLE_DISCOUNT_PERCENT`
+  = 10 %) — recalculée côté serveur au moment du paiement
+  (`checkout/+page.server.ts`, action `?/checkout`) à partir du contenu réel
+  de la commande, jamais d'une valeur transmise par le client. Elle s'insère
+  dans la même chaîne de remises que le code promo, le parrainage et la
+  carte cadeau (remise promo → bundle → parrainage → carte cadeau, chacune
+  calculée sur le reste après les précédentes). L'aperçu affiché avant
+  paiement (`checkout/+page.svelte`) est approximatif ; seul le montant
+  recalculé côté serveur est appliqué.
+
 ### Anti-scraping
 
 En plus du plafond global par IP (`global-ip`, `hooks.server.ts`), les chemins

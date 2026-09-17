@@ -1,5 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import { toPublicCart } from '$lib/commerce/cart';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 /**
  * Données partagées par toutes les pages.
@@ -8,7 +9,13 @@ import { toPublicCart } from '$lib/commerce/cart';
  * l'interface (menu compte, garde d'affichage), jamais un secret.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
+	// BUNDLE-PLUGIN ▼ le tiroir panier (`Cart.svelte`) affiche ses suggestions
+	// partout, donc à même le layout racine plutôt que page par page.
+	const { frequentlyBoughtTogetherEnabled } = await getStoreFeatureFlags();
+	// BUNDLE-PLUGIN ▲
+
 	return {
+		frequentlyBoughtTogetherEnabled,
 		// AUTH-PLUGIN ▼ alimente le menu compte (`Cart.svelte`, `Navigation.svelte`).
 		// Projection explicite : `locals.user` porte aussi la clé TOTP chiffrée, qui
 		// ne doit jamais quitter le serveur. Toute nouvelle propriété doit être

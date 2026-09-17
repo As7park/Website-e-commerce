@@ -12,7 +12,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { error, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-import { getOrderById } from '$lib/prisma/order/prendingOrder';
+import { getOrderById, findPendingOrder } from '$lib/prisma/order/prendingOrder';
 import { getUserAddresses } from '$lib/prisma/addresses/addresses';
 import { OrderSchema } from '$lib/schema/order/order';
 import { validatePromo, incrementUsage } from '$lib/prisma/promo/promo';
@@ -21,6 +21,7 @@ import {
 	isReferralDiscountEligible,
 	REFERRAL_REFEREE_DISCOUNT_PERCENT
 } from '$lib/prisma/referral/referral';
+import { computeBundleDiscount, BUNDLE_DISCOUNT_PERCENT } from '$lib/prisma/bundles/bundles';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { prisma } from '$lib/server';
 import {
@@ -42,17 +43,34 @@ export const load = (async ({ locals }) => {
 	// AUTH-PLUGIN ▲
 	const IOrderSchema = await superValidate(zod(OrderSchema));
 	const addresses = await getUserAddresses(userId);
-	const { giftCardsEnabled, referralEnabled } = await getStoreFeatureFlags();
+	const { giftCardsEnabled, referralEnabled, frequentlyBoughtTogetherEnabled } =
+		await getStoreFeatureFlags();
 	const referralDiscountEligible = referralEnabled
 		? await isReferralDiscountEligible(userId)
 		: false;
+
+	// BUNDLE-PLUGIN ▼ aperçu uniquement (bandeau d'info) : la remise réelle est
+	// recalculée dans l'action `checkout`, jamais lue d'ici.
+	let bundleDiscountEligible = false;
+	if (frequentlyBoughtTogetherEnabled) {
+		const pendingOrder = await findPendingOrder(userId);
+		const productIds = pendingOrder?.items.map((item) => item.productId) ?? [];
+		const productTotalTTC = (pendingOrder?.items ?? []).reduce(
+			(sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity,
+			0
+		);
+		bundleDiscountEligible = (await computeBundleDiscount(productIds, productTotalTTC)) > 0;
+	}
+	// BUNDLE-PLUGIN ▲
 
 	return {
 		addresses,
 		IOrderSchema,
 		giftCardsEnabled,
 		referralDiscountEligible,
-		referralDiscountPercent: REFERRAL_REFEREE_DISCOUNT_PERCENT
+		referralDiscountPercent: REFERRAL_REFEREE_DISCOUNT_PERCENT,
+		bundleDiscountEligible,
+		bundleDiscountPercent: BUNDLE_DISCOUNT_PERCENT
 	};
 }) satisfies PageServerLoad;
 
@@ -131,19 +149,31 @@ export const actions: Actions = {
 		// Carte cadeau : plafonnée par ce qu'il reste à payer une fois la remise
 		// promo ci-dessus déduite. Comme pour `validatePromo`, seul ce calcul
 		// serveur fait foi — jamais un montant envoyé par le client.
-		const { giftCardsEnabled, referralEnabled } = await getStoreFeatureFlags();
+		const { giftCardsEnabled, referralEnabled, frequentlyBoughtTogetherEnabled } =
+			await getStoreFeatureFlags();
 		const remainderAfterPromo = Math.max(0, productTotalTTC - promoDiscount);
+
+		// BUNDLE-PLUGIN ▼ même garde que promo/parrainage : recalculée ici depuis
+		// l'historique réel des commandes, jamais une valeur transmise par le client.
+		const bundleDiscount = frequentlyBoughtTogetherEnabled
+			? await computeBundleDiscount(
+					order.items.map((item) => item.productId),
+					remainderAfterPromo
+				)
+			: 0;
+		const remainderAfterBundle = Math.max(0, remainderAfterPromo - bundleDiscount);
+		// BUNDLE-PLUGIN ▲
 
 		// Parrainage : remise automatique sur la première commande payée d'un
 		// compte parrainé — recalculée ici, jamais déduite d'une valeur envoyée par
 		// le client (même logique que promo/carte cadeau).
 		const referralEligible = referralEnabled && (await isReferralDiscountEligible(userId));
 		const referralDiscount = referralEligible
-			? parseFloat((remainderAfterPromo * REFERRAL_REFEREE_DISCOUNT_PERCENT).toFixed(2))
+			? parseFloat((remainderAfterBundle * REFERRAL_REFEREE_DISCOUNT_PERCENT).toFixed(2))
 			: 0;
 
 		const giftCardResult = giftCardsEnabled
-			? await validateGiftCard(giftCardCode, Math.max(0, remainderAfterPromo - referralDiscount))
+			? await validateGiftCard(giftCardCode, Math.max(0, remainderAfterBundle - referralDiscount))
 			: { valid: false, amount: 0, giftCard: null };
 		const appliedGiftCardAmount = giftCardResult.valid ? giftCardResult.amount : 0;
 		const appliedGiftCardCode = giftCardResult.valid
@@ -151,7 +181,7 @@ export const actions: Actions = {
 			: null;
 
 		const appliedDiscount = parseFloat(
-			(promoDiscount + referralDiscount + appliedGiftCardAmount).toFixed(2)
+			(promoDiscount + bundleDiscount + referralDiscount + appliedGiftCardAmount).toFixed(2)
 		);
 
 		// COMMERCE-PLUGIN : réutilise le client Stripe existant (`savedPaymentsEnabled`)

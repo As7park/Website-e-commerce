@@ -15,24 +15,25 @@ npm run dev
 
 ## Documentation
 
-| Sujet                      | Document                                               |
-| -------------------------- | ------------------------------------------------------ |
-| Authentification           | [docs/auth/README.md](./docs/auth/README.md)           |
-| Retirer l'authentification | [docs/auth/retrait.md](./docs/auth/retrait.md)         |
-| Administration             | [docs/admin/README.md](./docs/admin/README.md)         |
-| Retirer l'administration   | [docs/admin/retrait.md](./docs/admin/retrait.md)       |
-| Catalogue produits         | [docs/products/README.md](./docs/products/README.md)   |
-| Retirer le catalogue       | [docs/products/retrait.md](./docs/products/retrait.md) |
-| Commerce                   | [docs/commerce/README.md](./docs/commerce/README.md)   |
-| Retirer le commerce        | [docs/commerce/retrait.md](./docs/commerce/retrait.md) |
-| Blog                       | [docs/blog/README.md](./docs/blog/README.md)           |
-| Retirer le blog            | [docs/blog/retrait.md](./docs/blog/retrait.md)         |
-| Codes promo                | [docs/promo/README.md](./docs/promo/README.md)         |
-| Retirer les codes promo    | [docs/promo/retrait.md](./docs/promo/retrait.md)       |
-| Contact                    | [docs/contact/README.md](./docs/contact/README.md)     |
-| Retirer le contact         | [docs/contact/retrait.md](./docs/contact/retrait.md)   |
-| Rotation des secrets       | [docs/secrets-rotation.md](./docs/secrets-rotation.md) |
-| Tests end-to-end           | [e2e/README.md](./e2e/README.md)                       |
+| Sujet                      | Document                                                 |
+| -------------------------- | -------------------------------------------------------- |
+| Authentification           | [docs/auth/README.md](./docs/auth/README.md)             |
+| Retirer l'authentification | [docs/auth/retrait.md](./docs/auth/retrait.md)           |
+| Administration             | [docs/admin/README.md](./docs/admin/README.md)           |
+| Retirer l'administration   | [docs/admin/retrait.md](./docs/admin/retrait.md)         |
+| Catalogue produits         | [docs/products/README.md](./docs/products/README.md)     |
+| Retirer le catalogue       | [docs/products/retrait.md](./docs/products/retrait.md)   |
+| Commerce                   | [docs/commerce/README.md](./docs/commerce/README.md)     |
+| Retirer le commerce        | [docs/commerce/retrait.md](./docs/commerce/retrait.md)   |
+| Blog                       | [docs/blog/README.md](./docs/blog/README.md)             |
+| Retirer le blog            | [docs/blog/retrait.md](./docs/blog/retrait.md)           |
+| Codes promo                | [docs/promo/README.md](./docs/promo/README.md)           |
+| Retirer les codes promo    | [docs/promo/retrait.md](./docs/promo/retrait.md)         |
+| Contact                    | [docs/contact/README.md](./docs/contact/README.md)       |
+| Retirer le contact         | [docs/contact/retrait.md](./docs/contact/retrait.md)     |
+| Rotation des secrets       | [docs/secrets-rotation.md](./docs/secrets-rotation.md)   |
+| Déploiement Vercel         | [docs/deployment/README.md](./docs/deployment/README.md) |
+| Tests end-to-end           | [e2e/README.md](./e2e/README.md)                         |
 
 ## Structure
 

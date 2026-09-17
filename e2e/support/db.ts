@@ -473,6 +473,23 @@ export async function linkProductToOrder(
 }
 
 /**
+ * Commande payée regroupant plusieurs produits en une fois — construit un
+ * historique de co-achat (bundle « souvent achetés ensemble »). Pas de
+ * `Transaction` créée : suffisant pour les lectures qui ne portent que sur
+ * `Order`/`OrderItem` (contrairement à `simulatePaidOrder`, qui simule un
+ * paiement complet).
+ */
+export async function createPaidOrderWithProducts(userId: string, productIds: string[]) {
+	const order = await resilient(() => db.order.create({ data: { userId, status: 'PAID' } }));
+	for (const productId of productIds) {
+		await resilient(() =>
+			db.orderItem.create({ data: { orderId: order.id, productId, quantity: 1, price: 1 } })
+		);
+	}
+	return order;
+}
+
+/**
  * Recule `Order.updatedAt` de `hoursAgo` heures — nécessaire pour simuler un
  * panier abandonné sans attendre réellement 1h/24h. `@updatedAt` est
  * réécrit par le moteur Prisma sur tout `update()` classique (la valeur
@@ -846,7 +863,8 @@ export async function getStoreFeatureFlags() {
 				productQnaEnabled: true,
 				cartRecoveryEnabled: true,
 				referralEnabled: true,
-				stockAlertsEnabled: true
+				stockAlertsEnabled: true,
+				frequentlyBoughtTogetherEnabled: true
 			}
 		})
 	);
@@ -864,6 +882,7 @@ export async function setStoreFeatureFlags(patch: {
 	cartRecoveryEnabled?: boolean;
 	referralEnabled?: boolean;
 	stockAlertsEnabled?: boolean;
+	frequentlyBoughtTogetherEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

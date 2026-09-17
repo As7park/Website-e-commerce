@@ -8,6 +8,7 @@
 
 	import {
 		cart,
+		addToCart,
 		removeFromCart,
 		updateCartItemQuantity,
 		resetCart,
@@ -62,6 +63,57 @@
 
 		const otherItemsQuantity = totalNonCustomQuantity - item.quantity;
 		return Math.max(0, Math.min(stockLimit, 72 - otherItemsQuantity));
+	}
+
+	/* ------------------------------------------------------------------
+	   BUNDLE-PLUGIN : suggestions « souvent achetés ensemble »
+	------------------------------------------------------------------ */
+	type BundleSuggestion = {
+		id: string;
+		name: string;
+		slug: string;
+		price: number;
+		images: string[];
+		stock: number;
+	};
+
+	let bundleSuggestions = $state<BundleSuggestion[]>([]);
+
+	$effect(() => {
+		const productIds = $cart.items.map((item) => item.product.id);
+		if (!data.frequentlyBoughtTogetherEnabled || productIds.length === 0) {
+			bundleSuggestions = [];
+			return;
+		}
+
+		const controller = new AbortController();
+		fetch(`/api/bundles?productIds=${encodeURIComponent(productIds.join(','))}`, {
+			signal: controller.signal
+		})
+			.then((res) => (res.ok ? res.json() : { suggestions: [] }))
+			.then((body) => {
+				bundleSuggestions = body.suggestions ?? [];
+			})
+			.catch(() => {
+				// Silencieux : une suggestion manquante n'est jamais bloquante.
+			});
+
+		return () => controller.abort();
+	});
+
+	function addSuggestionToCart(suggestion: BundleSuggestion) {
+		addToCart({
+			id: crypto.randomUUID(),
+			product: {
+				id: suggestion.id,
+				name: suggestion.name,
+				price: suggestion.price,
+				images: suggestion.images[0] ?? '',
+				stock: suggestion.stock
+			},
+			quantity: 1,
+			price: suggestion.price
+		});
 	}
 
 	/* ------------------------------------------------------------------
@@ -230,6 +282,40 @@
 									<span>{isFinite($cart.total) ? $cart.total.toFixed(2) : '0.00'} €</span>
 								</div>
 							</div>
+
+							<!-- ---------- BUNDLE-PLUGIN : souvent achetés ensemble --- -->
+							{#if bundleSuggestions.length > 0}
+								<div class="mt-4 border-t pt-4">
+									<h3 class="text-sm font-semibold mb-2">Souvent achetés ensemble</h3>
+									{#each bundleSuggestions as suggestion (suggestion.id)}
+										<div class="flex items-center justify-between gap-2 py-1">
+											<div class="flex items-center gap-2 min-w-0">
+												<img
+													src={optimizedImageUrl(suggestion.images[0] ?? '', 60)}
+													alt={suggestion.name}
+													class="w-12 h-12 object-cover shrink-0"
+												/>
+												<div class="min-w-0">
+													<p class="text-sm truncate">{suggestion.name}</p>
+													<p class="text-xs text-gray-500">{suggestion.price.toFixed(2)}€</p>
+												</div>
+											</div>
+											<Button
+												type="button"
+												variant="outline"
+												class="shrink-0"
+												onclick={() => addSuggestionToCart(suggestion)}
+											>
+												Ajouter
+											</Button>
+										</div>
+									{/each}
+									<p class="text-xs text-gray-500 mt-1">
+										Petite remise automatique appliquée au paiement si ces produits restent ensemble
+										dans le panier.
+									</p>
+								</div>
+							{/if}
 						{:else}
 							<p>Votre panier est vide.</p>
 						{/if}

@@ -27,6 +27,7 @@ export interface StoreFeatureFlags {
 	flashSaleEnabled: boolean;
 	referralEnabled: boolean;
 	stockAlertsEnabled: boolean;
+	frequentlyBoughtTogetherEnabled: boolean;
 }
 
 const DEFAULT_FLAGS: StoreFeatureFlags = {
@@ -40,7 +41,8 @@ const DEFAULT_FLAGS: StoreFeatureFlags = {
 	cartRecoveryEnabled: false,
 	flashSaleEnabled: false,
 	referralEnabled: false,
-	stockAlertsEnabled: false
+	stockAlertsEnabled: false,
+	frequentlyBoughtTogetherEnabled: false
 };
 
 /** Lecture mise en cache — utilisée par les routes publiques. */
@@ -61,7 +63,8 @@ export async function getStoreFeatureFlags(): Promise<StoreFeatureFlags> {
 			cartRecoveryEnabled: row.cartRecoveryEnabled,
 			flashSaleEnabled: row.flashSaleEnabled,
 			referralEnabled: row.referralEnabled,
-			stockAlertsEnabled: row.stockAlertsEnabled
+			stockAlertsEnabled: row.stockAlertsEnabled,
+			frequentlyBoughtTogetherEnabled: row.frequentlyBoughtTogetherEnabled
 		};
 	});
 }
