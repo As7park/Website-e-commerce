@@ -8,6 +8,10 @@
 		{
 			"path": "/api/jobs/cart-recovery",
 			"schedule": "*/30 * * * *"
+		},
+		{
+			"path": "/api/jobs/accounting-export",
+			"schedule": "0 5 1 * *"
 		}
 	]
 }

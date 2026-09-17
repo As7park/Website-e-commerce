@@ -60,9 +60,6 @@ cartes cadeaux, variantes produit, questions produit, suivi de commande).
   de commandes par compte, écart adresse facturation/livraison, e-mail
   jetable), affiché dans `/admin/sales`, avec blocage optionnel avant
   capture Stripe.
-- ⭐ **Export comptable périodique automatisé** — génération + envoi
-  mensuel (cron QStash) d'un export CSV/FEC des transactions à l'admin,
-  au lieu d'un export manuel.
 - **A/B testing de prix et promotions** — cohortes aléatoires par
   utilisateur pour mesurer l'impact conversion d'une remise ou d'un prix,
   au-dessus du module Promo existant.

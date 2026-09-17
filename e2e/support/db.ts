@@ -736,6 +736,28 @@ export async function getTransactionById(id: string) {
 	return resilient(() => db.transaction.findUnique({ where: { id } }));
 }
 
+/**
+ * Place `Transaction.createdAt` dans le mois comptable voulu (export
+ * périodique, `$lib/server/jobs/accountingExport.ts`) — champ simple
+ * (`@default(now())`, pas `@updatedAt`), directement réécrivable par un
+ * `update()` classique, contrairement à `Order.updatedAt` (`backdateOrder`).
+ */
+export async function setTransactionCreatedAt(transactionId: string, createdAt: Date) {
+	await resilient(() =>
+		db.transaction.update({ where: { id: transactionId }, data: { createdAt } })
+	);
+}
+
+/**
+ * Supprime la trace d'idempotence d'un export comptable pour une période
+ * (`YYYY-MM`) — nécessaire en nettoyage de test : sans ça, un run ultérieur
+ * du test pour le même mois calendaire trouverait `AccountingExportLog`
+ * déjà présent et sauterait l'envoi (`sent: false`) dès le premier appel.
+ */
+export async function deleteAccountingExportLog(period: string) {
+	await resilient(() => db.accountingExportLog.deleteMany({ where: { period } }));
+}
+
 /** Pose `sendcloudParcelId` — clé de rapprochement du webhook Sendcloud entrant. */
 export async function setSendcloudParcelId(transactionId: string, parcelId: number) {
 	await resilient(() =>

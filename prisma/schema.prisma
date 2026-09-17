@@ -673,6 +673,19 @@ model InvoiceCounter {
   @@map("invoice_counters")
 }
 
+/// Traçabilité de l'export comptable mensuel envoyé
+/// (`$lib/server/jobs/accountingExport.ts`) — un enregistrement par période
+/// (`YYYY-MM`) empêche un double envoi si le job est rejoué (retry QStash,
+/// relance manuelle) : contrairement au verrou Redis (`withLock`, éphémère
+/// et absent en dev/e2e sans Upstash), cet enregistrement persiste.
+model AccountingExportLog {
+  period           String   @id
+  sentAt           DateTime @default(now())
+  transactionCount Int
+
+  @@map("accounting_export_logs")
+}
+
 model ProductCategory {
   id         String @id @default(cuid())
   productId  String

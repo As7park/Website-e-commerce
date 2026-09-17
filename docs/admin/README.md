@@ -62,20 +62,20 @@ naissent par inscription.
 
 ## Sections
 
-| Route               | Rôle                                                                                                                                                              |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/admin`            | tableau de bord (ventes récentes, dernières inscriptions)                                                                                                         |
-| `/admin/sales`      | transactions, factures, bordereaux                                                                                                                                |
-| `/admin/users`      | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                                                        |
-| `/admin/products`   | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                                                          |
-| `/admin/blog`       | articles, catégories, tags                                                                                                                                        |
-| `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                                               |
-| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                                               |
-| `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique ou crédit compte alternatif (voir [docs/commerce](../commerce/README.md#retours--sav)) |
-| `/admin/contacts`   | messages du formulaire de contact                                                                                                                                 |
-| `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                                                  |
-| `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts                                            |
-| `/admin/settings`   | activation des modules e-commerce optionnels (voir ci-dessous)                                                                                                    |
+| Route               | Rôle                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/admin`            | tableau de bord (ventes récentes, dernières inscriptions)                                                                                                                      |
+| `/admin/sales`      | transactions, factures, bordereaux                                                                                                                                             |
+| `/admin/users`      | liste et suppression ; fiche `[id]` pour rôle, 2FA, mot de passe, adresses                                                                                                     |
+| `/admin/products`   | catalogue, taxonomies, avis, questions/réponses, variantes (voir [docs/products](../products/README.md))                                                                       |
+| `/admin/blog`       | articles, catégories, tags                                                                                                                                                     |
+| `/admin/promo`      | codes promo (inclut le seuil de fidélité, voir [docs/promo](../promo/README.md#fid%C3%A9lit%C3%A9))                                                                            |
+| `/admin/gift-cards` | émission et gestion des cartes cadeaux (voir [docs/commerce](../commerce/README.md#cartes-cadeaux))                                                                            |
+| `/admin/returns`    | approbation/refus des demandes de retour, remboursement Stripe automatique ou crédit compte alternatif (voir [docs/commerce](../commerce/README.md#retours--sav))              |
+| `/admin/contacts`   | messages du formulaire de contact                                                                                                                                              |
+| `/admin/metrics`    | compteurs applicatifs (cache, rate-limit, jobs) en lecture seule                                                                                                               |
+| `/admin/exports`    | export CSV, purge ciblée par ancienneté, import (restauration) — ventes, utilisateurs, produits, blog, promo, contacts ; export comptable mensuel automatisé (voir ci-dessous) |
+| `/admin/settings`   | activation des modules e-commerce optionnels (voir ci-dessous)                                                                                                                 |
 
 Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 `recoveryCode`.
@@ -99,6 +99,36 @@ que de faire échouer toute la purge.
 L'import restaure les colonnes exportées uniquement : jamais les secrets
 (`passwordHash`, `totpKey`), jamais les relations profondes (tags et
 commentaires de blog). Indisponible pour les ventes.
+
+### Export comptable automatisé
+
+Remplace l'export manuel ponctuel (`GET /admin/exports/sales`) par un envoi
+périodique sans action admin : le 1er de chaque mois, un job planifié
+(`$lib/server/jobs/accountingExport.ts`, `runAccountingExportJob`) génère un
+CSV des transactions payées du mois calendaire précédent et l'envoie en
+pièce jointe à `ACCOUNTING_EXPORT_EMAIL`.
+
+Colonnes inspirées de la nomenclature officielle du FEC (Fichier des
+Écritures Comptables) — `JournalCode`, `EcritureDate`, `PieceRef`,
+`CompteNum`... — mais **pas** un FEC réglementaire complet : une seule
+écriture par transaction, pas de contrepartie débit/crédit par compte de
+tiers. Point de départ d'un rapprochement comptable mensuel, pas un
+substitut d'un vrai logiciel de comptabilité.
+
+Même modèle de déclenchement que la purge/la relance panier abandonné : scan
+périodique, pas événementiel — QStash Schedule
+(`scripts/register-accounting-export-schedule.mjs`, `npm run
+jobs:register-accounting-export-schedule`, 1er du mois 05:00 UTC) ou repli
+Vercel Cron (`vercel.json` → `/api/jobs/accounting-export`), même route
+double-auth (signature QStash ou `Authorization: Bearer $CRON_SECRET`) que
+`/api/jobs/cleanup`.
+
+Idempotent par période : `AccountingExportLog` (une ligne par mois `YYYY-MM`)
+empêche un double envoi si le job est rejoué (retry QStash après un envoi
+déjà réussi, relance manuelle) — contrairement au verrou Redis (`withLock`,
+éphémère, absent en dev/e2e sans Upstash configuré), cet enregistrement
+persiste. `ACCOUNTING_EXPORT_EMAIL` manquant → le job s'exécute mais
+n'envoie rien (log `WARN`), comme un module `StoreSettings` désactivé.
 
 ### Modules e-commerce optionnels — `/admin/settings`
 
@@ -243,6 +273,16 @@ Purge jouée sur `products`, seuil 365 jours, lignes de test vieillies de 400 jo
 | 4   | Réimport met à jour une ligne modifiée | Importer                      | `0 créé(s), 1 mis à jour`, prix changé |
 
 Blocage anonyme/CLIENT couvert par `ADMIN_PATHS` (`e2e/admin/security.spec.ts`).
+
+### Export comptable — `e2e/admin/accounting-export.spec.ts`
+
+Appel direct de la route de job (comme la relance panier abandonné), pas de
+parcours UI : ce n'est pas une action déclenchée depuis l'admin.
+
+| #   | Étape                                 | Geste                              | Preuve                                              |
+| --- | ------------------------------------- | ---------------------------------- | --------------------------------------------------- |
+| 1   | Premier appel : export envoyé         | POST `/api/jobs/accounting-export` | `sent: true`, e-mail avec pièce jointe CSV attendue |
+| 2   | Rejoué tout de suite : pas de doublon | POST `/api/jobs/accounting-export` | `sent: false`, aucune boîte de réception            |
 
 Catalogue admin : [docs/products](../products/README.md). Ventes :
 [docs/commerce](../commerce/README.md). Blog : [docs/blog](../blog/README.md).
