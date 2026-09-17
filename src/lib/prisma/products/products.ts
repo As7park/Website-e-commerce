@@ -84,6 +84,16 @@ export const getProductById = async (productId: string) => {
 	});
 };
 
+/** Pour la suppression (unitaire/lot) : seules les images sont nécessaires
+ * pour le nettoyage Cloudinary, pas les relations catégorie/matière/taxonomie
+ * de `getProductById`. */
+export const getProductImagesById = async (productId: string) => {
+	return await prisma.product.findUnique({
+		where: { id: productId },
+		select: { id: true, images: true }
+	});
+};
+
 export const getProductBySlug = async (slug: string) => {
 	return prisma.product.findUnique({
 		where: { slug },

@@ -23,8 +23,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// console.log('Loading user data for ID:', params.id);
 
 	// 📌 Récupération des informations utilisateur et adresses associées
-	const userFetched = await getUsersById(params.id);
-	const addressesFetched = await getUserAddresses(params.id);
+	const [userFetched, addressesFetched] = await Promise.all([
+		getUsersById(params.id),
+		getUserAddresses(params.id)
+	]);
 
 	// console.log(userFetched, 'userFetched');
 	// console.log(addressesFetched, 'addressesFetched');
