@@ -112,8 +112,21 @@ export async function runReviewReminderJob(): Promise<ReviewReminderResult> {
 			});
 
 			let sent = 0;
-			for (const candidate of candidates) {
-				if (await sendReminder(candidate.id)) sent++;
+			// En parallèle (comme `stockAlerts.ts`) : chaque candidate a son propre
+			// lock (`review-reminder:<orderId>`), le pool de connexions Prisma
+			// borne déjà la concurrence réelle côté DB.
+			const results = await Promise.allSettled(
+				candidates.map((candidate) => sendReminder(candidate.id))
+			);
+			for (const [index, result] of results.entries()) {
+				if (result.status === 'fulfilled') {
+					if (result.value) sent++;
+				} else {
+					log('ERROR', 'review-reminder', 'Échec de la relance pour une commande', {
+						orderId: candidates[index].id,
+						error: result.reason
+					});
+				}
 			}
 
 			const result: ReviewReminderResult = {

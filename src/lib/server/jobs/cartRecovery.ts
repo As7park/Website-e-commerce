@@ -154,8 +154,21 @@ export async function runCartRecoveryJob(): Promise<CartRecoveryResult> {
 			});
 
 			let reminder1Sent = 0;
-			for (const candidate of reminder1Candidates) {
-				if (await sendReminder(candidate.id, 1, 10)) reminder1Sent++;
+			// En parallèle (comme `stockAlerts.ts`) : chaque candidate a son propre
+			// lock (`cart-recovery:<orderId>:1`), le pool de connexions Prisma borne
+			// déjà la concurrence réelle côté DB.
+			const reminder1Results = await Promise.allSettled(
+				reminder1Candidates.map((candidate) => sendReminder(candidate.id, 1, 10))
+			);
+			for (const [index, result] of reminder1Results.entries()) {
+				if (result.status === 'fulfilled') {
+					if (result.value) reminder1Sent++;
+				} else {
+					log('ERROR', 'cart-recovery', 'Échec de la relance (palier 1) pour une commande', {
+						orderId: reminder1Candidates[index].id,
+						error: result.reason
+					});
+				}
 			}
 
 			// Requêté après le palier 1 (pas en parallèle) : une commande tout juste
@@ -172,8 +185,18 @@ export async function runCartRecoveryJob(): Promise<CartRecoveryResult> {
 			});
 
 			let reminder2Sent = 0;
-			for (const candidate of reminder2Candidates) {
-				if (await sendReminder(candidate.id, 2, 15)) reminder2Sent++;
+			const reminder2Results = await Promise.allSettled(
+				reminder2Candidates.map((candidate) => sendReminder(candidate.id, 2, 15))
+			);
+			for (const [index, result] of reminder2Results.entries()) {
+				if (result.status === 'fulfilled') {
+					if (result.value) reminder2Sent++;
+				} else {
+					log('ERROR', 'cart-recovery', 'Échec de la relance (palier 2) pour une commande', {
+						orderId: reminder2Candidates[index].id,
+						error: result.reason
+					});
+				}
 			}
 
 			const result: CartRecoveryResult = {

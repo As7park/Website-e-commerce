@@ -53,7 +53,9 @@ export const load = (async ({ locals }) => {
 	// recalculée dans l'action `checkout`, jamais lue d'ici.
 	let bundleDiscountEligible = false;
 	if (frequentlyBoughtTogetherEnabled) {
-		const pendingOrder = await findPendingOrder(userId);
+		// Déjà chargée par `pendingOrderHandle` (hooks.server.ts) pour cette
+		// même requête : pas besoin d'un second `findPendingOrder`.
+		const pendingOrder = locals.pendingOrder as Awaited<ReturnType<typeof findPendingOrder>>;
 		const productIds = pendingOrder?.items.map((item) => item.productId) ?? [];
 		const productTotalTTC = (pendingOrder?.items ?? []).reduce(
 			(sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity,

@@ -66,16 +66,23 @@ export async function runLoyaltyCheckJob(orderId: string): Promise<void> {
 				});
 				if (already) continue;
 
-				await prisma.loyaltyAward.create({
+				const award = await prisma.loyaltyAward.create({
 					data: { userId: user.id, promoCodeId: promo.id, orderCountAtAward: paidOrderCount }
 				});
 
-				await sendMail({
-					to: user.email,
-					subject: 'Un code fidélité vous attend 🎁',
-					text: `Merci pour votre fidélité ! Vous avez atteint ${paidOrderCount} commande(s) payée(s) et recevez le code ${promo.code}, à utiliser lors de votre prochaine commande.`,
-					html: `<p>Merci pour votre fidélité !</p><p>Vous avez atteint <strong>${paidOrderCount}</strong> commande(s) payée(s) et recevez le code <strong>${promo.code}</strong>, à utiliser lors de votre prochaine commande.</p>`
-				});
+				try {
+					await sendMail({
+						to: user.email,
+						subject: 'Un code fidélité vous attend 🎁',
+						text: `Merci pour votre fidélité ! Vous avez atteint ${paidOrderCount} commande(s) payée(s) et recevez le code ${promo.code}, à utiliser lors de votre prochaine commande.`,
+						html: `<p>Merci pour votre fidélité !</p><p>Vous avez atteint <strong>${paidOrderCount}</strong> commande(s) payée(s) et recevez le code <strong>${promo.code}</strong>, à utiliser lors de votre prochaine commande.</p>`
+					});
+				} catch (err) {
+					// Sans ce rollback, l'award resterait créé mais jamais notifié :
+					// "already" court-circuiterait silencieusement tous les retries.
+					await prisma.loyaltyAward.delete({ where: { id: award.id } });
+					throw err;
+				}
 
 				log('INFO', 'loyalty-check', 'Récompense fidélité accordée', {
 					userId: user.id,

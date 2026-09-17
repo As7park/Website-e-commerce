@@ -275,6 +275,10 @@ model Order {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  // `findPendingOrder`/`pendingOrderHandle` (hooks.server.ts) filtrent sur
+  // les deux à chaque requête authentifiée — composite dédié plutôt que
+  // deux index séparés.
+  @@index([userId, status])
   // Sert la purge des paniers PENDING abandonnés ($lib/server/jobs/cleanup.ts) :
   // filtre status + updatedAt ensemble, pas juste chacun séparément.
   @@index([status, updatedAt])
@@ -975,6 +979,10 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@index([userId])
+  /// `productId` seul n'est pas couvert par l'unique (userId, productId) —
+  /// nécessaire pour `listWishlistItemsForProduct` (scan à chaque
+  /// changement de prix/vente flash d'un produit).
+  @@index([productId])
   @@map("wishlist_items")
 }
 
