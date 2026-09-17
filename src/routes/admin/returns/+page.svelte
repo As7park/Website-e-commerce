@@ -162,6 +162,9 @@
 						{:else}
 							<div class="text-right">
 								<span class="text-sm font-medium">{STATUS_LABELS[item.status] ?? item.status}</span>
+								{#if item.creditNoteNumber}
+									<p class="text-xs text-muted-foreground">Avoir : {item.creditNoteNumber}</p>
+								{/if}
 								{#if item.returnTrackingNumber}
 									<p class="text-xs text-muted-foreground">
 										Étiquette : {item.returnTrackingNumber}

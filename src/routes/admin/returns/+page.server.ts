@@ -14,6 +14,8 @@ import { createSendcloudReturnLabel } from '$lib/sendcloud/returnLabel';
 import { log } from '$lib/server/log';
 import { sendMail } from '$lib/server/smtp-mail';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { buildCreditNoteView } from '$lib/server/creditNote/view';
+import { sendCreditNoteEmail } from '$lib/server/creditNote/email';
 
 /**
  * Gestion admin des demandes de retour (`ReturnRequest`).
@@ -27,6 +29,10 @@ import { getStoreFeatureFlags } from '$lib/server/storeSettings';
  * montant intégral de la transaction, envoyée par e-mail, aucun appel
  * Stripe. N'apparaît que si `giftCardsEnabled` est actif (le crédit s'appuie
  * sur ce module).
+ *
+ * Dans les deux cas, un avoir PDF (`$lib/server/creditNote/`) est généré et
+ * envoyé par e-mail — best-effort, un échec ne doit jamais annuler le
+ * remboursement/crédit déjà acquis.
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	assertAdmin(locals);
@@ -82,7 +88,21 @@ export const actions: Actions = {
 				amount: Math.round(returnRequest.transaction.amount * 100)
 			});
 
-			await markReturnApproved(id, refund.id);
+			const updated = await markReturnApproved(id, refund.id);
+
+			try {
+				const creditNote = buildCreditNoteView(
+					returnRequest.transaction,
+					updated.creditNoteNumber!,
+					'REFUND'
+				);
+				await sendCreditNoteEmail(creditNote);
+			} catch (creditNoteErr) {
+				log('WARN', 'returns', 'Avoir non envoyé', {
+					returnRequestId: id,
+					error: creditNoteErr instanceof Error ? creditNoteErr.message : String(creditNoteErr)
+				});
+			}
 
 			// Best-effort : le remboursement est déjà acquis, une étiquette de
 			// retour qui échoue ne doit pas repasser la demande en échec.
@@ -131,7 +151,7 @@ export const actions: Actions = {
 			note: `Retour ${returnRequest.transaction.invoiceNumber ?? returnRequest.transactionId}`
 		});
 
-		await markReturnCredited(id, giftCard.id);
+		const updated = await markReturnCredited(id, giftCard.id);
 
 		await sendMail({
 			to: returnRequest.user.email,
@@ -139,6 +159,20 @@ export const actions: Actions = {
 			text: `Bonjour, votre retour a été accepté et crédité sous forme d'avoir de ${giftCard.initialValue.toFixed(2)} € : utilisez le code ${giftCard.code} lors de votre prochaine commande.`,
 			html: `<p>Bonjour,</p><p>Votre retour a été accepté et crédité sous forme d'avoir de <strong>${giftCard.initialValue.toFixed(2)} €</strong> : utilisez le code <strong>${giftCard.code}</strong> lors de votre prochaine commande.</p>`
 		});
+
+		try {
+			const creditNote = buildCreditNoteView(
+				returnRequest.transaction,
+				updated.creditNoteNumber!,
+				'STORE_CREDIT'
+			);
+			await sendCreditNoteEmail(creditNote);
+		} catch (creditNoteErr) {
+			log('WARN', 'returns', 'Avoir non envoyé', {
+				returnRequestId: id,
+				error: creditNoteErr instanceof Error ? creditNoteErr.message : String(creditNoteErr)
+			});
+		}
 
 		// Best-effort, comme pour l'approbation Stripe : le crédit est déjà
 		// acquis, une étiquette de retour qui échoue ne doit pas le remettre en cause.

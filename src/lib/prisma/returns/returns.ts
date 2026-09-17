@@ -8,6 +8,7 @@
  */
 import { prisma } from '$lib/server';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { nextCreditNoteNumber } from '$lib/server/creditNote/number';
 
 export async function getReturnRequestByTransactionId(transactionId: string) {
 	return prisma.returnRequest.findUnique({ where: { transactionId } });
@@ -55,17 +56,26 @@ export async function getReturnRequestById(id: string) {
 }
 
 export async function markReturnApproved(id: string, stripeRefundId: string) {
-	return prisma.returnRequest.update({
-		where: { id },
-		data: { status: 'REFUNDED', stripeRefundId }
+	// Numéro d'avoir alloué dans la même transaction que le changement de
+	// statut : le statut ne repasse jamais par REQUESTED, donc ce numéro
+	// n'est alloué qu'une seule fois par retour (idempotence structurelle).
+	return prisma.$transaction(async (tx) => {
+		const creditNoteNumber = await nextCreditNoteNumber(tx);
+		return tx.returnRequest.update({
+			where: { id },
+			data: { status: 'REFUNDED', stripeRefundId, creditNoteNumber }
+		});
 	});
 }
 
 /** Alternative à `markReturnApproved` : crédit compte (`GiftCard`) au lieu d'un remboursement Stripe. */
 export async function markReturnCredited(id: string, giftCardId: string) {
-	return prisma.returnRequest.update({
-		where: { id },
-		data: { status: 'CREDITED', giftCardId }
+	return prisma.$transaction(async (tx) => {
+		const creditNoteNumber = await nextCreditNoteNumber(tx);
+		return tx.returnRequest.update({
+			where: { id },
+			data: { status: 'CREDITED', giftCardId, creditNoteNumber }
+		});
 	});
 }
 

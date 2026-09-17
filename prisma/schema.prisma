@@ -673,6 +673,15 @@ model InvoiceCounter {
   @@map("invoice_counters")
 }
 
+/// Compteur annuel des numéros d'avoir AV-AAAA-n (`ReturnRequest.creditNoteNumber`),
+/// séquence indépendante de `InvoiceCounter` — un avoir n'est pas une facture.
+model CreditNoteCounter {
+  year Int @id
+  last Int
+
+  @@map("credit_note_counters")
+}
+
 /// Traçabilité de l'export comptable mensuel envoyé
 /// (`$lib/server/jobs/accountingExport.ts`) — un enregistrement par période
 /// (`YYYY-MM`) empêche un double envoi si le job est rejoué (retry QStash,
@@ -986,6 +995,10 @@ model ReturnRequest {
   /// échec Sendcloud ne bloque jamais le remboursement (voir la route admin).
   returnTrackingNumber String?
   returnTrackingUrl    String?
+  /// Numéro d'avoir (AV-AAAA-00001, `$lib/server/creditNote/number.ts`), posé
+  /// dans la même transaction DB que le passage REFUNDED/CREDITED — jamais
+  /// régénéré (le statut ne peut plus repasser par REQUESTED).
+  creditNoteNumber     String?      @unique
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 

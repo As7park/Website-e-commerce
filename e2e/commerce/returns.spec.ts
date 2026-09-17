@@ -154,6 +154,23 @@ test.describe('Retours / SAV', () => {
 			// Needle ASCII (pas de caractère accentué) : le corps décodé en quoted-printable
 			// mélange l'encodage UTF-8 sur un accent, voir e2e/support/mailbox.ts.
 			await waitForEmailContaining(account.email, giftCard!.code);
+
+			await test.step('Avoir PDF : numéro, e-mail dédié, téléchargeable', async () => {
+				expect(request?.creditNoteNumber).toMatch(/^AV-\d{4}-\d{5}$/);
+				const creditNoteMail = await waitForEmailContaining(
+					account.email,
+					request!.creditNoteNumber!
+				);
+				expect(creditNoteMail.raw).toContain(`Avoir_${request!.creditNoteNumber}.pdf`);
+				expect(creditNoteMail.raw).toContain('application/pdf');
+
+				await page.goto(`/auth/settings/returns/${transactionId}`);
+				await expect(page.getByText(request!.creditNoteNumber!)).toBeVisible();
+
+				const download = await page.request.get(`/auth/settings/returns/${transactionId}/avoir`);
+				expect(download.status()).toBe(200);
+				expect(download.headers()['content-type']).toBe('application/pdf');
+			});
 		} finally {
 			await setStoreFeatureFlags(originalFlags);
 			if (giftCardId) await deleteGiftCard(giftCardId);

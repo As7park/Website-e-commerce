@@ -60,6 +60,17 @@
 						envoyé par e-mail.
 					</p>
 				{/if}
+				{#if data.returnRequest.creditNoteNumber}
+					<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+						<div>
+							<p class="text-xs text-muted-foreground">Avoir</p>
+							<p class="font-mono text-sm">{data.returnRequest.creditNoteNumber}</p>
+						</div>
+						<Button href="/auth/settings/returns/{data.transaction.id}/avoir" size="sm">
+							Télécharger l'avoir
+						</Button>
+					</div>
+				{/if}
 				{#if data.returnRequest.returnTrackingNumber}
 					<div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
 						<div>
