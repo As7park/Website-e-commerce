@@ -150,7 +150,9 @@ test.describe('Parcours complet', () => {
 		});
 
 		await test.step("4. Vérification de l'adresse : les codes invalides sont rejetés", async () => {
-			await expect(page.getByRole('heading', { name: 'Vérifiez votre adresse email' })).toBeVisible();
+			await expect(
+				page.getByRole('heading', { name: 'Vérifiez votre adresse email' })
+			).toBeVisible();
 
 			await submitCode(page, '123');
 			await expectMessage(page, 'Le code doit contenir 8 chiffres.');
@@ -279,6 +281,9 @@ test.describe('Parcours complet', () => {
 			await clearMailbox();
 			await signOut(page);
 
+			// `signOut` ramène désormais à l'accueil, pas à `/auth/login` : le lien
+			// « Mot de passe oublié ? » n'existe que sur la page de connexion.
+			await page.goto('/auth/login');
 			await page.getByRole('link', { name: 'Mot de passe oublié ?' }).click();
 			await waitForPath(page, '/auth/forgot-password');
 
