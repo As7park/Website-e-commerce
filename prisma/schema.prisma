@@ -803,6 +803,8 @@ model BlogPost {
   categoryId String?
   comments   BlogComment[]
   tags       BlogPostTag[]
+  /// Remplace à terme `category`/`tags` ci-dessus (migration en cours, voir BlogTaxonomy).
+  taxonomyValues BlogPostTaxonomyValue[]
 
   @@index([authorId])
   @@index([categoryId])
@@ -860,6 +862,49 @@ model BlogPostTag {
   @@unique([postId, tagId])
   @@index([tagId])
   @@map("blog_post_tags")
+}
+
+// BLOG-PLUGIN : système générique de taxonomies (remplace à terme `BlogCategory`
+// et `BlogTag`/`BlogPostTag` ci-dessus). Tables dédiées au blog (pas de
+// dépendance vers `Taxonomy`/`TaxonomyValue` PRODUCT-PLUGIN) pour garder le
+// blog retirable indépendamment du catalogue produit.
+model BlogTaxonomy {
+  id        String              @id @default(cuid())
+  name      String              @unique
+  /// Utilisé comme nom de paramètre de filtre vitrine (`?<slug>=valeur`).
+  slug      String              @unique
+  /// true = plusieurs valeurs par article (ex: Tag), false = une seule (ex: Catégorie).
+  multiple  Boolean             @default(true)
+  values    BlogTaxonomyValue[]
+  createdAt DateTime            @default(now())
+
+  @@map("blog_taxonomies")
+}
+
+model BlogTaxonomyValue {
+  id         String                  @id @default(cuid())
+  taxonomyId String
+  taxonomy   BlogTaxonomy            @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  value      String
+  /// Libellé affiché si différent de `value`.
+  label      String?
+  posts      BlogPostTaxonomyValue[]
+  createdAt  DateTime                @default(now())
+
+  @@unique([taxonomyId, value])
+  @@map("blog_taxonomy_values")
+}
+
+model BlogPostTaxonomyValue {
+  id              String            @id @default(cuid())
+  postId          String
+  taxonomyValueId String
+  post            BlogPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  taxonomyValue   BlogTaxonomyValue @relation(fields: [taxonomyValueId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, taxonomyValueId])
+  @@index([taxonomyValueId])
+  @@map("blog_post_taxonomy_values")
 }
 
 // CONTACT-PLUGIN : messages du formulaire public `/contact`.

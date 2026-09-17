@@ -12,8 +12,10 @@ const createBlogPostSchema = z.object({
 		.describe('The content of the blog post'),
 	published: z.boolean().describe('Whether the blog post is published or not'),
 	authorId: z.string(),
-	categoryId: z.string().nullable().describe('The category ID for the blog post'),
-	tagIds: z.array(z.string()).nullable().describe('Array of tag IDs associated with the blog post')
+	taxonomyValueIds: z
+		.array(z.string())
+		.nullable()
+		.describe("Valeurs de taxonomie (catégorie, tags...) assignées à l'article")
 });
 
 // Schema for updating a blog post
@@ -29,8 +31,10 @@ const updateBlogPostSchema = z.object({
 		.describe('The content of the blog post'),
 	published: z.boolean().describe('Whether the blog post is published or not'),
 	authorId: z.string(),
-	categoryId: z.string().optional().describe('The category ID for the blog post'),
-	tagIds: z.array(z.string()).optional().describe('Array of tag IDs associated with the blog post')
+	taxonomyValueIds: z
+		.array(z.string())
+		.optional()
+		.describe("Valeurs de taxonomie (catégorie, tags...) assignées à l'article")
 });
 
 // Schema for deleting a blog post

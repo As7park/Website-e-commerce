@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
-	import * as Popover from '$shadcn/popover';
-	import * as Command from '$shadcn/command';
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
 	import { Checkbox } from '$shadcn/checkbox/index.js';
 	import { Label } from '$shadcn/label/index.js';
+	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -19,14 +18,15 @@
 	// Receive props from the server
 	let { data } = $props();
 
-	// Variables pour catégories et tags
-	let categories = $state(untrack(() => data.AllCategoriesPost || []));
-	let tags = $state(untrack(() => data.AllTagsPost || []));
-	// Pour les catégories, seule la sélection du nom est stockée
-	let selectedCategory = $state('');
-	// Les popovers pour les catégories et tags
-	let openCategory = $state(false);
-	let openTag = $state(false);
+	// Le picker attend {type, values:{code,parentId}} : le blog n'a ni couleur
+	// ni hiérarchie, ces champs sont donc toujours neutres.
+	const taxonomies = untrack(() =>
+		(data.taxonomies || []).map((taxonomy) => ({
+			...taxonomy,
+			type: 'TEXT',
+			values: taxonomy.values.map((v) => ({ ...v, code: null, parentId: null }))
+		}))
+	);
 
 	// Initialisation du formulaire via SuperForm
 	const createPost = superForm(
@@ -46,8 +46,8 @@
 	// AUTH-PLUGIN : `data.user` vient de `+layout.server.ts` ; sans
 	// authentification, choisir l'auteur dans une liste (`BlogAuthor`).
 	$createPostData.authorId = untrack(() => data.user.id);
-	if (!$createPostData.tagIds) {
-		$createPostData.tagIds = [];
+	if (!$createPostData.taxonomyValueIds) {
+		$createPostData.taxonomyValueIds = [];
 	}
 
 	// Affichage d'un toast et redirection en cas de succès
@@ -57,16 +57,6 @@
 			setTimeout(() => goto('/admin/blog/'), 0);
 		}
 	});
-
-	/*
-	 * Sélection d'une catégorie
-	 * Seule une catégorie peut être sélectionnée, on affecte son nom et son ID.
-	 */
-	function handleSelectCategory(category: { id: string; name: string }) {
-		selectedCategory = category.name;
-		$createPostData.categoryId = category.id;
-		openCategory = false;
-	}
 
 	// Configuration de l'éditeur
 	let editorConfig = {
@@ -119,59 +109,13 @@
 					</Form.Field>
 				</div>
 
-				<!-- Popover pour la sélection de la catégorie -->
-				<div class="mx-2">
-					<Popover.Root bind:open={openCategory}>
-						<Popover.Trigger>
-							<Button>
-								Catégories : {selectedCategory}
-							</Button>
-						</Popover.Trigger>
-						<Popover.Content>
-							<Command.Root>
-								{#each categories as category}
-									<Command.Item onSelect={() => handleSelectCategory(category)}>
-										{category.name}
-									</Command.Item>
-								{/each}
-							</Command.Root>
-						</Popover.Content>
-					</Popover.Root>
-				</div>
-
-				<!-- Sélection de Tags avec un Checkbox.Group -->
-				<!-- Tags multi-sélection : inputs natifs -->
-				<Popover.Root bind:open={openTag}>
-					<Popover.Trigger>
-						<Button>
-							Tags : {($createPostData?.tagIds || []).length} sélectionnés
-						</Button>
-					</Popover.Trigger>
-					<Popover.Content class="p-4 space-y-2">
-						{#each tags as tag}
-							<div class="flex items-center space-x-2">
-								<!-- Input natif, name="tagIds" -->
-								<input
-									type="checkbox"
-									name="tagIds"
-									value={tag.id}
-									id={'tag-' + tag.id}
-									checked={($createPostData.tagIds ?? []).includes(tag.id)}
-									onchange={(e) => {
-										const checked = (e.target as HTMLInputElement).checked;
-										const currentTagIds = $createPostData.tagIds ?? [];
-										if (checked) {
-											$createPostData.tagIds = [...currentTagIds, tag.id];
-										} else {
-											$createPostData.tagIds = currentTagIds.filter((id) => id !== tag.id);
-										}
-									}}
-								/>
-								<Label for={'tag-' + tag.id}>{tag.name}</Label>
-							</div>
-						{/each}
-					</Popover.Content>
-				</Popover.Root>
+				<TaxonomyValuePicker
+					{taxonomies}
+					bind:selectedIds={
+						() => $createPostData.taxonomyValueIds ?? [],
+						(v) => ($createPostData.taxonomyValueIds = v)
+					}
+				/>
 
 				<!-- Champ Content avec éditeur -->
 				<div class="w-[100%]">
@@ -190,11 +134,10 @@
 				</div>
 
 				<!-- Inputs cachés pour transmettre les IDs et autres champs -->
-				<input type="text" name="tagIds" bind:value={$createPostData.tagIds} class="hidden" />
 				<input
 					type="text"
-					name="categoryId"
-					bind:value={$createPostData.categoryId}
+					name="taxonomyValueIds"
+					bind:value={$createPostData.taxonomyValueIds}
 					class="hidden"
 				/>
 				<input type="hidden" name="authorId" bind:value={$createPostData.authorId} />
@@ -204,3 +147,4 @@
 		</form>
 	</div>
 </div>
+

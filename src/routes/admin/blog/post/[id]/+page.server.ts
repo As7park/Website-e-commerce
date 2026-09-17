@@ -8,18 +8,13 @@ import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import { updateBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
-import {
-	getAllCategoriesPosts,
-	getAllTagsPosts,
-	getPostById,
-	updatePost
-} from '$lib/prisma/blogPost/blogPost';
+import { getPostById, updatePost } from '$lib/prisma/blogPost/blogPost';
+import { getAllBlogTaxonomiesWithValues } from '$lib/prisma/blogPost/blogTaxonomies';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const blogPost = await getPostById(params.id);
-	const AllCategoriesPost = await getAllCategoriesPosts();
-	const AllTagsPost = await getAllTagsPosts();
+	const taxonomies = await getAllBlogTaxonomiesWithValues();
 
 	if (!blogPost) {
 		error(404, 'Blog post not found');
@@ -29,8 +24,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		id: blogPost.id,
 		title: blogPost.title,
 		content: blogPost.content,
-		categoryId: blogPost.categoryId || undefined,
-		tagIds: blogPost.tags.map((tag) => tag.id),
+		taxonomyValueIds: blogPost.taxonomyValues.map((t) => t.taxonomyValueId),
 		published: blogPost.published,
 		authorId: blogPost.authorId
 	};
@@ -38,8 +32,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const IupdateBlogPostSchema = await superValidate(initialData, zod(updateBlogPostSchema));
 
 	return {
-		AllTagsPost,
-		AllCategoriesPost,
+		taxonomies,
 		IupdateBlogPostSchema
 	};
 };
@@ -53,18 +46,18 @@ export const actions: Actions = {
 		// Convertir formData en objet exploitable
 		const cleanData: Record<string, unknown> = Object.fromEntries(formData.entries());
 
-		// Vérifier et nettoyer tagIds (éviter [undefined])
-		if (cleanData.tagIds) {
+		// Vérifier et nettoyer taxonomyValueIds (éviter [undefined])
+		if (cleanData.taxonomyValueIds) {
 			// Si c'est une seule valeur, la convertir en tableau
-			if (!Array.isArray(cleanData.tagIds)) {
-				cleanData.tagIds = [cleanData.tagIds];
+			if (!Array.isArray(cleanData.taxonomyValueIds)) {
+				cleanData.taxonomyValueIds = [cleanData.taxonomyValueIds];
 			}
 
 			// Filtrer les valeurs nulles ou undefined
-			cleanData.tagIds = (cleanData.tagIds as unknown[]).filter(Boolean);
+			cleanData.taxonomyValueIds = (cleanData.taxonomyValueIds as unknown[]).filter(Boolean);
 		} else {
 			// S'assurer que c'est toujours un tableau vide
-			cleanData.tagIds = [];
+			cleanData.taxonomyValueIds = [];
 		}
 
 		const raw: Record<string, unknown> = Object.fromEntries(formData);

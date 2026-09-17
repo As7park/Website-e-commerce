@@ -374,7 +374,7 @@ export async function getProductByName(name: string) {
 	return resilient(() => db.product.findFirst({ where: { name } }));
 }
 
-/** Blog : article de test isolé (auteur + catégorie dédiés). */
+/** Blog : article de test isolé (auteur + valeur de taxonomie « Catégorie » dédiés). */
 export async function createBlogPost(overrides?: {
 	title?: string;
 	slug?: string;
@@ -384,9 +384,12 @@ export async function createBlogPost(overrides?: {
 	const author = await resilient(() =>
 		db.blogAuthor.create({ data: { name: `e2e-blog-author-${stamp}` } })
 	);
-	const category = await resilient(() =>
-		db.blogCategory.create({
-			data: { name: `e2e-blog-cat-${stamp}`, description: 'Catégorie de test e2e.' }
+	const categoryTaxonomy = await resilient(() =>
+		db.blogTaxonomy.findUniqueOrThrow({ where: { slug: 'categorie' } })
+	);
+	const categoryValue = await resilient(() =>
+		db.blogTaxonomyValue.create({
+			data: { taxonomyId: categoryTaxonomy.id, value: `e2e-blog-cat-${stamp}` }
 		})
 	);
 	const post = await resilient(() =>
@@ -397,11 +400,11 @@ export async function createBlogPost(overrides?: {
 				content: '<p>Contenu de test e2e pour le blog.</p>',
 				published: overrides?.published ?? true,
 				authorId: author.id,
-				categoryId: category.id
+				taxonomyValues: { create: { taxonomyValueId: categoryValue.id } }
 			}
 		})
 	);
-	return { post, author, category };
+	return { post, author, category: { id: categoryValue.id, name: categoryValue.value } };
 }
 
 export async function getBlogPostBySlug(slug: string) {
@@ -428,7 +431,14 @@ export async function deleteBlogPost(postId: string) {
 	);
 	if (!post) return;
 
-	await resilient(() => db.blogPostTag.deleteMany({ where: { postId } }));
+	// Récupéré avant suppression du post : la cascade DB retire ensuite la
+	// ligne `BlogPostTaxonomyValue` en même temps que le post.
+	const categoryLink = await resilient(() =>
+		db.blogPostTaxonomyValue.findFirst({
+			where: { postId, taxonomyValue: { taxonomy: { slug: 'categorie' } } }
+		})
+	);
+
 	await resilient(() => db.blogComment.deleteMany({ where: { postId } }));
 	await resilient(() => db.blogPost.deleteMany({ where: { id: postId } }));
 
@@ -443,14 +453,14 @@ export async function deleteBlogPost(postId: string) {
 		);
 	}
 
-	if (post.categoryId) {
+	if (categoryLink) {
 		const remainingForCategory = await resilient(() =>
-			db.blogPost.count({ where: { categoryId: post.categoryId } })
+			db.blogPostTaxonomyValue.count({ where: { taxonomyValueId: categoryLink.taxonomyValueId } })
 		);
 		if (remainingForCategory === 0) {
 			await resilient(() =>
-				db.blogCategory.deleteMany({
-					where: { id: post.categoryId, name: { startsWith: 'e2e-blog-cat-' } }
+				db.blogTaxonomyValue.deleteMany({
+					where: { id: categoryLink.taxonomyValueId, value: { startsWith: 'e2e-blog-cat-' } }
 				})
 			);
 		}

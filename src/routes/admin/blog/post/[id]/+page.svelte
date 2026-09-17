@@ -2,15 +2,14 @@
 	import { untrack } from 'svelte';
 	// ----- Imports -----
 	import * as Form from '$shadcn/form';
-	import * as Popover from '$shadcn/popover';
-	import * as Command from '$shadcn/command';
 	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
 	import { Checkbox } from '$shadcn/checkbox';
 	import { Label } from '$shadcn/label';
 	import Editor from '@tinymce/tinymce-svelte';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
+	import { Button } from '$shadcn/button';
+	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -42,60 +41,15 @@
 		}
 	});
 
-	// ----- Categories -----
-	let categories = $state(untrack(() => data.AllCategoriesPost || []));
-	let selectedCategoryName = $state('');
-
-	$effect(() => {
-		if ($updateData.categoryId && categories.length) {
-			const found = categories.find((cat) => cat.id === $updateData.categoryId);
-			if (found) selectedCategoryName = found.name;
-		}
-	});
-
-	// ----- Tags -----
-	let allTags = $state(untrack(() => data.AllTagsPost || []));
-
-	/**
-	 * Initialize local `tags` array with a `checked` property
-	 * based on the relation. For example, if the post is linked to the tag,
-	 * set checked = true.
-	 */
-	let tags = $state(
-		allTags.map((tag) => {
-			// On vérifie si l'ID du post figure dans la relation many-to-many du tag
-			const isLinked = tag.posts.some((rel) => rel.postId === $updateData.id);
-			return {
-				...tag,
-				checked: isLinked
-			};
-		})
+	// Le picker attend {type, values:{code,parentId}} : le blog n'a ni couleur
+	// ni hiérarchie, ces champs sont donc toujours neutres.
+	const taxonomies = untrack(() =>
+		(data.taxonomies || []).map((taxonomy) => ({
+			...taxonomy,
+			type: 'TEXT',
+			values: taxonomy.values.map((v) => ({ ...v, code: null, parentId: null }))
+		}))
 	);
-
-	/**
-	 * New variable that holds only the IDs of the checked tags.
-	 * This is separate from $updateData.tagIds, so you can use it
-	 * for display or other logic as needed.
-	 */
-	let checkedTagIds = $state<string[]>([]);
-
-	/**
-	 * Whenever `tags` changes, we update:
-	 * - $updateData.tagIds: needed for the form submission
-	 * - checkedTagIds: a new array containing only the checked tag IDs
-	 */
-	$effect(() => {
-		const newCheckedIds = tags
-			.filter((t) => t.checked)
-			.map((t) => t.id)
-			.filter(Boolean);
-
-		// Update the superform data
-		$updateData.tagIds = newCheckedIds;
-
-		// Also update our separate local variable
-		checkedTagIds = newCheckedIds;
-	});
 
 	// ----- TinyMCE config -----
 	let editorConfig = {
@@ -108,19 +62,6 @@
 		toolbar:
 			'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help'
 	};
-
-	let openCategory = $state(false);
-	let openTag = $state(false);
-
-	function handleSelectCategory(cat: { id: string; name: string }) {
-		selectedCategoryName = cat.name;
-		$updateData.categoryId = cat.id;
-		openCategory = false;
-	}
-
-	// $effect(() => {
-	// 	console.log(JSON.stringify($updateData, null, 2), JSON.stringify(checkedTagIds, null, 2));
-	// });
 </script>
 
 <form method="POST" action="?/updatePost" use:updateEnhance class="space-y-4">
@@ -144,46 +85,13 @@
 		<Form.FieldErrors />
 	</Form.Field>
 
-	<!-- Category Popover -->
-	<div class="flex items-center space-x-4">
-		<Popover.Root bind:open={openCategory}>
-			<Popover.Trigger>
-				<Button>Category: {selectedCategoryName}</Button>
-			</Popover.Trigger>
-			<Popover.Content class="p-4">
-				<Command.Root>
-					{#each categories as cat}
-						<Command.Item onSelect={() => handleSelectCategory(cat)}>
-							{cat.name}
-						</Command.Item>
-					{/each}
-				</Command.Root>
-			</Popover.Content>
-		</Popover.Root>
-
-		<!-- Tags Popover -->
-		<Popover.Root bind:open={openTag}>
-			<Popover.Trigger>
-				<Button>Tags: {$updateData.tagIds?.length ?? 0} selected</Button>
-			</Popover.Trigger>
-			<Popover.Content class="p-4 space-y-2">
-				{#each tags as tag, i}
-					<div class="flex items-center space-x-2">
-						<input
-							type="checkbox"
-							id={'tag-' + tag.id}
-							checked={tag.checked}
-							onchange={(e) => {
-								// Immutable update to force Svelte to register changes
-								tags[i] = { ...tag, checked: (e.target as HTMLInputElement).checked };
-							}}
-						/>
-						<Label for={'tag-' + tag.id}>{tag.name}</Label>
-					</div>
-				{/each}
-			</Popover.Content>
-		</Popover.Root>
-	</div>
+	<TaxonomyValuePicker
+		{taxonomies}
+		bind:selectedIds={
+			() => $updateData.taxonomyValueIds ?? [],
+			(v) => ($updateData.taxonomyValueIds = v)
+		}
+	/>
 
 	<!-- Content -->
 	<Form.Field name="content" form={updateForm}>
@@ -202,10 +110,10 @@
 	<!-- Hidden fields for the form submission -->
 	<input type="hidden" name="id" value={$updateData.id} />
 	<input type="hidden" name="authorId" bind:value={$updateData.authorId} />
-	<input type="hidden" name="categoryId" bind:value={$updateData.categoryId} />
 	<input type="hidden" name="content" bind:value={$updateData.content} />
-	<input type="hidden" name="tagIds" bind:value={$updateData.tagIds} />
+	<input type="hidden" name="taxonomyValueIds" bind:value={$updateData.taxonomyValueIds} />
 
 	<!-- Submit -->
 	<Button type="submit">Save changes</Button>
 </form>
+

@@ -6,18 +6,17 @@ import type { Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { createBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
-import { createPost, getAllCategoriesPosts, getAllTagsPosts } from '$lib/prisma/blogPost/blogPost';
+import { createPost } from '$lib/prisma/blogPost/blogPost';
+import { getAllBlogTaxonomiesWithValues } from '$lib/prisma/blogPost/blogTaxonomies';
 import { slugify } from '$lib/prisma/slugify';
 import { prisma } from '$lib/server';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load = async () => {
-	const AllCategoriesPost = await getAllCategoriesPosts();
-	const AllTagsPost = await getAllTagsPosts();
+	const taxonomies = await getAllBlogTaxonomiesWithValues();
 	const IcreateBlogPostSchema = await superValidate(zod(createBlogPostSchema));
 	return {
-		AllCategoriesPost,
-		AllTagsPost,
+		taxonomies,
 		IcreateBlogPostSchema
 	};
 };
@@ -32,9 +31,9 @@ export const actions: Actions = {
 		// Convert formData into a flat object
 		const raw: Record<string, unknown> = Object.fromEntries(formData);
 
-		// Convert tagIds to an array (if not already)
-		if (raw.tagIds) {
-			raw.tagIds = (raw.tagIds as string).split(',');
+		// Convert taxonomyValueIds to an array (if not already)
+		if (raw.taxonomyValueIds) {
+			raw.taxonomyValueIds = (raw.taxonomyValueIds as string).split(',').filter(Boolean);
 		}
 
 		// Convert the "published" field to a boolean
@@ -49,7 +48,7 @@ export const actions: Actions = {
 			return fail(400, { form });
 		}
 
-		const { title, content, authorId, published, categoryId, tagIds } = form.data;
+		const { title, content, authorId, published, taxonomyValueIds } = form.data;
 		let slug = slugify(title);
 
 		// Ensure the slug is unique
@@ -68,8 +67,7 @@ export const actions: Actions = {
 			authorId,
 			uniqueSlug,
 			published,
-			categoryId ?? undefined,
-			tagIds ?? undefined
+			taxonomyValueIds ?? undefined
 		);
 
 		// console.log('Post created successfully.', form);

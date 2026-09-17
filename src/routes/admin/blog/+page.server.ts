@@ -1,5 +1,5 @@
 /**
- * BLOG-PLUGIN : liste et suppressions admin (articles, catégories, tags).
+ * BLOG-PLUGIN : liste et suppressions admin (articles, taxonomies).
  * Les gardes d'écriture sont celles de l'admin (`requireAdmin`).
  */
 import type { PageServerLoad } from './$types';
@@ -8,20 +8,14 @@ import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import { deleteBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
+import { deleteBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
 
+import { getPostById, deletePost, getAllPosts } from '$lib/prisma/blogPost/blogPost';
 import {
-	deleteCategory,
-	deleteTag,
-	getAllCategoriesPosts,
-	getAllTagsPosts,
-	getCategoryById,
-	getPostById,
-	getTagById
-} from '$lib/prisma/blogPost/blogPost';
-import { deletePost } from '$lib/prisma/blogPost/blogPost';
-import { getAllPosts } from '$lib/prisma/blogPost/blogPost';
-import { deleteBlogCategorySchema } from '$lib/schema/BlogPost/categoriesSchema';
-import { deleteBlogTagSchema } from '$lib/schema/BlogPost/tagSchema';
+	getAllBlogTaxonomies,
+	getBlogTaxonomyById,
+	deleteBlogTaxonomyById
+} from '$lib/prisma/blogPost/blogTaxonomies';
 import { requireAdmin } from '$lib/admin/guards';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -32,16 +26,13 @@ export const load: PageServerLoad = async ({ url }) => {
 		sort: url.searchParams.get('sort') ?? undefined,
 		dir: url.searchParams.get('dir') === 'desc' ? 'desc' : undefined
 	});
-	const AllCategoriesPost = await getAllCategoriesPosts();
-	const AllTagsPost = await getAllTagsPosts();
+	const taxonomies = await getAllBlogTaxonomies();
 
 	const IdeleteBlogPostSchema = await superValidate(zod(deleteBlogPostSchema));
-	const IdeleteBlogCategorySchema = await superValidate(zod(deleteBlogCategorySchema));
-	const IdeleteBlogTagSchema = await superValidate(zod(deleteBlogTagSchema));
+	const IdeleteBlogTaxonomySchema = await superValidate(zod(deleteBlogTaxonomySchema));
 
 	return {
-		AllCategoriesPost,
-		AllTagsPost,
+		taxonomies,
 		IdeleteBlogPostSchema,
 		BlogPost: items,
 		total,
@@ -50,8 +41,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		search,
 		sort,
 		dir,
-		IdeleteBlogTagSchema,
-		IdeleteBlogCategorySchema
+		IdeleteBlogTaxonomySchema
 	};
 };
 
@@ -88,68 +78,27 @@ export const actions: Actions = {
 			return fail(500, { message: 'Post deletion failed' });
 		}
 	},
-	deleteBlogTag: async ({ request, locals }) => {
+	deleteBlogTaxonomy: async ({ request, locals }) => {
 		requireAdmin(locals);
-		// console.log('deleteTag action initiated.', request);
-
 		const formData = await request.formData();
-		// console.log(formData, 'form data');
-
-		const form = await superValidate(formData, zod(deleteBlogTagSchema));
+		const form = await superValidate(formData, zod(deleteBlogTaxonomySchema));
 		const id = formData.get('id') as string;
-		// console.log('Received id:', id);
+
 		if (!id) {
-			// console.log('No id provided');
-			return fail(400, { message: 'Tag ID is required' });
+			return fail(400, { message: 'Taxonomy ID is required' });
 		}
 		try {
-			// Vérifier si le tag existe
-			const existingTag = await getTagById(id);
-			if (!existingTag) {
-				// console.log('Tag not found:', id);
-				return fail(400, { message: 'Tag not found' });
+			const existingTaxonomy = await getBlogTaxonomyById(id);
+			if (!existingTaxonomy) {
+				return fail(400, { message: 'Taxonomy not found' });
 			}
-			// console.log('Tag found:', existingTag);
 
-			// Supprimer le tag
-			const deletedTag = await deleteTag(id);
-			// console.log('Deleted tag:', deletedTag);
-			return message(form, 'Tag deleted successfully');
+			await deleteBlogTaxonomyById(id);
+
+			return message(form, 'Taxonomy deleted successfully');
 		} catch (error) {
-			console.error('Error deleting tag:', error);
-			return fail(500, { message: 'Tag deletion failed' });
-		}
-	},
-	deleteBlogCategory: async ({ request, locals }) => {
-		requireAdmin(locals);
-		// console.log('deleteCategory action initiated.', request);
-
-		const formData = await request.formData();
-		// console.log(formData, 'form data');
-
-		const form = await superValidate(formData, zod(deleteBlogCategorySchema));
-		const id = formData.get('id') as string;
-		// console.log('Received id:', id);
-		if (!id) {
-			// console.log('No id provided');
-			return fail(400, { message: 'Category ID is required' });
-		}
-		try {
-			// Vérifier si la catégorie existe
-			const existingCategory = await getCategoryById(id);
-			if (!existingCategory) {
-				// console.log('Category not found:', id);
-				return fail(400, { message: 'Category not found' });
-			}
-			// console.log('Category found:', existingCategory);
-
-			// Supprimer la catégorie
-			const deletedCategory = await deleteCategory(id);
-			// console.log('Deleted category:', deletedCategory);
-			return message(form, 'Category deleted successfully');
-		} catch (error) {
-			console.error('Error deleting category:', error);
-			return fail(500, { message: 'Category deletion failed' });
+			console.error('Error deleting blog taxonomy:', error);
+			return fail(500, { message: 'Taxonomy deletion failed' });
 		}
 	}
 };
