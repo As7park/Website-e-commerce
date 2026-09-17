@@ -231,9 +231,12 @@ const PACKAGE = {
  */
 async function truncate() {
 	await prisma.$transaction([
+		prisma.blogPostTaxonomyValue.deleteMany(), // BLOG-PLUGIN
 		prisma.blogPostTag.deleteMany(), // BLOG-PLUGIN
 		prisma.blogComment.deleteMany(), // BLOG-PLUGIN
 		prisma.blogPost.deleteMany(), // BLOG-PLUGIN
+		prisma.blogTaxonomyValue.deleteMany(), // BLOG-PLUGIN
+		prisma.blogTaxonomy.deleteMany(), // BLOG-PLUGIN
 		prisma.blogCategory.deleteMany(), // BLOG-PLUGIN
 		prisma.blogAuthor.deleteMany(), // BLOG-PLUGIN
 		prisma.blogTag.deleteMany(), // BLOG-PLUGIN
@@ -865,22 +868,30 @@ async function main() {
 		data: { name: 'Camille — direction artistique' }
 	});
 
-	const studioCategory = await prisma.blogCategory.create({
-		data: {
-			name: 'Studio',
-			description: 'Articles du studio MadeInDiamonds : design, produit et culture web.'
-		}
+	// BLOG-PLUGIN : taxonomies génériques (voir docs/blog/README.md).
+	const categoryTaxonomy = await prisma.blogTaxonomy.create({
+		data: { name: 'Catégorie', slug: 'categorie', multiple: false }
 	});
-	const methodCategory = await prisma.blogCategory.create({
-		data: {
-			name: 'Méthode',
-			description: 'Cadrage, design system, mise en ligne et maintenance.'
-		}
+	const tagTaxonomy = await prisma.blogTaxonomy.create({
+		data: { name: 'Tag', slug: 'tag', multiple: true }
 	});
 
-	const tagDesign = await prisma.blogTag.create({ data: { name: 'Design' } });
-	const tagTech = await prisma.blogTag.create({ data: { name: 'Technique' } });
-	const tagCulture = await prisma.blogTag.create({ data: { name: 'Culture' } });
+	const studioCategory = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: categoryTaxonomy.id, value: 'Studio' }
+	});
+	const methodCategory = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: categoryTaxonomy.id, value: 'Méthode' }
+	});
+
+	const tagDesign = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: tagTaxonomy.id, value: 'Design' }
+	});
+	const tagTech = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: tagTaxonomy.id, value: 'Technique' }
+	});
+	const tagCulture = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: tagTaxonomy.id, value: 'Culture' }
+	});
 
 	const parseBlogDate = (value) => {
 		const [day, month, yearRaw] = String(value).split('.');
@@ -898,13 +909,15 @@ async function main() {
 				slug: article.link,
 				published: true,
 				authorId: index % 3 === 1 ? camilleAuthor.id : studioAuthor.id,
-				categoryId: index >= 4 ? methodCategory.id : studioCategory.id,
 				createdAt,
 				updatedAt: createdAt,
-				tags: {
+				taxonomyValues: {
 					create: [
-						{ tagId: tagCulture.id },
-						...(index % 2 === 0 ? [{ tagId: tagDesign.id }] : [{ tagId: tagTech.id }])
+						{ taxonomyValueId: index >= 4 ? methodCategory.id : studioCategory.id },
+						{ taxonomyValueId: tagCulture.id },
+						...(index % 2 === 0
+							? [{ taxonomyValueId: tagDesign.id }]
+							: [{ taxonomyValueId: tagTech.id }])
 					]
 				}
 			}
@@ -918,7 +931,7 @@ async function main() {
 			slug: 'brouillon-refonte-studio',
 			published: false,
 			authorId: studioAuthor.id,
-			categoryId: methodCategory.id,
+			taxonomyValues: { create: { taxonomyValueId: methodCategory.id } },
 			createdAt: atUtc(2026, 7, 20),
 			content: `
 				<p>Notes internes : revoir la homepage, le parcours Offres et le cas client sportif.</p>

@@ -1,21 +1,22 @@
 # Blog
 
-Vitrine publique et CRUD admin des articles Prisma : fiches, catégories, tags.
-Réservé en écriture au rôle `ADMIN` ; la lecture (`/blog`) est ouverte et ne
-montre que les articles `published`.
+Vitrine publique et CRUD admin des articles Prisma : fiches, taxonomies
+(catégorie, tags, et toute nouvelle facette créée en admin). Réservé en
+écriture au rôle `ADMIN` ; la lecture (`/blog`) est ouverte et ne montre que
+les articles `published`.
 
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
 ## Frontière du module
 
-| Emplacement | Contenu |
-| ----------- | ------- |
-| `src/lib/blog/` | lecture publique et chemins de tests |
-| `src/lib/prisma/blogPost/` | DAO Prisma (articles, catégories, tags) |
-| `src/lib/schema/BlogPost/` | schémas Zod des formulaires admin |
-| `src/routes/blog/` | vitrine |
-| `src/routes/admin/blog/` | CRUD back-office (gardes = module admin) |
+| Emplacement                | Contenu                                  |
+| -------------------------- | ---------------------------------------- |
+| `src/lib/blog/`            | lecture publique et chemins de tests     |
+| `src/lib/prisma/blogPost/` | DAO Prisma (articles, taxonomies)        |
+| `src/lib/schema/BlogPost/` | schémas Zod des formulaires admin        |
+| `src/routes/blog/`         | vitrine                                  |
+| `src/routes/admin/blog/`   | CRUD back-office (gardes = module admin) |
 
 Contrairement à l'auth, le blog **n'a pas de hook** dans `hooks.server.ts` :
 le public est en lecture seule, les mutations passent déjà par `requireAdmin`.
@@ -32,12 +33,34 @@ Les commentaires (`BlogComment`) sont un modèle Prisma rattaché aux articles
 (`onDelete: Cascade`). Il n'y a pas d'UI publique de commentaires dans ce
 module.
 
+### Taxonomies (catégorie, tags...)
+
+Le classement des articles utilise un système générique dédié au blog —
+`BlogTaxonomy` (le type de facette, ex: « Catégorie », « Tag »),
+`BlogTaxonomyValue` (ses valeurs possibles) et `BlogPostTaxonomyValue`
+(l'assignation à un article). `BlogTaxonomy.multiple` distingue une sélection
+unique (Catégorie) d'une sélection multiple (Tag). L'admin peut créer de
+nouvelles facettes sans migration (`/admin/blog/taxonomies`).
+
+Ce système est un mirroring volontaire de `$lib/prisma/taxonomies`
+(produits) mais sur des tables séparées : le blog ne dépend pas des tables
+PRODUCT-PLUGIN, ce qui garde les deux modules retirables indépendamment.
+
+La vitrine publique (`src/lib/blog/catalog.ts`) suppose deux taxonomies au
+slug fixe : `categorie` (nav de filtre) et `tag` (affichage libre sur la
+fiche). Toute autre taxonomie créée en admin n'a pas d'UI publique dédiée.
+
+Les anciens modèles `BlogCategory`/`BlogTag`/`BlogPostTag` et la colonne
+`BlogPost.categoryId` restent en base (données migrées par la migration
+`20260917270000_add_blog_taxonomies`) mais ne sont plus lus/écrits par
+l'application — même convention que `materials`/`categories` côté produits.
+
 ## Vitrine
 
-| Route | Rôle |
-| ----- | ---- |
-| `/blog` | liste des articles publiés, filtre optionnel `?categorie=` |
-| `/blog/[slug]` | fiche ; 404 si le slug est inconnu **ou** si l'article n'est pas publié |
+| Route          | Rôle                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `/blog`        | liste des articles publiés, filtre optionnel `?categorie=` (id d'une valeur de la taxonomie « Catégorie ») |
+| `/blog/[slug]` | fiche ; 404 si le slug est inconnu **ou** si l'article n'est pas publié                                    |
 
 Les données viennent de Prisma.
 
@@ -45,14 +68,15 @@ Un brouillon n'apparaît ni dans la liste ni à l'URL de son slug.
 
 ## Admin
 
-`/admin/blog` : liste, création, édition, suppression, catégories, tags. Accès
+`/admin/blog` : liste, création, édition, suppression, taxonomies. Accès
 couvert par `adminHandle`. Un article peut être dépublié : il disparaît de la
 vitrine sans être effacé.
 
 ## Ce qui n'est pas le blog
 
 L'authentification, le back-office dans son ensemble, le catalogue produits
-(`Category` n'est pas `BlogCategory`), le panier et le checkout.
+(le système de taxonomies produits `Taxonomy`/`TaxonomyValue` n'est pas
+`BlogTaxonomy`/`BlogTaxonomyValue`), le panier et le checkout.
 
 ## Tests
 
@@ -62,26 +86,26 @@ puis le code (`src/lib/blog`, `/blog`, `/admin/blog`). Index :
 
 ### Vitrine — `e2e/blog/catalog.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | La liste affiche le titre Prisma | GET `/blog` | titres + lien catégorie |
-| 2 | La fiche s’ouvre par slug | GET `/blog/[slug]` | titre, auteur, ligne en base |
-| 3 | Un slug inconnu renvoie 404 | GET slug absent | statut 404 |
-| 4 | Un brouillon n’est pas public | GET slug `published=false` | statut 404, absent de la liste |
-| 5 | Pas d’UI d’édition admin | HTML de `/blog` | pas de `/admin/blog` ni `passwordHash` |
+| #   | Étape                            | Geste                      | Preuve                                 |
+| --- | -------------------------------- | -------------------------- | -------------------------------------- |
+| 1   | La liste affiche le titre Prisma | GET `/blog`                | titres + lien de valeur « Catégorie »  |
+| 2   | La fiche s’ouvre par slug        | GET `/blog/[slug]`         | titre, auteur, ligne en base           |
+| 3   | Un slug inconnu renvoie 404      | GET slug absent            | statut 404                             |
+| 4   | Un brouillon n’est pas public    | GET slug `published=false` | statut 404, absent de la liste         |
+| 5   | Pas d’UI d’édition admin         | HTML de `/blog`            | pas de `/admin/blog` ni `passwordHash` |
 
 ### Admin — `e2e/blog/admin.spec.ts`
 
 La création et l'édition du titre passent par Prisma : TinyMCE n'est pas joué
 en e2e.
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Liste admin | GET `/admin/blog`, recherche | ligne du tableau Articles |
-| 2 | Création Prisma visible sur la vitrine | GET `/blog` | heading + base |
-| 3 | Édition Prisma du titre | `updateBlogPostTitle` | DB + titre sur la fiche publique |
-| 4 | Suppression | dialogue Continue | article absent en base |
-| 5 | Dépublier : disparaît de la vitrine | `published=false` en Prisma | GET slug → 404 |
+| #   | Étape                                  | Geste                        | Preuve                           |
+| --- | -------------------------------------- | ---------------------------- | -------------------------------- |
+| 1   | Liste admin                            | GET `/admin/blog`, recherche | ligne du tableau Articles        |
+| 2   | Création Prisma visible sur la vitrine | GET `/blog`                  | heading + base                   |
+| 3   | Édition Prisma du titre                | `updateBlogPostTitle`        | DB + titre sur la fiche publique |
+| 4   | Suppression                            | dialogue Continue            | article absent en base           |
+| 5   | Dépublier : disparaît de la vitrine    | `published=false` en Prisma  | GET slug → 404                   |
 
 À part : CLIENT POST `?/deleteBlogPost` — l'article reste.
 

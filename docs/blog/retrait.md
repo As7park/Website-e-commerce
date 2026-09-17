@@ -7,10 +7,10 @@ Procédure à suivre dans l'ordre. Compter moins d'une heure.
 Supprimer la vitrine et `/admin/blog` enlève l'interface, pas les lignes en
 base. Deux trajectoires :
 
-| Trajectoire | Ce que devient le blog | Effort |
-| ----------- | ---------------------- | ------ |
-| Autre vitrine (CMS, headless) | les modèles Prisma restent ou sont remplacés | modéré |
-| Tout retirer | supprimer BlogPost, BlogAuthor, BlogCategory, BlogTag, BlogComment | faible |
+| Trajectoire                   | Ce que devient le blog                                                                                                                                                  | Effort |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Autre vitrine (CMS, headless) | les modèles Prisma restent ou sont remplacés                                                                                                                            | modéré |
+| Tout retirer                  | supprimer BlogPost, BlogAuthor, BlogTaxonomy, BlogTaxonomyValue, BlogPostTaxonomyValue, BlogComment (+ BlogCategory/BlogTag/BlogPostTag, non lus mais toujours en base) | faible |
 
 Les étapes 1 et 2 sont communes.
 
@@ -35,15 +35,16 @@ rg "BLOG-PLUGIN" src/ prisma/
 Les blocs encadrés par `BLOG-PLUGIN ▼` et `BLOG-PLUGIN ▲` se suppriment
 tels quels.
 
-| Fichier | Action |
-| ------- | ------ |
-| `src/lib/components/Navigation.svelte` | retirer le lien Blog / `/blog` |
-| `src/routes/admin/+layout.svelte` | retirer l'entrée « blog » du menu |
-| `src/lib/sitemap.config.ts` | retirer `/blog` |
-| `prisma/seed.js` | ne plus créer auteurs, catégories ni articles |
-| `prisma/schema.prisma` | retirer les modèles `Blog*` dans une migration |
+| Fichier                                | Action                                         |
+| -------------------------------------- | ---------------------------------------------- |
+| `src/lib/components/Navigation.svelte` | retirer le lien Blog / `/blog`                 |
+| `src/routes/admin/+layout.svelte`      | retirer l'entrée « blog » du menu              |
+| `src/lib/sitemap.config.ts`            | retirer `/blog`                                |
+| `prisma/seed.js`                       | ne plus créer auteurs, catégories ni articles  |
+| `prisma/schema.prisma`                 | retirer les modèles `Blog*` dans une migration |
 
-`BlogCategory` n'a rien à voir avec `Category` (catalogue).
+`BlogCategory`/`BlogTaxonomy` n'ont rien à voir avec `Category`/`Taxonomy`
+(catalogue produit) : ce sont deux systèmes séparés, propres à chaque module.
 
 ## 3. Données et dépendances
 
