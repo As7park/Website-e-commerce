@@ -243,6 +243,11 @@ model Order {
   /// pour ne jamais relancer deux fois le même palier sur la même commande.
   cartReminder1SentAt DateTime?
   cartReminder2SentAt DateTime?
+  /// Relance avis produit post-livraison (`StoreSettings.reviewReminderEnabled`,
+  /// `$lib/server/jobs/reviewReminder.ts`) : posé une seule fois, jamais
+  /// réinitialisé — un seul rappel par commande, contrairement aux deux
+  /// paliers de `cartReminder*SentAt` ci-dessus.
+  reviewReminderSentAt DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   items               OrderItem[]
@@ -557,6 +562,24 @@ model Transaction {
   userId          String?
   amount          Float
   currency        String
+
+  /// PaymentIntent Stripe de la session (`session.payment_intent`, déjà
+  /// présent dans le payload `checkout.session.completed` sans appel API
+  /// supplémentaire) — sert uniquement à rattacher un litige
+  /// (`charge.dispute.*`, qui ne référence que ce PaymentIntent) sans devoir
+  /// interroger Stripe depuis le webhook.
+  stripePaymentIntentId String? @unique
+
+  /// Litige Stripe (`charge.dispute.created`/`.closed`, webhook
+  /// `/api/webhooks`) — jamais résolu automatiquement, juste tracé et
+  /// alerté (`$lib/server/disputeAlert.ts`). `disputeId` sert de garde
+  /// d'idempotence contre un retry du même évènement webhook.
+  disputeId       String?   @unique
+  disputeStatus   String?
+  disputeReason   String?
+  disputeAmount   Float?
+  disputeOpenedAt DateTime?
+  disputeClosedAt DateTime?
 
   customer_details_email String? @default("")
   customer_details_name  String? @default("")
@@ -874,6 +897,7 @@ model StoreSettings {
   /// suggestion panier + petite remise automatique, basées sur la
   /// co-occurrence réelle dans `OrderItem` — pas de table dédiée.
   frequentlyBoughtTogetherEnabled Boolean @default(false)
+  reviewReminderEnabled Boolean @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

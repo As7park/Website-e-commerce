@@ -408,6 +408,20 @@ repli sans QStash). `Order.updatedAt` est reculé via une écriture SQL directe
 | 3   | Rejouer le job tout de suite : pas de doublon | job une seconde fois       | aucun nouvel e-mail                                       |
 | 4   | Palier 2 (15 %) à 25h                         | `backdateOrder(25)` + job  | second e-mail, code différent, `cartReminder2SentAt` posé |
 
+### Relance avis produit — `e2e/products/review-reminder.spec.ts`
+
+Même principe : scan périodique (`$lib/server/jobs/reviewReminder.ts`), job
+appelé directement via `POST /api/jobs/review-reminder` (même en-tête
+`CRON_SECRET`), `Order.updatedAt` reculé via `backdateOrder` pour simuler une
+commande `SHIPPED` de plus ou moins de 7 jours.
+
+| #   | Étape                                         | Geste                        | Preuve                                                                   |
+| --- | --------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| 1   | Module désactivé : aucune relance             | flag à `false` + job         | `reviewReminderSentAt` reste `null`, aucun e-mail                        |
+| 2   | Trop récente (2 jours)                        | `backdateOrder(24*2)` + job  | pas encore de relance                                                    |
+| 3   | 10 jours : relance envoyée                    | `backdateOrder(24*10)` + job | e-mail avec lien `/products/[slug]#reviews`, `reviewReminderSentAt` posé |
+| 4   | Rejouer le job tout de suite : pas de doublon | job une seconde fois         | aucun nouvel e-mail                                                      |
+
 ### Fidélité — `e2e/promo/loyalty.spec.ts`
 
 Pas de système séparé : un `PromoCode` actif avec `loyaltyThreshold` est

@@ -461,9 +461,11 @@ export async function deleteBlogPost(postId: string) {
 export async function linkProductToOrder(
 	userId: string,
 	productId: string,
-	overrides?: { variantId?: string }
+	overrides?: { variantId?: string; status?: 'PENDING' | 'PAID' | 'SHIPPED' | 'CANCELLED' }
 ) {
-	const order = await resilient(() => db.order.create({ data: { userId } }));
+	const order = await resilient(() =>
+		db.order.create({ data: { userId, status: overrides?.status } })
+	);
 	const item = await resilient(() =>
 		db.orderItem.create({
 			data: { orderId: order.id, productId, variantId: overrides?.variantId, quantity: 1, price: 1 }
@@ -507,12 +509,16 @@ export async function backdateOrder(orderId: string, hoursAgo: number) {
 	);
 }
 
-/** Relance panier abandonné : horodatages d'envoi, pour les assertions. */
+/** Relance panier abandonné / avis produit : horodatages d'envoi, pour les assertions. */
 export async function getOrderReminderState(orderId: string) {
 	return resilient(() =>
 		db.order.findUniqueOrThrow({
 			where: { id: orderId },
-			select: { cartReminder1SentAt: true, cartReminder2SentAt: true }
+			select: {
+				cartReminder1SentAt: true,
+				cartReminder2SentAt: true,
+				reviewReminderSentAt: true
+			}
 		})
 	);
 }

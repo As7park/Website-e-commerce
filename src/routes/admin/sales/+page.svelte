@@ -18,7 +18,12 @@
 		{ key: 'customer_details_email', label: 'Email commande' },
 		{ key: 'app_user_email', label: 'Email compte' },
 		{ key: 'app_user_name', label: 'Nom compte' },
-		{ key: 'createdAt', label: 'Date de création', formatter: formatDate }
+		{ key: 'createdAt', label: 'Date de création', formatter: formatDate },
+		{
+			key: 'disputeLabel',
+			label: 'Litige',
+			formatter: (value: unknown) => (typeof value === 'string' ? value : '—')
+		}
 	];
 
 	const transactionActions = [

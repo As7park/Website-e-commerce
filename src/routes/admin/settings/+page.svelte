@@ -20,7 +20,8 @@
 		| 'cartRecoveryEnabled'
 		| 'referralEnabled'
 		| 'stockAlertsEnabled'
-		| 'frequentlyBoughtTogetherEnabled';
+		| 'frequentlyBoughtTogetherEnabled'
+		| 'reviewReminderEnabled';
 
 	type ModuleCategory =
 		| 'Produits & découverte'
@@ -140,6 +141,15 @@
 				'Suggestion dans le panier basée sur les achats réels passés ensemble, avec une petite remise automatique si les deux produits restent dans le panier.',
 			details:
 				"Le tiroir panier suggère, pour chaque article ajouté, le produit le plus souvent commandé avec lui dans l'historique des ventes payées (au moins deux commandes en commun, jamais une simple coïncidence). Si les deux produits suggérés sont toujours dans le panier au moment de payer, une remise de 10% est appliquée automatiquement sur le total — recalculée côté serveur au paiement, jamais une simple promesse d'affichage. Aucune association manuelle à saisir : la sélection vient uniquement de l'historique des commandes."
+		},
+		{
+			key: 'reviewReminderEnabled',
+			category: 'Marketing & fidélisation',
+			label: 'Relance avis produit',
+			description:
+				'E-mail « notez votre achat » envoyé une fois par commande, quelques jours après son passage en expédiée.',
+			details:
+				"Une commande passée au statut « Expédiée » reçoit, 7 jours plus tard, un e-mail invitant le client à noter les produits achetés, avec un lien direct vers le formulaire d'avis de chaque fiche produit. Un seul envoi par commande, jamais renvoyé même si le client ne laisse pas d'avis."
 		}
 	];
 

@@ -80,14 +80,9 @@ cartes cadeaux, variantes produit, questions produit, suivi de commande).
 Pas encore priorisé collectivement : à trier par coup de cœur / effort une
 fois qu'on choisit la prochaine à implémenter.
 
-Voici quelques idées vraiment ciblées sur les briques déjà en place (donc du même calibre effort/impact que l'export comptable, le parrainage ou "souvent achetés ensemble") — pas des redites de ce qui est déjà dans `FEATURE_IDEAS.md` :
+## Autres pistes (2026-09-17)
 
-**⭐ Avoir / note de crédit PDF sur les retours** \n Quand un retour est remboursé (Stripe) ou crédité (gift card), il n'existe aujourd'hui aucun document formel équivalent à la facture — juste un changement de statut. Génère un PDF "avoir" (même moteur `jspdf`/`jspdf-autotable` que `invoice/pdf.ts`), envoyé par email au même moment que le remboursement/crédit dans `/admin/returns`. Complète naturellement le module Retours/SAV _et_ l'export comptable qu'on vient de finir (un avoir sans total qui matche l'export serait un vrai trou côté compta).
-
-**⭐ Alerte "de retour en stock"** \n Sur une fiche produit en rupture (`stock = 0`), un client laisse son email ("me prévenir"). Job périodique (même pattern que `cleanup.ts`/`cartRecovery.ts`) scanne les produits repassés en stock et envoie l'email. Nouveau modèle simple (`StockAlertSubscription`), flag `StoreSettings`, réutilise `sendMail`. Peu de code, forte valeur perçue côté client.
-
-**⭐ Notification chargeback Stripe (**`charge.dispute.created`) \n Vous avez déjà un webhook entrant Sendcloud avec vérif de signature — même modèle pour un second event Stripe (`charge.dispute.created`/`.closed`) : flag la transaction, alerte admin (email ou `reportIfRepeated`/Sentry existant), visible dans `/admin/sales`. C'est un vrai angle mort opérationnel qu'un audit sécurité/fraude pointerait, et ça ne demande aucune nouvelle UI lourde.
-
-**Relance avis produit post-livraison** \n `Review` existe déjà mais rien ne sollicite activement le client. X jours après passage en `SHIPPED` (ou webhook Sendcloud `delivered` que vous avez déjà), un job envoie un email "notez votre achat" avec lien direct vers le formulaire d'avis — jamais relancé deux fois (record d'idempotence comme l'export comptable ou le cart-recovery).
-
-**Alerte baisse de prix / vente flash sur la wishlist** \n Vous avez Wishlist + Vente flash déjà en place mais ils ne se parlent pas. Job qui scanne les wishlists et notifie par email quand un produit y figurant passe en vente flash ou baisse de prix. Fait converger deux modules existants sans nouveau concept.
+- **Alerte baisse de prix / vente flash sur la wishlist** — Wishlist et
+  Vente flash existent déjà mais ne se parlent pas. Job qui scanne les
+  wishlists et notifie par email quand un produit y figurant passe en
+  vente flash ou baisse de prix.

@@ -30,6 +30,7 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 | `src/lib/sendcloud/returnLabel.ts`                                                            | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                |
 | `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/` | suivi de commande sans compte (n° facture + email)                                                |
 | `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/`                   | relance panier abandonné (scan périodique, voir plus bas)                                         |
+| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/`               | relance avis produit post-livraison (scan périodique, voir plus bas)                              |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -219,12 +220,12 @@ vérifier le comportement réel sans jamais rien facturer :
   créer le retour ni le transmettre à un transporteur. Aucun coût, aucune
   trace dans le tableau de bord.
 
-| Fichier                                          | Ce qu'il prouve                                                                                                     |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/sendcloud/label.test.ts`                 | Forme du payload v3 (mocké), chaque échec lève une exception, la bonne donnée est écrite en base sur succès.        |
-| `src/lib/sendcloud/label.live.test.ts`            | Le vrai `createSendcloudLabel` (réseau réel, DB mockée) obtient un vrai `parcelId`/`trackingNumber` de Sendcloud.    |
-| `src/lib/sendcloud/returnValidate.ts`/`.test.ts`  | Le payload d'adresse retour (mêmes variables d'env que `returnLabel.ts`) est bien formé, sans jamais créer de retour. |
-| `e2e/live/sendcloud-label.spec.ts`                | Boucle complète : vraie création d'étiquette → vrai webhook signé → `Order` `PAID` → `SHIPPED`.                     |
+| Fichier                                          | Ce qu'il prouve                                                                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/sendcloud/label.test.ts`                | Forme du payload v3 (mocké), chaque échec lève une exception, la bonne donnée est écrite en base sur succès.          |
+| `src/lib/sendcloud/label.live.test.ts`           | Le vrai `createSendcloudLabel` (réseau réel, DB mockée) obtient un vrai `parcelId`/`trackingNumber` de Sendcloud.     |
+| `src/lib/sendcloud/returnValidate.ts`/`.test.ts` | Le payload d'adresse retour (mêmes variables d'env que `returnLabel.ts`) est bien formé, sans jamais créer de retour. |
+| `e2e/live/sendcloud-label.spec.ts`               | Boucle complète : vraie création d'étiquette → vrai webhook signé → `Order` `PAID` → `SHIPPED`.                       |
 
 Ces tests sont gated par `hasLiveSendcloud()`/`isDummySecret()` (mêmes clés
 que la production, dans `.env`/`.env.test`) : `describe.skipIf`/`test.skip`
@@ -449,6 +450,31 @@ est déjà réattaché automatiquement à chaque requête
 (`findPendingOrder`/`pendingOrderHandle`, voir plus haut), pas besoin d'un
 token ou d'un lien spécial.
 
+## Relance avis produit post-livraison
+
+Module activable depuis `/admin/settings` (`StoreSettings.reviewReminderEnabled`).
+Même mécanique que la relance panier ci-dessus : un scan périodique
+(`$lib/server/jobs/reviewReminder.ts`, `runReviewReminderJob`), pas un job
+déclenché par une action utilisateur. Il détecte les `Order` `SHIPPED` dont
+`updatedAt` date de plus de 7 jours (`REVIEW_REMINDER_DELAY_DAYS`) et envoie
+un e-mail « notez votre achat » avec un lien direct vers le formulaire
+d'avis (`/products/[slug]#reviews`) de chaque produit commandé.
+
+`OrderStatusHistory` n'est peuplé qu'en seed, jamais en production : la date
+de passage en `SHIPPED` n'est donc pas tracée explicitement. Le webhook
+Sendcloud (`src/routes/api/webhooks/sendcloud/+server.ts`) ne fait passer une
+commande de `PAID` à `SHIPPED` qu'une seule fois, si bien que `Order.updatedAt`
+reste figé à cette date tant que rien d'autre ne modifie la commande — même
+astuce que la relance panier avec les commandes `PENDING`.
+
+Un seul rappel par commande (`Order.reviewReminderSentAt`), jamais
+réinitialisé — contrairement aux deux paliers de la relance panier.
+Planifié quotidiennement : QStash Schedule
+(`scripts/register-review-reminder-schedule.mjs`) ou repli Vercel Cron
+(`vercel.json` → `/api/jobs/review-reminder`), même route double-auth que
+`/api/jobs/cart-recovery`. `StoreSettings.reviewReminderEnabled` est vérifié
+dans le job lui-même, comme `cartRecoveryEnabled`.
+
 ## Tests
 
 Les numéros sont ceux des `test.step`. Changer la procédure ici, puis le spec,
@@ -506,9 +532,9 @@ s'exécute directement dans la requête webhook, sans file d'attente.
 
 ### Webhook Sendcloud — `e2e/commerce/sendcloud-webhook.spec.ts`
 
-| #   | Étape             | Geste                            | Preuve                                             |
-| --- | ----------------- | --------------------------------- | --------------------------------------------------- |
-| 1   | Signature invalide | POST `/api/webhooks/sendcloud`   | 401, `Transaction`/`Order` inchangées               |
+| #   | Étape              | Geste                                       | Preuve                                                                                  |
+| --- | ------------------ | ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | Signature invalide | POST `/api/webhooks/sendcloud`              | 401, `Transaction`/`Order` inchangées                                                   |
 | 2   | Signature valide   | POST signé (`SENDCLOUD_WEBHOOK_SECRET` e2e) | 200, `shippingStatusCode`/`Message`/`trackingNumber` à jour, `Order` `PAID` → `SHIPPED` |
 
 `parcelId` fictif (compteur local), pas d'appel réseau Sendcloud — seule la
@@ -607,6 +633,19 @@ côté webhook. `Order.updatedAt` est reculé via une écriture SQL directe
 | 2   | Palier 1 (10 %) à 1h30                        | `backdateOrder(1.5)` + job | e-mail avec code `RELANCE-…`, `cartReminder1SentAt` posé  |
 | 3   | Rejouer le job tout de suite : pas de doublon | job une seconde fois       | aucun nouvel e-mail                                       |
 | 4   | Palier 2 (15 %) à 25h                         | `backdateOrder(25)` + job  | second e-mail, code différent, `cartReminder2SentAt` posé |
+
+### Relance avis produit — `e2e/products/review-reminder.spec.ts`
+
+Même principe que la relance panier : `POST /api/jobs/review-reminder`
+(même en-tête `CRON_SECRET`), `Order.updatedAt` reculé via `backdateOrder`
+pour simuler une commande `SHIPPED` de plus ou moins de 7 jours.
+
+| #   | Étape                                         | Geste                        | Preuve                                                                   |
+| --- | --------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| 1   | Module désactivé : aucune relance             | flag à `false` + job         | `reviewReminderSentAt` reste `null`, aucun e-mail                        |
+| 2   | Trop récente (2 jours)                        | `backdateOrder(24*2)` + job  | pas encore de relance                                                    |
+| 3   | 10 jours : relance envoyée                    | `backdateOrder(24*10)` + job | e-mail avec lien `/products/[slug]#reviews`, `reviewReminderSentAt` posé |
+| 4   | Rejouer le job tout de suite : pas de doublon | job une seconde fois         | aucun nouvel e-mail                                                      |
 
 ```bash
 npm run test:e2e

@@ -383,7 +383,7 @@
 		</section>
 	{/if}
 
-	<section class="mt-16 border-t pt-10">
+	<section id="reviews" class="mt-16 border-t pt-10">
 		<h2 class="mb-6 text-xl font-medium">Avis</h2>
 
 		{#if data.user}

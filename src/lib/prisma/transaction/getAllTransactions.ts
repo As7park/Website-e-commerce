@@ -1,6 +1,7 @@
 /** COMMERCE-PLUGIN : liste paginée pour `/admin/sales`. */
 import { prisma } from '$lib/server';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { formatDisputeStatus } from '$lib/server/dispute';
 
 const TRANSACTION_SORTABLE = ['amount', 'createdAt', 'status'] as const;
 
@@ -49,6 +50,9 @@ export const getAllTransactions = async (params: ListParams = {}) => {
 			app_user_name: transaction.user?.name ?? '',
 			hasFacture: transaction.status === 'paid',
 			hasBordereau: transaction.status === 'paid',
+			disputeLabel: transaction.disputeStatus
+				? formatDisputeStatus(transaction.disputeStatus)
+				: null,
 			user: undefined
 		}));
 

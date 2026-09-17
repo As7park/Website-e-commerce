@@ -15,6 +15,7 @@ import {
 import { derivePackageEstimate, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { log } from '$lib/server/log';
+import { notifyDispute } from '$lib/server/disputeAlert';
 
 /**
  * Webhook Stripe.
@@ -66,10 +67,96 @@ export async function POST({ request }: { request: Request }) {
 		case 'charge.succeeded':
 			break;
 
+		case 'charge.dispute.created': {
+			const dispute = event.data.object as Stripe.Dispute;
+			await handleChargeDisputeCreated(dispute);
+			break;
+		}
+
+		case 'charge.dispute.closed': {
+			const dispute = event.data.object as Stripe.Dispute;
+			await handleChargeDisputeClosed(dispute);
+			break;
+		}
+
 		default:
 			log('WARN', 'webhook:stripe', `⚠️ Unhandled event type: ${event.type}`);
 	}
 	return json({ received: true }, { status: 200 });
+}
+
+/**
+ * Retrouve la transaction visée par un litige via le PaymentIntent brut du
+ * dispute (`dispute.payment_intent`) — jamais via un appel Stripe
+ * supplémentaire, `stripePaymentIntentId` est déjà posé au paiement.
+ */
+async function findTransactionForDispute(dispute: Stripe.Dispute) {
+	const paymentIntentId =
+		typeof dispute.payment_intent === 'string'
+			? dispute.payment_intent
+			: dispute.payment_intent?.id;
+	if (!paymentIntentId) {
+		log('WARN', 'webhook:stripe', '⚠️ Litige sans PaymentIntent, ignoré', {
+			disputeId: dispute.id
+		});
+		return null;
+	}
+	const transaction = await prisma.transaction.findUnique({
+		where: { stripePaymentIntentId: paymentIntentId }
+	});
+	if (!transaction) {
+		log('WARN', 'webhook:stripe', '⚠️ Aucune transaction pour ce PaymentIntent', {
+			disputeId: dispute.id,
+			paymentIntentId
+		});
+	}
+	return transaction;
+}
+
+async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
+	const transaction = await findTransactionForDispute(dispute);
+	if (!transaction) return;
+	// Retry du même évènement webhook : déjà tracé, pas de double alerte.
+	if (transaction.disputeId === dispute.id) {
+		log('DEBUG', 'webhook:stripe', 'ℹ️ Litige déjà enregistré, retry ignoré', {
+			disputeId: dispute.id
+		});
+		return;
+	}
+
+	const updated = await prisma.transaction.update({
+		where: { id: transaction.id },
+		data: {
+			disputeId: dispute.id,
+			disputeStatus: dispute.status,
+			disputeReason: dispute.reason,
+			disputeAmount: dispute.amount / 100,
+			disputeOpenedAt: new Date(dispute.created * 1000)
+		}
+	});
+
+	await notifyDispute(updated, 'created');
+}
+
+async function handleChargeDisputeClosed(dispute: Stripe.Dispute) {
+	const transaction = await findTransactionForDispute(dispute);
+	if (!transaction) return;
+	if (transaction.disputeClosedAt) {
+		log('DEBUG', 'webhook:stripe', 'ℹ️ Litige déjà clos, retry ignoré', {
+			disputeId: dispute.id
+		});
+		return;
+	}
+
+	const updated = await prisma.transaction.update({
+		where: { id: transaction.id },
+		data: {
+			disputeStatus: dispute.status,
+			disputeClosedAt: new Date()
+		}
+	});
+
+	await notifyDispute(updated, 'closed');
 }
 
 /**
@@ -160,6 +247,12 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 			const transactionData = {
 				// Liens Stripe
 				stripePaymentId: session.id,
+				// Id brut, déjà présent dans le payload (pas d'expand) : sert à
+				// rattacher un futur litige (`charge.dispute.*`) sans appel API.
+				stripePaymentIntentId:
+					typeof session.payment_intent === 'string'
+						? session.payment_intent
+						: (session.payment_intent?.id ?? null),
 				amount: (session.amount_total ?? 0) / 100,
 				currency: session.currency ?? 'eur',
 				customer_details_email: session.customer_details?.email || '',
