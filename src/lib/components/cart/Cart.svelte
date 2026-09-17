@@ -132,13 +132,20 @@
 	 *
 	 * AUTH-PLUGIN : POST vers l'action `?/signout` de `/auth` (formulaire, pas
 	 * `fetch`) pour que la protection CSRF de SvelteKit laisse passer la requête.
-	 * Le panier local est vidé avant la redirection vers `/auth/login`.
+	 * Le panier local est vidé avant la redirection vers l'accueil.
+	 *
+	 * `update()` est dans un `finally` : une exception dans `resetCart()` ne doit
+	 * jamais empêcher la navigation post-déconnexion (sinon la session est bien
+	 * invalidée côté serveur mais l'utilisateur reste planté sur la page).
 	 */
 	const enhanceSignOut: SubmitFunction = () => {
 		return async ({ update }) => {
-			resetCart();
-			sidebarOpen = false;
-			await update();
+			try {
+				resetCart();
+			} finally {
+				sidebarOpen = false;
+				await update();
+			}
 		};
 	};
 </script>

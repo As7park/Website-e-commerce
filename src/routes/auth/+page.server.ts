@@ -48,7 +48,7 @@ export const load = async (event: PageServerLoadEvent) => {
 export const actions: Actions = {
 	signout: async (event: RequestEvent) => {
 		if (event.locals.session === null) {
-			return redirect(302, '/auth/login');
+			return redirect(302, '/');
 		}
 
 		await invalidateSession(event.locals.session.id);
@@ -56,6 +56,8 @@ export const actions: Actions = {
 		event.locals.session = null;
 		event.locals.user = null;
 
-		return redirect(302, '/auth/login');
+		// Ramène à l'accueil plutôt qu'à /auth/login : ce formulaire est aussi
+		// soumis depuis le tiroir panier, sur n'importe quelle page.
+		return redirect(302, '/');
 	}
 };

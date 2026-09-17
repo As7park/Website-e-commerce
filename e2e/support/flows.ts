@@ -144,20 +144,31 @@ export async function waitOutLoginThrottle(page: Page, seconds: number) {
 	await page.waitForTimeout(seconds * 1000 + 300);
 }
 
-/** Se déconnecte depuis l'espace connecté et attend la page de connexion. */
+/** Se déconnecte depuis l'espace connecté et attend le retour à l'accueil. */
 export async function signOut(page: Page) {
 	await page.goto('/auth/');
 	await page.getByRole('button', { name: 'Se déconnecter' }).click();
-	await waitForPath(page, '/auth/login');
+	await waitForPath(page, '/');
 }
 
-/** Se déconnecte depuis le tiroir panier (pas le formulaire de `/auth`). */
+/**
+ * Se déconnecte depuis le tiroir panier (pas le formulaire de `/auth`).
+ *
+ * La page de départ ET d'arrivée sont toutes deux `/` : `waitForPath` ne
+ * détecterait aucun changement d'URL et rendrait la main avant même que la
+ * requête de déconnexion soit partie. On attend donc explicitement la réponse
+ * du POST `?/signout` avant de vérifier quoi que ce soit côté état.
+ */
 export async function signOutFromCart(page: Page) {
 	await page.goto('/');
 	await page.locator('.cartButton button').first().click();
 	await expect(page.getByRole('heading', { name: 'Votre panier' })).toBeVisible();
+	const signoutResponse = page.waitForResponse(
+		(response) => response.url().includes('signout') && response.request().method() === 'POST'
+	);
 	await page.getByRole('button', { name: 'Se déconnecter' }).click();
-	await waitForPath(page, '/auth/login');
+	await signoutResponse;
+	await waitForPath(page, '/');
 }
 
 /**
