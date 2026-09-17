@@ -379,19 +379,41 @@ export async function createBlogPost(overrides?: {
 	title?: string;
 	slug?: string;
 	published?: boolean;
+	/** Réutilise une valeur de catégorie existante au lieu d'en créer une (ex: articles liés). */
+	categoryValueId?: string;
+	/** Crée et assigne une valeur de la taxonomie « Tag ». */
+	tagValue?: string;
 }) {
 	const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const author = await resilient(() =>
 		db.blogAuthor.create({ data: { name: `e2e-blog-author-${stamp}` } })
 	);
-	const categoryTaxonomy = await resilient(() =>
-		db.blogTaxonomy.findUniqueOrThrow({ where: { slug: 'categorie' } })
-	);
-	const categoryValue = await resilient(() =>
-		db.blogTaxonomyValue.create({
-			data: { taxonomyId: categoryTaxonomy.id, value: `e2e-blog-cat-${stamp}` }
-		})
-	);
+	let categoryValue: { id: string; value: string };
+	if (overrides?.categoryValueId) {
+		categoryValue = await resilient(() =>
+			db.blogTaxonomyValue.findUniqueOrThrow({ where: { id: overrides.categoryValueId } })
+		);
+	} else {
+		const categoryTaxonomy = await resilient(() =>
+			db.blogTaxonomy.findUniqueOrThrow({ where: { slug: 'categorie' } })
+		);
+		categoryValue = await resilient(() =>
+			db.blogTaxonomyValue.create({
+				data: { taxonomyId: categoryTaxonomy.id, value: `e2e-blog-cat-${stamp}` }
+			})
+		);
+	}
+	let tagValue: { id: string; value: string } | undefined;
+	if (overrides?.tagValue) {
+		const tagTaxonomy = await resilient(() =>
+			db.blogTaxonomy.findUniqueOrThrow({ where: { slug: 'tag' } })
+		);
+		tagValue = await resilient(() =>
+			db.blogTaxonomyValue.create({
+				data: { taxonomyId: tagTaxonomy.id, value: overrides.tagValue! }
+			})
+		);
+	}
 	const post = await resilient(() =>
 		db.blogPost.create({
 			data: {
@@ -400,11 +422,21 @@ export async function createBlogPost(overrides?: {
 				content: '<p>Contenu de test e2e pour le blog.</p>',
 				published: overrides?.published ?? true,
 				authorId: author.id,
-				taxonomyValues: { create: { taxonomyValueId: categoryValue.id } }
+				taxonomyValues: {
+					create: [
+						{ taxonomyValueId: categoryValue.id },
+						...(tagValue ? [{ taxonomyValueId: tagValue.id }] : [])
+					]
+				}
 			}
 		})
 	);
-	return { post, author, category: { id: categoryValue.id, name: categoryValue.value } };
+	return {
+		post,
+		author,
+		category: { id: categoryValue.id, name: categoryValue.value },
+		tag: tagValue ? { id: tagValue.id, name: tagValue.value } : undefined
+	};
 }
 
 export async function getBlogPostBySlug(slug: string) {
@@ -438,6 +470,11 @@ export async function deleteBlogPost(postId: string) {
 			where: { postId, taxonomyValue: { taxonomy: { slug: 'categorie' } } }
 		})
 	);
+	const tagLinks = await resilient(() =>
+		db.blogPostTaxonomyValue.findMany({
+			where: { postId, taxonomyValue: { taxonomy: { slug: 'tag' } } }
+		})
+	);
 
 	await resilient(() => db.blogComment.deleteMany({ where: { postId } }));
 	await resilient(() => db.blogPost.deleteMany({ where: { id: postId } }));
@@ -451,6 +488,17 @@ export async function deleteBlogPost(postId: string) {
 				where: { id: post.authorId, name: { startsWith: 'e2e-blog-author-' } }
 			})
 		);
+	}
+
+	for (const tagLink of tagLinks) {
+		const remainingForTag = await resilient(() =>
+			db.blogPostTaxonomyValue.count({ where: { taxonomyValueId: tagLink.taxonomyValueId } })
+		);
+		if (remainingForTag === 0) {
+			await resilient(() =>
+				db.blogTaxonomyValue.deleteMany({ where: { id: tagLink.taxonomyValueId } })
+			);
+		}
 	}
 
 	if (categoryLink) {

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getPublishedPostBySlug } from '$lib/blog/catalog';
+import { estimateReadingMinutes, getPublishedPostBySlug, getRelatedPosts } from '$lib/blog/catalog';
 
 /**
  * Article public.
@@ -13,5 +13,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		error(404, 'Article introuvable');
 	}
 
-	return { post };
+	const relatedPosts = await getRelatedPosts(post.id, post.category?.id);
+
+	return { post, relatedPosts, readingMinutes: estimateReadingMinutes(post.content) };
 };

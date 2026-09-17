@@ -1,10 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
-import {
-	createBlogPost,
-	deleteBlogPost,
-	getBlogPostBySlug
-} from '../support/db';
+import { createBlogPost, deleteBlogPost, getBlogPostBySlug } from '../support/db';
 
 /**
  * Vitrine publique Prisma : liste, fiche, 404, brouillon. Pas de formulaires admin.
@@ -56,6 +52,43 @@ test.describe('Blog — vitrine', () => {
 		} finally {
 			await deleteBlogPost(published.post.id);
 			await deleteBlogPost(draft.post.id);
+		}
+	});
+
+	test('recherche, filtre par tag et articles liés', async ({ page }) => {
+		const withTag = await createBlogPost({ published: true, tagValue: `e2e-tag-${Date.now()}` });
+		const sameCategory = await createBlogPost({
+			published: true,
+			categoryValueId: withTag.category.id
+		});
+
+		try {
+			await test.step('6. La recherche filtre par titre', async () => {
+				await page.goto(`/blog?q=${encodeURIComponent(withTag.post.title)}`);
+				await expect(page.getByRole('heading', { name: withTag.post.title })).toBeVisible();
+				await expect(page.getByRole('heading', { name: sameCategory.post.title })).toHaveCount(0);
+			});
+
+			await test.step('7. Une recherche sans résultat affiche un état vide', async () => {
+				await page.goto('/blog?q=e2e-terme-introuvable-xyz');
+				await expect(page.getByText(/Aucun article ne correspond/)).toBeVisible();
+			});
+
+			await test.step('8. Le filtre par tag ne montre que l’article associé', async () => {
+				await page.goto(`/blog?tag=${withTag.tag!.id}`);
+				await expect(page.getByRole('heading', { name: withTag.post.title })).toBeVisible();
+				await expect(page.getByRole('heading', { name: sameCategory.post.title })).toHaveCount(0);
+			});
+
+			await test.step('9. La fiche affiche le temps de lecture et les articles liés', async () => {
+				await page.goto(`/blog/${withTag.post.slug}`);
+				await expect(page.getByText(/min de lecture/)).toBeVisible();
+				await expect(page.getByRole('heading', { name: 'À lire aussi' })).toBeVisible();
+				await expect(page.getByRole('link', { name: sameCategory.post.title })).toBeVisible();
+			});
+		} finally {
+			await deleteBlogPost(withTag.post.id);
+			await deleteBlogPost(sameCategory.post.id);
 		}
 	});
 });
