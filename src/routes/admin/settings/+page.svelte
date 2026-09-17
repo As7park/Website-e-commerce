@@ -21,7 +21,8 @@
 		| 'referralEnabled'
 		| 'stockAlertsEnabled'
 		| 'frequentlyBoughtTogetherEnabled'
-		| 'reviewReminderEnabled';
+		| 'reviewReminderEnabled'
+		| 'wishlistPriceAlertEnabled';
 
 	type ModuleCategory =
 		| 'Produits & découverte'
@@ -150,6 +151,15 @@
 				'E-mail « notez votre achat » envoyé une fois par commande, quelques jours après son passage en expédiée.',
 			details:
 				"Une commande passée au statut « Expédiée » reçoit, 7 jours plus tard, un e-mail invitant le client à noter les produits achetés, avec un lien direct vers le formulaire d'avis de chaque fiche produit. Un seul envoi par commande, jamais renvoyé même si le client ne laisse pas d'avis."
+		},
+		{
+			key: 'wishlistPriceAlertEnabled',
+			category: 'Produits & découverte',
+			label: 'Alerte wishlist : baisse de prix / vente flash',
+			description:
+				'E-mail automatique aux comptes ayant un produit en liste d’envies dès que son prix baisse ou qu’il passe en vente flash.',
+			details:
+				"Dès qu'un admin enregistre, depuis /admin/products, un prix plus bas ou une nouvelle date de fin de vente flash sur un produit, chaque compte l'ayant dans sa liste d'envies reçoit un e-mail avec un lien vers la fiche produit — jamais deux fois pour la même baisse ou la même vente flash, mais une nouvelle baisse ultérieure redéclenche normalement une alerte. Fait converger les modules Liste d'envies et Vente flash sans dépendre directement de leurs interrupteurs respectifs."
 		}
 	];
 

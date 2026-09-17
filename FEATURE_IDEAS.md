@@ -79,10 +79,3 @@ cartes cadeaux, variantes produit, questions produit, suivi de commande).
 
 Pas encore priorisé collectivement : à trier par coup de cœur / effort une
 fois qu'on choisit la prochaine à implémenter.
-
-## Autres pistes (2026-09-17)
-
-- **Alerte baisse de prix / vente flash sur la wishlist** — Wishlist et
-  Vente flash existent déjà mais ne se parlent pas. Job qui scanne les
-  wishlists et notifie par email quand un produit y figurant passe en
-  vente flash ou baisse de prix.

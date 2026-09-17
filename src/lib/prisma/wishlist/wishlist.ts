@@ -27,7 +27,21 @@ export async function toggleWishlistItem(userId: string, productId: string): Pro
 		return false;
 	}
 
-	await prisma.wishlistItem.create({ data: { userId, productId } });
+	// Baseline pour `$lib/server/jobs/wishlistPriceAlert.ts` : le prix/l'état
+	// vente flash au moment de l'ajout, pour ne détecter que ce qui change
+	// *après* — pas de fausse alerte sur l'état déjà visible en s'inscrivant.
+	const product = await prisma.product.findUnique({
+		where: { id: productId },
+		select: { price: true, flashSaleEndsAt: true }
+	});
+	await prisma.wishlistItem.create({
+		data: {
+			userId,
+			productId,
+			lastNotifiedPrice: product?.price ?? null,
+			lastNotifiedFlashSaleEndsAt: product?.flashSaleEndsAt ?? null
+		}
+	});
 	return true;
 }
 
@@ -38,4 +52,31 @@ export async function listWishlistForUser(userId: string) {
 		orderBy: { createdAt: 'desc' }
 	});
 	return items.map((item) => item.product);
+}
+
+/**
+ * Wishlists contenant ce produit — lues par le job d'alerte prix/vente
+ * flash (`$lib/server/jobs/wishlistPriceAlert.ts`), jamais par la vitrine.
+ */
+export async function listWishlistItemsForProduct(productId: string) {
+	return prisma.wishlistItem.findMany({
+		where: { productId },
+		select: {
+			id: true,
+			lastNotifiedPrice: true,
+			lastNotifiedFlashSaleEndsAt: true,
+			user: { select: { email: true } }
+		}
+	});
+}
+
+/** Marque l'alerte envoyée pour cette entrée : nouvelle baseline prix/vente flash. */
+export async function markWishlistItemNotified(
+	id: string,
+	data: { price: number; flashSaleEndsAt: Date | null }
+): Promise<void> {
+	await prisma.wishlistItem.update({
+		where: { id },
+		data: { lastNotifiedPrice: data.price, lastNotifiedFlashSaleEndsAt: data.flashSaleEndsAt }
+	});
 }

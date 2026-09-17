@@ -3,7 +3,7 @@ import { bumpCacheVersion } from '$lib/server/cache';
 import { reportIfRepeated } from '$lib/server/alerting';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { enqueueStockAlertsJob } from '$lib/server/qstash';
+import { enqueueStockAlertsJob, enqueueWishlistPriceAlertJob } from '$lib/server/qstash';
 
 const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
 
@@ -204,10 +204,15 @@ export const updateProductById = async (
 	// dépôt (aucune vente ne le décrémente, cf. commentaire `checkLowStockAlert`
 	// ci-dessus) — c'est donc ici, et seulement ici, qu'un passage de 0 (ou
 	// moins) à un stock positif peut être détecté. Lu avant l'update, sinon
-	// l'ancienne valeur serait perdue.
+	// l'ancienne valeur serait perdue. Même lecture pour `price`/
+	// `flashSaleEndsAt` : seul point d'écriture de ces deux champs, requis
+	// par l'alerte wishlist ci-dessous (WISHLIST_PRICE_ALERT-PLUGIN).
 	const previous =
-		data.stock !== undefined
-			? await prisma.product.findUnique({ where: { id: productId }, select: { stock: true } })
+		data.stock !== undefined || data.price !== undefined || data.flashSaleEndsAt !== undefined
+			? await prisma.product.findUnique({
+					where: { id: productId },
+					select: { stock: true, price: true, flashSaleEndsAt: true }
+				})
 			: null;
 
 	const { flashSaleEndsAt, ...rest } = data;
@@ -227,6 +232,28 @@ export const updateProductById = async (
 		const { stockAlertsEnabled } = await getStoreFeatureFlags();
 		if (stockAlertsEnabled) {
 			await enqueueStockAlertsJob(product.id);
+		}
+	}
+
+	// WISHLIST_PRICE_ALERT-PLUGIN : converge Wishlist et Vente flash, voir
+	// `$lib/server/jobs/wishlistPriceAlert.ts`. Le job lui-même recalcule,
+	// par compte, si c'est vraiment nouveau pour lui (baseline
+	// `WishlistItem.lastNotifiedPrice`/`lastNotifiedFlashSaleEndsAt`) — ici
+	// on ne fait que détecter qu'*un* changement pertinent a eu lieu sur le
+	// produit, pour éviter d'enfiler le job à chaque sauvegarde admin.
+	if (previous) {
+		const priceDropped = data.price !== undefined && product.price < previous.price;
+		const flashSaleActivated =
+			data.flashSaleEndsAt !== undefined &&
+			product.flashSaleEndsAt !== null &&
+			product.flashSaleEndsAt > new Date() &&
+			previous.flashSaleEndsAt?.getTime() !== product.flashSaleEndsAt.getTime();
+
+		if (priceDropped || flashSaleActivated) {
+			const { wishlistPriceAlertEnabled } = await getStoreFeatureFlags();
+			if (wishlistPriceAlertEnabled) {
+				await enqueueWishlistPriceAlertJob(product.id);
+			}
 		}
 	}
 

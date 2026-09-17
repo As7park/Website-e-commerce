@@ -898,6 +898,10 @@ model StoreSettings {
   /// co-occurrence réelle dans `OrderItem` — pas de table dédiée.
   frequentlyBoughtTogetherEnabled Boolean @default(false)
   reviewReminderEnabled Boolean @default(false)
+  /// Alerte wishlist (baisse de prix / vente flash), voir
+  /// `$lib/server/jobs/wishlistPriceAlert.ts` — converge `wishlistEnabled` et
+  /// `flashSaleEnabled` sans dépendre directement de ces deux flags.
+  wishlistPriceAlertEnabled Boolean @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")
@@ -955,6 +959,16 @@ model WishlistItem {
   userId    String
   productId String
   createdAt DateTime @default(now())
+
+  /// Prix du produit au moment de l'ajout (ou de la dernière alerte envoyée)
+  /// — baseline comparée à `Product.price` par
+  /// `$lib/server/jobs/wishlistPriceAlert.ts` : une nouvelle alerte n'est
+  /// envoyée que si le prix courant repasse strictement sous cette valeur,
+  /// jamais deux fois pour la même baisse.
+  lastNotifiedPrice           Float?
+  /// Même principe pour la vente flash en cours : une nouvelle date (nouvelle
+  /// vente flash) redéclenche une alerte, la même jamais deux fois.
+  lastNotifiedFlashSaleEndsAt DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)

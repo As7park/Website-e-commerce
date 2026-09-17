@@ -869,6 +869,13 @@ export async function isInWishlistDb(userId: string, productId: string): Promise
 	return item !== null;
 }
 
+/** Liste d'envies : lecture complète (baseline `lastNotifiedPrice`/`lastNotifiedFlashSaleEndsAt`). */
+export async function getWishlistItem(userId: string, productId: string) {
+	return resilient(() =>
+		db.wishlistItem.findUnique({ where: { userId_productId: { userId, productId } } })
+	);
+}
+
 /**
  * Réglages boutique (`StoreSettings`, ligne unique `id = "singleton"`).
  *
@@ -890,9 +897,11 @@ export async function getStoreFeatureFlags() {
 				giftCardsEnabled: true,
 				productQnaEnabled: true,
 				cartRecoveryEnabled: true,
+				flashSaleEnabled: true,
 				referralEnabled: true,
 				stockAlertsEnabled: true,
-				frequentlyBoughtTogetherEnabled: true
+				frequentlyBoughtTogetherEnabled: true,
+				wishlistPriceAlertEnabled: true
 			}
 		})
 	);
@@ -908,9 +917,11 @@ export async function setStoreFeatureFlags(patch: {
 	giftCardsEnabled?: boolean;
 	productQnaEnabled?: boolean;
 	cartRecoveryEnabled?: boolean;
+	flashSaleEnabled?: boolean;
 	referralEnabled?: boolean;
 	stockAlertsEnabled?: boolean;
 	frequentlyBoughtTogetherEnabled?: boolean;
+	wishlistPriceAlertEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

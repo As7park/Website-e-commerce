@@ -216,6 +216,31 @@ Deux modules activables depuis `/admin/settings` (voir
   `/products/[slug]` uniquement quand le module est actif et qu'au moins un
   produit correspond.
 
+### Alerte wishlist : baisse de prix / vente flash
+
+Module activable depuis `/admin/settings`
+(`StoreSettings.wishlistPriceAlertEnabled`,
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)) :
+fait converger Liste d'envies et Vente flash, deux modules déjà en place qui
+ne se parlaient pas jusqu'ici, sans introduire de nouveau concept.
+
+`updateProductById` (`src/lib/prisma/products/products.ts`) est le seul point
+d'écriture de `Product.price`/`flashSaleEndsAt` dans ce dépôt : dès qu'une
+sauvegarde admin fait baisser le prix, ou active une nouvelle vente flash
+(nouvelle date de `flashSaleEndsAt`), le job
+`$lib/server/jobs/wishlistPriceAlert.ts` est enfilé pour ce produit — même
+mécanique event-triggered que les alertes réassort (`stockAlerts.ts`), pas de
+scan périodique. Chaque compte ayant le produit dans sa liste d'envies reçoit
+alors un e-mail, mais l'idempotence se fait **par valeur**, pas par booléen :
+`WishlistItem.lastNotifiedPrice`/`lastNotifiedFlashSaleEndsAt` retiennent la
+dernière valeur déjà notifiée pour ce compte (initialisée au prix/à l'état
+vente flash du moment de l'ajout, dans `toggleWishlistItem`). Une alerte n'est
+donc envoyée que si le prix courant repasse strictement sous cette valeur, ou
+si la date de fin de vente flash a changé — un ré-enregistrement identique
+(retry QStash, ou sauvegarde admin sans changement réel) ne renvoie jamais
+rien, mais une nouvelle baisse ou une nouvelle vente flash redéclenche
+normalement une alerte.
+
 ### Souvent achetés ensemble
 
 Module activable depuis `/admin/settings`
@@ -360,6 +385,20 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 | 5   | Ré-ajout puis retrait depuis la fiche | clic cœur × 2                 | libellé revient à « Ajouter… » |
 
 À part : anonyme POST `/api/wishlist` — 401.
+
+### Alerte wishlist : baisse de prix / vente flash — `e2e/products/wishlist-price-alert.spec.ts`
+
+| #   | Étape                                              | Geste                                  | Preuve                                                 |
+| --- | -------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| 1   | Ajout à la liste d'envies (baseline)               | clic cœur                              | `WishlistItem.lastNotifiedPrice` = prix courant        |
+| 2   | Baisse de prix admin déclenche une alerte          | fiche admin → prix plus bas            | e-mail reçu, `lastNotifiedPrice` mis à jour            |
+| 3   | Ré-enregistrer le même prix ne renvoie rien        | Save changes sans changement           | boîte mail vide                                        |
+| 4   | Nouvelle baisse redéclenche une alerte             | fiche admin → prix encore plus bas     | e-mail reçu, `lastNotifiedPrice` mis à jour de nouveau |
+| 5   | Nouvelle vente flash déclenche une alerte          | fiche admin → `flashSaleEndsAt` future | e-mail reçu, `lastNotifiedFlashSaleEndsAt` renseigné   |
+| 6   | Ré-enregistrer la même vente flash ne renvoie rien | Save changes avec la même date         | boîte mail vide                                        |
+
+À part : module désactivé (`wishlistPriceAlertEnabled: false`) — la baisse de
+prix admin ne déclenche aucun e-mail, `lastNotifiedPrice` reste inchangé.
 
 ### Questions & réponses — `e2e/products/questions.spec.ts`
 

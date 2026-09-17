@@ -13,8 +13,9 @@ worker) :
   taxonomies génériques (`e2e/products/taxonomies.spec.ts`), avis
   (`e2e/products/reviews.spec.ts`), questions & réponses
   (`e2e/products/questions.spec.ts`), variantes (`e2e/products/variants.spec.ts`)
-  liste d'envies (`e2e/products/wishlist.spec.ts`) et ventes croisées
-  (`e2e/products/cross-sell.spec.ts`) ;
+  liste d'envies (`e2e/products/wishlist.spec.ts`), alerte wishlist baisse de
+  prix/vente flash (`e2e/products/wishlist-price-alert.spec.ts`) et ventes
+  croisées (`e2e/products/cross-sell.spec.ts`) ;
 - commerce : panier (connecté + invité), checkout, webhook Stripe, ventes,
   retours/SAV, moyens de paiement enregistrés (`e2e/commerce/*.spec.ts`) et
   cartes cadeaux (`e2e/gift-cards/*.spec.ts`) ;
@@ -250,6 +251,25 @@ Test à part : un CLIENT POST `?/deleteReview` sur l'avis d'un autre — l'avis 
 | 5   | Ré-ajout puis retrait depuis la fiche produit         | clic cœur × 2                                                           | libellé revient à « Ajouter… », ligne absente |
 
 Test à part : un anonyme POST `/api/wishlist` — 401.
+
+### Alerte wishlist : baisse de prix / vente flash — `e2e/products/wishlist-price-alert.spec.ts`
+
+Event-triggered depuis `updateProductById` (seul point d'écriture de
+`price`/`flashSaleEndsAt`) : fallback synchrone dans la requête admin quand
+QStash n'est pas configuré, même mécanique que `stock-alerts.spec.ts`.
+
+| #   | Étape                                               | Geste                                  | Preuve                                                 |
+| --- | --------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| 1   | Ajout à la liste d'envies (baseline = prix courant) | clic cœur                              | `WishlistItem.lastNotifiedPrice` = prix courant        |
+| 2   | Baisse de prix admin déclenche une alerte           | fiche admin → prix plus bas → Save     | e-mail reçu, `lastNotifiedPrice` mis à jour            |
+| 3   | Ré-enregistrer le même prix ne renvoie rien         | Save changes sans changement           | boîte mail vide                                        |
+| 4   | Nouvelle baisse redéclenche une alerte              | fiche admin → prix encore plus bas     | e-mail reçu, `lastNotifiedPrice` mis à jour de nouveau |
+| 5   | Nouvelle vente flash déclenche une alerte           | fiche admin → `flashSaleEndsAt` future | e-mail reçu, `lastNotifiedFlashSaleEndsAt` renseigné   |
+| 6   | Ré-enregistrer la même vente flash ne renvoie rien  | Save changes avec la même date         | boîte mail vide                                        |
+
+Test à part : module désactivé (`wishlistPriceAlertEnabled: false`) — la
+baisse de prix admin ne déclenche aucun e-mail, `lastNotifiedPrice` reste
+inchangé.
 
 ### Auth adresses — `e2e/auth/address.spec.ts`
 

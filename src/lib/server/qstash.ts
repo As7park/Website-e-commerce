@@ -5,6 +5,7 @@ import { runInvoiceEmailJob } from './jobs/invoice-email';
 import { runLoyaltyCheckJob } from './jobs/loyalty';
 import { runReferralRewardJob } from './jobs/referral';
 import { runStockAlertsJob } from './jobs/stockAlerts';
+import { runWishlistPriceAlertJob } from './jobs/wishlistPriceAlert';
 
 /**
  * Queue Upstash QStash — HTTP, sans process persistant, cohérente avec le
@@ -118,6 +119,24 @@ export async function enqueueStockAlertsJob(productId: string): Promise<void> {
 
 	await getClient().publishJSON({
 		url: `${resolveAppUrl()}/api/jobs/stock-alerts`,
+		body: { productId }
+	});
+}
+
+/**
+ * Enfile l'alerte wishlist (`$lib/server/jobs/wishlistPriceAlert.ts`),
+ * appelée par `updateProductById` dès qu'une baisse de prix ou une nouvelle
+ * vente flash est constatée — n'est appelée que si
+ * `StoreSettings.wishlistPriceAlertEnabled`.
+ */
+export async function enqueueWishlistPriceAlertJob(productId: string): Promise<void> {
+	if (!isQStashConfigured()) {
+		await runWishlistPriceAlertJob(productId);
+		return;
+	}
+
+	await getClient().publishJSON({
+		url: `${resolveAppUrl()}/api/jobs/wishlist-price-alert`,
 		body: { productId }
 	});
 }
