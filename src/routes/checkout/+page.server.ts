@@ -17,6 +17,10 @@ import { getUserAddresses } from '$lib/prisma/addresses/addresses';
 import { OrderSchema } from '$lib/schema/order/order';
 import { validatePromo, incrementUsage } from '$lib/prisma/promo/promo';
 import { validateGiftCard, decrementGiftCardBalance } from '$lib/prisma/giftCards/giftCards';
+import {
+	isReferralDiscountEligible,
+	REFERRAL_REFEREE_DISCOUNT_PERCENT
+} from '$lib/prisma/referral/referral';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { prisma } from '$lib/server';
 import {
@@ -38,12 +42,17 @@ export const load = (async ({ locals }) => {
 	// AUTH-PLUGIN ▲
 	const IOrderSchema = await superValidate(zod(OrderSchema));
 	const addresses = await getUserAddresses(userId);
-	const { giftCardsEnabled } = await getStoreFeatureFlags();
+	const { giftCardsEnabled, referralEnabled } = await getStoreFeatureFlags();
+	const referralDiscountEligible = referralEnabled
+		? await isReferralDiscountEligible(userId)
+		: false;
 
 	return {
 		addresses,
 		IOrderSchema,
-		giftCardsEnabled
+		giftCardsEnabled,
+		referralDiscountEligible,
+		referralDiscountPercent: REFERRAL_REFEREE_DISCOUNT_PERCENT
 	};
 }) satisfies PageServerLoad;
 
@@ -122,16 +131,28 @@ export const actions: Actions = {
 		// Carte cadeau : plafonnée par ce qu'il reste à payer une fois la remise
 		// promo ci-dessus déduite. Comme pour `validatePromo`, seul ce calcul
 		// serveur fait foi — jamais un montant envoyé par le client.
-		const { giftCardsEnabled } = await getStoreFeatureFlags();
+		const { giftCardsEnabled, referralEnabled } = await getStoreFeatureFlags();
+		const remainderAfterPromo = Math.max(0, productTotalTTC - promoDiscount);
+
+		// Parrainage : remise automatique sur la première commande payée d'un
+		// compte parrainé — recalculée ici, jamais déduite d'une valeur envoyée par
+		// le client (même logique que promo/carte cadeau).
+		const referralEligible = referralEnabled && (await isReferralDiscountEligible(userId));
+		const referralDiscount = referralEligible
+			? parseFloat((remainderAfterPromo * REFERRAL_REFEREE_DISCOUNT_PERCENT).toFixed(2))
+			: 0;
+
 		const giftCardResult = giftCardsEnabled
-			? await validateGiftCard(giftCardCode, Math.max(0, productTotalTTC - promoDiscount))
+			? await validateGiftCard(giftCardCode, Math.max(0, remainderAfterPromo - referralDiscount))
 			: { valid: false, amount: 0, giftCard: null };
 		const appliedGiftCardAmount = giftCardResult.valid ? giftCardResult.amount : 0;
 		const appliedGiftCardCode = giftCardResult.valid
 			? (giftCardResult.giftCard?.code ?? null)
 			: null;
 
-		const appliedDiscount = parseFloat((promoDiscount + appliedGiftCardAmount).toFixed(2));
+		const appliedDiscount = parseFloat(
+			(promoDiscount + referralDiscount + appliedGiftCardAmount).toFixed(2)
+		);
 
 		// COMMERCE-PLUGIN : réutilise le client Stripe existant (`savedPaymentsEnabled`)
 		// s'il en existe déjà un pour ce compte — n'en crée jamais un ici.

@@ -74,7 +74,8 @@ export const load = async (event: RequestEvent) => {
 		zod(isMfaEnabledSchema)
 	);
 
-	const { wishlistEnabled, savedPaymentsEnabled, returnsEnabled } = await getStoreFeatureFlags();
+	const { wishlistEnabled, savedPaymentsEnabled, returnsEnabled, referralEnabled } =
+		await getStoreFeatureFlags();
 	const marketingEmailsOptIn = await getMarketingEmailsOptIn(event.locals.user.id);
 
 	return {
@@ -86,6 +87,7 @@ export const load = async (event: RequestEvent) => {
 		wishlistEnabled,
 		savedPaymentsEnabled,
 		returnsEnabled,
+		referralEnabled,
 		marketingEmailsOptIn
 	};
 };

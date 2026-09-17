@@ -14,6 +14,7 @@
 import { decrypt, encrypt } from '$lib/lucia/encryption';
 // AUTH-PLUGIN ▲
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
 
 const USER_SORTABLE = ['email', 'username', 'role', 'createdAt'] as const;
 import { prisma } from '$lib/server';
@@ -43,6 +44,7 @@ export const createUserWithGoogleOAuth = async (
 	name: string,
 	picture: string
 ) => {
+	const referralCode = await generateUniqueReferralCode();
 	return await prisma.user.create({
 		data: {
 			googleId,
@@ -51,6 +53,7 @@ export const createUserWithGoogleOAuth = async (
 			picture,
 			role: 'CLIENT',
 			emailVerified: true,
+			referralCode,
 			addresses: {
 				create: []
 			},
@@ -72,7 +75,9 @@ export const createUserInDatabase = async (
 	role: Role,
 	emailVerified: boolean,
 	totpKey: Buffer | null,
-	googleId?: string | null
+	googleId?: string | null,
+	/** Parrain éventuel (`User.id`), résolu depuis `?ref=<code>` à l'inscription. */
+	referredById?: string | null
 ) => {
 	// console.log('Creating user:', {
 	// 	email,
@@ -85,6 +90,8 @@ export const createUserInDatabase = async (
 	// 	googleId
 	// });
 
+	const referralCode = await generateUniqueReferralCode();
+
 	return await prisma.user.create({
 		data: {
 			email,
@@ -95,6 +102,8 @@ export const createUserInDatabase = async (
 			emailVerified,
 			totpKey,
 			googleId,
+			referralCode,
+			referredById: referredById ?? null,
 			// Relations initialisées à vide
 			addresses: { create: [] },
 			orders: { create: [] },

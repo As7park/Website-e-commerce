@@ -45,9 +45,10 @@ export const ADMIN_PATHS = [
 	'/admin/contacts/view/placeholder'
 ] as const;
 
-/** Inscrit le compte, confirme l'adresse, et s'arrête sur l'espace connecté. */
-export async function signUpAndVerify(page: Page, account: Account) {
-	await page.goto('/auth/signup');
+/** Inscrit le compte, confirme l'adresse, et s'arrête sur l'espace connecté.
+ * `refCode` simule l'arrivée depuis un lien de parrainage (`?ref=<code>`). */
+export async function signUpAndVerify(page: Page, account: Account, refCode?: string) {
+	await page.goto(refCode ? `/auth/signup?ref=${refCode}` : '/auth/signup');
 	await expect(page.getByRole('heading', { name: 'Créer un compte' })).toBeVisible({
 		timeout: 60_000
 	});

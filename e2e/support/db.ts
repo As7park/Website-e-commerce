@@ -101,7 +101,14 @@ export async function enableMfa(email: string) {
  * l'email est en jeu, aucun mot de passe n'est nécessaire.
  */
 export async function occupyEmail(email: string) {
-	await resilient(() => db.user.create({ data: { email } }));
+	await resilient(() =>
+		db.user.create({
+			data: {
+				email,
+				referralCode: `E2E${Date.now()}${Math.random().toString(36).slice(2, 6)}`.toUpperCase()
+			}
+		})
+	);
 }
 
 /** Passe un compte au rôle administrateur. Le rôle est relu à chaque requête. */
@@ -837,7 +844,9 @@ export async function getStoreFeatureFlags() {
 				loyaltyEnabled: true,
 				giftCardsEnabled: true,
 				productQnaEnabled: true,
-				cartRecoveryEnabled: true
+				cartRecoveryEnabled: true,
+				referralEnabled: true,
+				stockAlertsEnabled: true
 			}
 		})
 	);
@@ -853,6 +862,8 @@ export async function setStoreFeatureFlags(patch: {
 	giftCardsEnabled?: boolean;
 	productQnaEnabled?: boolean;
 	cartRecoveryEnabled?: boolean;
+	referralEnabled?: boolean;
+	stockAlertsEnabled?: boolean;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }
@@ -902,5 +913,17 @@ export async function getSavedPaymentMethodsByUserId(userId: string) {
 export async function getLoyaltyAward(userId: string, promoCodeId: string) {
 	return resilient(() =>
 		db.loyaltyAward.findUnique({ where: { userId_promoCodeId: { userId, promoCodeId } } })
+	);
+}
+
+/** Parrainage : récompense éventuelle du parrain pour un filleul donné. */
+export async function getReferralReward(referredId: string) {
+	return resilient(() => db.referralReward.findUnique({ where: { referredId } }));
+}
+
+/** Alertes réassort : inscription éventuelle d'un compte sur un produit donné. */
+export async function getStockAlert(productId: string, userId: string) {
+	return resilient(() =>
+		db.stockAlert.findUnique({ where: { productId_userId: { productId, userId } } })
 	);
 }

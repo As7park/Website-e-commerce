@@ -2,6 +2,8 @@ import { prisma } from '$lib/server';
 import { bumpCacheVersion } from '$lib/server/cache';
 import { reportIfRepeated } from '$lib/server/alerting';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { enqueueStockAlertsJob } from '$lib/server/qstash';
 
 const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
 
@@ -198,6 +200,16 @@ export const updateProductById = async (
 		height?: number | null;
 	}
 ) => {
+	// Réassort (STOCK_ALERT-PLUGIN) : seul point d'écriture du stock dans ce
+	// dépôt (aucune vente ne le décrémente, cf. commentaire `checkLowStockAlert`
+	// ci-dessus) — c'est donc ici, et seulement ici, qu'un passage de 0 (ou
+	// moins) à un stock positif peut être détecté. Lu avant l'update, sinon
+	// l'ancienne valeur serait perdue.
+	const previous =
+		data.stock !== undefined
+			? await prisma.product.findUnique({ where: { id: productId }, select: { stock: true } })
+			: null;
+
 	const { flashSaleEndsAt, ...rest } = data;
 	const product = await prisma.product.update({
 		where: { id: productId },
@@ -210,5 +222,13 @@ export const updateProductById = async (
 	});
 	await bumpCacheVersion('catalog');
 	await checkLowStockAlert(product);
+
+	if (previous && previous.stock <= 0 && product.stock > 0) {
+		const { stockAlertsEnabled } = await getStoreFeatureFlags();
+		if (stockAlertsEnabled) {
+			await enqueueStockAlertsJob(product.id);
+		}
+	}
+
 	return product;
 };

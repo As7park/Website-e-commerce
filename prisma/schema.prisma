@@ -93,6 +93,16 @@ model User {
 
   role Role @default(CLIENT)
 
+  /// Code de parrainage unique, généré à la création du compte
+  /// (`generateUniqueReferralCode`) — jamais deviné, jamais réutilisé.
+  referralCode String @unique
+  /// Compte parrain, posé une seule fois à l'inscription si `?ref=<code>`
+  /// désignait un compte existant et que le module était actif à ce moment-là.
+  referredById String?
+  referredBy   User?   @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  /// Filleuls parrainés par ce compte.
+  referrals    User[]  @relation("Referrals")
+
   // Relations commerce
   addresses           Address[]
   orders              Order[]
@@ -103,6 +113,8 @@ model User {
   savedPaymentMethods SavedPaymentMethod[]
   returnRequests      ReturnRequest[]
   loyaltyAwards       LoyaltyAward[]
+  referralRewards     ReferralReward[]
+  stockAlerts         StockAlert[]
 
   // Relations d'authentification (disparaissent avec le module)
   sessions                  Session[]
@@ -356,6 +368,7 @@ model Product {
   reviews         Review[]
   questions       ProductQuestion[]
   wishlistedBy    WishlistItem[]
+  stockAlerts     StockAlert[]
   /// Variantes simples (étiquette libre : « Taille 54 », « Or blanc »...),
   /// chacune avec son propre stock et un prix optionnel qui surcharge
   /// `price` ci-dessus. Un produit sans variante se comporte exactement
@@ -496,6 +509,30 @@ model ProductQuestion {
 
   @@index([productId])
   @@map("product_questions")
+}
+
+/// File d'attente « Me prévenir » : un compte s'inscrit sur un produit en
+/// rupture (`Product.stock <= 0`) et reçoit un e-mail une seule fois dès
+/// que le stock repasse au-dessus de 0. Contrainte unique par compte et par
+/// produit — `notifiedAt` distingue une inscription encore en attente
+/// (`null`) d'une déjà notifiée ; se réinscrire après notification remet
+/// `notifiedAt` à `null` plutôt que de créer une seconde ligne. Complète le
+/// module Questions produit (même patron : lié à un compte, jamais un
+/// simple e-mail anonyme). Activable/désactivable via
+/// `StoreSettings.stockAlertsEnabled`.
+model StockAlert {
+  id         String    @id @default(cuid())
+  productId  String
+  userId     String
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("stock_alerts")
 }
 
 model Custom {
@@ -809,9 +846,31 @@ model StoreSettings {
   productQnaEnabled    Boolean  @default(false)
   cartRecoveryEnabled  Boolean  @default(false)
   flashSaleEnabled     Boolean  @default(false)
+  referralEnabled      Boolean  @default(false)
+  stockAlertsEnabled   Boolean  @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")
+}
+
+/// Récompense de parrainage — une seule ligne par filleul (`referredId`),
+/// posée à sa toute première commande payée, jamais aux suivantes. Le lien
+/// vers la carte cadeau (`giftCardId`) n'est qu'un texte, comme `PromoCode`
+/// sur `Order` : pas de FK vers `GiftCard`, la carte reste consultable et
+/// gérable indépendamment depuis /admin/gift-cards. Activable/désactivable
+/// via `StoreSettings.referralEnabled`.
+model ReferralReward {
+  id         String   @id @default(cuid())
+  referrerId String
+  /// Un seul filleul ne peut déclencher qu'une seule récompense.
+  referredId String   @unique
+  giftCardId String
+  createdAt  DateTime @default(now())
+
+  referrer User @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral_rewards")
 }
 
 /// Carte cadeau à solde décroissant. Pas de relation FK vers `Order` — même

@@ -18,6 +18,7 @@ import {
 	askQuestion,
 	listPublicQuestionsForProduct
 } from '$lib/prisma/productQuestions/productQuestions';
+import { isPendingStockAlert } from '$lib/prisma/stockAlerts/stockAlerts';
 
 /**
  * Fiche produit publique.
@@ -36,8 +37,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const userId = locals.user?.id;
-	const { wishlistEnabled, crossSellEnabled, productQnaEnabled, flashSaleEnabled } =
-		await getStoreFeatureFlags();
+	const {
+		wishlistEnabled,
+		crossSellEnabled,
+		productQnaEnabled,
+		flashSaleEnabled,
+		stockAlertsEnabled
+	} = await getStoreFeatureFlags();
 	const categoryIds = product.categories.map((link) => link.categoryId);
 
 	const [
@@ -48,7 +54,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		inWishlist,
 		relatedProducts,
 		questions,
-		askForm
+		askForm,
+		stockAlertSubscribed
 	] = await Promise.all([
 		getReviewSummary(product.id),
 		listReviewsForProduct(product.id),
@@ -57,7 +64,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		wishlistEnabled && userId ? isInWishlist(userId, product.id) : false,
 		crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : [],
 		productQnaEnabled ? listPublicQuestionsForProduct(product.id) : [],
-		superValidate(zod(askQuestionSchema))
+		superValidate(zod(askQuestionSchema)),
+		stockAlertsEnabled && userId ? isPendingStockAlert(userId, product.id) : false
 	]);
 
 	return {
@@ -72,7 +80,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		productQnaEnabled,
 		flashSaleEnabled,
 		questions,
-		askForm
+		askForm,
+		stockAlertsEnabled,
+		stockAlertSubscribed
 	};
 };
 

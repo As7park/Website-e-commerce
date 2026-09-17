@@ -9,7 +9,8 @@ import { withLock } from '$lib/server/lock';
 import {
 	enqueuePostPaymentJob,
 	enqueueInvoiceEmailJob,
-	enqueueLoyaltyCheckJob
+	enqueueLoyaltyCheckJob,
+	enqueueReferralRewardJob
 } from '$lib/server/qstash';
 import { derivePackageEstimate, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
@@ -308,6 +309,12 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		const flags = await getStoreFeatureFlags();
 		if (flags.loyaltyEnabled && orderId) {
 			jobs.push(enqueueLoyaltyCheckJob(orderId));
+		}
+
+		// Parrainage : même garde, récompense du parrain sortie du chemin
+		// synchrone (module Gift Cards, voir $lib/server/jobs/referral.ts).
+		if (flags.referralEnabled && orderId) {
+			jobs.push(enqueueReferralRewardJob(orderId));
 		}
 
 		const jobResults = await Promise.allSettled(jobs);

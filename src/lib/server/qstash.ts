@@ -3,6 +3,8 @@ import { resolveAppUrl } from './app-url';
 import { runPostPaymentJob } from './jobs/post-payment';
 import { runInvoiceEmailJob } from './jobs/invoice-email';
 import { runLoyaltyCheckJob } from './jobs/loyalty';
+import { runReferralRewardJob } from './jobs/referral';
+import { runStockAlertsJob } from './jobs/stockAlerts';
 
 /**
  * Queue Upstash QStash — HTTP, sans process persistant, cohérente avec le
@@ -83,5 +85,39 @@ export async function enqueueLoyaltyCheckJob(orderId: string): Promise<void> {
 	await getClient().publishJSON({
 		url: `${resolveAppUrl()}/api/jobs/loyalty-check`,
 		body: { orderId }
+	});
+}
+
+/**
+ * Enfile la récompense de parrainage (`$lib/server/jobs/referral.ts`), sortie
+ * du chemin synchrone du webhook au même titre que la fidélité — n'est
+ * appelée par le webhook que si `StoreSettings.referralEnabled`.
+ */
+export async function enqueueReferralRewardJob(orderId: string): Promise<void> {
+	if (!isQStashConfigured()) {
+		await runReferralRewardJob(orderId);
+		return;
+	}
+
+	await getClient().publishJSON({
+		url: `${resolveAppUrl()}/api/jobs/referral-reward`,
+		body: { orderId }
+	});
+}
+
+/**
+ * Enfile la notification de réassort (`$lib/server/jobs/stockAlerts.ts`),
+ * appelée par `updateProductById` dès qu'un produit repasse au-dessus de 0
+ * en stock — n'est appelée que si `StoreSettings.stockAlertsEnabled`.
+ */
+export async function enqueueStockAlertsJob(productId: string): Promise<void> {
+	if (!isQStashConfigured()) {
+		await runStockAlertsJob(productId);
+		return;
+	}
+
+	await getClient().publishJSON({
+		url: `${resolveAppUrl()}/api/jobs/stock-alerts`,
+		body: { productId }
 	});
 }

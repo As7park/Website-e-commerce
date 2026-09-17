@@ -71,6 +71,32 @@
 		}
 	}
 
+	// STOCK_ALERT-PLUGIN : "Me prévenir" — bascule l'inscription à la file
+	// d'attente de réassort, même patron que `toggleWishlist` ci-dessus.
+	let stockAlertSubscribed = $state(untrack(() => data.stockAlertSubscribed));
+	let stockAlertBusy = $state(false);
+
+	async function toggleStockAlert() {
+		if (!data.user) {
+			window.location.href = '/auth/login';
+			return;
+		}
+		stockAlertBusy = true;
+		try {
+			const res = await fetch('/api/stock-alerts', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ productId: product.id })
+			});
+			if (res.ok) {
+				const result = await res.json();
+				stockAlertSubscribed = result.subscribed;
+			}
+		} finally {
+			stockAlertBusy = false;
+		}
+	}
+
 	// Variantes (`ProductVariant`) : un produit sans variante se comporte
 	// exactement comme avant leur introduction (`selectedVariant` reste
 	// `null`, jamais de sélection imposée).
@@ -271,6 +297,16 @@
 				<Button type="button" onclick={handleAddToCart} disabled={displayedStock <= 0}>
 					Ajouter au panier
 				</Button>
+				{#if data.stockAlertsEnabled && product.stock <= 0}
+					<Button
+						type="button"
+						variant="outline"
+						disabled={stockAlertBusy}
+						onclick={toggleStockAlert}
+					>
+						{stockAlertSubscribed ? 'Vous serez prévenu' : 'Me prévenir'}
+					</Button>
+				{/if}
 				{#if data.wishlistEnabled}
 					<Button
 						type="button"

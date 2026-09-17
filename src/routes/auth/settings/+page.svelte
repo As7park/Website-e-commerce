@@ -23,7 +23,8 @@
 		ShieldCheck,
 		CreditCard,
 		Undo2,
-		Bell
+		Bell,
+		Gift
 	} from 'lucide-svelte';
 
 	let { data } = $props();
@@ -193,6 +194,23 @@
 					<Card.Content class="flex-grow" />
 					<Card.Footer>
 						<Button href="/auth/settings/returns" class="w-full">Mes retours</Button>
+					</Card.Footer>
+				</Card.Root>
+			{/if}
+
+			{#if data.referralEnabled}
+				<!-- Parrainage -->
+				<Card.Root class="flex flex-col">
+					<Card.Header>
+						<Card.Title class="flex items-center gap-2">
+							<Gift class="w-6 h-6 text-primary" />
+							<span>Parrainage</span>
+						</Card.Title>
+						<Card.Description>Partagez votre lien et gagnez une carte cadeau.</Card.Description>
+					</Card.Header>
+					<Card.Content class="flex-grow" />
+					<Card.Footer>
+						<Button href="/auth/settings/referral" class="w-full">Mon parrainage</Button>
 					</Card.Footer>
 				</Card.Root>
 			{/if}

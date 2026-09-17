@@ -17,6 +17,7 @@ import { signupSchema } from '$lib/schema/auth/signupSchema';
 
 import { checkEmailAvailability } from '$lib/prisma/email/email';
 import { createUser } from '$lib/lucia/user';
+import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 import {
 	createEmailVerificationRequest,
@@ -66,7 +67,11 @@ export const load: PageServerLoad = async (event) => {
 	/* Formulaire vierge ----------------------------------------------------- */
 	const form = await superValidate(zod(signupSchema));
 	log('load() done → empty form');
-	return { form };
+	// Parrainage : code brut porté par le lien partagé (`?ref=`), simplement
+	// ré-affiché en champ caché du formulaire — la validation réelle n'a lieu
+	// que dans l'action `signup`, jamais ici.
+	const referralCode = event.url.searchParams.get('ref');
+	return { form, referralCode };
 };
 
 /* -------------------------------------------------------------------------- */
@@ -82,7 +87,10 @@ export const actions: Actions = {
 		if (!(await ipBucket.check(ip, 1))) return fail(429, { message: 'Too many requests' });
 
 		/* ---------- 2. Validation Zod + Superforms ------------------------- */
-		const form = await superValidate(event, zod(signupSchema));
+		// `formData` explicite (plutôt que `superValidate(event, ...)`) pour
+		// pouvoir relire le champ caché `ref` (parrainage) à côté du schéma.
+		const formData = await event.request.formData();
+		const form = await superValidate(formData, zod(signupSchema));
 		log('Form received', form.data);
 
 		if (!form.valid) {
@@ -108,7 +116,9 @@ export const actions: Actions = {
 		if (!(await ipBucket.consume(ip, 1))) return fail(429, { message: 'Too many requests' });
 
 		/* ---------- 4. Création de l’utilisateur --------------------------- */
-		const user = await createUser(email, username, password);
+		const { referralEnabled } = await getStoreFeatureFlags();
+		const referralCode = referralEnabled ? String(formData.get('ref') ?? '').trim() : '';
+		const user = await createUser(email, username, password, referralCode || null);
 		log('✅  User created', { id: user.id, email: user.email });
 
 		/* ---------- 5. Demande de vérification e-mail ---------------------- */

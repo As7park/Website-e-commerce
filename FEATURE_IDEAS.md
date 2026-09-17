@@ -23,10 +23,6 @@ e2e, documentés dans `docs/`.
 
 ## Fidélité & croissance
 
-- ⭐ **Parrainage** — lien unique par utilisateur ; le filleul obtient une
-  remise à sa première commande, le parrain reçoit un gift card une fois
-  la commande du filleul payée. Réutilise le webhook de paiement existant
-  et le module Gift Cards. Effet viral, coût maîtrisé.
 - **Paliers de fidélité multiples (bronze / argent / or)** au lieu d'un
   seuil unique par code — chaque palier débloque un avantage cumulatif
   (réduction permanente, livraison offerte). Évolution naturelle de
@@ -44,9 +40,6 @@ e2e, documentés dans `docs/`.
 
 ## Produits & découverte
 
-- **Alertes réassort** — bouton « Me prévenir » sur un produit en rupture,
-  file d'attente en base, e-mail dès que le stock repasse au-dessus de 0.
-  Complète bien le module Questions produit déjà en place.
 - ⭐ **« Souvent achetés ensemble »** — bundle suggéré au niveau du panier,
   basé sur la co-occurrence réelle dans `OrderItem` (pas seulement la
   catégorie comme le cross-sell actuel), avec petite remise si les

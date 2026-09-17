@@ -35,6 +35,18 @@ const encrypt = (data) => {
 
 const generateRecoveryCode = () => Math.floor(10000000 + Math.random() * 90000000).toString();
 
+// Parrainage : même alphabet que `generateUniqueReferralCode` côté app, une
+// simple collision improbable suffit pour un jeu de données de démo.
+const REFERRAL_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const generateReferralCode = () => {
+	const bytes = randomBytes(8);
+	let code = '';
+	for (let i = 0; i < 8; i++) {
+		code += REFERRAL_CODE_ALPHABET[bytes[i] % REFERRAL_CODE_ALPHABET.length];
+	}
+	return code;
+};
+
 const money = (value) => parseFloat(Number(value).toFixed(2));
 
 const vatFromTtc = (ttc) => {
@@ -278,6 +290,7 @@ async function createDemoUser({
 			totpKey: Buffer.from(encrypt(randomBytes(32))),
 			recoveryCode: encrypt(Buffer.from(recoveryCode, 'utf-8')).toString('base64'),
 			encryptionVersion: 2,
+			referralCode: generateReferralCode(),
 			createdAt
 		}
 	});

@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const signupForm = superForm(untrack(() => data.form), {
-		validators: zodClient(signupSchema),
-		id: 'signupForm'
-	});
+	const signupForm = superForm(
+		untrack(() => data.form),
+		{
+			validators: zodClient(signupSchema),
+			id: 'signupForm'
+		}
+	);
 
 	const { form: signupData, enhance: signupEnhance, message: signupMessage } = signupForm;
 
@@ -30,7 +33,14 @@
 	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
 		<h1 class="mb-4 text-2xl font-bold">Créer un compte</h1>
 
+		{#if data.referralCode}
+			<p class="mb-4 text-sm text-muted-foreground">
+				Vous avez été invité·e par un ami ·e 🎉 votre première commande bénéficiera d'une remise.
+			</p>
+		{/if}
+
 		<form method="POST" use:signupEnhance action="?/signup" class="space-y-4">
+			<input type="hidden" name="ref" value={data.referralCode ?? ''} />
 			<div class="mb-4">
 				<Form.Field name="username" form={signupForm}>
 					<Form.Control>

@@ -1,6 +1,7 @@
 import { Role, PromoType } from '@prisma/client';
 import { prisma } from '$lib/server';
 import { parseCsv } from '$lib/server/export/csv';
+import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
 import { EXPORT_COLUMNS, EXPORT_KINDS, EXPORT_MAX_ROWS, type ExportKind } from './export';
 
 export type ImportKind = Exclude<ExportKind, 'sales'>;
@@ -45,7 +46,11 @@ function parseFloatField(row: Record<string, string>, header: string, line: numb
 	return parsed;
 }
 
-function parseOptionalFloat(row: Record<string, string>, header: string, line: number): number | null {
+function parseOptionalFloat(
+	row: Record<string, string>,
+	header: string,
+	line: number
+): number | null {
 	const value = row[header]?.trim();
 	if (!value) return null;
 	const parsed = Number(value);
@@ -108,7 +113,11 @@ async function importUsersRow(row: Record<string, string>, line: number) {
 	};
 
 	const existing = await prisma.user.findUnique({ where: { id }, select: { id: true } });
-	await prisma.user.upsert({ where: { id }, create: { id, ...data }, update: data });
+	// `referralCode` est requis en création (colonne unique NOT NULL) mais
+	// absent du CSV : généré ici, sans effet sur une ligne existante (branche
+	// `update`, qui ne le touche jamais).
+	const referralCode = await generateUniqueReferralCode();
+	await prisma.user.upsert({ where: { id }, create: { id, ...data, referralCode }, update: data });
 	return existing ? 'updated' : 'created';
 }
 

@@ -30,6 +30,7 @@ import {
 	upgradeUserTotpKeyEncryption,
 	verifyUserEmail
 } from '$lib/prisma/user/user';
+import { getUserByReferralCode } from '$lib/prisma/referral/referral';
 
 // Interface utilisateur unifiée
 export interface User {
@@ -47,11 +48,21 @@ export interface User {
 }
 
 // Crée un nouvel utilisateur avec email et mot de passe + 2FA
-export async function createUser(email: string, username: string, password: string): Promise<User> {
+export async function createUser(
+	email: string,
+	username: string,
+	password: string,
+	/** Code de parrainage brut (`?ref=`), non encore validé. */
+	referralCode?: string | null
+): Promise<User> {
 	const passwordHash = await hashPassword(password);
 	const recoveryCode = generateRandomRecoveryCode();
 	const encryptedRecoveryCode = encryptString(recoveryCode);
 	const encryptedRecoveryCodeString = Buffer.from(encryptedRecoveryCode).toString('base64');
+
+	// Un code invalide/inconnu est simplement ignoré : le compte se crée quand
+	// même, juste sans parrain (jamais bloquant pour l'inscription).
+	const referrer = referralCode ? await getUserByReferralCode(referralCode) : null;
 
 	const createdUser = await createUserInDatabase(
 		email,
@@ -61,7 +72,8 @@ export async function createUser(email: string, username: string, password: stri
 		Role.CLIENT,
 		false,
 		null,
-		null
+		null,
+		referrer?.id ?? null
 	);
 
 	return {

@@ -18,7 +18,8 @@
 		| 'giftCardsEnabled'
 		| 'productQnaEnabled'
 		| 'cartRecoveryEnabled'
-		| 'flashSaleEnabled';
+		| 'referralEnabled'
+		| 'stockAlertsEnabled';
 
 	type ModuleInfo = { key: FlagKey; label: string; description: string; details: string };
 
@@ -88,12 +89,20 @@
 				"Un client qui laisse une commande en attente reçoit un e-mail de relance avec un code promo dégressif : 10% après 1h, puis 15% après 24h si la première relance n'a pas suffi. Le lien renvoie vers /checkout, où son panier est déjà rattaché automatiquement — aucun lien ni jeton spécial à gérer."
 		},
 		{
-			key: 'flashSaleEnabled',
-			label: 'Vente flash',
+			key: 'referralEnabled',
+			label: 'Parrainage',
 			description:
-				'Bandeau et compte à rebours vitrine sur les fiches produit et le catalogue, tant que la date de fin de vente flash du produit est dans le futur.',
+				'Lien unique par compte : le filleul obtient une remise à sa première commande, le parrain reçoit une carte cadeau une fois cette commande payée.',
 			details:
-				"Chaque produit peut recevoir une date de fin de vente flash depuis /admin/products. Tant que ce module est actif et que la date est dans le futur, un badge (catalogue) et un bandeau avec compte à rebours (fiche produit) s'affichent automatiquement. Se combine avec le prix barré (compareAtPrice) mais fonctionne aussi seul."
+				"Chaque client retrouve son lien unique depuis /auth/settings/referral (?ref=<code> ajouté à l'inscription). Le filleul bénéficie automatiquement d'une remise de 10% sur sa toute première commande payée, sans code à saisir. Dès que cette commande est payée, le parrain reçoit par e-mail une carte cadeau de 10€ (module Gift Cards, visible depuis /admin/gift-cards) — une seule fois par filleul, jamais à ses commandes suivantes."
+		},
+		{
+			key: 'stockAlertsEnabled',
+			label: 'Alertes réassort',
+			description:
+				'Bouton « Me prévenir » sur une fiche produit en rupture : e-mail automatique dès que le stock repasse au-dessus de 0.',
+			details:
+				"Un client connecté clique sur « Me prévenir » sur une fiche produit en rupture (stock à 0) ; son inscription rejoint une file d'attente. Dès qu'un admin remet ce produit en stock depuis /admin/products, chaque compte inscrit reçoit automatiquement un e-mail — une seule fois par rupture, sans action admin supplémentaire à effectuer."
 		}
 	];
 

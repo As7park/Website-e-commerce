@@ -71,12 +71,29 @@
 
 	// Total TTC des produits (hors frais de port) — base de calcul de la remise
 	let productTotalTTC = $derived($cartStore.subtotal + $cartStore.tax);
-	let giftCardMaxApplicable = $derived(Math.max(0, productTotalTTC - discountAmount));
+
+	// Parrainage : remise automatique sur la première commande d'un compte
+	// parrainé, affichée ici pour info — le montant réel appliqué est
+	// recalculé côté serveur (`?/checkout`), jamais lu depuis ce dérivé.
+	let referralDiscountAmount = $derived(
+		data.referralDiscountEligible
+			? parseFloat((productTotalTTC * data.referralDiscountPercent).toFixed(2))
+			: 0
+	);
+
+	let giftCardMaxApplicable = $derived(
+		Math.max(0, productTotalTTC - discountAmount - referralDiscountAmount)
+	);
 
 	let totalTTC = $derived(
 		Math.max(
 			0,
-			$cartStore.subtotal + $cartStore.tax + shippingCost - discountAmount - giftCardAmount
+			$cartStore.subtotal +
+				$cartStore.tax +
+				shippingCost -
+				discountAmount -
+				giftCardAmount -
+				referralDiscountAmount
 		)
 	);
 
@@ -595,6 +612,15 @@
 						onRemoveFromCart={handleRemoveFromCart}
 						onChangeQuantity={changeQuantity}
 					/>
+					{#if $cartStore.items.length > 0 && referralDiscountAmount > 0}
+						<div
+							class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+						>
+							🎉 Remise de bienvenue parrainage appliquée automatiquement : -{referralDiscountAmount.toFixed(
+								2
+							)}€
+						</div>
+					{/if}
 					{#if $cartStore.items.length > 0}
 						<!-- PROMO-PLUGIN -->
 						<PromoCodeInput
