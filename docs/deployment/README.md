@@ -138,9 +138,8 @@ production) — ne pas compter sur `VERCEL_URL` en dehors des Previews.
    serveur (`src/lib/server/cloudinary.ts`), pas d'upload preset non signé à
    déclarer côté Cloudinary.
 3. Le domaine `res.cloudinary.com` est déjà autorisé dans la CSP
-   (`img-src`) et dans le cache PWA (`vite-plugin-pwa`, `runtimeCaching` sur
-   `res.cloudinary.com`) — pas de changement à faire si le cloud name change,
-   seule l'URL de base des images change, pas le domaine.
+   (`img-src`) — pas de changement à faire si le cloud name change, seule
+   l'URL de base des images change, pas le domaine.
 
 ## E-mails transactionnels — Brevo (SMTP)
 

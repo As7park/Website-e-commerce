@@ -1,5 +1,4 @@
 import adapter from '@sveltejs/adapter-vercel';
-import { VitePWA } from 'vite-plugin-pwa';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -8,40 +7,6 @@ const config = {
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 
-	plugins: [
-		VitePWA({
-			manifest: {
-				// les options pour votre manifeste
-				name: 'Mon App SvelteKit PWA',
-				short_name: 'SvelteKitPWA',
-				description: 'Une démo de PWA avec SvelteKit et Vite',
-				icons: [
-					// Vos icônes pour la PWA
-				]
-				// ... d'autres options du manifeste
-			},
-			workbox: {
-				// les options pour workbox
-				swSrc: '/sw.js',
-				// Uniquement les images produits Cloudinary : pas de règle catch-all
-				// same-origin (le cache runtime ne doit jamais contenir /api, /admin,
-				// /auth ou toute réponse porteuse de données utilisateur).
-				runtimeCaching: [
-					{
-						urlPattern: /^https:\/\/res\.cloudinary\.com\//,
-						handler: 'CacheFirst',
-						options: {
-							cacheName: 'cloudinary-images',
-							expiration: {
-								maxEntries: 200,
-								maxAgeSeconds: 30 * 24 * 60 * 60 // 30 jours
-							}
-						}
-					}
-				]
-			}
-		})
-	],
 	kit: {
 		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
 		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.

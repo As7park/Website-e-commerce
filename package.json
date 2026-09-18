@@ -173,8 +173,7 @@
 		"svelte-toolbelt": "^0.9.2",
 		"tabbable": "^6.2.0",
 		"tinymce": "^7.9.0",
-		"uqr": "^0.1.2",
-		"vite-plugin-pwa": "^1.0.0"
+		"uqr": "^0.1.2"
 	},
 	"overrides": {
 		"@prisma/client": "5.22.0",

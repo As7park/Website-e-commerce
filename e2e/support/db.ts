@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { createDecipheriv } from 'node:crypto';
 
 /**
@@ -9,6 +9,25 @@ export const db = new PrismaClient({
 	datasources: { db: { url: process.env.DATABASE_URL } },
 	log: ['error']
 });
+
+/**
+ * Schéma réellement utilisé par `DATABASE_URL` (`?schema=e2e` sur Neon,
+ * absent → `public` sur la base éphémère de CI). Nécessaire pour qualifier
+ * les tables dans le SQL brut (voir `backdateOrder`) : repli `public` requis
+ * depuis que la CI tourne sur un Postgres jetable sans ce paramètre.
+ * Identifiant validé (alphanumérique/underscore) avant interpolation SQL.
+ */
+const rawSchemaName = (() => {
+	try {
+		return new URL(process.env.DATABASE_URL ?? '').searchParams.get('schema') || 'public';
+	} catch {
+		return 'public';
+	}
+})();
+if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSchemaName)) {
+	throw new Error(`Nom de schéma invalide dans DATABASE_URL: ${rawSchemaName}`);
+}
+const schemaName = Prisma.raw(`"${rawSchemaName}"`);
 
 /**
  * Rejoue une lecture sur coupure réseau passagère.
@@ -553,17 +572,18 @@ export async function createPaidOrderWithProducts(userId: string, productIds: st
  * Recule `Order.updatedAt` de `hoursAgo` heures — nécessaire pour simuler un
  * panier abandonné sans attendre réellement 1h/24h. `@updatedAt` est
  * réécrit par le moteur Prisma sur tout `update()` classique (la valeur
- * fournie est ignorée), d'où le passage par `$executeRaw`. Table
- * explicitement qualifiée `"e2e"."orders"` : contrairement aux requêtes
- * générées par le client Prisma, le SQL brut ne suit pas le paramètre
- * `schema=e2e` de `DATABASE_URL` (pas de `search_path` positionné côté
- * session) — sans ce préfixe, la commande s'exécute silencieusement dans
- * `public` et ne trouve jamais la ligne (0 ligne affectée, aucune erreur).
+ * fournie est ignorée), d'où le passage par `$executeRaw`. Table qualifiée
+ * avec `schemaName` (déduit de `DATABASE_URL`, cf. plus haut) : contrairement
+ * aux requêtes générées par le client Prisma, le SQL brut ne suit pas le
+ * paramètre `schema=` de `DATABASE_URL` (pas de `search_path` positionné
+ * côté session) — sans préfixe explicite, la commande s'exécute
+ * silencieusement dans le mauvais schéma et ne trouve jamais la ligne
+ * (0 ligne affectée, aucune erreur).
  */
 export async function backdateOrder(orderId: string, hoursAgo: number) {
 	await resilient(
 		() =>
-			db.$executeRaw`UPDATE "e2e"."orders" SET "updatedAt" = NOW() - (${hoursAgo}::float * interval '1 hour') WHERE id = ${orderId}`
+			db.$executeRaw`UPDATE ${schemaName}."orders" SET "updatedAt" = NOW() - (${hoursAgo}::float * interval '1 hour') WHERE id = ${orderId}`
 	);
 }
 
