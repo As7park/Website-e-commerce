@@ -438,15 +438,15 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 
 ## 5. Chiffres de référence (mesurés ce jour)
 
-| Métrique                                                            | Valeur                                        |
-| ------------------------------------------------------------------- | --------------------------------------------- |
-| `npm run check`                                                     | 0 erreur, 0 warning                           |
-| `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)       |
+| Métrique                                                            | Valeur                                          |
+| ------------------------------------------------------------------- | ----------------------------------------------- |
+| `npm run check`                                                     | 0 erreur, 0 warning                             |
+| `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)         |
 | ESLint                                                              | 34 erreurs bloquantes + 65 warnings (voir §3.2) |
-| Specs Playwright                                                    | 46 fichiers                                   |
-| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)          |
-| Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 29 / 15                                       |
-| Scan de vulnérabilités                                              | OSV-Scanner + Dependabot (`npm audit` retiré) |
+| Specs Playwright                                                    | 46 fichiers                                     |
+| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)            |
+| Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 29 / 15                                         |
+| Scan de vulnérabilités                                              | OSV-Scanner + Dependabot (`npm audit` retiré)   |
 
 ---
 
