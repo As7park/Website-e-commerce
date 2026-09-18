@@ -280,13 +280,13 @@ rétrogradées — 3 d'entre elles cachaient un vrai bug (voir détail ci-dessou
 
 Répartition actuelle (après corrections) :
 
-| Règle                                | Occurrences | Statut CI                                                                                                       |
-| ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-explicit-any` | 3           | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés)             |
-| `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                      |
-| `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                 |
-| `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale |
-| `svelte/no-at-html-tags`             | 3           | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)             |
+| Règle                                | Occurrences | Statut CI                                                                                                                                                                         |
+| ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@typescript-eslint/no-explicit-any` | 3           | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés) |
+| `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                                                                                        |
+| `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                                                                                   |
+| `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale                                                                   |
+| `svelte/no-at-html-tags`             | 3           | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)                                                                               |
 
 **Bugs réels découverts en corrigeant les violations à 1-2 occurrences** :
 
@@ -434,7 +434,7 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
     annotations redondantes supprimées dans les pages admin taxonomies/
     blog/products). `npm run check` (0 erreur/0 warning), ESLint
     (`no-explicit-any` : 3 occurrences restantes, uniquement les `icon:
-    any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
+any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
     skippés) vérifiés après chaque lot.
 12. ~~**Ajouter `CONTRIBUTING.md` + `CODEOWNERS`**~~ **fait** :
     [CONTRIBUTING.md](CONTRIBUTING.md) (setup, checks avant PR, conventions
