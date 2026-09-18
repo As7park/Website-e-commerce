@@ -40,10 +40,10 @@ jobs:
 
       - name: Lint (eslint)
         # Bloquant sur les erreurs (svelte/require-each-key,
-        # svelte/prefer-svelte-reactivity : bugs de réactivité potentiels).
-        # Le reste de la dette ESLint pré-existante (no-explicit-any,
-        # prefer-writable-derived, no-at-html-tags...) est en 'warn' dans
-        # eslint.config.js — visible ici mais ne bloque pas ce step.
+        # svelte/prefer-svelte-reactivity, svelte/prefer-writable-derived :
+        # bugs de réactivité potentiels). Le reste de la dette ESLint
+        # pré-existante (no-explicit-any, no-at-html-tags...) est en 'warn'
+        # dans eslint.config.js — visible ici mais ne bloque pas ce step.
         run: npm run lint:eslint
 
       - name: Type-check (svelte-check)

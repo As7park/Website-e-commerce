@@ -22,10 +22,9 @@ export default ts.config(
 			// (visible dans la sortie CI, mais ne bloque pas) tant qu'elle n'a pas
 			// été résorbée (voir AUDIT_TECHNIQUE.md, roadmap P1/P2).
 			'@typescript-eslint/no-explicit-any': 'warn',
-			// Anti-pattern documenté (store `$state` réassigné dans un `$derived`) :
-			// nécessite une vraie réécriture, pas un correctif ESLint. Voir
-			// /memories/repo/svelte5-effect-store-antipattern.md.
-			'svelte/prefer-writable-derived': 'warn',
+			// Résorbé (0 occurrence) — promu en 'error' pour éviter toute régression :
+			// voir AUDIT_TECHNIQUE.md §3.2.
+			'svelte/prefer-writable-derived': 'error',
 			// 2 usages revus et acceptés (contenu de confiance interne) — voir
 			// AUDIT_TECHNIQUE.md §1.1.
 			'svelte/no-at-html-tags': 'warn'

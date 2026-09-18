@@ -28,8 +28,9 @@ job `lint-and-check`) — les lancer en local évite un aller-retour :
 
 ```bash
 npm run lint:prettier   # formatage
-npm run lint:eslint     # bloquant sur svelte/require-each-key et
-                        # svelte/prefer-svelte-reactivity, warn sur le reste
+npm run lint:eslint     # bloquant sur svelte/require-each-key,
+                        # svelte/prefer-svelte-reactivity et
+                        # svelte/prefer-writable-derived, warn sur le reste
 npm run check           # svelte-check (types), bloquant
 npm run test:unit -- --run
 ```
