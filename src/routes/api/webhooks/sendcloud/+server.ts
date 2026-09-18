@@ -111,7 +111,12 @@ export async function POST({ request }: { request: Request }) {
 		// retente déjà les webhooks en échec (jusqu'à 10 fois, délai croissant),
 		// mieux vaut donc un 500 franc ici qu'un 200 qui ferait croire à tort
 		// que le statut a été enregistré.
-		log('ERROR', 'webhook:sendcloud', `Échec du traitement du webhook pour le colis ${parcelId}`, error);
+		log(
+			'ERROR',
+			'webhook:sendcloud',
+			`Échec du traitement du webhook pour le colis ${parcelId}`,
+			error
+		);
 		return json({ error: 'Processing failed' }, { status: 500 });
 	}
 

@@ -11,10 +11,13 @@
 	let { data } = $props();
 
 	// Initialiser le formulaire Superform avec Zod
-	const recoveryCodeForm = superForm(untrack(() => data?.verifyCodeForm ?? {}), {
-		validators: zodClient(recoveryCodeSchema),
-		id: 'recoveryCodeForm'
-	});
+	const recoveryCodeForm = superForm(
+		untrack(() => data?.verifyCodeForm ?? {}),
+		{
+			validators: zodClient(recoveryCodeSchema),
+			id: 'recoveryCodeForm'
+		}
+	);
 
 	const {
 		form: recoveryCodeData,

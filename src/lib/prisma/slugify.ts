@@ -4,8 +4,8 @@ export function slugify(text: string): string {
 		.toString()
 		.toLowerCase()
 		.replace(/\s+/g, '-') // Remplacer les espaces par des tirets
-		.replace(/[^\w\-]+/g, '') // Retirer tous les caractères non-alphanumériques et les tirets
-		.replace(/\-\-+/g, '-') // Remplacer les multiples tirets par un seul
+		.replace(/[^\w-]+/g, '') // Retirer tous les caractères non-alphanumériques et les tirets
+		.replace(/--+/g, '-') // Remplacer les multiples tirets par un seul
 		.replace(/^-+/, '') // Retirer les tirets de début
 		.replace(/-+$/, ''); // Retirer les tirets de fin
 }

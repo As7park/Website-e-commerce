@@ -7,10 +7,10 @@ comment gérer ensuite les produits, les commandes et les comptes.
 
 Supprimer `/admin` enlève l'interface, pas les données. Trois trajectoires :
 
-| Trajectoire | Ce que devient le CRUD | Effort |
-| ----------- | ---------------------- | ------ |
-| Remplacer par un autre back-office | les modèles Prisma restent | modéré |
-| Tout gérer via Prisma Studio / SQL | plus d'UI métier | faible |
+| Trajectoire                          | Ce que devient le CRUD          | Effort    |
+| ------------------------------------ | ------------------------------- | --------- |
+| Remplacer par un autre back-office   | les modèles Prisma restent      | modéré    |
+| Tout gérer via Prisma Studio / SQL   | plus d'UI métier                | faible    |
 | Retirer aussi le commerce et le blog | supprimer les modèles concernés | important |
 
 Les étapes 1 et 2 sont communes. L'étape 3 traite le commerce conservé.
@@ -36,13 +36,13 @@ rg "ADMIN-PLUGIN" src/ prisma/
 Les blocs encadrés par `ADMIN-PLUGIN ▼` et `ADMIN-PLUGIN ▲` se suppriment tels
 quels.
 
-| Fichier | Action |
-| ------- | ------ |
-| `src/hooks.server.ts` | retirer l'import de `adminHandle` et la ligne de la séquence |
-| `src/lib/components/cart/Cart.svelte` | retirer le bouton « Dashboard » |
-| `src/routes/auth/+page.svelte` | idem |
-| `src/lib/sitemap.config.ts` | retirer `/admin` des routes exclues |
-| `prisma/seed.js` | ne plus créer le compte `ADMIN` de démonstration, ou le laisser `CLIENT` |
+| Fichier                               | Action                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| `src/hooks.server.ts`                 | retirer l'import de `adminHandle` et la ligne de la séquence             |
+| `src/lib/components/cart/Cart.svelte` | retirer le bouton « Dashboard »                                          |
+| `src/routes/auth/+page.svelte`        | idem                                                                     |
+| `src/lib/sitemap.config.ts`           | retirer `/admin` des routes exclues                                      |
+| `prisma/seed.js`                      | ne plus créer le compte `ADMIN` de démonstration, ou le laisser `CLIENT` |
 
 Point de vigilance : retirer le hook **sans** retirer les routes rouvre le
 back-office à n'importe quel visiteur. Supprimer d'abord les routes, ou le

@@ -1,7 +1,6 @@
 <script lang="ts">
 	// Importation des composants principaux
 	import * as Sidebar from '$shadcn/sidebar/index.js';
-	import { Search } from 'lucide-svelte';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
 
 	let { data, children } = $props();

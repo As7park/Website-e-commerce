@@ -19,7 +19,10 @@
 	<div class="inline-flex items-center gap-0.5" aria-hidden="true">
 		{#each stars as n (n)}
 			<Star
-				class={cn(size, n <= Math.round(value) ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground')}
+				class={cn(
+					size,
+					n <= Math.round(value) ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'
+				)}
 			/>
 		{/each}
 	</div>

@@ -154,7 +154,12 @@ export const validateGiftCard = async (
 		return { valid: false, reason: 'Cette carte cadeau a expiré', amount: 0, giftCard };
 	}
 	if (giftCard.balance <= 0) {
-		return { valid: false, reason: 'Le solde de cette carte cadeau est épuisé', amount: 0, giftCard };
+		return {
+			valid: false,
+			reason: 'Le solde de cette carte cadeau est épuisé',
+			amount: 0,
+			giftCard
+		};
 	}
 
 	const amount = parseFloat(Math.min(giftCard.balance, Math.max(0, maxApplicable)).toFixed(2));

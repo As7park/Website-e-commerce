@@ -60,9 +60,7 @@ test.describe('Questions produit', () => {
 
 				await expectMessage(page, 'Question envoyée');
 				await expect(page.getByText('Cette bague existe-t-elle en taille 54 ?')).toHaveCount(0);
-				await expect(
-					page.getByText('Aucune question répondue pour ce produit.')
-				).toBeVisible();
+				await expect(page.getByText('Aucune question répondue pour ce produit.')).toBeVisible();
 			});
 
 			await test.step('4. Modération admin : réponse publiée', async () => {

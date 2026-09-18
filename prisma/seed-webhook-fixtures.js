@@ -15,7 +15,6 @@
 // -----------------------------------------------------------------------------
 
 import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';

@@ -22,7 +22,6 @@ import { renderSVG } from 'uqr';
 
 import type { Actions, RequestEvent } from './$types';
 import { zod } from 'sveltekit-superforms/adapters';
-import { auth } from '$lib/lucia';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
 const totpUpdateBucket = new RefillingTokenBucket<string>(3, 60 * 10, '2fa-setup');

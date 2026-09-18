@@ -71,8 +71,7 @@ export async function waitForEmailContaining(
 			messages
 				.filter((message) => message.to.some((entry) => entry.toLowerCase().includes(target)))
 				.sort((a, b) => b.receivedAt - a.receivedAt)
-				.find((message) => decodeQuotedPrintable(message.raw).toLowerCase().includes(token)) ??
-			null
+				.find((message) => decodeQuotedPrintable(message.raw).toLowerCase().includes(token)) ?? null
 		);
 	};
 

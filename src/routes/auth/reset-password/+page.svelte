@@ -11,10 +11,13 @@
 	let { data } = $props();
 
 	// Initialiser le formulaire Superform avec le schéma Zod
-	const resetPasswordForm = superForm(untrack(() => data?.resetPasswordForm ?? {}), {
-		validators: zodClient(resetPasswordSchema),
-		id: 'resetPasswordForm'
-	});
+	const resetPasswordForm = superForm(
+		untrack(() => data?.resetPasswordForm ?? {}),
+		{
+			validators: zodClient(resetPasswordSchema),
+			id: 'resetPasswordForm'
+		}
+	);
 
 	const {
 		form: resetPasswordData,

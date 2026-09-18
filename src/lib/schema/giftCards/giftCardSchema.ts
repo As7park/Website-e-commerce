@@ -36,7 +36,9 @@ const updateGiftCardSchema = z.object({
  */
 const adjustGiftCardBalanceSchema = z.object({
 	id: z.string(),
-	balance: z.number({ invalid_type_error: 'Le solde est requis' }).min(0, 'Le solde doit être positif ou nul')
+	balance: z
+		.number({ invalid_type_error: 'Le solde est requis' })
+		.min(0, 'Le solde doit être positif ou nul')
 });
 
 const deleteGiftCardSchema = z.object({

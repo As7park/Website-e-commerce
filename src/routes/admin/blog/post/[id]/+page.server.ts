@@ -75,8 +75,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const result = await updatePost(form.data);
-			// console.log(result);
+			await updatePost(form.data);
 
 			return message(form, 'Post updated successfully');
 		} catch (error) {

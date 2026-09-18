@@ -59,9 +59,7 @@ export function renderInvoicePdf(invoice: InvoiceView): Buffer {
 		headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }
 	});
 
-	const lastTable = (
-		doc as jsPDF & { lastAutoTable?: { finalY: number } }
-	).lastAutoTable;
+	const lastTable = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable;
 	const finalY = (lastTable?.finalY ?? 130) + 15;
 	const titleX = 110;
 	const valueX = 190;

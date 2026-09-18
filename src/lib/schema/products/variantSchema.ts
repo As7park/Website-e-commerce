@@ -13,7 +13,11 @@ const baseVariantSchema = z.object({
 	label: z.string().trim().min(1, "L'étiquette est requise").max(120, 'Étiquette trop longue'),
 	sku: z.string().trim().max(60, 'SKU trop long').optional(),
 	price: z.coerce.number().min(0, 'Le prix doit être positif').default(0),
-	stock: z.coerce.number().int('Nombre entier attendu').min(0, 'Le stock doit être positif').default(0)
+	stock: z.coerce
+		.number()
+		.int('Nombre entier attendu')
+		.min(0, 'Le stock doit être positif')
+		.default(0)
 });
 
 export const createVariantSchema = baseVariantSchema;

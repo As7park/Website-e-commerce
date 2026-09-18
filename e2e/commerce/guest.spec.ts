@@ -10,12 +10,18 @@ import {
 
 const GUEST_CART_KEY = 'commerce:guest-cart';
 
-async function addAnonymousProduct(page: import('@playwright/test').Page, slug: string, productId: string) {
+async function addAnonymousProduct(
+	page: import('@playwright/test').Page,
+	slug: string,
+	productId: string
+) {
 	await page.goto(`/products/${slug}`);
 	await waitForPath(page, `/products/${slug}`);
 	await page.getByRole('button', { name: 'Ajouter au panier' }).click();
 	await expect
-		.poll(async () => (await page.evaluate((key) => localStorage.getItem(key), GUEST_CART_KEY)) ?? '')
+		.poll(
+			async () => (await page.evaluate((key) => localStorage.getItem(key), GUEST_CART_KEY)) ?? ''
+		)
 		.toContain(productId);
 }
 

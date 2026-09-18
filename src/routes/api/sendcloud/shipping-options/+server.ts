@@ -67,7 +67,6 @@ function toKg(value: number, unit: 'kilogram' | 'gram'): number {
 }
 
 function toBase64(s: string): string {
-	// @ts-ignore btoa may exist in some runtimes
 	if (typeof btoa === 'function') return btoa(s);
 	return Buffer.from(s).toString('base64');
 }
@@ -114,7 +113,10 @@ async function callShippingOptions(
 	} catch (err) {
 		if (err instanceof CircuitOpenError) {
 			log('WARN', 'sendcloud:shipping-options', 'Disjoncteur ouvert, appel court-circuité');
-			throw error(503, 'Service de livraison temporairement indisponible, réessayez dans une minute.');
+			throw error(
+				503,
+				'Service de livraison temporairement indisponible, réessayez dans une minute.'
+			);
 		}
 		if (err instanceof DOMException && err.name === 'AbortError') {
 			log('WARN', 'sendcloud:shipping-options', 'Délai dépassé en contactant Sendcloud');

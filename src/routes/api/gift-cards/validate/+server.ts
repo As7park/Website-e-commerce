@@ -12,7 +12,12 @@ export const POST = async ({ request }) => {
 		const { giftCardsEnabled } = await getStoreFeatureFlags();
 		if (!giftCardsEnabled) {
 			return json(
-				{ valid: false, amount: 0, reason: 'Les cartes cadeaux ne sont pas disponibles', code: null },
+				{
+					valid: false,
+					amount: 0,
+					reason: 'Les cartes cadeaux ne sont pas disponibles',
+					code: null
+				},
 				{ status: 404 }
 			);
 		}
@@ -31,9 +36,6 @@ export const POST = async ({ request }) => {
 		});
 	} catch (error) {
 		console.error('Error validating gift card:', error);
-		return json(
-			{ valid: false, amount: 0, reason: 'Erreur serveur', code: null },
-			{ status: 500 }
-		);
+		return json({ valid: false, amount: 0, reason: 'Erreur serveur', code: null }, { status: 500 });
 	}
 };

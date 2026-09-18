@@ -242,9 +242,7 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
 		};
 
 		// Envoi de l'email
-		const info = await transporter.sendMail(mailOptions);
-
-		// console.log(`Password reset email sent to ${email}: ${info.response}`);
+		await transporter.sendMail(mailOptions);
 	} catch (error) {
 		console.error('Failed to send password reset email:', error);
 		throw new Error('Email sending failed');

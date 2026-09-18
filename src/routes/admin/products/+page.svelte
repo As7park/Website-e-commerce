@@ -40,16 +40,15 @@
 	);
 
 	// Form handling with superForm
-	const deleteProduct = superForm(untrack(() => data?.IdeleteProductSchema ?? {}), {
-		validators: zodClient(deleteProductSchema),
-		id: 'deleteProduct'
-	});
+	const deleteProduct = superForm(
+		untrack(() => data?.IdeleteProductSchema ?? {}),
+		{
+			validators: zodClient(deleteProductSchema),
+			id: 'deleteProduct'
+		}
+	);
 
-	const {
-		form: deleteProductData,
-		enhance: deleteProductEnhance,
-		message: deleteProductMessage
-	} = deleteProduct;
+	const { enhance: deleteProductEnhance, message: deleteProductMessage } = deleteProduct;
 
 	// Define table columns
 	const productColumns = $state<TableColumn[]>([
@@ -127,16 +126,15 @@
 	];
 
 	// Form handling with superForm
-	const deleteTaxonomy = superForm(untrack(() => data?.IdeleteTaxonomySchema ?? {}), {
-		validators: zodClient(deleteTaxonomySchema),
-		id: 'deleteTaxonomy'
-	});
+	const deleteTaxonomy = superForm(
+		untrack(() => data?.IdeleteTaxonomySchema ?? {}),
+		{
+			validators: zodClient(deleteTaxonomySchema),
+			id: 'deleteTaxonomy'
+		}
+	);
 
-	const {
-		form: deleteTaxonomyData,
-		enhance: deleteTaxonomyEnhance,
-		message: deleteTaxonomyMessage
-	} = deleteTaxonomy;
+	const { enhance: deleteTaxonomyEnhance, message: deleteTaxonomyMessage } = deleteTaxonomy;
 
 	let taxonomiesData = $derived(
 		(data?.taxonomies ?? []).map((taxonomy: any) => ({

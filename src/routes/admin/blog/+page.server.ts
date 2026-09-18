@@ -70,8 +70,7 @@ export const actions: Actions = {
 			// console.log('Post found:', existingPost);
 
 			// Supprimer la catégorie
-			const deletedPost = await deletePost(id);
-			// console.log('Deleted category:', deletedPost);
+			await deletePost(id);
 			return message(form, 'Post deleted successfully');
 		} catch (error) {
 			console.error('Error deleting category:', error);

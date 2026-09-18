@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const verifyCodeForm = superForm(untrack(() => data.verifyCode), {
-		validators: zodClient(verifyCodeSchema),
-		id: 'verifyCodeForm'
-	});
+	const verifyCodeForm = superForm(
+		untrack(() => data.verifyCode),
+		{
+			validators: zodClient(verifyCodeSchema),
+			id: 'verifyCodeForm'
+		}
+	);
 
 	const { form: verifyData, enhance: verifyEnhance, message: verifyMessage } = verifyCodeForm;
 

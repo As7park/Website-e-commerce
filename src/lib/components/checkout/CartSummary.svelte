@@ -37,7 +37,7 @@
 		onChangeQuantity,
 		discountAmount = 0,
 		promoCode = ''
-	} = $props();
+	}: Props = $props();
 
 	// Borne haute du champ libre : stock dispo, et pour le non-custom, le
 	// reliquat sous le plafond global de 72 unités (pas de plafond en custom).
@@ -95,11 +95,11 @@
 		{#if localItems.length > 0}
 			<div class="space-y-4">
 				{#each localItems as item (item.id + '-' + item.quantity)}
-					{@const isCustomItem = Boolean(item.custom?.length > 0)}
+					{@const isCustomItem = Boolean((item.custom?.length ?? 0) > 0)}
 					<div class="flex gap-4 p-4 rounded-lg border bg-background">
 						<img
 							src={optimizedImageUrl(
-								(item.custom?.length > 0 && item.custom[0].image) ||
+								((item.custom?.length ?? 0) > 0 && item.custom?.[0]?.image) ||
 									(Array.isArray(item.product.images)
 										? item.product.images[0]
 										: item.product.images) ||
@@ -128,7 +128,7 @@
 								</button>
 							</div>
 							<p class="text-sm text-muted-foreground">
-								{#if item.custom?.length > 0}
+								{#if (item.custom?.length ?? 0) > 0}
 									{getCustomCanPrice(item.quantity).toFixed(2)}€ l'unité
 								{:else}
 									{(item.variant?.price ?? item.product.price).toFixed(2)}€ l'unité
@@ -148,7 +148,7 @@
 							{/if}
 
 							<p class="text-right font-medium">
-								{#if item.custom?.length > 0}
+								{#if (item.custom?.length ?? 0) > 0}
 									{(getCustomCanPrice(item.quantity) * item.quantity).toFixed(2)}€
 								{:else}
 									{(item.price * item.quantity).toFixed(2)}€

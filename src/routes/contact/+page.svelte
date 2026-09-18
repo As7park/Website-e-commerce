@@ -12,10 +12,13 @@
 
 	let { data } = $props();
 
-	const contactForm = superForm(untrack(() => data.form), {
-		validators: zodClient(contactSchema),
-		id: 'contactForm'
-	});
+	const contactForm = superForm(
+		untrack(() => data.form),
+		{
+			validators: zodClient(contactSchema),
+			id: 'contactForm'
+		}
+	);
 
 	const { form: contactData, enhance: contactEnhance, message: contactMessage } = contactForm;
 

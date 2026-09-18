@@ -12,10 +12,13 @@
 	//console.log(data);
 
 	// Initialiser le formulaire Superform avec Zod
-	const verifyEmailForm = superForm(untrack(() => data?.verifyEmailForm ?? {}), {
-		validators: zodClient(verifyCodeSchema),
-		id: 'verifyEmailForm'
-	});
+	const verifyEmailForm = superForm(
+		untrack(() => data?.verifyEmailForm ?? {}),
+		{
+			validators: zodClient(verifyCodeSchema),
+			id: 'verifyEmailForm'
+		}
+	);
 
 	const {
 		form: verifyEmailData,

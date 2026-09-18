@@ -44,8 +44,8 @@ describe.skipIf(!live)('validateSendcloudReturn — Sendcloud réel (dry-run)', 
 		});
 
 		expect(result.addressesAccepted).toBe(true);
-		expect(result.fieldErrors.some((e) => e.field === 'from_address' || e.field === 'to_address')).toBe(
-			false
-		);
+		expect(
+			result.fieldErrors.some((e) => e.field === 'from_address' || e.field === 'to_address')
+		).toBe(false);
 	});
 });

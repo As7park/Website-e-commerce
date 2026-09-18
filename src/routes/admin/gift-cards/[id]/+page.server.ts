@@ -3,7 +3,10 @@ import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateGiftCardSchema, adjustGiftCardBalanceSchema } from '$lib/schema/giftCards/giftCardSchema';
+import {
+	updateGiftCardSchema,
+	adjustGiftCardBalanceSchema
+} from '$lib/schema/giftCards/giftCardSchema';
 import {
 	getGiftCardById,
 	updateGiftCard,

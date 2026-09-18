@@ -14,10 +14,13 @@
 
 	let { data } = $props();
 
-	const createTaxonomy = superForm(untrack(() => data.IcreateTaxonomySchema), {
-		validators: zodClient(createTaxonomySchema),
-		id: 'createTaxonomy'
-	});
+	const createTaxonomy = superForm(
+		untrack(() => data.IcreateTaxonomySchema),
+		{
+			validators: zodClient(createTaxonomySchema),
+			id: 'createTaxonomy'
+		}
+	);
 
 	const {
 		form: createTaxonomyData,

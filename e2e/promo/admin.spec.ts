@@ -2,12 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import { promoAdminRow } from '../support/promo';
-import {
-	createPromoCode,
-	deletePromoCode,
-	findPromoCode,
-	promoteToAdmin
-} from '../support/db';
+import { createPromoCode, deletePromoCode, findPromoCode, promoteToAdmin } from '../support/db';
 
 /**
  * CRUD admin des codes promo : liste, édition, suppression, CLIENT.

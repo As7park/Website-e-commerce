@@ -83,7 +83,8 @@ export const seoConfig = {
 		},
 		admin: {
 			title: 'Administration — MadeInDiamonds',
-			description: 'Panneau d’administration MadeInDiamonds. Gérez vos offres, commandes et utilisateurs.',
+			description:
+				'Panneau d’administration MadeInDiamonds. Gérez vos offres, commandes et utilisateurs.',
 			keywords: 'administration, gestion, offres, commandes, utilisateurs, MadeInDiamonds',
 			image: '/og-admin.jpg'
 		}

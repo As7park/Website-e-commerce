@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const deleteReview = superForm(untrack(() => data.deleteForm), {
-		validators: zodClient(deleteReviewSchema),
-		id: 'deleteReview'
-	});
+	const deleteReview = superForm(
+		untrack(() => data.deleteForm),
+		{
+			validators: zodClient(deleteReviewSchema),
+			id: 'deleteReview'
+		}
+	);
 	const { enhance: deleteReviewEnhance, message: deleteReviewMessage } = deleteReview;
 
 	const reviewColumns = [

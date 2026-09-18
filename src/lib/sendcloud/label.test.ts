@@ -81,9 +81,9 @@ describe('createSendcloudLabel', () => {
 		vi.stubGlobal('fetch', vi.fn());
 		const { createSendcloudLabel } = await import('./label');
 
-		await expect(
-			createSendcloudLabel({ ...baseTransaction, address_city: '' })
-		).rejects.toThrow(/adresse/i);
+		await expect(createSendcloudLabel({ ...baseTransaction, address_city: '' })).rejects.toThrow(
+			/adresse/i
+		);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 

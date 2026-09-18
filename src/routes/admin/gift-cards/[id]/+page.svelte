@@ -17,20 +17,26 @@
 
 	let { data } = $props();
 
-	const updateGiftCardForm = superForm(untrack(() => data.updateGiftCardForm), {
-		validators: zodClient(updateGiftCardSchema),
-		id: 'updateGiftCard'
-	});
+	const updateGiftCardForm = superForm(
+		untrack(() => data.updateGiftCardForm),
+		{
+			validators: zodClient(updateGiftCardSchema),
+			id: 'updateGiftCard'
+		}
+	);
 	const {
 		form: updateGiftCardData,
 		enhance: updateGiftCardEnhance,
 		message: updateGiftCardMessage
 	} = updateGiftCardForm;
 
-	const adjustBalanceForm = superForm(untrack(() => data.adjustBalanceForm), {
-		validators: zodClient(adjustGiftCardBalanceSchema),
-		id: 'adjustBalance'
-	});
+	const adjustBalanceForm = superForm(
+		untrack(() => data.adjustBalanceForm),
+		{
+			validators: zodClient(adjustGiftCardBalanceSchema),
+			id: 'adjustBalance'
+		}
+	);
 	const {
 		form: adjustBalanceData,
 		enhance: adjustBalanceEnhance,
@@ -108,8 +114,8 @@
 			<Card.Header>
 				<Card.Title>Ajuster le solde</Card.Title>
 				<Card.Description>
-					Geste SAV (remboursement partiel, correction) — modifie directement le solde
-					restant, sans passer par une utilisation en caisse.
+					Geste SAV (remboursement partiel, correction) — modifie directement le solde restant, sans
+					passer par une utilisation en caisse.
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>

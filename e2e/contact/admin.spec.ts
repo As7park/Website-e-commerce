@@ -2,11 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { signUpAndVerify } from '../support/admin';
 import { contactAdminRow } from '../support/contact';
-import {
-	createContactMessage,
-	deleteContactMessage,
-	promoteToAdmin
-} from '../support/db';
+import { createContactMessage, deleteContactMessage, promoteToAdmin } from '../support/db';
 
 /**
  * Lecture admin des messages de contact. Pas de suppression UI.

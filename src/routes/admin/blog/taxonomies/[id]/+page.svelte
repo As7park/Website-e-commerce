@@ -19,10 +19,13 @@
 	let { data } = $props();
 	let id = $derived(page.params.id);
 
-	const updateBlogTaxonomy = superForm(untrack(() => data.IupdateBlogTaxonomySchema), {
-		validators: zodClient(updateBlogTaxonomySchema),
-		id: 'updateBlogTaxonomy'
-	});
+	const updateBlogTaxonomy = superForm(
+		untrack(() => data.IupdateBlogTaxonomySchema),
+		{
+			validators: zodClient(updateBlogTaxonomySchema),
+			id: 'updateBlogTaxonomy'
+		}
+	);
 
 	const {
 		form: updateBlogTaxonomyData,
@@ -36,15 +39,16 @@
 		}
 	});
 
-	const deleteBlogTaxonomyValue = superForm(untrack(() => data.IdeleteBlogTaxonomyValueSchema), {
-		validators: zodClient(deleteBlogTaxonomyValueSchema),
-		id: 'deleteBlogTaxonomyValue'
-	});
+	const deleteBlogTaxonomyValue = superForm(
+		untrack(() => data.IdeleteBlogTaxonomyValueSchema),
+		{
+			validators: zodClient(deleteBlogTaxonomyValueSchema),
+			id: 'deleteBlogTaxonomyValue'
+		}
+	);
 
-	const {
-		enhance: deleteBlogTaxonomyValueEnhance,
-		message: deleteBlogTaxonomyValueMessage
-	} = deleteBlogTaxonomyValue;
+	const { enhance: deleteBlogTaxonomyValueEnhance, message: deleteBlogTaxonomyValueMessage } =
+		deleteBlogTaxonomyValue;
 
 	$effect(() => {
 		if ($deleteBlogTaxonomyValueMessage) {
@@ -83,7 +87,12 @@
 
 <div class="ccc">
 	<div class="m-5 p-5 border w-[420px]">
-		<form method="POST" action="?/updateBlogTaxonomy" use:updateBlogTaxonomyEnhance class="space-y-4">
+		<form
+			method="POST"
+			action="?/updateBlogTaxonomy"
+			use:updateBlogTaxonomyEnhance
+			class="space-y-4"
+		>
 			<div class="ccs mt-5">
 				<div class="w-[100%]">
 					<Form.Field name="name" form={updateBlogTaxonomy}>

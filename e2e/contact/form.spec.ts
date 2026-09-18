@@ -1,10 +1,7 @@
 import { test, expect } from '../support/fixtures';
 import { expectMessage, waitForPath } from '../support/flows';
 import { pageOrigin, sveltekitActionHeaders } from '../support/admin';
-import {
-	countContactMessagesByEmail,
-	deleteContactMessagesByEmail
-} from '../support/db';
+import { countContactMessagesByEmail, deleteContactMessagesByEmail } from '../support/db';
 
 const validPayload = (email: string) => ({
 	__superform_id: 'contactForm',
@@ -35,8 +32,7 @@ test.describe('Contact — formulaire', () => {
 				await page.locator('textarea[name="message"]').fill(validPayload(email).message);
 
 				const sent = page.waitForResponse(
-					(response) =>
-						response.url().includes('?/send') && response.request().method() === 'POST'
+					(response) => response.url().includes('?/send') && response.request().method() === 'POST'
 				);
 				await page.getByRole('button', { name: 'Envoyer' }).click();
 				await sent;
@@ -82,9 +78,7 @@ test.describe('Contact — formulaire', () => {
 					headers
 				});
 				const blockedBody = await blocked.text();
-				expect(
-					blocked.status() === 429 || blockedBody.includes('Too many requests')
-				).toBeTruthy();
+				expect(blocked.status() === 429 || blockedBody.includes('Too many requests')).toBeTruthy();
 				expect(await countContactMessagesByEmail(email)).toBe(5);
 			});
 		} finally {

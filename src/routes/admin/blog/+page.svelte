@@ -14,21 +14,23 @@
 	let { data } = $props();
 
 	// Form handling with superForm
-	const deleteBlogPost = superForm(untrack(() => data?.IdeleteBlogPostSchema ?? {}), {
-		validators: zodClient(deleteBlogPostSchema),
-		id: 'deleteBlogPost'
-	});
+	const deleteBlogPost = superForm(
+		untrack(() => data?.IdeleteBlogPostSchema ?? {}),
+		{
+			validators: zodClient(deleteBlogPostSchema),
+			id: 'deleteBlogPost'
+		}
+	);
 
-	const deleteBlogTaxonomy = superForm(untrack(() => data?.IdeleteBlogTaxonomySchema ?? {}), {
-		validators: zodClient(deleteBlogTaxonomySchema),
-		id: 'deleteBlogTaxonomy'
-	});
+	const deleteBlogTaxonomy = superForm(
+		untrack(() => data?.IdeleteBlogTaxonomySchema ?? {}),
+		{
+			validators: zodClient(deleteBlogTaxonomySchema),
+			id: 'deleteBlogTaxonomy'
+		}
+	);
 
-	const {
-		form: deleteBlogPostData,
-		enhance: deleteBlogPostEnhance,
-		message: deleteBlogPostMessage
-	} = deleteBlogPost;
+	const { enhance: deleteBlogPostEnhance, message: deleteBlogPostMessage } = deleteBlogPost;
 
 	const { enhance: deleteBlogTaxonomyEnhance, message: deleteBlogTaxonomyMessage } =
 		deleteBlogTaxonomy;

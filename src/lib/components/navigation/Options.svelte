@@ -25,37 +25,33 @@
 		// 	localStorage: localStorage.getItem(DARK_MODE_KEY),
 		// 	systemPreference: window.matchMedia('(prefers-color-scheme: dark)').matches
 		// });
-		
+
 		toggleMode();
-		
+
 		// On attend un tick pour que mode-watcher mette à jour
 		setTimeout(() => {
 			const newDarkModeLocal = localStorage.getItem(DARK_MODE_KEY);
 			const newState = newDarkModeLocal
 				? newDarkModeLocal === 'dark'
 				: window.matchMedia('(prefers-color-scheme: dark)').matches;
-			
+
 			// console.log('🌙 [Options] toggleDarkMode après:', {
 			// 	darkMod,
 			// 	newState,
 			// 	localStorage: newDarkModeLocal,
 			// 	systemPreference: window.matchMedia('(prefers-color-scheme: dark)').matches
 			// });
-			
+
 			darkMod = newState;
-		
 		}, 50);
 	}
 
 	$effect(() => {
 		const darkModeLocal = localStorage.getItem(DARK_MODE_KEY);
 		const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		
-		darkMod = darkModeLocal
-			? darkModeLocal === 'dark'
-			: systemPreference;
-			
-		
+
+		darkMod = darkModeLocal ? darkModeLocal === 'dark' : systemPreference;
+
 		isFullscreen = !!document.fullscreenElement;
 
 		document.addEventListener('fullscreenchange', updateFullscreenStatus);

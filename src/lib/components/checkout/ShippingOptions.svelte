@@ -9,7 +9,7 @@
 		hasCustomItems: boolean;
 	}
 
-	let { shippingOptions, selectedShippingOption, onShippingOptionSelect, hasCustomItems } =
+	let { shippingOptions, selectedShippingOption, onShippingOptionSelect, hasCustomItems }: Props =
 		$props();
 
 	// Helper function to group shipping options by type

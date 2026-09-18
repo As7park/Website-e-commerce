@@ -20,7 +20,6 @@
 		Heart,
 		Mail,
 		KeyRound,
-		ShieldCheck,
 		CreditCard,
 		Undo2,
 		Bell,

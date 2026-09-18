@@ -13,9 +13,7 @@ export const getTransactionsByUserId = async (userId: string, params: ListParams
 
 	const where = {
 		userId,
-		...(search
-			? { invoiceNumber: { contains: search, mode: 'insensitive' as const } }
-			: {})
+		...(search ? { invoiceNumber: { contains: search, mode: 'insensitive' as const } } : {})
 	};
 
 	try {

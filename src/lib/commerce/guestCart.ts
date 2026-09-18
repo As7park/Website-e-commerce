@@ -149,7 +149,9 @@ export function storeItemsToGuest(items: StoreCartItem[]): GuestCartLine[] {
 
 export function guestToStoreItems(guest: GuestCart): StoreCartItem[] {
 	return guest.items.map((line) => {
-		const price = line.variantId ? (line.variantPrice ?? line.unitPrice ?? 0) : (line.unitPrice ?? 0);
+		const price = line.variantId
+			? (line.variantPrice ?? line.unitPrice ?? 0)
+			: (line.unitPrice ?? 0);
 		return {
 			id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : line.productId,
 			product: {

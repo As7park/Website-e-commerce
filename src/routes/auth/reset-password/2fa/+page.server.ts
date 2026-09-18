@@ -89,7 +89,7 @@ async function totpAction(event: RequestEvent) {
 		if (!isValid) {
 			return message(form, 'Invalid TOTP code');
 		}
-	} catch (error) {
+	} catch {
 		return fail(500, { message: 'Internal server error', form });
 	}
 

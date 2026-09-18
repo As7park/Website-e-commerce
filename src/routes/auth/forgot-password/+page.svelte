@@ -11,10 +11,13 @@
 	let { data } = $props();
 
 	// Initialiser le formulaire Superform avec Zod
-	const forgotForm = superForm(untrack(() => data.forgotForm), {
-		validators: zodClient(forgotPasswordSchema),
-		id: 'forgotForm'
-	});
+	const forgotForm = superForm(
+		untrack(() => data.forgotForm),
+		{
+			validators: zodClient(forgotPasswordSchema),
+			id: 'forgotForm'
+		}
+	);
 
 	const { form: forgotData, enhance: forgotEnhance, message: forgotMessage } = forgotForm;
 

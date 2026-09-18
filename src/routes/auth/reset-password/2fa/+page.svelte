@@ -13,15 +13,21 @@
 	let { data } = $props();
 
 	// Initialiser les formulaires Superform
-	const totpForm = superForm(untrack(() => data?.totpForm ?? {}), {
-		validators: zodClient(totpCodeSchema),
-		id: 'totpForm'
-	});
+	const totpForm = superForm(
+		untrack(() => data?.totpForm ?? {}),
+		{
+			validators: zodClient(totpCodeSchema),
+			id: 'totpForm'
+		}
+	);
 
-	const recoveryCodeForm = superForm(untrack(() => data?.recoveryCodeForm ?? {}), {
-		validators: zodClient(recoveryCodeSchema),
-		id: 'recoveryCodeForm'
-	});
+	const recoveryCodeForm = superForm(
+		untrack(() => data?.recoveryCodeForm ?? {}),
+		{
+			validators: zodClient(recoveryCodeSchema),
+			id: 'recoveryCodeForm'
+		}
+	);
 
 	const { form: totpData, enhance: totpEnhance, message: totpMessage } = totpForm;
 	const {

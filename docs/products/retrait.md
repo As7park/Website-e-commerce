@@ -43,12 +43,12 @@ rg "PRODUCT-PLUGIN" src/ prisma/
 Les blocs encadrés par `PRODUCT-PLUGIN ▼` et `PRODUCT-PLUGIN ▲` se suppriment
 tels quels.
 
-| Fichier                                | Action                                              |
-| -------------------------------------- | --------------------------------------------------- |
-| `src/lib/components/Navigation.svelte` | retirer le lien Catalogue / `/products`             |
-| `src/routes/admin/+layout.svelte`      | retirer l'entrée « produits » du menu               |
-| `src/lib/sitemap.config.ts`            | retirer `/products`                                 |
-| `prisma/seed.js`                       | ne plus créer de taxonomies ni de produits          |
+| Fichier                                | Action                                                                                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/components/Navigation.svelte` | retirer le lien Catalogue / `/products`                                                                                                                              |
+| `src/routes/admin/+layout.svelte`      | retirer l'entrée « produits » du menu                                                                                                                                |
+| `src/lib/sitemap.config.ts`            | retirer `/products`                                                                                                                                                  |
+| `prisma/seed.js`                       | ne plus créer de taxonomies ni de produits                                                                                                                           |
 | `prisma/schema.prisma`                 | `OrderItem.productId`/`OrderItem.variantId` : garder si le commerce reste ; retirer `Review`/`ProductQuestion`/`ProductVariant` et `StoreSettings.productQnaEnabled` |
 
 Point de vigilance : le panier et le checkout **dépendent** encore de `Product`.

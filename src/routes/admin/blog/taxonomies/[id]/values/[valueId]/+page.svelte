@@ -12,10 +12,13 @@
 	let { data } = $props();
 	let valueId = $derived(page.params.valueId);
 
-	const updateBlogTaxonomyValue = superForm(untrack(() => data.IupdateBlogTaxonomyValueSchema), {
-		validators: zodClient(updateBlogTaxonomyValueSchema),
-		id: 'updateBlogTaxonomyValue'
-	});
+	const updateBlogTaxonomyValue = superForm(
+		untrack(() => data.IupdateBlogTaxonomyValueSchema),
+		{
+			validators: zodClient(updateBlogTaxonomyValueSchema),
+			id: 'updateBlogTaxonomyValue'
+		}
+	);
 
 	const {
 		form: updateBlogTaxonomyValueData,

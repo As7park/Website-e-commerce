@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const deleteGiftCard = superForm(untrack(() => data?.IdeleteGiftCardSchema ?? {}), {
-		validators: zodClient(deleteGiftCardSchema),
-		id: 'deleteGiftCard'
-	});
+	const deleteGiftCard = superForm(
+		untrack(() => data?.IdeleteGiftCardSchema ?? {}),
+		{
+			validators: zodClient(deleteGiftCardSchema),
+			id: 'deleteGiftCard'
+		}
+	);
 
 	const { enhance: deleteGiftCardEnhance, message: deleteGiftCardMessage } = deleteGiftCard;
 

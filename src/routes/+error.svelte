@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SEO from '$lib/components/SEO.svelte';
-	
+
 	export let error; // Message d'erreur passé par SvelteKit
 </script>
 

@@ -9,8 +9,12 @@ import http from 'k6/http';
 import { BASE_URL } from './config.js';
 
 export function login(email, password) {
-	return http.post(`${BASE_URL}/auth/login?/login`, { email, password }, {
-		headers: { Origin: BASE_URL },
-		redirects: 5
-	});
+	return http.post(
+		`${BASE_URL}/auth/login?/login`,
+		{ email, password },
+		{
+			headers: { Origin: BASE_URL },
+			redirects: 5
+		}
+	);
 }

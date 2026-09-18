@@ -108,7 +108,9 @@
 			if (!res.ok) throw new Error(await res.text());
 			const data = await res.json();
 			s.message = `${data.created} créé(s), ${data.updated} mis à jour${
-				data.errors.length > 0 ? `, ${data.errors.length} erreur(s) : ${data.errors.slice(0, 3).join(' / ')}` : ''
+				data.errors.length > 0
+					? `, ${data.errors.length} erreur(s) : ${data.errors.slice(0, 3).join(' / ')}`
+					: ''
 			}`;
 		} catch (err) {
 			s.message = err instanceof Error ? err.message : "Échec de l'import.";
@@ -127,8 +129,8 @@
 		<h1 class="text-2xl font-semibold">Données — export, purge, import</h1>
 		<p class="text-sm text-muted-foreground">
 			Purge : ciblée par ancienneté (`createdAt`), jamais un vidage total de table. Import :
-			restaure un CSV exporté depuis cette même page (mêmes colonnes) — ne restaure ni les
-			secrets (mot de passe, 2FA) ni les relations profondes (tags/commentaires de blog).
+			restaure un CSV exporté depuis cette même page (mêmes colonnes) — ne restaure ni les secrets
+			(mot de passe, 2FA) ni les relations profondes (tags/commentaires de blog).
 		</p>
 	</div>
 
@@ -163,7 +165,9 @@
 						{/if}
 						<Button
 							variant="destructive"
-							disabled={p.purgeBusy || p.preview === 0 || (kind === 'sales' && p.confirmText !== 'SUPPRIMER')}
+							disabled={p.purgeBusy ||
+								p.preview === 0 ||
+								(kind === 'sales' && p.confirmText !== 'SUPPRIMER')}
 							onclick={() => confirmPurge(kind)}
 						>
 							{p.purgeBusy ? 'Suppression…' : 'Confirmer la suppression'}

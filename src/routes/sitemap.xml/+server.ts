@@ -2,7 +2,6 @@ import type { RequestHandler } from './$types';
 import { sitemapConfig } from '$lib/sitemap.config';
 import { prisma } from '$lib/server';
 
-
 // Importer toutes les pages Svelte automatiquement
 const pages = import.meta.glob('../**/+page.svelte', { eager: true });
 
@@ -43,7 +42,7 @@ const extractPaths = () => {
 		}
 
 		// Vérifier si la route doit être exclue
-		const shouldExclude = sitemapConfig.excludedRoutes.some(excludedRoute => {
+		const shouldExclude = sitemapConfig.excludedRoutes.some((excludedRoute) => {
 			// Exclure les routes qui commencent par les patterns exclus
 			if (excludedRoute.endsWith('*')) {
 				const pattern = excludedRoute.slice(0, -1);
@@ -92,9 +91,12 @@ const escapeXml = (str: string): string => {
 };
 
 // Fonction pour générer le sitemap XML
-const generateSitemap = (paths: Array<{ path: string; priority: string; changefreq: string }>, blogPosts: Array<{ slug: string; updatedAt: Date }>) => {
+const generateSitemap = (
+	paths: Array<{ path: string; priority: string; changefreq: string }>,
+	blogPosts: Array<{ slug: string; updatedAt: Date }>
+) => {
 	const currentDate = new Date().toISOString();
-	
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
 ${paths

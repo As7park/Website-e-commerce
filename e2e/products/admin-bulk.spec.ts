@@ -57,12 +57,10 @@ test.describe('Administration — suppression groupée des produits', () => {
 				await Promise.all([
 					page.waitForResponse(
 						(response) =>
-							response.url().includes('bulkDeleteProducts') && response.request().method() === 'POST'
+							response.url().includes('bulkDeleteProducts') &&
+							response.request().method() === 'POST'
 					),
-					page
-						.getByRole('alertdialog')
-						.getByRole('button', { name: 'Confirmer' })
-						.click()
+					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
 
 				expect(await getProductById(removableA.product.id)).toBeNull();
@@ -82,12 +80,10 @@ test.describe('Administration — suppression groupée des produits', () => {
 				await Promise.all([
 					page.waitForResponse(
 						(response) =>
-							response.url().includes('bulkDeleteProducts') && response.request().method() === 'POST'
+							response.url().includes('bulkDeleteProducts') &&
+							response.request().method() === 'POST'
 					),
-					page
-						.getByRole('alertdialog')
-						.getByRole('button', { name: 'Confirmer' })
-						.click()
+					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
 
 				expect(await getProductById(locked.product.id)).not.toBeNull();
@@ -96,9 +92,7 @@ test.describe('Administration — suppression groupée des produits', () => {
 			await test.step('3. Sélectionner tout sur la page via la case d’en-tête', async () => {
 				await page.goto('/admin/products');
 				await waitForPath(page, '/admin/products');
-				const headerCheckbox = productsAdminTable(page)
-					.locator('thead')
-					.getByRole('checkbox');
+				const headerCheckbox = productsAdminTable(page).locator('thead').getByRole('checkbox');
 				await headerCheckbox.click();
 				await expect(page.getByText(/éléments? sélectionnés?/)).toBeVisible();
 				await headerCheckbox.click();

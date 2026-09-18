@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const createBlogTaxonomyValue = superForm(untrack(() => data.IcreateBlogTaxonomyValueSchema), {
-		validators: zodClient(createBlogTaxonomyValueSchema),
-		id: 'createBlogTaxonomyValue'
-	});
+	const createBlogTaxonomyValue = superForm(
+		untrack(() => data.IcreateBlogTaxonomyValueSchema),
+		{
+			validators: zodClient(createBlogTaxonomyValueSchema),
+			id: 'createBlogTaxonomyValue'
+		}
+	);
 
 	const {
 		form: createBlogTaxonomyValueData,

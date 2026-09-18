@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const answerForm = superForm(untrack(() => data.answerForm), {
-		validators: zodClient(answerQuestionSchema),
-		id: 'answerQuestion'
-	});
+	const answerForm = superForm(
+		untrack(() => data.answerForm),
+		{
+			validators: zodClient(answerQuestionSchema),
+			id: 'answerQuestion'
+		}
+	);
 	const { form: answerData, enhance: answerEnhance, message: answerMessage } = answerForm;
 
 	$effect(() => {

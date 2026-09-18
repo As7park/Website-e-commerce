@@ -19,10 +19,13 @@
 	//console.log('[AddressPage] Data loaded:', data);
 
 	/* ───────────────────────────── Forms ─────────────────────────────── */
-	const deleteAddress = superForm(untrack(() => data?.IdeleteAddressSchema ?? {}), {
-		validators: zodClient(deleteAddressSchema),
-		id: 'deleteAddress'
-	});
+	const deleteAddress = superForm(
+		untrack(() => data?.IdeleteAddressSchema ?? {}),
+		{
+			validators: zodClient(deleteAddressSchema),
+			id: 'deleteAddress'
+		}
+	);
 
 	const {
 		form: deleteAddressData,

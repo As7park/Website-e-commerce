@@ -8,11 +8,11 @@ Procédure à suivre dans l'ordre. Compter moins d'une heure une fois le PSP
 Supprimer `/checkout` et `/admin/sales` enlève l'interface, pas les
 `Transaction` en base. Trois trajectoires :
 
-| Trajectoire | Ce que devient le tunnel | Effort |
-| ----------- | ------------------------ | ------ |
-| Autre PSP | garder `Order` / `Transaction`, remplacer Stripe | modéré |
-| Catalogue sans vente | retirer COMMERCE, garder `Product` (`OrderItem` Restrict) | faible |
-| Tout retirer | Order, Transaction, hook, `/checkout`, `/admin/sales` | important |
+| Trajectoire          | Ce que devient le tunnel                                  | Effort    |
+| -------------------- | --------------------------------------------------------- | --------- |
+| Autre PSP            | garder `Order` / `Transaction`, remplacer Stripe          | modéré    |
+| Catalogue sans vente | retirer COMMERCE, garder `Product` (`OrderItem` Restrict) | faible    |
+| Tout retirer         | Order, Transaction, hook, `/checkout`, `/admin/sales`     | important |
 
 Les étapes 1 et 2 sont communes.
 
@@ -51,18 +51,18 @@ rg "COMMERCE-PLUGIN" src/ prisma/
 Les blocs encadrés par `COMMERCE-PLUGIN ▼` et `COMMERCE-PLUGIN ▲` se suppriment
 tels quels.
 
-| Fichier | Action |
-| ------- | ------ |
-| `src/hooks.server.ts` | retirer `pendingOrderHandle` |
-| `src/routes/+layout.server.ts` | retirer `pendingOrder` |
-| `src/routes/+layout.svelte` | retirer hydratation / `startSync` / panier invité |
-| `src/lib/commerce/guestCart.ts` | localStorage `commerce:guest-cart` |
-| `src/lib/components/Navigation.svelte` | retirer `<Cart />` |
-| `src/routes/admin/+layout.svelte` | retirer l'entrée « ventes » |
-| `src/lib/sitemap.config.ts` | retirer `/checkout` |
-| `src/routes/products/[slug]/+page.svelte` | retirer « Ajouter au panier » |
-| `prisma/schema.prisma` | `Order`, `OrderItem`, `Transaction` : garder si historique comptable ; retirer `GiftCard`, `ReturnRequest`, `SavedPaymentMethod` et `StoreSettings.giftCardsEnabled`/`returnsEnabled`/`savedPaymentsEnabled` |
-| `src/routes/checkout/success/+page.svelte` | retirer le lien « Suivre ma commande » vers `/suivi-commande` |
+| Fichier                                    | Action                                                                                                                                                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/hooks.server.ts`                      | retirer `pendingOrderHandle`                                                                                                                                                                                 |
+| `src/routes/+layout.server.ts`             | retirer `pendingOrder`                                                                                                                                                                                       |
+| `src/routes/+layout.svelte`                | retirer hydratation / `startSync` / panier invité                                                                                                                                                            |
+| `src/lib/commerce/guestCart.ts`            | localStorage `commerce:guest-cart`                                                                                                                                                                           |
+| `src/lib/components/Navigation.svelte`     | retirer `<Cart />`                                                                                                                                                                                           |
+| `src/routes/admin/+layout.svelte`          | retirer l'entrée « ventes »                                                                                                                                                                                  |
+| `src/lib/sitemap.config.ts`                | retirer `/checkout`                                                                                                                                                                                          |
+| `src/routes/products/[slug]/+page.svelte`  | retirer « Ajouter au panier »                                                                                                                                                                                |
+| `prisma/schema.prisma`                     | `Order`, `OrderItem`, `Transaction` : garder si historique comptable ; retirer `GiftCard`, `ReturnRequest`, `SavedPaymentMethod` et `StoreSettings.giftCardsEnabled`/`returnsEnabled`/`savedPaymentsEnabled` |
+| `src/routes/checkout/success/+page.svelte` | retirer le lien « Suivre ma commande » vers `/suivi-commande`                                                                                                                                                |
 
 Sendcloud (`src/lib/sendcloud`, `/api/sendcloud`) et le promo (`PROMO-PLUGIN`)
 ne font pas partie de ce module : les retirer à part.

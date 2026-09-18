@@ -25,9 +25,7 @@ export class UnknownProductError extends Error {
 }
 
 export class InvalidShippingError extends Error {
-	constructor(
-		message = 'Les frais de port fournis par le client ne sont pas acceptés.'
-	) {
+	constructor(message = 'Les frais de port fournis par le client ne sont pas acceptés.') {
 		super(message);
 		this.name = 'InvalidShippingError';
 	}

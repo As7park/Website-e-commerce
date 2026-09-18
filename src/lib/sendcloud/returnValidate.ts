@@ -116,7 +116,8 @@ export async function validateSendcloudReturn(
 	);
 
 	if (!response.ok && !addressesAccepted) {
-		const detail = fieldErrors.map((e) => `${e.field}: ${e.message}`).join('; ') || JSON.stringify(raw);
+		const detail =
+			fieldErrors.map((e) => `${e.field}: ${e.message}`).join('; ') || JSON.stringify(raw);
 		throw new Error(`Sendcloud a rejeté l'adresse du retour : ${detail}`);
 	}
 

@@ -48,7 +48,8 @@ export const actions: Actions = {
 			return message(form, 'Address deleted successfully');
 		} catch (error: unknown) {
 			console.error('Error deleting address:', error);
-			const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the address';
+			const errorMessage =
+				error instanceof Error ? error.message : 'An error occurred while deleting the address';
 			return fail(500, { form, error: errorMessage });
 		}
 	}

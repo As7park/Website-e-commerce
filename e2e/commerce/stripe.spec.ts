@@ -1,9 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { signUpAndVerify } from '../support/admin';
-import {
-	checkoutSessionCompletedPayload,
-	signStripePayload
-} from '../support/stripe';
+import { checkoutSessionCompletedPayload, signStripePayload } from '../support/stripe';
 import {
 	attachOrderAddress,
 	createCatalogProduct,

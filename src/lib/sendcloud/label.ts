@@ -92,7 +92,9 @@ function extractTrackingNumber(data: any): string | null {
 
 function extractTrackingUrl(data: any): string | null {
 	const documents = Array.isArray(data?.documents) ? data.documents : [];
-	const label = documents.find((doc: any) => doc?.type === 'label' || doc?.document_type === 'label');
+	const label = documents.find(
+		(doc: any) => doc?.type === 'label' || doc?.document_type === 'label'
+	);
 	return label?.link ?? null;
 }
 
@@ -163,9 +165,7 @@ export async function createSendcloudLabel(transaction: TransactionForLabel) {
 		],
 		order_number: `ORDER-${transaction.id}`,
 		external_reference_id: transaction.id,
-		...(transaction.servicePointId
-			? { to_service_point: Number(transaction.servicePointId) }
-			: {})
+		...(transaction.servicePointId ? { to_service_point: Number(transaction.servicePointId) } : {})
 	};
 
 	log('INFO', 'sendcloud:label', "Création d'étiquette v3", {
@@ -238,7 +238,9 @@ export async function createSendcloudLabel(transaction: TransactionForLabel) {
 		where: { id: transaction.id }
 	});
 	if (!existingTransaction) {
-		throw new Error(`Transaction ${transaction.id} introuvable en base après création de l'étiquette`);
+		throw new Error(
+			`Transaction ${transaction.id} introuvable en base après création de l'étiquette`
+		);
 	}
 
 	await prisma.transaction.update({

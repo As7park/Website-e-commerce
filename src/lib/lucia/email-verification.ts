@@ -139,4 +139,8 @@ export async function getUserEmailVerificationRequestFromRequest(
 }
 
 // Limiteur de taux pour l'envoi des emails de vérification
-export const sendVerificationEmailBucket = new ExpiringTokenBucket<string>(3, 60 * 10, 'send-verification-email');
+export const sendVerificationEmailBucket = new ExpiringTokenBucket<string>(
+	3,
+	60 * 10,
+	'send-verification-email'
+);

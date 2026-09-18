@@ -13,15 +13,14 @@
 	let { data } = $props();
 
 	// Form handling with superForm
-	const deleteUser = superForm(untrack(() => data?.IdeleteUserSchema ?? {}), {
-		validators: zodClient(deleteUserSchema)
-	});
+	const deleteUser = superForm(
+		untrack(() => data?.IdeleteUserSchema ?? {}),
+		{
+			validators: zodClient(deleteUserSchema)
+		}
+	);
 
-	const {
-		form: deleteUserData,
-		enhance: deleteUserEnhance,
-		message: deleteUserMessage
-	} = deleteUser;
+	const { enhance: deleteUserEnhance, message: deleteUserMessage } = deleteUser;
 
 	// Define table columns
 	const userColumns = $state<TableColumn[]>([

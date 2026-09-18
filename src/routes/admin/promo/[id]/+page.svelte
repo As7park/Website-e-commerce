@@ -13,10 +13,13 @@
 
 	let { data } = $props();
 
-	const updatePromo = superForm(untrack(() => data.updatePromoForm), {
-		validators: zodClient(updatePromoSchema),
-		id: 'updatePromo'
-	});
+	const updatePromo = superForm(
+		untrack(() => data.updatePromoForm),
+		{
+			validators: zodClient(updatePromoSchema),
+			id: 'updatePromo'
+		}
+	);
 
 	const {
 		form: updatePromoData,

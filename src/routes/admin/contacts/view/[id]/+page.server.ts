@@ -6,9 +6,9 @@ import type { PageServerLoad } from './$types';
 
 export const load = (async ({ params }) => {
 	const { id } = params;
-	
+
 	const contactSubmission = await getContactSubmissionById(id);
-	
+
 	if (!contactSubmission) {
 		throw error(404, 'Message de contact non trouvé');
 	}
@@ -16,4 +16,4 @@ export const load = (async ({ params }) => {
 	return {
 		contactSubmission
 	};
-}) satisfies PageServerLoad; 
+}) satisfies PageServerLoad;

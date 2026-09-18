@@ -44,7 +44,7 @@
 			}
 		} catch (err) {
 			console.error('Erreur validation code promo:', err);
-			toast.error("Impossible de vérifier le code promo.");
+			toast.error('Impossible de vérifier le code promo.');
 		} finally {
 			loading = false;
 		}

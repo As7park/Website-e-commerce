@@ -14,7 +14,6 @@ Sentry.init({
 
 export const handleError = Sentry.handleErrorWithSentry();
 
-
 /**
  * `localhost:2000` est partagé entre plusieurs projets. Un PWA (ici Lezardoises)
  * peut laisser un service worker qui intercepte les requêtes et demande des

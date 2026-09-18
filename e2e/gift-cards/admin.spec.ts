@@ -2,13 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import { giftCardAdminRow } from '../support/giftCards';
-import {
-	createGiftCard,
-	db,
-	deleteGiftCard,
-	getGiftCardById,
-	promoteToAdmin
-} from '../support/db';
+import { createGiftCard, db, deleteGiftCard, getGiftCardById, promoteToAdmin } from '../support/db';
 
 /**
  * CRUD admin des cartes cadeaux : liste, création (code généré), édition du

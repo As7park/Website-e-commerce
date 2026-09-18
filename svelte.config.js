@@ -2,13 +2,12 @@ import adapter from '@sveltejs/adapter-vercel';
 import { VitePWA } from 'vite-plugin-pwa';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://svelte.dev/docs/kit/integrations
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
-	
+
 	plugins: [
 		VitePWA({
 			manifest: {
@@ -59,32 +58,32 @@ const config = {
 			maxDuration: 30
 		}),
 
-			// CSP en Report-Only : une politique mal calibrée casserait
-			// silencieusement Stripe Checkout ou l'éditeur de blog — sur un site
-			// marchand, le pire endroit pour se tromper. `mode: 'auto'` laisse
-			// SvelteKit générer les hash/nonce de ses propres scripts inline
-			// (bootstrap d'hydratation), pas besoin de les lister à la main.
-			// À rendre bloquante (reportOnly → directives) seulement après avoir
-			// confirmé, DevTools ouvertes, l'absence de violation sur le
-			// checkout (jusqu'au paiement Stripe), l'éditeur TinyMCE et le QR
-			// code TOTP du setup 2FA (`data:` URI, couvert par `img-src`).
-			csp: {
-				mode: 'auto',
-				reportOnly: {
-					'default-src': ["'self'"],
-					'script-src': ["'self'", 'https://js.stripe.com'],
-					// bits-ui/floating-ui posent des styles inline (popovers, tooltips).
-					'style-src': ["'self'", "'unsafe-inline'"],
-					'img-src': ["'self'", 'data:', 'https://res.cloudinary.com'],
-					'connect-src': ["'self'", 'https://api.stripe.com'],
-					// Stripe Elements s'affiche dans une iframe cross-origin.
-					'frame-src': ['https://js.stripe.com', 'https://hooks.stripe.com'],
-					'frame-ancestors': ["'none'"],
-					// Requis par SvelteKit pour un `report-only` (sinon 500 sur
-					// toute réponse) — collecté par `/api/csp-report`.
-					'report-uri': ['/api/csp-report']
-				}
-			},
+		// CSP en Report-Only : une politique mal calibrée casserait
+		// silencieusement Stripe Checkout ou l'éditeur de blog — sur un site
+		// marchand, le pire endroit pour se tromper. `mode: 'auto'` laisse
+		// SvelteKit générer les hash/nonce de ses propres scripts inline
+		// (bootstrap d'hydratation), pas besoin de les lister à la main.
+		// À rendre bloquante (reportOnly → directives) seulement après avoir
+		// confirmé, DevTools ouvertes, l'absence de violation sur le
+		// checkout (jusqu'au paiement Stripe), l'éditeur TinyMCE et le QR
+		// code TOTP du setup 2FA (`data:` URI, couvert par `img-src`).
+		csp: {
+			mode: 'auto',
+			reportOnly: {
+				'default-src': ["'self'"],
+				'script-src': ["'self'", 'https://js.stripe.com'],
+				// bits-ui/floating-ui posent des styles inline (popovers, tooltips).
+				'style-src': ["'self'", "'unsafe-inline'"],
+				'img-src': ["'self'", 'data:', 'https://res.cloudinary.com'],
+				'connect-src': ["'self'", 'https://api.stripe.com'],
+				// Stripe Elements s'affiche dans une iframe cross-origin.
+				'frame-src': ['https://js.stripe.com', 'https://hooks.stripe.com'],
+				'frame-ancestors': ["'none'"],
+				// Requis par SvelteKit pour un `report-only` (sinon 500 sur
+				// toute réponse) — collecté par `/api/csp-report`.
+				'report-uri': ['/api/csp-report']
+			}
+		},
 		alias: {
 			// this will match a file
 			$lib: 'src/lib',

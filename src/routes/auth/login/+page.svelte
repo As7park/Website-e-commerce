@@ -13,10 +13,13 @@
 	//console.log(data);
 
 	// Initialiser le formulaire Superform avec Zod
-	const loginForm = superForm(untrack(() => data?.loginForm ?? {}), {
-		validators: zodClient(loginSchema),
-		id: 'loginForm'
-	});
+	const loginForm = superForm(
+		untrack(() => data?.loginForm ?? {}),
+		{
+			validators: zodClient(loginSchema),
+			id: 'loginForm'
+		}
+	);
 
 	const { form: loginData, enhance: loginEnhance, message: loginMessage } = loginForm;
 

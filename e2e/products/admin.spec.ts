@@ -71,7 +71,10 @@ test.describe('Administration — produits', () => {
 
 			await test.step('4. Suppression d’un produit sans commande', async () => {
 				await page.goto('/admin/products');
-				await page.getByPlaceholder('Cherchez dans le tableau').first().fill(removable.product.name);
+				await page
+					.getByPlaceholder('Cherchez dans le tableau')
+					.first()
+					.fill(removable.product.name);
 				const row = productAdminRow(page, removable.product.name);
 				await row.locator('[data-alert-dialog-trigger]').click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();

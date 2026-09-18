@@ -9,13 +9,13 @@ Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 
 ## Frontière du module
 
-| Emplacement | Contenu |
-| ----------- | ------- |
-| `src/lib/contact/` | chemins de tests |
-| `src/lib/prisma/contact/` | DAO Prisma |
-| `src/lib/schema/contact/` | schéma Zod du formulaire |
-| `src/routes/contact/` | page publique |
-| `src/routes/admin/contacts/` | liste et fiche (gardes = module admin) |
+| Emplacement                    | Contenu                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `src/lib/contact/`             | chemins de tests                                                                                 |
+| `src/lib/prisma/contact/`      | DAO Prisma                                                                                       |
+| `src/lib/schema/contact/`      | schéma Zod du formulaire                                                                         |
+| `src/routes/contact/`          | page publique                                                                                    |
+| `src/routes/admin/contacts/`   | liste et fiche (gardes = module admin)                                                           |
 | `src/lib/server/rate-limit.ts` | `contactFormLimiter` (5 envois valides / IP, 1 jeton / 60 s ; Redis si configuré, sinon mémoire) |
 
 Contrairement à l'auth, le contact **n'a pas de hook** dans `hooks.server.ts`.
@@ -32,8 +32,8 @@ Aucun email n'est envoyé à la soumission : la preuve est la ligne en base.
 
 ## Vitrine
 
-| Route | Rôle |
-| ----- | ---- |
+| Route      | Rôle                                  |
+| ---------- | ------------------------------------- |
 | `/contact` | formulaire nom, email, sujet, message |
 
 Les saisies invalides sont refusées (Zod). Un envoi accepté crée un
@@ -57,20 +57,20 @@ puis le code. Index : [../../e2e/README.md](../../e2e/README.md).
 
 ### Formulaire — `e2e/contact/form.spec.ts`
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Envoi valide | remplir + Envoyer | toast + ligne en base |
-| 2 | Email invalide (serveur) | POST `?/send` | pas de ligne (400 ou `fail` Superforms) |
-| 3 | Limiteur | 6 POST valides même IP | 5 lignes, 6ᵉ = 429 |
+| #   | Étape                    | Geste                  | Preuve                                  |
+| --- | ------------------------ | ---------------------- | --------------------------------------- |
+| 1   | Envoi valide             | remplir + Envoyer      | toast + ligne en base                   |
+| 2   | Email invalide (serveur) | POST `?/send`          | pas de ligne (400 ou `fail` Superforms) |
+| 3   | Limiteur                 | 6 POST valides même IP | 5 lignes, 6ᵉ = 429                      |
 
 ### Admin — `e2e/contact/admin.spec.ts`
 
 Les messages sont posés en Prisma (`createContactMessage`).
 
-| # | Étape | Geste | Preuve |
-| - | ----- | ----- | ------ |
-| 1 | Liste admin | GET `/admin/contacts`, recherche | ligne du tableau |
-| 2 | Fiche | GET `/admin/contacts/view/[id]` | nom, sujet, message |
+| #   | Étape       | Geste                            | Preuve              |
+| --- | ----------- | -------------------------------- | ------------------- |
+| 1   | Liste admin | GET `/admin/contacts`, recherche | ligne du tableau    |
+| 2   | Fiche       | GET `/admin/contacts/view/[id]`  | nom, sujet, message |
 
 À part : un CLIENT GET `/admin/contacts` → `/`.
 

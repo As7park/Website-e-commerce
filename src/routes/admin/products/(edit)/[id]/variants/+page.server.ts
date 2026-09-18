@@ -4,7 +4,11 @@ import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import { deleteVariantSchema } from '$lib/schema/products/variantSchema';
-import { deleteVariantById, getVariantsForProduct, VariantInUseError } from '$lib/prisma/productVariants/productVariants';
+import {
+	deleteVariantById,
+	getVariantsForProduct,
+	VariantInUseError
+} from '$lib/prisma/productVariants/productVariants';
 import { getProductById } from '$lib/prisma/products/products';
 import { requireAdmin } from '$lib/admin/guards';
 
@@ -36,7 +40,9 @@ export const actions: Actions = {
 			return message(form, 'Variante supprimée avec succès');
 		} catch (err) {
 			if (err instanceof VariantInUseError) {
-				return fail(409, { message: 'Cette variante a déjà été commandée et ne peut pas être supprimée.' });
+				return fail(409, {
+					message: 'Cette variante a déjà été commandée et ne peut pas être supprimée.'
+				});
 			}
 			console.error('Error deleting variant:', err);
 			return fail(500, { message: 'Échec de la suppression de la variante' });

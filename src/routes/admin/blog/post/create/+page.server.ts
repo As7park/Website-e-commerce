@@ -49,7 +49,7 @@ export const actions: Actions = {
 		}
 
 		const { title, content, authorId, published, taxonomyValueIds } = form.data;
-		let slug = slugify(title);
+		const slug = slugify(title);
 
 		// Ensure the slug is unique
 		let uniqueSlug = slug;

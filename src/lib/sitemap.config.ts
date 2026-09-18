@@ -2,7 +2,7 @@
 export const sitemapConfig = {
 	// URL de base du site
 	site: 'https://madeindiamonds.com', // Domaine MadeInDiamonds
-	
+
 	// Routes à exclure du sitemap (routes privées, admin, auth)
 	excludedRoutes: [
 		'/auth', // AUTH-PLUGIN : à retirer si le module d'authentification disparaît
@@ -12,7 +12,7 @@ export const sitemapConfig = {
 		'/api',
 		'/+page.svelte' // Fichier technique
 	],
-	
+
 	// Configuration des priorités et fréquences par type de route
 	routeConfig: {
 		'/': { priority: '1.0', changefreq: 'daily' },
@@ -20,7 +20,7 @@ export const sitemapConfig = {
 		'/blog': { priority: '0.8', changefreq: 'weekly' }, // BLOG-PLUGIN
 		'/contact': { priority: '0.7', changefreq: 'monthly' } // CONTACT-PLUGIN
 	},
-	
+
 	// Configuration par défaut pour les routes non configurées
 	defaultConfig: {
 		priority: '0.5',

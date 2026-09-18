@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const deletePromo = superForm(untrack(() => data?.IdeletePromoSchema ?? {}), {
-		validators: zodClient(deletePromoSchema),
-		id: 'deletePromo'
-	});
+	const deletePromo = superForm(
+		untrack(() => data?.IdeletePromoSchema ?? {}),
+		{
+			validators: zodClient(deletePromoSchema),
+			id: 'deletePromo'
+		}
+	);
 
 	const { enhance: deletePromoEnhance, message: deletePromoMessage } = deletePromo;
 

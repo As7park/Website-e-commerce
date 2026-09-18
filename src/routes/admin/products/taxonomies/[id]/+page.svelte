@@ -13,7 +13,6 @@
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { updateTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
 	import { deleteTaxonomyValueSchema } from '$lib/schema/taxonomies/taxonomyValueSchema';
-	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
@@ -21,10 +20,13 @@
 	let { data } = $props();
 	let id = $derived(page.params.id);
 
-	const updateTaxonomy = superForm(untrack(() => data.IupdateTaxonomySchema), {
-		validators: zodClient(updateTaxonomySchema),
-		id: 'updateTaxonomy'
-	});
+	const updateTaxonomy = superForm(
+		untrack(() => data.IupdateTaxonomySchema),
+		{
+			validators: zodClient(updateTaxonomySchema),
+			id: 'updateTaxonomy'
+		}
+	);
 
 	const {
 		form: updateTaxonomyData,
@@ -52,16 +54,16 @@
 		}
 	});
 
-	const deleteTaxonomyValue = superForm(untrack(() => data.IdeleteTaxonomyValueSchema), {
-		validators: zodClient(deleteTaxonomyValueSchema),
-		id: 'deleteTaxonomyValue'
-	});
+	const deleteTaxonomyValue = superForm(
+		untrack(() => data.IdeleteTaxonomyValueSchema),
+		{
+			validators: zodClient(deleteTaxonomyValueSchema),
+			id: 'deleteTaxonomyValue'
+		}
+	);
 
-	const {
-		form: deleteTaxonomyValueData,
-		enhance: deleteTaxonomyValueEnhance,
-		message: deleteTaxonomyValueMessage
-	} = deleteTaxonomyValue;
+	const { enhance: deleteTaxonomyValueEnhance, message: deleteTaxonomyValueMessage } =
+		deleteTaxonomyValue;
 
 	$effect(() => {
 		if ($deleteTaxonomyValueMessage) {

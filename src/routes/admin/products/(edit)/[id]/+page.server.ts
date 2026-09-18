@@ -96,7 +96,7 @@ export const actions: Actions = {
 							}
 						);
 						uploadedImageUrls.push(uploadResponse.secure_url);
-					} catch (error) {
+					} catch {
 						return fail(500, { message: 'Image upload failed' });
 					}
 				}
@@ -111,7 +111,7 @@ export const actions: Actions = {
 							if (result.result !== 'ok' && result.result !== 'not found') {
 								return fail(500, { message: 'Failed to delete image from Cloudinary' });
 							}
-						} catch (error) {
+						} catch {
 							return fail(500, { message: 'Failed to delete image from Cloudinary' });
 						}
 					}
@@ -151,10 +151,10 @@ export const actions: Actions = {
 				await connectProductToTaxonomyValues(productId, taxonomyValueIds);
 
 				return message(form, 'Product updated successfully');
-			} catch (error) {
+			} catch {
 				return fail(500, { message: 'Product update failed' });
 			}
-		} catch (error) {
+		} catch {
 			return fail(500, { message: 'An unexpected error occurred' });
 		}
 	}

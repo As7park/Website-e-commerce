@@ -67,7 +67,9 @@
 			style="color: {strokeColor}; --stroke-color: {strokeColor};"
 		>
 			Commencer
-			<span class="translate-y-[35px] transition-all duration-[400ms] ease-in-out group-hover:translate-y-0">
+			<span
+				class="translate-y-[35px] transition-all duration-[400ms] ease-in-out group-hover:translate-y-0"
+			>
 				<Power class="ml-10" />
 			</span>
 		</span>

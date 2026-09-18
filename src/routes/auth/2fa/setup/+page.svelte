@@ -10,10 +10,13 @@
 
 	let { data } = $props();
 
-	const twoFactorForm = superForm(untrack(() => data.totpForm), {
-		validators: zodClient(totpSchema),
-		id: 'twoFactorForm'
-	});
+	const twoFactorForm = superForm(
+		untrack(() => data.totpForm),
+		{
+			validators: zodClient(totpSchema),
+			id: 'twoFactorForm'
+		}
+	);
 
 	const { form: twoFactorData, enhance: formEnhance, message: formMessage } = twoFactorForm;
 

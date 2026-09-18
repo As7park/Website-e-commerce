@@ -7,10 +7,10 @@ Procédure à suivre dans l'ordre. Compter moins d'une heure.
 Supprimer `/contact` et `/admin/contacts` enlève l'interface, pas les lignes
 en base.
 
-| Trajectoire | Ce que deviennent les messages | Effort |
-| ----------- | ------------------------------ | ------ |
+| Trajectoire            | Ce que deviennent les messages               | Effort |
+| ---------------------- | -------------------------------------------- | ------ |
 | Autre formulaire / CRM | les modèles Prisma restent ou sont remplacés | modéré |
-| Tout retirer | supprimer `ContactSubmission` | faible |
+| Tout retirer           | supprimer `ContactSubmission`                | faible |
 
 Les étapes 1 et 2 sont communes.
 
@@ -36,14 +36,14 @@ rg "CONTACT-PLUGIN" src/ prisma/
 Les blocs encadrés par `CONTACT-PLUGIN ▼` et `CONTACT-PLUGIN ▲` se suppriment
 tels quels.
 
-| Fichier | Action |
-| ------- | ------ |
-| `src/lib/components/Navigation.svelte` | retirer le lien Contact / `/contact` |
-| `src/routes/admin/+layout.svelte` | retirer l'entrée « contacts » |
-| `src/lib/sitemap.config.ts` | retirer `/contact` |
-| `src/lib/seo.config.ts` | retirer `pages.contact` |
-| `prisma/seed.js` | ne plus vider `contactSubmission` |
-| `prisma/schema.prisma` | retirer `ContactSubmission` dans une migration |
+| Fichier                                | Action                                         |
+| -------------------------------------- | ---------------------------------------------- |
+| `src/lib/components/Navigation.svelte` | retirer le lien Contact / `/contact`           |
+| `src/routes/admin/+layout.svelte`      | retirer l'entrée « contacts »                  |
+| `src/lib/sitemap.config.ts`            | retirer `/contact`                             |
+| `src/lib/seo.config.ts`                | retirer `pages.contact`                        |
+| `prisma/seed.js`                       | ne plus vider `contactSubmission`              |
+| `prisma/schema.prisma`                 | retirer `ContactSubmission` dans une migration |
 
 ## 3. Vérifier
 

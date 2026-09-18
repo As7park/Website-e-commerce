@@ -10,16 +10,22 @@
 
 	let { data } = $props();
 
-	const deleteVariant = superForm(untrack(() => data.IdeleteVariantSchema), {
-		validators: zodClient(deleteVariantSchema),
-		id: 'deleteVariant'
-	});
+	const deleteVariant = superForm(
+		untrack(() => data.IdeleteVariantSchema),
+		{
+			validators: zodClient(deleteVariantSchema),
+			id: 'deleteVariant'
+		}
+	);
 	const { enhance: deleteVariantEnhance, message: deleteVariantMessage } = deleteVariant;
 
 	const variantsData = $derived.by(() =>
 		(data.variants ?? []).map((v) => ({
 			...v,
-			priceLabel: v.price != null ? `${v.price.toFixed(2)}€` : `${data.product.price.toFixed(2)}€ (prix produit)`,
+			priceLabel:
+				v.price != null
+					? `${v.price.toFixed(2)}€`
+					: `${data.product.price.toFixed(2)}€ (prix produit)`,
 			skuLabel: v.sku || '—'
 		}))
 	);

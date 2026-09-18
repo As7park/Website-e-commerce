@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$shadcn/card';
+	import { Card, CardHeader, CardTitle, CardContent } from '$shadcn/card';
 	import { Button } from '$shadcn/button';
 	import SEO from '$lib/components/SEO.svelte';
 

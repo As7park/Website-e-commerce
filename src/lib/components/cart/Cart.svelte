@@ -20,7 +20,6 @@
 	import Button from '$shadcn/button/button.svelte';
 	import * as Sheet from '$shadcn/sheet/index.js';
 	import { Trash, ShoppingCart } from 'lucide-svelte';
-	import Input from '../shadcn/ui/input/input.svelte';
 	import QuantityInput from '../QuantityInput.svelte';
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';

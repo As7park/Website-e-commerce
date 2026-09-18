@@ -12,10 +12,13 @@
 
 	let { data } = $props();
 
-	const deleteQuestion = superForm(untrack(() => data.deleteForm), {
-		validators: zodClient(deleteQuestionSchema),
-		id: 'deleteQuestion'
-	});
+	const deleteQuestion = superForm(
+		untrack(() => data.deleteForm),
+		{
+			validators: zodClient(deleteQuestionSchema),
+			id: 'deleteQuestion'
+		}
+	);
 	const { enhance: deleteQuestionEnhance, message: deleteQuestionMessage } = deleteQuestion;
 
 	const questionsData = $derived.by(() =>

@@ -11,10 +11,13 @@
 	let { data } = $props();
 
 	// Initialiser le formulaire Superform avec Zod
-	const totpForm = superForm(untrack(() => data?.totpForm ?? {}), {
-		validators: zodClient(totpCodeSchema),
-		id: 'totpForm'
-	});
+	const totpForm = superForm(
+		untrack(() => data?.totpForm ?? {}),
+		{
+			validators: zodClient(totpCodeSchema),
+			id: 'totpForm'
+		}
+	);
 
 	const { form: totpData, enhance: totpEnhance, message: totpMessage } = totpForm;
 

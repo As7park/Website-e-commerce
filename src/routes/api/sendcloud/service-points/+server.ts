@@ -65,7 +65,10 @@ export async function POST({ request }) {
 	} catch (err) {
 		if (err instanceof CircuitOpenError) {
 			log('WARN', 'sendcloud:service-points', 'Disjoncteur ouvert, appel court-circuité');
-			throw error(503, 'Service de points relais temporairement indisponible, réessayez dans une minute.');
+			throw error(
+				503,
+				'Service de points relais temporairement indisponible, réessayez dans une minute.'
+			);
 		}
 		if (err instanceof DOMException && err.name === 'AbortError') {
 			log('WARN', 'sendcloud:service-points', 'Délai dépassé en contactant Sendcloud');

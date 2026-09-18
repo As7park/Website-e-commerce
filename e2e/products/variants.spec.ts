@@ -126,9 +126,7 @@ test.describe('Variantes produit', () => {
 			await test.step('3. Suppression : la variante libre part, la variante commandée est refusée', async () => {
 				await page.goto(`/admin/products/${created.product.id}/variants`);
 
-				const rowRemovable = page
-					.locator('tbody tr', { hasText: removable.label })
-					.first();
+				const rowRemovable = page.locator('tbody tr', { hasText: removable.label }).first();
 				await rowRemovable.locator('[data-alert-dialog-trigger]').click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
 				await Promise.all([

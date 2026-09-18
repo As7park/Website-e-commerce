@@ -34,9 +34,7 @@
 		}
 	);
 
-	const { form, enhance, message } = updateUserAndAddresses;
-
-	let selectedAddressIndex: number | null = $state(null);
+	const { form, enhance } = updateUserAndAddresses;
 
 	function handleAddressSelect(suggestion: AddressSuggestion, index: number) {
 		$form.addresses[index].street_number = suggestion.street_number;

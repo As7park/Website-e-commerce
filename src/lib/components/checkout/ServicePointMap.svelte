@@ -14,16 +14,16 @@
 		onMarkerClick: (point: any) => void;
 	}
 
-	let { 
-		showMap, 
-		isLoadingServicePoints, 
-		servicePoints, 
-		selectedPoint, 
-		zoom, 
-		centerCoordinates, 
-		offsets, 
-		onMarkerClick 
-	} = $props();
+	let {
+		showMap,
+		isLoadingServicePoints,
+		servicePoints,
+		selectedPoint,
+		zoom,
+		centerCoordinates,
+		offsets,
+		onMarkerClick
+	}: Props = $props();
 </script>
 
 {#if showMap}
@@ -38,7 +38,9 @@
 			{#if isLoadingServicePoints}
 				<div class="flex items-center justify-center h-[400px]">
 					<div class="text-center">
-						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+						<div
+							class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"
+						></div>
 						<p class="text-sm text-muted-foreground">Chargement des points relais...</p>
 					</div>
 				</div>
@@ -63,11 +65,7 @@
 								<div class="bg-blue-600 text-white p-2 rounded cursor-pointer"></div>
 							{/snippet}
 							<!-- Popup à l'intérieur du Marker -->
-							<Popup
-								class="text-black"
-								offset={offsets}
-								open={selectedPoint?.id === point.id}
-							>
+							<Popup class="text-black" offset={offsets} open={selectedPoint?.id === point.id}>
 								<div class="p-2">
 									<h3 class="font-bold mb-1">{point.name}</h3>
 									<p>Adresse : {point.street}</p>

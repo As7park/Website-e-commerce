@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const createVariantForm = superForm(untrack(() => data.createVariantForm), {
-		validators: zodClient(createVariantSchema),
-		id: 'createVariant'
-	});
+	const createVariantForm = superForm(
+		untrack(() => data.createVariantForm),
+		{
+			validators: zodClient(createVariantSchema),
+			id: 'createVariant'
+		}
+	);
 	const {
 		form: createVariantData,
 		enhance: createVariantEnhance,
@@ -74,7 +77,13 @@
 			<Form.Field name="stock" form={createVariantForm}>
 				<Form.Control>
 					<Form.Label>Stock</Form.Label>
-					<Input name="stock" type="number" step="1" min="0" bind:value={$createVariantData.stock} />
+					<Input
+						name="stock"
+						type="number"
+						step="1"
+						min="0"
+						bind:value={$createVariantData.stock}
+					/>
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

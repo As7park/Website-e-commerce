@@ -88,8 +88,7 @@
 	<TaxonomyValuePicker
 		{taxonomies}
 		bind:selectedIds={
-			() => $updateData.taxonomyValueIds ?? [],
-			(v) => ($updateData.taxonomyValueIds = v)
+			() => $updateData.taxonomyValueIds ?? [], (v) => ($updateData.taxonomyValueIds = v)
 		}
 	/>
 
@@ -116,4 +115,3 @@
 	<!-- Submit -->
 	<Button type="submit">Save changes</Button>
 </form>
-

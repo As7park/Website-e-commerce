@@ -114,9 +114,6 @@ export function decrypt(
 }
 
 /** Déchiffre et retourne le résultat sous forme de chaîne de caractères. */
-export function decryptToString(
-	data: string | Uint8Array,
-	version: EncryptionVersion = 2
-): string {
+export function decryptToString(data: string | Uint8Array, version: EncryptionVersion = 2): string {
 	return Buffer.from(decrypt(data, version)).toString('utf-8');
 }

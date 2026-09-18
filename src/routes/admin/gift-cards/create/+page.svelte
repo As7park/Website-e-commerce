@@ -11,10 +11,13 @@
 
 	let { data } = $props();
 
-	const createGiftCardForm = superForm(untrack(() => data?.createGiftCardForm ?? {}), {
-		validators: zodClient(createGiftCardSchema),
-		id: 'createGiftCard'
-	});
+	const createGiftCardForm = superForm(
+		untrack(() => data?.createGiftCardForm ?? {}),
+		{
+			validators: zodClient(createGiftCardSchema),
+			id: 'createGiftCard'
+		}
+	);
 
 	const {
 		form: createGiftCardData,
@@ -46,8 +49,7 @@
 				<p class="font-medium">Carte cadeau créée avec succès.</p>
 				<p class="font-mono text-lg tracking-wide">{createdCode}</p>
 				<p class="text-sm text-muted-foreground">
-					Transmettez ce code au destinataire — il ne sera plus jamais affiché ailleurs
-					qu'ici.
+					Transmettez ce code au destinataire — il ne sera plus jamais affiché ailleurs qu'ici.
 				</p>
 				<div class="flex gap-2">
 					<Button href="/admin/gift-cards">Retour à la liste</Button>
