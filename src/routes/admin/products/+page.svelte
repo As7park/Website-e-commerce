@@ -30,7 +30,7 @@
 				'No category',
 			materialName: product.material?.name ?? '—',
 			// Première image ou placeholder
-			images: `<img class='w-20 h-20' src='${optimizedImageUrl(product.images[0] ?? '', 80)}' alt='${product.name}' />`,
+			images: { src: optimizedImageUrl(product.images[0] ?? '', 80), alt: product.name },
 			// Description tronquée
 			description:
 				product.description?.length > 20

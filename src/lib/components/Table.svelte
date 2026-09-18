@@ -614,7 +614,12 @@
 										{#each visibleColumns as column}
 											<td class="border border-gray-300 p-2">
 												{#if column.key === 'images'}
-													{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
+													{@const image = item[column.key] as
+														| { src: string; alt: string }
+														| undefined}
+													{#if image}
+														<img class="h-20 w-20" src={image.src} alt={image.alt} />
+													{/if}
 												{:else if column.formatter}
 													<!-- Si la colonne a un formatter, appliquez-le -->
 													{column.formatter(item[column.key])}
@@ -660,7 +665,12 @@
 											<dt class="text-muted-foreground text-xs shrink-0">{column.label}</dt>
 											<dd class="text-sm text-right break-words">
 												{#if column.key === 'images'}
-													{@html typeof item[column.key] === 'string' ? item[column.key] : ''}
+													{@const image = item[column.key] as
+														| { src: string; alt: string }
+														| undefined}
+													{#if image}
+														<img class="ml-auto h-20 w-20" src={image.src} alt={image.alt} />
+													{/if}
 												{:else if column.formatter}
 													{column.formatter(item[column.key])}
 												{:else}

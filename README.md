@@ -71,7 +71,17 @@ npm run stripe:listen       # CLI Stripe → POST http://localhost:2000/api/webh
 
 ## CI
 
-`.github/workflows/ci.yml` (npm ci, lint, check, test:unit, audit) tourne sur
-push/PR vers `main`. `lint` et `check` sont en `continue-on-error` le temps de
-résorber la dette de formatage/typage pré-existante (voir commentaires dans le
-workflow) ; `test:unit` est bloquant.
+`.github/workflows/ci.yml` tourne sur push/PR vers `main`, deux jobs :
+
+- **`lint-and-check`** : `npm ci`, `prettier --check` (bloquant), `eslint`
+  (non-bloquant — dette pré-existante en cours de résorption, voir
+  commentaires dans le workflow), `svelte-check` (bloquant), tests unitaires
+  Vitest (bloquant), `npm audit` (non-bloquant).
+- **`e2e`** : Postgres jetable en service container (aucun secret réel
+  requis, toutes les intégrations externes tournent en mode mock), suite
+  Playwright complète hors `e2e/live/**` (specs appelant de vrais services
+  externes). Non-bloquant pour l'instant (première itération), à rendre
+  bloquant une fois la stabilité confirmée sur plusieurs runs.
+
+Voir [AUDIT_TECHNIQUE.md](./AUDIT_TECHNIQUE.md) pour l'état détaillé et la
+feuille de route (dette ESLint, sécurité des dépendances, etc.).
