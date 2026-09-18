@@ -39,18 +39,29 @@ jobs:
         run: npm run lint:prettier
 
       - name: Lint (eslint)
-        # Non-bloquant : ~111 erreurs pré-existantes sur le code applicatif
-        # (static/tinymce, vendorisé, est exclu de la config eslint), triées
-        # par catégorie (no-explicit-any, require-each-key, no-at-html-tags...).
-        # À rendre bloquant une fois résorbée.
+        # Bloquant sur les erreurs (svelte/require-each-key,
+        # svelte/prefer-svelte-reactivity : bugs de réactivité potentiels).
+        # Le reste de la dette ESLint pré-existante (no-explicit-any,
+        # prefer-writable-derived, no-at-html-tags...) est en 'warn' dans
+        # eslint.config.js — visible ici mais ne bloque pas ce step.
         run: npm run lint:eslint
-        continue-on-error: true
 
       - name: Type-check (svelte-check)
         run: npm run check
 
+      - name: Lint (knip)
+        # Non-bloquant : premier passage instrumenté (knip.json filtre les
+        # faux positifs déjà identifiés — scripts k6, static/, composants
+        # shadcn scaffoldés) mais les candidats réels restants (fichiers/deps
+        # potentiellement morts) n'ont pas encore été triés un par un.
+        run: npm run lint:knip
+        continue-on-error: true
+
       - name: Unit tests
-        run: npm run test:unit -- --run
+        # `--coverage` : chiffre de référence (voir AUDIT_TECHNIQUE.md), pas
+        # de seuil configuré (`vite.config.ts`) donc ce step reste bloquant
+        # uniquement sur des tests rouges, jamais sur la couverture elle-même.
+        run: npm run test:unit:coverage
 
   e2e:
     runs-on: ubuntu-latest

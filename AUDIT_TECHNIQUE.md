@@ -90,10 +90,11 @@ desktop **et** vue cartes mobile). Réduit aussi la dette ESLint
 - [src/routes/auth/2fa/setup/+page.svelte#L39](src/routes/auth/2fa/setup/+page.svelte) —
   QR code SVG généré côté serveur (`uqr`), pas de donnée utilisateur. Faible risque.
 - [src/routes/blog/\[slug\]/+page.svelte#L36](src/routes/blog/%5Bslug%5D/+page.svelte) —
-  contenu d'article, rédigé par un admin via TinyMCE. Acceptable dans le
-  modèle de confiance actuel (admin = confiance totale), mais **candidat
-  naturel à `dompurify`** (déjà en dépendance, jamais importé — voir §3.4)
-  en défense en profondeur si un jour plusieurs rôles éditoriaux existent.
+  contenu d'article, rédigé par un admin via TinyMCE. **Fait (P1 #7)** :
+  sanitizé à l'écriture via `sanitizeBlogHtml()` (`src/lib/server/sanitizeHtml.ts`,
+  DOMPurify + jsdom, 4 tests unitaires) dans `createPost`/`updatePost`
+  (`src/lib/prisma/blogPost/blogPost.ts`) — défense en profondeur en cas de
+  compromission d'un compte admin ou de futurs rôles éditoriaux moins fiables.
 
 ### 1.2 🟡 Bug de fond — `backdateOrder()` supposait un schéma `e2e` en dur
 
@@ -265,26 +266,42 @@ factices) au job `lint-and-check` dans `ci.yml`, reproduisant le fix déjà
 appliqué au job `e2e`. Revérifié localement (0 erreur) avec ces mêmes
 variables et sans `.env`.
 
-### 3.2 🟡 Qualité de code outillée — non bloquante, mais 109 erreurs qui dorment
+### 3.2 � Qualité de code outillée — 2 règles réactivité désormais bloquantes en CI
 
-ESLint est en `continue-on-error: true` en CI depuis sa mise en place —
-aucune régression n'y est donc jamais bloquée. Répartition actuelle :
+**Fait (P1 #6)** : `eslint.config.js` rétrograde explicitement en `'warn'` les
+règles non encore résorbées (`no-explicit-any`, `prefer-writable-derived`,
+`no-at-html-tags`) ; `svelte/prefer-svelte-reactivity` et
+`svelte/require-each-key` restent en `'error'` (défaut des presets) et le
+step CI "Lint (eslint)" n'a plus de `continue-on-error` — ce sont désormais
+les deux seules règles qui bloquent le build. Les violations à 1-2
+occurrences (`no-unused-vars`, `no-unused-expressions`, `no-constant-condition`,
+`valid-prop-names-in-kit-pages`) ont été corrigées directement plutôt que
+rétrogradées — 3 d'entre elles cachaient un vrai bug (voir détail ci-dessous).
 
-| Règle                                                                                                       | Occurrences | Gravité réelle                                                                                                                                                       |
-| ----------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-explicit-any`                                                                        | 65          | Dette de typage — érode la valeur du `strict: true` par ailleurs réel                                                                                                |
-| `svelte/require-each-key`                                                                                   | 25          | Pas que du style : sans clé, Svelte peut réutiliser/désynchroniser des nœuds DOM sur réordonnancement → bugs d'affichage discrets                                    |
-| `svelte/prefer-svelte-reactivity`                                                                           | 9           | `new Set()`/`new Map()` natifs dans du code réactif Svelte 5 → mutations qui ne déclenchent pas toujours de re-render. Risque de bug fonctionnel, pas juste de style |
-| `svelte/prefer-writable-derived`                                                                            | 3           | Anti-pattern `$state` + `$effect` de synchronisation plutôt qu'un `$derived` écrivable (déjà documenté dans `/memories/repo/svelte5-effect-store-antipattern.md`)    |
-| `@typescript-eslint/no-unused-vars`                                                                         | 2           | Mineur                                                                                                                                                               |
-| `svelte/no-at-html-tags`                                                                                    | 2           | Voir §1.1 — les 2 restants évalués et acceptés                                                                                                                       |
-| `@typescript-eslint/no-unused-expressions`, `no-constant-condition`, `svelte/valid-prop-names-in-kit-pages` | 1 chacun    | Mineur                                                                                                                                                               |
+Répartition actuelle (après corrections) :
 
-Les deux règles `prefer-svelte-reactivity` et `require-each-key` méritent
-d'être requalifiées : ce ne sont **pas des erreurs de style**, ce sont des
-bugs de réactivité latents en Svelte 5. Elles devraient passer bloquantes
-avant `no-explicit-any`, qui est plus gros en volume mais moins dangereux à
-l'exécution.
+| Règle                                | Occurrences | Statut CI                                                                                                       |
+| ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `@typescript-eslint/no-explicit-any` | 65          | `warn` — dette de typage, chantier P2 #11 dédié                                                                 |
+| `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                      |
+| `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                 |
+| `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale |
+| `svelte/no-at-html-tags`             | 3           | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)             |
+
+**Bugs réels découverts en corrigeant les violations à 1-2 occurrences** :
+
+- `StructuredData.svelte` (`no-unused-vars`) : le JSON-LD (SEO) n'était
+  **jamais rendu** — `{JSON.stringify(structuredData)}` à l'intérieur d'un
+  `<script>` du template est parsé en RAWTEXT par Svelte, jamais interpolé.
+  Corrigé en construisant la balise en JS et en l'injectant via `{@html}`
+  (avec échappement `\u003c` des données).
+- `+error.svelte` (`svelte/valid-prop-names-in-kit-pages`) : `export let
+error` ne reçoit jamais rien de SvelteKit sur une page `+error.svelte` (pas
+  un prop comme `data`) — le message d'erreur réel n'était jamais affiché.
+  Corrigé avec `$page.error` (`$app/stores`).
+- `auth/settings/+page.svelte` (`no-unused-vars`) : `isMfaEnabledEnhance`
+  n'était référencé que dans un bloc de carte MFA actuellement commenté
+  (feature volontairement masquée) — supprimé de la déstructuration.
 
 ### 3.3 🟡 Documentation désynchronisée du code réel
 
@@ -296,30 +313,37 @@ ajouté cette semaine (postgres jetable, 46 specs, entièrement mocké). Un
 contributeur qui lit uniquement le README a une image fausse du filet de
 sécurité réel du projet. → correction proposée en §4 (P0, 5 minutes).
 
-### 3.4 🟢 Hygiène des dépendances — jamais auditée avant aujourd'hui
+### 3.4 🟢 Hygiène des dépendances — knip en CI (non-bloquant) depuis P1 #8
 
-Premier passage `knip` (aucune config présente dans le dépôt, donc résultat
-brut, à trier) :
+**Fait (P1 #8)** : `knip` installé (`devDependencies`), configuré via
+[knip.json](knip.json) pour filtrer les faux positifs déjà identifiés
+ci-dessous (`k6/**`, `static/**`, composants shadcn scaffoldés dans
+`src/lib/components/shadcn/ui/**`, et les types de rapports `exports`/
+`types`/`enumMembers`/`duplicates` qui produisaient un bruit disproportionné
+non couvert par cet audit initial). Exposé via `npm run lint:knip` et un
+step CI dédié "Lint (knip)" en `continue-on-error: true` — visible à chaque
+run, mais non bloquant tant que les candidats réels restants n'ont pas été
+triés un par un.
 
-- **30 dépendances de prod + 15 devDependencies potentiellement inutilisées**
-  (ex. `argon2` doublon de `@node-rs/argon2` déjà utilisé ; `dompurify`
-  jamais importé malgré un usage naturel identifié en §1.1 ; `date-fns`,
-  `cmdk`, `input-otp`, `class-variance-authority`... à confirmer un par un,
-  certains sont des faux positifs de dépendances transitives nécessaires au
-  build — **ne pas supprimer en masse sans vérification individuelle**).
-- **127 "fichiers inutilisés"** — à plus de 80 % du bruit attendu (composants
-  shadcn-svelte scaffoldés mais pas tous consommés, `static/dev-sw.js` qui
-  est en réalité un filet de sécurité HTTP légitime non détecté par l'analyse
-  statique de knip — voir mémoire repo). Une poignée de vrais candidats à
-  vérifier : `e2e/support/commerce.ts`, `src/lib/{blog,commerce,contact,products}/paths.ts`,
+Une fois filtré, le rapport se réduit à des candidats réels et actionnables :
+
+- **8 fichiers potentiellement inutilisés** (confirmés, pas de faux positif
+  après filtrage) : `e2e/support/commerce.ts`,
+  `src/lib/{blog,commerce,contact,products}/paths.ts`,
   `src/lib/schema/products/customSchema.ts`, `src/lib/store/mediaStore.ts`,
-  `src/lib/utils/shippingMethodMap.ts`.
-- Les scripts k6 (`k6/*.js`) sont signalés "inutilisés" à tort — knip ne
-  connaît pas les scripts invoqués uniquement via le binaire `k6 run`
-  (`npm run load:*`) : faux positif de configuration, pas un vrai problème.
-
-**Aucune configuration `knip.json`/`.depcheckrc` n'existe** : cet audit n'a
-jamais été fait de façon institutionnalisée avant aujourd'hui.
+  `src/lib/utils/shippingMethodMap.ts`. **Pas encore supprimés** — à vérifier
+  individuellement (import dynamique, référence dans un test, etc.) avant
+  toute suppression, en gardant l'esprit "ne pas supprimer en masse".
+- **29 dépendances de prod + 15 devDependencies** potentiellement inutilisées
+  restent signalées — à trier au fil de l'eau, `dompurify` n'apparaît
+  désormais plus dans cette liste (utilisé depuis P1 #7, voir §1.1).
+- **1 dépendance non listée** (`@eslint/js`, utilisée dans
+  `eslint.config.js` mais absente de `package.json`) — trouvaille réelle et
+  nouvelle, laissée pour un futur triage (probablement une dépendance
+  transitive d'`eslint-plugin-svelte`/`typescript-eslint` à expliciter).
+- Les scripts k6 (`k6/*.js`) et le binaire `k6` lui-même sont désormais
+  filtrés via `ignore`/`ignoreBinaries` dans `knip.json` (faux positifs
+  confirmés — invocation uniquement via `k6 run`, jamais importés en JS).
 
 ### 3.5 🟢 Gouvernance & process — absents
 
@@ -350,32 +374,32 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 5. ~~Résoudre l'énigme `lint-and-check`~~ **fait** (§3.1.c) — variables
    d'environnement `$env/static/*` manquantes dans le job, `ci.yml` corrigé.
 
-### P1 — Prochaines itérations, effort moyen
+### P1 — Prochaines itérations, effort moyen (✅ toutes faites)
 
-6. **Rendre bloquantes les 2 règles ESLint les plus dangereuses**
-   (`svelte/prefer-svelte-reactivity`, `svelte/require-each-key` — 34
-   occurrences à elles deux) sans attendre d'avoir traité les 65
-   `no-explicit-any`. Ce sont des bugs de réactivité potentiels, pas du
-   style — les isoler du reste de la dette ESLint (override de règle par
-   règle dans `eslint.config.js`, ou script `eslint --rule ...` dédié en CI)
-   permet de les rendre bloquants sans attendre la résorption complète.
-7. **Trancher le sort de `dompurify`** : soit l'utiliser réellement pour
-   sanitiser `post.content` (blog, §1.1) en défense en profondeur, soit le
-   retirer des dépendances s'il reste décidément hors scope.
-8. **Passer `knip` en CI non-bloquant** (`continue-on-error`, comme l'audit
-   au démarrage) avec une configuration (`knip.json`) qui exclut
-   explicitement les faux positifs identifiés (scripts k6, `dev-sw.js`,
-   composants shadcn volontairement scaffoldés) — sinon le bruit initial
-   décourage de le garder. Traiter ensuite un par un les candidats réels
-   listés en §3.4.
-9. **Mesurer la couverture de tests unitaires** (`vitest --coverage`,
-   provider `v8`) avec un seuil bas au départ (ex. 20-30 %) pour avoir un
-   chiffre de référence et éviter la régression silencieuse, plutôt que de
-   viser un seuil ambitieux dès le départ.
-10. **Documenter le stockage des secrets** (pas seulement leur rotation) :
-    au minimum une note sur l'usage des "Environment Variables" chiffrées
-    de Vercel en prod, et une recommandation (Doppler/1Password/Vault) si
-    l'équipe grandit.
+6. ~~**Rendre bloquantes les 2 règles ESLint les plus dangereuses**~~ **fait**
+   (§3.2) : `svelte/prefer-svelte-reactivity` et `svelte/require-each-key`
+   restent en `error` (défaut), le reste (`no-explicit-any`,
+   `prefer-writable-derived`, `no-at-html-tags`) rétrogradé en `warn` dans
+   `eslint.config.js`, `continue-on-error` retiré du step CI "Lint (eslint)".
+7. ~~**Trancher le sort de `dompurify`**~~ **fait** (§1.1, §3.4) : utilisé
+   réellement — `src/lib/server/sanitizeHtml.ts` (+ `jsdom`) sanitize
+   `post.content` à l'écriture (`createPost`/`updatePost`), 4 tests unitaires.
+8. ~~**Passer `knip` en CI non-bloquant**~~ **fait** (§3.4) : `knip.json`
+   filtre les faux positifs connus, step CI "Lint (knip)" en
+   `continue-on-error: true`. Candidats réels listés en §3.4 pour triage futur.
+9. ~~**Mesurer la couverture de tests unitaires**~~ **fait** : `@vitest/coverage-v8`,
+   `vite.config.ts` (`test.coverage`, provider `v8`, sans seuil actif),
+   `npm run test:unit:coverage`, exécuté en CI (step "Unit tests"). Chiffre
+   de référence mesuré : **~7 % de lignes** sur `src/**` (l'essentiel de la
+   surface — routes SvelteKit — est couvert par les 46 specs e2e Playwright,
+   pas par des tests unitaires ; seuls 9 fichiers ont des tests vitest à ce
+   jour). Aucun seuil bloquant configuré volontairement — à réévaluer une
+   fois plus de logique métier couverte.
+10. ~~**Documenter le stockage des secrets**~~ **fait** :
+    [docs/secrets-rotation.md](docs/secrets-rotation.md) a désormais une
+    section "Stockage" (local `.env`, Vercel Environment Variables, absence
+    de secret de dépôt GitHub Actions) avant la partie rotation, avec
+    recommandation Doppler/1Password/Vault si l'équipe grandit.
 
 ### P2 — Structurant, effort plus élevé
 

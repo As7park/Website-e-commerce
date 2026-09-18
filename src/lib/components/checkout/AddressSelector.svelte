@@ -92,7 +92,7 @@
 											class="flex flex-col items-start px-2 py-1.5 gap-0.5"
 										>
 											<Check
-												class={`address-${selectedAddressId === address.id ? 'selected' : 'unselected'} ${true ? 'shrink-0' : ''}`}
+												class={`address-${selectedAddressId === address.id ? 'selected' : 'unselected'} shrink-0`}
 											/>
 
 											<span class="text-sm">

@@ -253,7 +253,7 @@
 	// des données : `paginatedItems` (référence) ne change que dans ces cas-là,
 	// jamais quand on coche/décoche une case (qui n'influence pas sa dérivation).
 	$effect(() => {
-		paginatedItems;
+		void paginatedItems;
 		selectedIds = new Set();
 	});
 

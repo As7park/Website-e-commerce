@@ -1,7 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import SEO from '$lib/components/SEO.svelte';
-
-	export let error; // Message d'erreur passé par SvelteKit
 </script>
 
 <!-- SEO pour la page d'erreur -->
@@ -11,7 +10,7 @@
 	<div class="text-center">
 		<h1 class="text-6xl font-bold">404</h1>
 		<p class="mt-2 text-lg dark:text-gray-400">
-			{error?.message || 'Page not found.'}
+			{$page.error?.message || 'Page not found.'}
 		</p>
 		<div class="mt-6">
 			<a

@@ -2,6 +2,7 @@ test-results
 playwright-report
 e2e-videos
 node_modules
+coverage
 
 # Output
 .output

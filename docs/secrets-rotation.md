@@ -1,9 +1,51 @@
 # Rotation des secrets
 
-Ce document couvre la rotation des secrets applicatifs mentionnés dans la
-roadmap : `ENCRYPTION_KEY`, `STRIPE_SECRET_KEY`, les clés Sendcloud, ainsi que
-les autres secrets de l'application selon le même schéma. Deux familles bien
-distinctes, avec des procédures différentes :
+Ce document couvre le **stockage** des secrets applicatifs, puis leur
+**rotation** : `ENCRYPTION_KEY`, `STRIPE_SECRET_KEY`, les clés Sendcloud,
+ainsi que les autres secrets de l'application selon le même schéma.
+
+## Stockage
+
+- **Local (dev)** : `.env`/`.env.test`, en clair sur disque, jamais commités
+  (`.gitignore` : `.env`, `.env.*`, avec exceptions explicites `.env.example`
+  et `.env.test.example` qui ne contiennent que des placeholders). Chaque
+  développeur les recrée localement à partir de ces fichiers d'exemple.
+- **Production/Preview (Vercel)** : "Environment Variables" du dashboard
+  Vercel (Project → Settings → Environment Variables). Chiffrées au repos
+  côté Vercel, jamais visibles en clair dans les logs de build, scindées par
+  environnement (Production / Preview / Development) — une variable peut
+  avoir une valeur différente selon l'environnement (ex. `STRIPE_SECRET_KEY`
+  test en Preview, live en Production). **Un changement de valeur nécessite
+  un redéploiement** pour être pris en compte (les variables sont injectées
+  au build/à l'exécution des fonctions serverless, pas lues dynamiquement).
+- **CI (GitHub Actions)** : le job `lint-and-check` utilise des valeurs
+  factices en dur dans `ci.yml` (aucun vrai secret nécessaire, juste de quoi
+  satisfaire la résolution de types `$env/static/*`). Le job `e2e` fait de
+  même contre une base Postgres éphémère locale au run — aucun secret de
+  dépôt (`Settings → Secrets and variables → Actions`) n'est utilisé
+  aujourd'hui dans ce projet.
+
+**Recommandation si l'équipe grandit** : au-delà d'un solo/duo occasionnel,
+les "Environment Variables" Vercel deviennent limitantes (pas d'historique
+d'accès par personne, pas de rotation programmée, partage de secrets hors
+Vercel — ex. accès direct à la base Neon ou au dashboard Stripe — toujours
+géré à la main). Un gestionnaire de secrets dédié apporte audit
+trail/permissions granulaires :
+
+- **Doppler** ou **1Password Secrets Automation** : SaaS, intégration
+  simple avec Vercel (sync automatique) et GitHub Actions (action officielle),
+  coût faible, bon rapport effort/bénéfice pour une petite équipe.
+- **HashiCorp Vault** : self-hosted, plus complet (rotation dynamique,
+  policies fines) mais overkill tant que l'infra reste sur Vercel/Neon
+  managés — à réserver à une équipe avec déjà de l'infra à opérer soi-même.
+
+Le signal à surveiller n'est pas un nombre de secrets, mais : plusieurs
+contributeurs ayant besoin d'un sous-ensemble différent de secrets, ou un
+premier départ d'équipe nécessitant de révoquer un accès sans redéployer.
+
+## Rotation
+
+Deux familles bien distinctes, avec des procédures différentes :
 
 1. **Secrets à rotation « zéro coupure » supportée par le code** : deux clés
    valides simultanément le temps de la transition. C'est le cas

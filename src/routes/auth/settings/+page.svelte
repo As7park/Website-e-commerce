@@ -57,11 +57,8 @@
 
 	const { form: emailData, enhance: emailEnhance, message: emailMessage } = emailForm;
 	const { form: passwordData, enhance: passwordEnhance, message: passwordMessage } = passwordForm;
-	const {
-		form: isMfaEnabledData,
-		enhance: isMfaEnabledEnhance,
-		message: isMfaEnabledMessage
-	} = isMfaEnabledForm;
+	// Carte MFA actuellement masquée dans le template : pas de use:enhance à câbler tant qu'elle est commentée.
+	const { form: isMfaEnabledData, message: isMfaEnabledMessage } = isMfaEnabledForm;
 
 	// Notifications pour les messages d'erreur
 	const SUCCESS_MESSAGES = ['Password modified successfully'];

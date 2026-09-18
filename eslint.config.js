@@ -14,7 +14,21 @@ export default ts.config(
 		rules: {
 			// Convention déjà utilisée dans le repo pour les paramètres
 			// intentionnellement inutilisés (ex: signature imposée par un type).
-			'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+			'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+			// `svelte/prefer-svelte-reactivity` et `svelte/require-each-key` restent
+			// en 'error' (défaut) : ce sont des bugs de réactivité potentiels, pas
+			// du style — le step CI "Lint (eslint)" est désormais bloquant dessus.
+			// Le reste de la dette ESLint ci-dessous est volontairement en 'warn'
+			// (visible dans la sortie CI, mais ne bloque pas) tant qu'elle n'a pas
+			// été résorbée (voir AUDIT_TECHNIQUE.md, roadmap P1/P2).
+			'@typescript-eslint/no-explicit-any': 'warn',
+			// Anti-pattern documenté (store `$state` réassigné dans un `$derived`) :
+			// nécessite une vraie réécriture, pas un correctif ESLint. Voir
+			// /memories/repo/svelte5-effect-store-antipattern.md.
+			'svelte/prefer-writable-derived': 'warn',
+			// 2 usages revus et acceptés (contenu de confiance interne) — voir
+			// AUDIT_TECHNIQUE.md §1.1.
+			'svelte/no-at-html-tags': 'warn'
 		}
 	},
 	{

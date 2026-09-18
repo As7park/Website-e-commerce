@@ -1,5 +1,6 @@
 import { prisma } from '$lib/server';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { sanitizeBlogHtml } from '$lib/server/sanitizeHtml';
 
 /**
  * BLOG-PLUGIN : DAO Prisma des articles, catégories et tags. Les lectures
@@ -83,7 +84,7 @@ export const updatePost = async (data: {
 				where: { id: data.id },
 				data: {
 					title: data.title,
-					content: data.content,
+					content: sanitizeBlogHtml(data.content),
 					published: data.published
 				}
 			});
@@ -135,7 +136,14 @@ export const createPost = async (
 ) => {
 	try {
 		const post = await prisma.blogPost.create({
-			data: { title, content, authorId, slug, published, createdAt: new Date() }
+			data: {
+				title,
+				content: sanitizeBlogHtml(content),
+				authorId,
+				slug,
+				published,
+				createdAt: new Date()
+			}
 		});
 
 		if (taxonomyValueIds && taxonomyValueIds.length > 0) {

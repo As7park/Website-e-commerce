@@ -23,7 +23,15 @@ export default defineConfig({
 	},
 
 	test: {
-		include: ['src/**/*.{test,spec}.{js,ts}']
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'html'],
+			include: ['src/**/*.{ts,js}'],
+			exclude: ['src/**/*.{test,spec}.{js,ts}']
+			// Pas de `thresholds` pour l'instant : premier chiffre de référence à
+			// établir avant de faire échouer la CI dessus (voir AUDIT_TECHNIQUE.md).
+		}
 	},
 
 	server: {
