@@ -612,7 +612,7 @@
 												/>
 											</td>
 										{/if}
-									{#each visibleColumns as column (column.key)}
+										{#each visibleColumns as column (column.key)}
 											<td class="border border-gray-300 p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
@@ -632,7 +632,7 @@
 										{/each}
 
 										{#if actions && actions.length > 0}
-										{#each actions as action (action.name)}
+											{#each actions as action (action.name)}
 												<TableCell>
 													{@render actionButton(item, action, 'table')}
 												</TableCell>
@@ -661,7 +661,7 @@
 									</div>
 								{/if}
 								<dl class="space-y-1.5">
-								{#each visibleColumns as column (column.key)}
+									{#each visibleColumns as column (column.key)}
 										<div class="flex items-baseline justify-between gap-3">
 											<dt class="text-muted-foreground text-xs shrink-0">{column.label}</dt>
 											<dd class="text-sm text-right break-words">

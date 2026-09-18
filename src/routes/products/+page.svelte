@@ -35,7 +35,10 @@
 	// le slider a toujours un intervalle valide à afficher, même sans filtre actif.
 	let sliderMin = $derived(facets.priceBounds.min);
 	let sliderMax = $derived(Math.max(facets.priceBounds.max, facets.priceBounds.min + 1));
-	let priceRange = $derived<[number, number]>([data.minPrice ?? sliderMin, data.maxPrice ?? sliderMax]);
+	let priceRange = $derived<[number, number]>([
+		data.minPrice ?? sliderMin,
+		data.maxPrice ?? sliderMax
+	]);
 
 	/**
 	 * Fusionne des paramètres dans l'URL courante et recharge `load()` — seul
