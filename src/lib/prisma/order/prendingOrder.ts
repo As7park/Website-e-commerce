@@ -116,6 +116,7 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 				});
 
 				// On supprime tous les "custom" existants pour cet item, puis on recrée
+				const oldCustomImages = matchingExisting.custom.map((c) => c.image).filter(Boolean);
 				await prisma.custom.deleteMany({
 					where: { orderItemId: matchingExisting.id }
 				});
@@ -129,6 +130,11 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 						}))
 					});
 				}
+
+				// Les anciennes images remplacées ne sont plus référencées : purge Cloudinary
+				// (no-op si l'URL a été recréée à l'identique, `maybeDeleteImageOnCloudinary`
+				// revérifie l'usage en base après le recréation ci-dessus).
+				await Promise.all(oldCustomImages.map((image) => maybeDeleteImageOnCloudinary(image)));
 
 				keptOrCreatedIds.push(matchingExisting.id);
 			} else {
@@ -162,6 +168,11 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 		if (itemsToDelete.length > 0) {
 			// console.log('Deleting items not in new list:', itemsToDelete);
 
+			const deletedCustomImages = existingOrderItems
+				.filter((oi) => itemsToDelete.includes(oi.id))
+				.flatMap((oi) => oi.custom.map((c) => c.image))
+				.filter(Boolean);
+
 			// 4A) Supprimer les customs de la base
 			await prisma.custom.deleteMany({
 				where: { orderItemId: { in: itemsToDelete } }
@@ -171,6 +182,9 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 			await prisma.orderItem.deleteMany({
 				where: { id: { in: itemsToDelete } }
 			});
+
+			// Purge Cloudinary des images des items supprimés
+			await Promise.all(deletedCustomImages.map((image) => maybeDeleteImageOnCloudinary(image)));
 
 			// console.log('Deleted old order items and their custom entries.');
 		} else {

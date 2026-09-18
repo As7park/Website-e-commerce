@@ -26,8 +26,9 @@ import {
 	setSessionTokenCookie
 } from '$lib/lucia/session';
 import { ExpiringTokenBucket } from '$lib/server/rate-limit';
-import { message, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate } from 'sveltekit-superforms';
 import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
+import { verifyPasswordStrength } from '$lib/lucia/password';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import type { Actions, RequestEvent } from './$types';
@@ -123,6 +124,14 @@ export const actions: Actions = {
 		const validPassword = await verifyPasswordHash(passwordHash, password);
 		if (!validPassword) {
 			return message(form, 'Incorrect password', { status: 400 });
+		}
+		if (!(await verifyPasswordStrength(new_password))) {
+			setError(
+				form,
+				'new_password',
+				'Ce mot de passe est trop courant ou a fuité, choisissez-en un autre.'
+			);
+			return fail(400, { form });
 		}
 
 		await passwordUpdateBucket.reset(event.locals.session.id);

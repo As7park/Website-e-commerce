@@ -4,7 +4,6 @@
 	import maplibregl from 'maplibre-gl';
 
 	import * as Card from '$shadcn/card/index.js';
-	import { loadStripe, type Stripe } from '@stripe/stripe-js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
@@ -39,7 +38,6 @@
 	);
 
 	// Runes Svelte 5
-	let stripe = $state<Stripe | null>(null);
 	let selectedAddressId = $state<string | undefined>(undefined);
 	// Facturation : par défaut identique à la livraison (cas le plus courant,
 	// zéro clic supplémentaire) — décoché uniquement si l'utilisateur veut une
@@ -233,12 +231,6 @@
 		selectedPoint = point;
 	}
 
-	$effect(() => {
-		(async () => {
-			stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-		})();
-	});
-
 	// Helper function to get selected address
 	function getSelectedAddress() {
 		return data.addresses?.find((a) => a.id === selectedAddressId);
@@ -375,9 +367,6 @@
 		}
 	}
 
-	// Stocker le code du transporteur de l'option sélectionnée
-	let selectedCarrierCode = '';
-
 	function chooseShippingOption(chosenOption: any) {
 		selectedShippingOption = chosenOption.id; // Nouvelle structure : option.id au lieu de option.code
 
@@ -398,8 +387,6 @@
 		selectedPoint = null;
 
 		if (isServicePoint && carrierCode) {
-			// Stocker le code du transporteur pour validation
-			selectedCarrierCode = carrierCode;
 			// On affiche la carte et on récupère les points relais
 			showMap = true;
 			// ✅ Vider la liste des points relais avant de récupérer les nouveaux
@@ -409,7 +396,6 @@
 			// Si ce n'est pas un point relais, on masque la carte et on reset les données du point
 			showMap = false;
 			selectedPoint = null;
-			selectedCarrierCode = '';
 			// ✅ Vider aussi la liste des points relais
 			servicePoints = [];
 		}

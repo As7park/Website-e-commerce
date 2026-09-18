@@ -27,7 +27,7 @@ import { updateUserPassword } from '$lib/lucia/user';
 
 import type { Actions, RequestEvent } from './$types';
 import type { SessionFlags } from '$lib/lucia/session';
-import { message, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { resetPasswordSchema } from '$lib/schema/auth/resetPasswordSchema';
 
@@ -73,6 +73,15 @@ export const actions: Actions = {
 		}
 
 		const { password } = form.data;
+		if (!(await verifyPasswordStrength(password))) {
+			setError(
+				form,
+				'password',
+				'Ce mot de passe est trop courant ou a fuité, choisissez-en un autre.'
+			);
+			return fail(400, { form });
+		}
+
 		await invalidateUserPasswordResetSessions(passwordResetSession.userId);
 		await invalidateUserSessions(passwordResetSession.userId);
 		await updateUserPassword(passwordResetSession.userId, password);

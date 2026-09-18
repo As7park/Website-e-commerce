@@ -31,8 +31,6 @@
 		message: updateAddressMessage
 	} = updateAddress;
 
-	let addressSuggestions: any[] = $state([]);
-
 	$effect(() => {
 		$updateAddressData.id = data.IupdateAddressSchema?.data.id;
 	});

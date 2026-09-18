@@ -10,13 +10,14 @@
 // -----------------------------------------------------------------------------
 
 import { redirect, fail } from '@sveltejs/kit';
-import { message, superValidate } from 'sveltekit-superforms';
+import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import { signupSchema } from '$lib/schema/auth/signupSchema';
 
 import { checkEmailAvailability } from '$lib/prisma/email/email';
 import { createUser } from '$lib/lucia/user';
+import { verifyPasswordStrength } from '$lib/lucia/password';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 
 import {
@@ -103,6 +104,16 @@ export const actions: Actions = {
 		// Extraire toutes les données du formulaire pour éviter les problèmes de sérialisation
 		const { email, username, password } = form.data;
 		log('📧 Extracted data:', { email, username });
+
+		/* ---------- 2bis. Robustesse (longueur + Have I Been Pwned) -------- */
+		if (!(await verifyPasswordStrength(password))) {
+			setError(
+				form,
+				'password',
+				'Ce mot de passe est trop courant ou a fuité, choisissez-en un autre.'
+			);
+			return fail(400, { form });
+		}
 
 		/* ---------- 3. Email déjà utilisé ? -------------------------------- */
 		if (!(await checkEmailAvailability(email))) {
