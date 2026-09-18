@@ -35,7 +35,7 @@ active** malgré une config qui laissait croire le contraire, et confirmé que
 | Axe                                   | Note actuelle                                             | Ce qui manque pour "professionnel, pris au sérieux"                               |
 | ------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Architecture & modularité             | 🟢 Solide                                                 | Rien de bloquant                                                                  |
-| Tests (unit + e2e + charge)           | 🟢 Solide                                                 | Coverage non mesurée, `lint-and-check` CI énigmatique                             |
+| Tests (unit + e2e + charge)           | 🟢 Solide                                                 | Coverage non mesurée                                                              |
 | Sécurité applicative                  | 🟢 Trou réel bouché, scan de vulnérabilités remis en état | Secrets `.env` en clair sur disque (non chiffrés au repos)                        |
 | Qualité de code outillée (lint/types) | 🟡 En progrès mais non bloquant                           | ESLint non-bloquant en CI depuis le début (109 erreurs dorment)                   |
 | Hygiène du dépôt                      | 🟢 Assainie pendant cet audit                             | Rien de bloquant                                                                  |
@@ -249,13 +249,21 @@ l'état dès qu'il y a plusieurs contributeurs ou un environnement partagé.
 `docs/secrets-rotation.md` documente bien la _rotation_, mais pas le
 _stockage_ (pas de Vault/1Password/Doppler/Vercel encrypted env mentionné).
 
-**c. `lint-and-check` échoue en CI pour une raison non identifiée.**
-Reproduit intégralement en local (Node 22, `npm ci` propre, `lint:prettier`,
-`check`, `test:unit`) : les trois étapes bloquantes passent avec un code de
-sortie 0. ESLint et l'audit sont `continue-on-error: true`, donc ne
-devraient pas faire échouer le job. Sans accès aux logs bruts (page GitHub
-demandant une authentification), impossible d'aller plus loin depuis cet
-environnement. **Ouvert, à investiguer avec un accès authentifié.**
+**c. `lint-and-check` échouait en CI — cause identifiée et corrigée.**
+Diagnostic obtenu via l'API GitHub REST publique (le dépôt est public :
+`GET /repos/.../actions/jobs/{id}` donne le détail par étape sans
+authentification), qui a permis d'isoler l'étape réellement en échec :
+`Type-check (svelte-check)`, systématiquement, alors que `Lint (prettier)`
+et `Lint (eslint)` passaient. Reproduit localement en déplaçant `.env`/
+`.env.test` (simulant l'absence totale de variables d'environnement du job
+`lint-and-check`, qui n'en définissait aucune contrairement au job `e2e`) :
+`svelte-check` échoue avec 10 erreurs `Module "$env/static/private"|"$env/static/public" has no exported member '...'`
+(`ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `PUBLIC_TINYMCE_API_KEY`...) — SvelteKit
+ne génère les types de ces modules que pour les variables présentes au
+moment de `svelte-kit sync`. **Corrigé** : ajout d'un bloc `env:` (valeurs
+factices) au job `lint-and-check` dans `ci.yml`, reproduisant le fix déjà
+appliqué au job `e2e`. Revérifié localement (0 erreur) avec ces mêmes
+variables et sans `.env`.
 
 ### 3.2 🟡 Qualité de code outillée — non bloquante, mais 109 erreurs qui dorment
 
@@ -332,15 +340,15 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 1. ~~Remplacer `npm audit` par un scanner qui fonctionne réellement.~~
    **fait** (§1.9) — `.github/workflows/osv-scanner.yml` (OSV-Scanner,
    résultats dans Security → Code scanning) + `.github/dependabot.yml`.
-   **Reste à faire manuellement** : activer Dependabot alerts dans
-   _Settings → Code security and analysis_ (réglage GitHub, pas un fichier).
+   Dependabot alerts déjà actif sur le dépôt (confirmé : 7 vulnérabilités
+   détectées dès le premier push — 1 critique, 2 hautes, 3 modérées, 1
+   basse — à trier).
 2. ~~Corriger la section CI du README~~ **fait** (§1.7).
 3. ~~Ajouter un `SECURITY.md`~~ **fait** (§1.8) — à enrichir si besoin.
 4. ~~Activer Dependabot~~ **fait** (§1.9, `.github/dependabot.yml`) — PRs de
    mise à jour automatiques, groupées par type, hebdomadaires.
-5. **Résoudre l'énigme `lint-and-check`** : demander l'accès au log brut
-   authentifié (toi, dans l'onglet Actions) pour identifier l'étape qui
-   échoue réellement — actuellement invisible depuis cet environnement.
+5. ~~Résoudre l'énigme `lint-and-check`~~ **fait** (§3.1.c) — variables
+   d'environnement `$env/static/*` manquantes dans le job, `ci.yml` corrigé.
 
 ### P1 — Prochaines itérations, effort moyen
 

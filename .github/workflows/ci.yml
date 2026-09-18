@@ -8,6 +8,22 @@ on:
 jobs:
   lint-and-check:
     runs-on: ubuntu-latest
+    env:
+      # `svelte-check` importe des modules `$env/static/private` et
+      # `$env/static/public` (voir src/lib/lucia/encryption.ts, oauth.ts,
+      # src/routes/api/address-search, src/routes/admin/blog/post/**).
+      # SvelteKit ne génère les types de ces modules que pour les variables
+      # présentes au moment de `svelte-kit sync` : sans elles, le type-check
+      # échoue avec "Module has no exported member 'X'" même si le code est
+      # correct. Valeurs factices, jamais utilisées au runtime dans ce job.
+      ENCRYPTION_KEY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaWbIUlVS8AKM=
+      ENCRYPTION_KEY_LEGACY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaW
+      GOOGLE_CLIENT_ID: ci-google-client-id
+      GOOGLE_CLIENT_SECRET: ci-google-client-secret
+      VITE_GOOGLE_REDIRECT_URI: http://localhost:2001/auth/login/google/callback
+      SECRET_ADDRESS_SEARCH_MODE: e2e
+      PUBLIC_TINYMCE_API_KEY: ci
+      STRIPE_SECRET_KEY: sk_test_ci
     steps:
       - uses: actions/checkout@v4
 
