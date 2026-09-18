@@ -34,6 +34,7 @@ npm run dev
 | Stockage & rotation des secrets | [docs/secrets-rotation.md](./docs/secrets-rotation.md)   |
 | Déploiement Vercel              | [docs/deployment/README.md](./docs/deployment/README.md) |
 | Tests end-to-end                | [e2e/README.md](./e2e/README.md)                         |
+| Contribuer                      | [CONTRIBUTING.md](./CONTRIBUTING.md)                     |
 
 ## Structure
 

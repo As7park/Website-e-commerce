@@ -1,24 +1,28 @@
 <script lang="ts" module>
 	import type { Action } from 'svelte/action';
 
-	export type TableColumn = {
-		key: string;
-		label: string;
-		formatter?: (value: any) => unknown;
-	};
-
 	export type TableItem = {
 		id: string;
 		[key: string]: unknown;
 	};
 
+	export type TableColumn = {
+		key: string;
+		label: string;
+		formatter?: (value: unknown) => unknown;
+	};
+
+	// `icon` reste en `any` : les icônes viennent soit de `lucide-svelte`
+	// (classes `SvelteComponentTyped`, API Svelte 4) soit de `@lucide/svelte`
+	// (composants fonction Svelte 5) — aucun type de composant Svelte natif ne
+	// couvre les deux à la fois sans passer par `any`.
 	export type TableAction =
 		| {
 				type: 'link';
 				name: string;
-				url: (item: any) => string;
+				url: (item: TableItem) => string;
 				icon?: any;
-				condition?: (item: any) => boolean;
+				condition?: (item: TableItem) => boolean;
 		  }
 		| {
 				type: 'form';
@@ -26,7 +30,7 @@
 				url: string;
 				enhanceAction: Action<HTMLFormElement>;
 				icon?: any;
-				condition?: (item: any) => boolean;
+				condition?: (item: TableItem) => boolean;
 		  };
 
 	/**

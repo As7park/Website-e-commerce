@@ -8,7 +8,7 @@
 	import { Label } from '$shadcn/label';
 	import * as Select from '$shadcn/select';
 	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn } from '$components/Table.svelte';
+	import type { TableAction, TableColumn, TableItem } from '$components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { updateTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
@@ -92,7 +92,7 @@
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/products/taxonomies/${id}/values/${item.id}`,
+			url: (item: TableItem) => `/admin/products/taxonomies/${id}/values/${item.id}`,
 			icon: Pencil
 		},
 		{

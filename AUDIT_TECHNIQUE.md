@@ -282,7 +282,7 @@ Répartition actuelle (après corrections) :
 
 | Règle                                | Occurrences | Statut CI                                                                                                       |
 | ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-explicit-any` | 65          | `warn` — dette de typage, chantier P2 #11 dédié                                                                 |
+| `@typescript-eslint/no-explicit-any` | 59          | `warn` — dette de typage, chantier P2 #11 dédié (lot 1 : `Table.svelte`, fait — 65 → 59)                        |
 | `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                      |
 | `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                 |
 | `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale |
@@ -403,12 +403,26 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 
 ### P2 — Structurant, effort plus élevé
 
-11. **Résorber `no-explicit-any` par lots thématiques** (le fichier
-    `Table.svelte` à lui seul en concentre 7 — un bon premier lot vu qu'il
-    vient d'être touché pour la faille XSS).
-12. **Ajouter `CONTRIBUTING.md` + `CODEOWNERS`** dès qu'un deuxième
-    contributeur régulier rejoint le projet (pas urgent en solo, mais à
-    anticiper plutôt que rétro-documenter après coup).
+11. 🔄 **Résorber `no-explicit-any` par lots thématiques** — **lot 1 fait**
+    (`Table.svelte` et ses ~8 call sites) : 65 → 59 occurrences.
+    `formatter`/`url`/`condition` typés `unknown`/`TableItem` au lieu de
+    `any` (avec ajustement des call sites qui passaient des formatters/
+    callbacks à signature trop stricte — `formatDate`, shapes ad-hoc
+    `{ productSlug: string }`/`{ hasFacture?: boolean }` remplacées par
+    `TableItem` + accès via propriété `unknown`, valide en template
+    literal/`Boolean()` sans cast). **`icon` reste volontairement en
+    `any`** (3 occurrences) : les icônes viennent soit de `lucide-svelte`
+    (classes `SvelteComponentTyped`, API Svelte 4) soit de `@lucide/svelte`
+    (composants fonction Svelte 5) — aucun type de composant Svelte natif
+    ne couvre les deux sans passer par `any`, tenté puis abandonné (le
+    type `Component` de `svelte` n'accepte pas les classes
+    `SvelteComponentTyped` historiques). Reste 56 occurrences ailleurs
+    dans le code pour de futurs lots.
+12. ~~**Ajouter `CONTRIBUTING.md` + `CODEOWNERS`**~~ **fait** :
+    [CONTRIBUTING.md](CONTRIBUTING.md) (setup, checks avant PR, conventions
+    TS strict/Svelte 5/knip) + [CODEOWNERS](CODEOWNERS) (propriétaire
+    global unique pour l'instant, à affiner par domaine dès un deuxième
+    contributeur régulier).
 
 ### Ne pas faire (pour éviter l'over-engineering)
 

@@ -17,9 +17,14 @@
 		{
 			key: 'message',
 			label: 'Message',
-			formatter: (value: string) => (value.length > 50 ? value.substring(0, 50) + '...' : value)
+			formatter: (value: unknown) =>
+				typeof value === 'string' && value.length > 50 ? value.substring(0, 50) + '...' : value
 		},
-		{ key: 'createdAt', label: 'Date de création', formatter: formatDate }
+		{
+			key: 'createdAt',
+			label: 'Date de création',
+			formatter: (value: unknown) => formatDate(String(value))
+		}
 	]);
 
 	// Define actions for each contact submission

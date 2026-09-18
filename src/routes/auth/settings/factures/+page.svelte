@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableItem } from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatMoney } from '$lib/utils/formatMoney';
 	import { formatOrderStatus } from '$lib/utils/formatOrderStatus';
@@ -21,7 +22,7 @@
 			label: 'Statut',
 			formatter: (value: unknown) => formatOrderStatus(String(value)).label
 		},
-		{ key: 'createdAt', label: 'Date', formatter: formatDate }
+		{ key: 'createdAt', label: 'Date', formatter: (value: unknown) => formatDate(String(value)) }
 	];
 
 	const transactionActions = [
@@ -30,14 +31,14 @@
 			name: 'facture',
 			url: (item: { id: string }) => `/auth/settings/factures/${item.id}`,
 			icon: Receipt,
-			condition: (item: { hasFacture?: boolean }) => Boolean(item.hasFacture)
+			condition: (item: TableItem) => Boolean(item.hasFacture)
 		},
 		{
 			type: 'link' as const,
 			name: 'retour',
 			url: (item: { id: string }) => `/auth/settings/returns/${item.id}`,
 			icon: Undo2,
-			condition: (item: { hasFacture?: boolean }) => data.returnsEnabled && Boolean(item.hasFacture)
+			condition: (item: TableItem) => data.returnsEnabled && Boolean(item.hasFacture)
 		}
 	];
 </script>

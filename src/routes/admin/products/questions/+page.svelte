@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import Table from '$components/Table.svelte';
+	import type { TableItem } from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -38,14 +39,18 @@
 				typeof value === 'string' && value.length > 60 ? `${value.slice(0, 60)}…` : value
 		},
 		{ key: 'statusLabel', label: 'Statut' },
-		{ key: 'createdAt', label: 'Posée le', formatter: formatDate }
+		{
+			key: 'createdAt',
+			label: 'Posée le',
+			formatter: (value: unknown) => formatDate(String(value))
+		}
 	];
 
 	const questionActions = [
 		{
 			type: 'link' as const,
 			name: 'voir le produit',
-			url: (item: { productSlug: string }) => `/products/${item.productSlug}`,
+			url: (item: TableItem) => `/products/${item.productSlug}`,
 			icon: ExternalLink
 		},
 		{

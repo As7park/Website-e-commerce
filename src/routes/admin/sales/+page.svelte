@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Table from '$components/Table.svelte';
+	import type { TableItem } from '$components/Table.svelte';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { formatMoney } from '$lib/utils/formatMoney';
 	import FileText from 'lucide-svelte/icons/file-text';
@@ -18,7 +19,11 @@
 		{ key: 'customer_details_email', label: 'Email commande' },
 		{ key: 'app_user_email', label: 'Email compte' },
 		{ key: 'app_user_name', label: 'Nom compte' },
-		{ key: 'createdAt', label: 'Date de création', formatter: formatDate },
+		{
+			key: 'createdAt',
+			label: 'Date de création',
+			formatter: (value: unknown) => formatDate(String(value))
+		},
 		{
 			key: 'disputeLabel',
 			label: 'Litige',
@@ -32,14 +37,14 @@
 			name: 'facture',
 			url: (item: { id: string }) => `/admin/sales/facture/${item.id}`,
 			icon: Receipt,
-			condition: (item: { hasFacture?: boolean }) => Boolean(item.hasFacture)
+			condition: (item: TableItem) => Boolean(item.hasFacture)
 		},
 		{
 			type: 'link' as const,
 			name: 'bordereau',
 			url: (item: { id: string }) => `/admin/sales/bordereau/${item.id}`,
 			icon: FileText,
-			condition: (item: { hasBordereau?: boolean }) => Boolean(item.hasBordereau)
+			condition: (item: TableItem) => Boolean(item.hasBordereau)
 		}
 	];
 </script>

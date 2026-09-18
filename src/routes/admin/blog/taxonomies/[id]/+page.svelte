@@ -7,7 +7,7 @@
 	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
 	import { Label } from '$shadcn/label';
 	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn } from '$components/Table.svelte';
+	import type { TableAction, TableColumn, TableItem } from '$components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { updateBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
@@ -72,7 +72,7 @@
 		{
 			type: 'link',
 			name: 'edit',
-			url: (item: any) => `/admin/blog/taxonomies/${id}/values/${item.id}`,
+			url: (item: TableItem) => `/admin/blog/taxonomies/${id}/values/${item.id}`,
 			icon: Pencil
 		},
 		{
