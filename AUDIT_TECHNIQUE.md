@@ -32,14 +32,14 @@ transcription de conversation), **une intégration PWA jamais réellement
 active** malgré une config qui laissait croire le contraire, et confirmé que
 **le scan de vulnérabilités npm est cassé en silence**, y compris en CI.
 
-| Axe                                   | Note actuelle                                             | Ce qui manque pour "professionnel, pris au sérieux"                               |
-| ------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Architecture & modularité             | 🟢 Solide                                                 | Rien de bloquant                                                                  |
-| Tests (unit + e2e + charge)           | 🟢 Solide                                                 | Coverage non mesurée                                                              |
-| Sécurité applicative                  | 🟢 Trou réel bouché, scan de vulnérabilités remis en état | Secrets `.env` en clair sur disque (non chiffrés au repos)                        |
-| Qualité de code outillée (lint/types) | 🟡 En progrès mais non bloquant                           | ESLint non-bloquant en CI depuis le début (109 erreurs dorment)                   |
-| Hygiène du dépôt                      | 🟢 Assainie pendant cet audit                             | Rien de bloquant                                                                  |
-| Gouvernance / process                 | 🟡 Premiers jalons posés                                  | CONTRIBUTING/CODEOWNERS restent à faire, Dependabot alerts à activer manuellement |
+| Axe                                   | Note actuelle                                             | Ce qui manque pour "professionnel, pris au sérieux"                                                                                                                           |
+| ------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture & modularité             | 🟢 Solide                                                 | Rien de bloquant                                                                                                                                                              |
+| Tests (unit + e2e + charge)           | 🟢 Solide                                                 | Coverage Vitest mesurée (6,94 % lignes) mais trompeuse isolément — la majorité du parcours utilisateur est couverte par les 46 specs Playwright, non incluses dans ce chiffre |
+| Sécurité applicative                  | 🟢 Trou réel bouché, scan de vulnérabilités remis en état | Secrets `.env` en clair sur disque (non chiffrés au repos)                                                                                                                    |
+| Qualité de code outillée (lint/types) | � Bloquant sur les bugs de réactivité, warn sur le reste  | 6 warnings résiduels justifiés (`no-explicit-any`, `no-at-html-tags`)                                                                                                         |
+| Hygiène du dépôt                      | 🟢 Assainie pendant cet audit                             | Rien de bloquant                                                                                                                                                              |
+| Gouvernance / process                 | � CONTRIBUTING/CODEOWNERS/SECURITY.md/Dependabot en place | Activer "Dependabot alerts" dans les réglages GitHub (action manuelle admin)                                                                                                  |
 
 ---
 
@@ -283,13 +283,13 @@ directement plutôt que rétrogradées — 3 d'entre elles cachaient un vrai bug
 
 Répartition actuelle (après corrections) :
 
-| Règle                                | Occurrences | Statut CI                                                                                                                                                                         |
-| ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-explicit-any` | 3           | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés) |
-| `svelte/require-each-key`            | 0 (25 corrigées) | **`error`, bloquant** — **résorbé** : clé ajoutée à chacun des 25 `{#each}` (15 fichiers), la plus pertinente sémantiquement (id, url, href, label, clé de tuple...)         |
-| `svelte/prefer-svelte-reactivity`    | 0 (9 traitées) | **`error`, bloquant** — **résorbé** : 2 occurrences (`Table.svelte`, sélection multi-lignes, état réactif réel) converties en `SvelteSet` ; 7 (`Map`/`URLSearchParams` locaux, construits et jetés dans une seule fonction) laissées natives avec `eslint-disable-next-line` justifié |
-| `svelte/prefer-writable-derived`     | 0 (3 corrigées) | **`error`, bloquant** — **résorbé** : les 3 occurrences (`QuantityInput.svelte`, `blog/+page.svelte`, `products/+page.svelte`) remplaçaient un `$state` + `$effect` de resynchronisation par un simple `$derived` réassignable (writable derived, natif Svelte 5.25+) ; règle promue en `'error'` pour éviter toute régression |
-| `svelte/no-at-html-tags`             | 3           | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)                                                                               |
+| Règle                                | Occurrences      | Statut CI                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@typescript-eslint/no-explicit-any` | 3                | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés)                                                                                                                                              |
+| `svelte/require-each-key`            | 0 (25 corrigées) | **`error`, bloquant** — **résorbé** : clé ajoutée à chacun des 25 `{#each}` (15 fichiers), la plus pertinente sémantiquement (id, url, href, label, clé de tuple...)                                                                                                                                                           |
+| `svelte/prefer-svelte-reactivity`    | 0 (9 traitées)   | **`error`, bloquant** — **résorbé** : 2 occurrences (`Table.svelte`, sélection multi-lignes, état réactif réel) converties en `SvelteSet` ; 7 (`Map`/`URLSearchParams` locaux, construits et jetés dans une seule fonction) laissées natives avec `eslint-disable-next-line` justifié                                          |
+| `svelte/prefer-writable-derived`     | 0 (3 corrigées)  | **`error`, bloquant** — **résorbé** : les 3 occurrences (`QuantityInput.svelte`, `blog/+page.svelte`, `products/+page.svelte`) remplaçaient un `$state` + `$effect` de resynchronisation par un simple `$derived` réassignable (writable derived, natif Svelte 5.25+) ; règle promue en `'error'` pour éviter toute régression |
+| `svelte/no-at-html-tags`             | 3                | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)                                                                                                                                                                                                                            |
 
 **Bugs réels découverts en corrigeant les violations à 1-2 occurrences** :
 
@@ -306,55 +306,105 @@ error` ne reçoit jamais rien de SvelteKit sur une page `+error.svelte` (pas
   n'était référencé que dans un bloc de carte MFA actuellement commenté
   (feature volontairement masquée) — supprimé de la déstructuration.
 
-### 3.3 🟡 Documentation désynchronisée du code réel
+### 3.3 � Documentation désynchronisée du code réel — corrigée
 
-Le [README.md](README.md) racine (section CI) affirme que `lint` et `check`
-sont tous deux en `continue-on-error` — **faux** : `check` (svelte-check)
-est bloquant depuis l'origine du fichier, seul `lint:eslint` (et l'audit)
-sont non-bloquants. Le README **ne mentionne pas du tout** le job `e2e`
-ajouté cette semaine (postgres jetable, 46 specs, entièrement mocké). Un
-contributeur qui lit uniquement le README a une image fausse du filet de
-sécurité réel du projet. → correction proposée en §4 (P0, 5 minutes).
+Le [README.md](README.md) (section CI) affirmait que `lint` et `check`
+étaient tous deux en `continue-on-error`, et ne mentionnait pas le job
+`e2e`. **Corrigé** : la section décrit désormais précisément le statut
+bloquant/non-bloquant de chaque step (`eslint` bloquant sur les 3 règles
+de réactivité, `warn` sur le reste ; `knip` non-bloquant ; job `e2e`
+non-bloquant en première itération), alignée sur `ci.yml`.
 
-### 3.4 🟢 Hygiène des dépendances — knip en CI (non-bloquant) depuis P1 #8
+### 3.4 🟢 Hygiène des dépendances — knip en CI (non-bloquant), dépendances triées
 
 **Fait (P1 #8)** : `knip` installé (`devDependencies`), configuré via
-[knip.json](knip.json) pour filtrer les faux positifs déjà identifiés
-ci-dessous (`k6/**`, `static/**`, composants shadcn scaffoldés dans
-`src/lib/components/shadcn/ui/**`, et les types de rapports `exports`/
-`types`/`enumMembers`/`duplicates` qui produisaient un bruit disproportionné
-non couvert par cet audit initial). Exposé via `npm run lint:knip` et un
-step CI dédié "Lint (knip)" en `continue-on-error: true` — visible à chaque
-run, mais non bloquant tant que les candidats réels restants n'ont pas été
-triés un par un.
+[knip.json](knip.json). Exposé via `npm run lint:knip` et un step CI dédié
+"Lint (knip)" en `continue-on-error: true`.
 
-Une fois filtré, le rapport se réduit à des candidats réels et actionnables :
+**Mise à jour — triage des 44 dépendances effectué** : chacune des 29
+dépendances de prod + 15 devDependencies signalées a été vérifiée
+individuellement (grep sur tout le repo + `npm ls <pkg> --all` pour détecter
+un besoin transitif réel via un autre paquet directement utilisé) :
 
-- **8 fichiers potentiellement inutilisés** (confirmés, pas de faux positif
-  après filtrage) : `e2e/support/commerce.ts`,
-  `src/lib/{blog,commerce,contact,products}/paths.ts`,
+- **37 supprimées de `package.json`** (29 prod + 8 dev) : soit réellement
+  mortes (ex. `argon2` remplacé depuis longtemps par `@node-rs/argon2`,
+  `next-themes` — lib React sans rapport avec ce projet Svelte, `date-fns`,
+  `mitt`, `cmdk`, `class-variance-authority`, `@fontsource/open-sans` alors
+  que `@fontsource-variable/open-sans` est la variante réellement importée,
+  les 4 plugins `@tailwindcss/{aspect-ratio,container-queries,forms,typography}`
+  jamais référencés dans `tailwind.config.ts` ni en `@plugin` CSS...), soit
+  déjà apportées transitivement par un paquet qu'on utilise directement
+  (`@floating-ui/*`, `runed`, `svelte-toolbelt`, `tabbable`, `esm-env` par
+  `bits-ui`/`vaul-svelte`/`paneforge` ; `@babel/runtime`, `core-js`, `raf`,
+  `performance-now`, `fflate` par `jspdf`/`canvg` ; `fast-check`/`pure-rand`
+  par `sveltekit-superforms`→`effect` ; `tslib` par de nombreux paquets) —
+  déclaration redondante retirée, rien n'est perdu à l'exécution.
+- **1 doublon retiré** : `prisma` était listé à la fois en `dependencies` et
+  `devDependencies` (même version) — conservé uniquement en dev (CLI), le
+  runtime est déjà couvert par `@prisma/client`.
+- **`prettier-plugin-tailwindcss` supprimé** : installé mais jamais ajouté au
+  tableau `plugins` de `.prettierrc` — donc sans aucun effet (le tri
+  automatique des classes Tailwind ne s'est jamais exécuté). Retiré plutôt
+  que branché à l'aveugle : l'activer réordonnerait les classes dans une
+  bonne partie des fichiers `.svelte`, un changement délibéré à faire à part.
+- **1 dépendance déclarée en plus** : `@eslint/js`, utilisée directement dans
+  `eslint.config.js` mais absente de `package.json` (dépendance transitive
+  d'`eslint-plugin-svelte`/`typescript-eslint` jusqu'ici) — désormais
+  explicite en `devDependencies`.
+- **6 faux positifs restants, dorénavant listés dans `knip.json` (`ignoreDependencies`)**
+  plutôt que laissés comme bruit à chaque run : `@tanstack/table-core`,
+  `embla-carousel-svelte`, `paneforge` (utilisés uniquement dans
+  `src/lib/components/shadcn/ui/**`, exclu du scan de fichiers par
+  `ignore` — leurs imports y sont donc invisibles pour knip) ; `chokidar`,
+  `pino-pretty` (utilisés respectivement via un script npm et une chaîne
+  dynamique `transport: { target: 'pino-pretty' }` dans `src/lib/server/log.ts`,
+  pas un `import` statique que knip puisse détecter).
+- **Effet de bord découvert en vérifiant par un vrai `npm run build`** :
+  `eslint.config.js` n'ignorait ni `.vercel/` (sortie de build de
+  l'adapter Vercel) ni `coverage/` (rapport de `vitest run --coverage`) —
+  tous deux déjà exclus de git mais pas d'ESLint. Un build local ou un
+  `--coverage` suivi d'un lint expose jusqu'à ~15 000 faux positifs sur du
+  JS bundlé/généré. Corrigé (`ignores` étendu à `.vercel/` et `coverage/`) ;
+  recompte final confirmé à 0 erreur / 6 warnings (baseline attendue).
+- **8 fichiers potentiellement inutilisés restent signalés** (inchangé,
+  hors périmètre de ce triage centré sur les dépendances) :
+  `e2e/support/commerce.ts`, `src/lib/{blog,commerce,contact,products}/paths.ts`,
   `src/lib/schema/products/customSchema.ts`, `src/lib/store/mediaStore.ts`,
   `src/lib/utils/shippingMethodMap.ts`. **Pas encore supprimés** — à vérifier
   individuellement (import dynamique, référence dans un test, etc.) avant
   toute suppression, en gardant l'esprit "ne pas supprimer en masse".
-- **29 dépendances de prod + 15 devDependencies** potentiellement inutilisées
-  restent signalées — à trier au fil de l'eau, `dompurify` n'apparaît
-  désormais plus dans cette liste (utilisé depuis P1 #7, voir §1.1).
-- **1 dépendance non listée** (`@eslint/js`, utilisée dans
-  `eslint.config.js` mais absente de `package.json`) — trouvaille réelle et
-  nouvelle, laissée pour un futur triage (probablement une dépendance
-  transitive d'`eslint-plugin-svelte`/`typescript-eslint` à expliciter).
-- Les scripts k6 (`k6/*.js`) et le binaire `k6` lui-même sont désormais
-  filtrés via `ignore`/`ignoreBinaries` dans `knip.json` (faux positifs
-  confirmés — invocation uniquement via `k6 run`, jamais importés en JS).
 
-### 3.5 🟢 Gouvernance & process — absents
+Vérifié après triage : `npm install` (64 + 1 paquets transitifs retirés),
+`npm run check` (0/0), `npm run build` (adapter Vercel, aucune régression),
+`npx vitest run` (28 passed, 2 skipped), `npx knip` (0 dépendance non
+utilisée, 0 dépendance non listée restante).
 
-Aucun `CONTRIBUTING.md`, `SECURITY.md` (politique de signalement de
-vulnérabilité), `CODEOWNERS`, ni configuration Dependabot/Renovate pour les
-mises à jour de dépendances automatisées. Pour un projet "pris au sérieux",
-ce sont des signaux attendus dès le premier contributeur externe ou audit
-client.
+### 3.5 🟢 Gouvernance & process
+
+`CONTRIBUTING.md`, `SECURITY.md` (politique de signalement de
+vulnérabilité), `CODEOWNERS` et `.github/dependabot.yml` (mises à jour de
+dépendances automatisées, groupées et hebdomadaires) sont en place. **Reste
+un réglage GitHub, pas un fichier** : activer "Dependabot alerts" (Settings
+→ Code security and analysis → Dependabot alerts) sur le dépôt — bascule
+d'interface qu'un agent sans accès admin au dépôt ne peut pas actionner à la
+place du mainteneur.
+
+### 3.6 🟢 Coverage Vitest — mesurée
+
+`npm run test:unit:coverage` (provider `v8`, config `vite.config.ts`) donne
+6,94 % de lignes / 44,71 % de branches / 43,23 % de fonctions sur
+l'ensemble de `src/**`. **Ce chiffre brut est trompeur pris isolément** :
+il est tiré vers le bas par ~150 `+page.server.ts`/`+server.ts` (routes
+SvelteKit) à 0 % — non pas parce qu'ils sont non testés, mais parce qu'ils
+sont exercés par les 46 specs Playwright (`e2e/**`), que `vitest --coverage`
+ne mesure pas. Les 9 fichiers de test unitaires existants ciblent
+spécifiquement la logique la plus critique/complexe à isoler (chiffrement,
+sanitization HTML, résilience Sendcloud, job post-paiement, génération de
+facture) plutôt que de dupliquer ce que Playwright couvre déjà de bout en
+bout. Aucun seuil (`thresholds`) n'est configuré — délibéré tant qu'un
+premier chiffre de référence n'était pas mesuré (c'est fait ici) ; un seuil
+combiné unit+e2e nécessiterait d'outiller la couverture Playwright
+(`nyc`/`istanbul` via un provider dédié), hors périmètre de cet audit.
 
 ---
 
@@ -459,15 +509,16 @@ any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
 
 ## 5. Chiffres de référence (mesurés ce jour)
 
-| Métrique                                                            | Valeur                                          |
-| ------------------------------------------------------------------- | ----------------------------------------------- |
-| `npm run check`                                                     | 0 erreur, 0 warning                             |
-| `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)         |
-| ESLint                                                              | 0 erreur bloquante + 6 warnings justifiés (voir §3.2) |
-| Specs Playwright                                                    | 46 fichiers                                     |
-| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)            |
-| Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 29 / 15                                         |
-| Scan de vulnérabilités                                              | OSV-Scanner + Dependabot (`npm audit` retiré)   |
+| Métrique                                                            | Valeur                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`                                                     | 0 erreur, 0 warning                                                                                                                                                                                                                                                                |
+| `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)                                                                                                                                                                                                                                            |
+| ESLint                                                              | 0 erreur bloquante + 6 warnings justifiés (voir §3.2)                                                                                                                                                                                                                              |
+| Coverage Vitest (`npm run test:unit:coverage`)                      | 6,94 % lignes / 44,71 % branches / 43,23 % fonctions — chiffre brut sur l'ensemble de `src/**`, dominé par les ~150 `+page.server.ts`/`+server.ts` non couverts en unitaire mais exercés par les 46 specs Playwright (non comptabilisées ici) ; pas de seuil configuré (voir §3.6) |
+| Specs Playwright                                                    | 46 fichiers                                                                                                                                                                                                                                                                        |
+| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)                                                                                                                                                                                                                                               |
+| Dépendances prod / dev potentiellement inutilisées (knip)           | 0 / 0 — 37 supprimées, 6 faux positifs justifiés en `ignoreDependencies` (voir §3.4) |
+| Scan de vulnérabilités                                              | OSV-Scanner + Dependabot (`npm audit` retiré)                                                                                                                                                                                                                                      |
 
 ---
 

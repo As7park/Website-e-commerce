@@ -15,11 +15,29 @@ ainsi que les autres secrets de l'application selon le même schéma.
   scénario réaliste pour un solo (perte/vol de la machine) — combiné à
   `chmod 600 .env` (lecture réservée à l'utilisateur courant), pas d'outil
   supplémentaire nécessaire. Pour aller plus loin sans dépendre d'un
-  service tiers : [`sops`](https://github.com/getsops/sops) +
+  service tiers, [`sops`](https://github.com/getsops/sops) +
   [`age`](https://github.com/FiloSottile/age) (tous deux open source,
-  gratuits, sans compte) chiffrent le `.env` valeur par valeur avec une clé
-  `age` gardée hors du repo — le fichier chiffré peut alors être commité
-  sans risque.
+  gratuits, sans compte) sont scaffoldés dans ce dépôt
+  ([`.sops.yaml`](../.sops.yaml)) : ils chiffrent le `.env` valeur par
+  valeur avec une clé `age` gardée hors du repo, permettant de committer
+  `.env.enc` sans risque. Rien n'est chiffré tant que ces étapes n'ont pas
+  été faites (une fois par développeur) :
+
+  ```bash
+  # 1. Installer sops et age (ex. apt/brew install sops age), puis générer
+  #    sa clé perso — le fichier généré ne doit jamais être commité.
+  age-keygen -o ~/.config/sops/age/keys.txt
+
+  # 2. Remplacer le placeholder dans .sops.yaml par la clé PUBLIQUE affichée
+  #    ("# public key: age1...").
+
+  # 3. Chiffrer .env → .env.enc (committable, voir .gitignore) :
+  npm run secrets:encrypt
+
+  # 4. Sur une autre machine (avec la même clé privée en place) :
+  npm run secrets:decrypt
+  ```
+
 - **Production/Preview (Vercel)** : "Environment Variables" du dashboard
   Vercel (Project → Settings → Environment Variables). Chiffrées au repos
   côté Vercel, jamais visibles en clair dans les logs de build, scindées par

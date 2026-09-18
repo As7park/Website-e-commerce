@@ -64,6 +64,11 @@ export default ts.config(
 	{
 		// static/tinymce est une librairie vendorisée/minifiée : la lint génère
 		// des milliers de faux positifs sans rapport avec le code applicatif.
-		ignores: ['build/', '.svelte-kit/', 'dist/', 'static/tinymce/']
+		// .vercel/ : sortie de `vercel build`/`npm run build` (adapter-vercel).
+		// coverage/ : rapport généré par `vitest run --coverage`.
+		// Aucun des deux n'est commité (voir .gitignore) mais tous deux
+		// peuvent exister localement/en CI et contiennent du JS bundlé/généré
+		// qui produit des milliers de faux positifs s'il est linté.
+		ignores: ['build/', '.svelte-kit/', 'dist/', 'static/tinymce/', '.vercel/', 'coverage/']
 	}
 );

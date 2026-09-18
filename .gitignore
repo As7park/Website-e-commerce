@@ -23,6 +23,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test.example
+# Chiffré via sops+age (voir .sops.yaml, docs/secrets-rotation.md) : committable.
+!.env.enc
 
 # Vite
 vite.config.js.timestamp-*

@@ -1,6 +1,13 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"ignore": ["k6/**", "static/**", "src/lib/components/shadcn/ui/**"],
-	"ignoreBinaries": ["k6"],
+	"ignoreBinaries": ["k6", "sops"],
+	"ignoreDependencies": [
+		"@tanstack/table-core",
+		"embla-carousel-svelte",
+		"paneforge",
+		"chokidar",
+		"pino-pretty"
+	],
 	"exclude": ["exports", "types", "enumMembers", "duplicates"]
 }

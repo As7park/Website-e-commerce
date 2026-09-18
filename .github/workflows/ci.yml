@@ -50,10 +50,9 @@ jobs:
         run: npm run check
 
       - name: Lint (knip)
-        # Non-bloquant : premier passage instrumenté (knip.json filtre les
-        # faux positifs déjà identifiés — scripts k6, static/, composants
-        # shadcn scaffoldés) mais les candidats réels restants (fichiers/deps
-        # potentiellement morts) n'ont pas encore été triés un par un.
+        # Non-bloquant : les dépendances inutilisées ont été triées (voir
+        # AUDIT_TECHNIQUE.md §3.4), reste 8 fichiers candidats à vérifier
+        # individuellement avant suppression — pas de quoi bloquer le build.
         run: npm run lint:knip
         continue-on-error: true
 

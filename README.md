@@ -75,9 +75,13 @@ npm run stripe:listen       # CLI Stripe → POST http://localhost:2000/api/webh
 `.github/workflows/ci.yml` tourne sur push/PR vers `main`, deux jobs :
 
 - **`lint-and-check`** : `npm ci`, `prettier --check` (bloquant), `eslint`
-  (non-bloquant — dette pré-existante en cours de résorption, voir
-  commentaires dans le workflow), `svelte-check` (bloquant), tests unitaires
-  Vitest (bloquant).
+  (bloquant sur les erreurs — `svelte/require-each-key`,
+  `svelte/prefer-svelte-reactivity`, `svelte/prefer-writable-derived` ;
+  le reste de la dette pré-existante, `no-explicit-any`/`no-at-html-tags`,
+  reste en `warn`, visible mais non-bloquant), `svelte-check` (bloquant),
+  tests unitaires Vitest avec couverture (bloquant sur des tests rouges,
+  pas sur le taux de couverture, aucun seuil configuré), `knip` (non-bloquant,
+  dette de dépendances/fichiers inutilisés en cours de triage).
 - **`e2e`** : Postgres jetable en service container (aucun secret réel
   requis, toutes les intégrations externes tournent en mode mock), suite
   Playwright complète hors `e2e/live/**` (specs appelant de vrais services

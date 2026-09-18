@@ -1,0 +1,10 @@
+# Config sops pour chiffrer .env avec une clé age (voir docs/secrets-rotation.md).
+# Rien n'est chiffré tant que ces étapes n'ont pas été faites par chaque dev :
+#   1. age-keygen -o ~/.config/sops/age/keys.txt   (clé perso, jamais commitée)
+#   2. Remplacer le placeholder ci-dessous par la clé PUBLIQUE affichée
+#      ("# public key: age1...").
+#   3. npm run secrets:encrypt   (génère .env.enc, committable sans risque)
+#   4. npm run secrets:decrypt   (régénère .env localement à partir de .env.enc)
+creation_rules:
+  - path_regex: \.env\.enc$
+    age: age1REMPLACE_PAR_TA_CLE_PUBLIQUE
