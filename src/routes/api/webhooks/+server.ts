@@ -46,8 +46,9 @@ export async function POST({ request }: { request: Request }) {
 			sig || '',
 			process.env.STRIPE_WEBHOOK_SECRET || ''
 		);
-	} catch (err: any) {
-		log('ERROR', 'webhook:stripe', '⚠️ Webhook signature verification failed.', err.message);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		log('ERROR', 'webhook:stripe', '⚠️ Webhook signature verification failed.', message);
 		return json({ error: 'Webhook signature verification failed.' }, { status: 400 });
 	}
 
@@ -333,7 +334,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				discountAmount: invoiceTotals.discountAmount,
 				promoCode: order.promoCode ?? null,
 
-				products: order.items.map((item: any) => ({
+				products: order.items.map((item) => ({
 					id: item.productId,
 					name: item.product.name,
 					price: item.price,
@@ -341,7 +342,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 					description: item.product.description,
 					stock: item.product.stock,
 					images: item.product.images,
-					customizations: item.custom.map((c: any) => ({
+					customizations: item.custom.map((c) => ({
 						id: c.id,
 						image: c.image,
 						userMessage: c.userMessage,

@@ -137,7 +137,7 @@
 	const { enhance: deleteTaxonomyEnhance, message: deleteTaxonomyMessage } = deleteTaxonomy;
 
 	let taxonomiesData = $derived(
-		(data?.taxonomies ?? []).map((taxonomy: any) => ({
+		(data?.taxonomies ?? []).map((taxonomy) => ({
 			...taxonomy,
 			valuesCount: taxonomy._count?.values ?? 0
 		}))

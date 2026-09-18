@@ -1,7 +1,7 @@
 <script lang="ts">
 	interface StructuredDataProps {
 		type: 'Organization' | 'WebSite' | 'Article' | 'Product' | 'BreadcrumbList';
-		data: Record<string, any>;
+		data: Record<string, unknown>;
 	}
 
 	let { type, data }: StructuredDataProps = $props();

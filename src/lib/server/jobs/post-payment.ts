@@ -7,6 +7,7 @@ import { withCircuitBreaker } from '$lib/server/circuit-breaker';
 import { recordJobAttempt, resetJobAttempts } from '$lib/server/job-attempts';
 import { withDuration } from '$lib/server/metrics';
 import * as Sentry from '@sentry/sveltekit';
+import { Prisma } from '@prisma/client';
 import { estimatePackage, type PackageEstimate } from '$lib/commerce/packageEstimate';
 
 /** Au-delà, on arrête de retenter cette transaction (dead-letter) : voir `runPostPaymentJob`. */
@@ -47,18 +48,29 @@ export function fallbackShippingMethod(shippingOption: string, pkg: PackageEstim
 }
 
 /**
+ * Commande + items nécessaires à l'estimation de colis — sous-ensemble des
+ * `include` réellement utilisés par les deux appelants (`runPostPaymentJob`
+ * ci-dessous et le webhook Stripe synchrone), typé via Prisma plutôt qu'en
+ * `any` : les deux appelants peuvent inclure davantage de relations, seule
+ * la forme `items.product`/`items.custom` est exploitée ici.
+ */
+type OrderForPackageEstimate = Prisma.OrderGetPayload<{
+	include: { items: { include: { product: true; custom: true } } };
+}>;
+
+/**
  * Estimation réelle du colis (poids + dimensions) à partir des produits de la
  * commande — même module que le devis checkout (`packageEstimate.ts`), pour
  * que le colis créé chez Sendcloud corresponde au devis affiché au client.
  */
-export function derivePackageEstimate(order: any): PackageEstimate {
+export function derivePackageEstimate(order: OrderForPackageEstimate | null): PackageEstimate {
 	if (!order || !order.items || !Array.isArray(order.items)) {
 		log('WARN', 'post-payment', "Impossible d'estimer le colis : 'order.items' est invalide.");
 		return estimatePackage([{ quantity: 1 }]);
 	}
 
 	return estimatePackage(
-		order.items.map((item: any) => ({
+		order.items.map((item) => ({
 			quantity: item.quantity,
 			hasCustom: (item.custom?.length ?? 0) > 0,
 			product: item.product

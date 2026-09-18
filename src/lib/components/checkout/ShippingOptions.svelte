@@ -1,11 +1,12 @@
 <script lang="ts">
 	import * as Card from '$shadcn/card/index.js';
 	import { Package, Home, MapPin, CheckCircle, XCircle } from 'lucide-svelte';
+	import type { ShippingOptionDTO } from '$lib/sendcloud/checkoutTypes';
 
 	interface Props {
-		shippingOptions: any[];
+		shippingOptions: ShippingOptionDTO[];
 		selectedShippingOption: string | null;
-		onShippingOptionSelect: (option: any) => void;
+		onShippingOptionSelect: (option: ShippingOptionDTO) => void;
 		hasCustomItems: boolean;
 	}
 
@@ -13,10 +14,10 @@
 		$props();
 
 	// Helper function to group shipping options by type
-	function groupShippingOptions(options: any[]) {
-		const grouped: { type: string; options: any[] }[] = [];
-		const servicePointOptions: any[] = [];
-		const homeDeliveryOptions: any[] = [];
+	function groupShippingOptions(options: ShippingOptionDTO[]) {
+		const grouped: { type: string; options: ShippingOptionDTO[] }[] = [];
+		const servicePointOptions: ShippingOptionDTO[] = [];
+		const homeDeliveryOptions: ShippingOptionDTO[] = [];
 
 		options.forEach((option) => {
 			// Nouvelle structure : option.type au lieu de option.functionalities?.last_mile

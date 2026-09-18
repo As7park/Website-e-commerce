@@ -21,7 +21,7 @@ import { log } from '$lib/server/log';
 const DEBUG = process.env.SENDCLOUD_DEBUG === 'true' || false;
 
 // Fonction helper pour les logs conditionnels
-function debugLog(...args: any[]) {
+function debugLog(...args: unknown[]) {
 	if (DEBUG) {
 		console.log(...args);
 	}
@@ -104,7 +104,7 @@ async function callShippingOptions(
 	url: string,
 	headers: Record<string, string>,
 	payload: unknown
-) {
+): Promise<SendcloudShippingOptionsResponse> {
 	let res: Response;
 	try {
 		res = await withCircuitBreaker('sendcloud', () =>
@@ -132,7 +132,7 @@ async function callShippingOptions(
 		log('ERROR', 'sendcloud:shipping-options', `Sendcloud a répondu ${res.status}`, text);
 		throw error(res.status, 'Le service de livraison a renvoyé une erreur.');
 	}
-	return res.json().catch(() => ({}) as any);
+	return res.json().catch(() => ({}));
 }
 
 /** Domestic vs international lead-time cap (hours). */
@@ -185,6 +185,34 @@ type QuoteDTO = {
 	eta?: string;
 };
 
+/** Forme brute Sendcloud v3 (`/api/v3/shipping-options`), champs accédés uniquement. */
+type SendcloudQuote = {
+	price?: { total?: { value?: number; currency?: string } };
+	lead_time?: number;
+};
+
+type SendcloudShippingOption = {
+	code?: string;
+	name?: string;
+	carrier?: { code?: string; name?: string };
+	product?: { name?: string; code?: string };
+	functionalities?: {
+		age_check?: boolean | null;
+		last_mile?: string;
+		signature?: boolean;
+		tracked?: boolean;
+		service_area?: ImportantInfo['serviceArea'];
+	};
+	weight?: { min?: { value?: number }; max?: { value?: number } };
+	max_dimensions?: { length?: number; width?: number; height?: number; unit?: string };
+	quotes?: SendcloudQuote[];
+	requirements?: { is_service_point_required?: boolean };
+};
+
+type SendcloudShippingOptionsResponse = {
+	data?: SendcloudShippingOption[];
+};
+
 function etaFromLeadTimeHours(lead?: number): string | undefined {
 	if (!lead || !Number.isFinite(lead)) return undefined;
 	const d = new Date();
@@ -192,7 +220,9 @@ function etaFromLeadTimeHours(lead?: number): string | undefined {
 	return d.toISOString();
 }
 
-function pickCheapestQuote(quotes: any[]): { price: number; lead_time?: number } | null {
+function pickCheapestQuote(
+	quotes: SendcloudQuote[] | undefined
+): { price: number; lead_time?: number } | null {
 	let best: { price: number; lead_time?: number } | null = null;
 	for (const q of quotes ?? []) {
 		const v = Number(q?.price?.total?.value);
@@ -212,8 +242,8 @@ function lastMileType(lastMile: string): 'service_point' | 'home_delivery' {
 }
 
 /** Map Sendcloud v3 options to a compact, stable DTO for the frontend. */
-function mapQuotesV3(resp: any): QuoteDTO[] {
-	const arr: any[] = Array.isArray(resp?.data) ? resp.data : [];
+function mapQuotesV3(resp: SendcloudShippingOptionsResponse): QuoteDTO[] {
+	const arr: SendcloudShippingOption[] = Array.isArray(resp?.data) ? resp.data : [];
 	const out: QuoteDTO[] = [];
 
 	for (const opt of arr) {
@@ -307,7 +337,7 @@ function num(x: unknown): number | undefined {
 	return Number.isFinite(n) ? n : undefined;
 }
 
-function cheapestQuoteFull(quotes: any[] | undefined) {
+function cheapestQuoteFull(quotes: SendcloudQuote[] | undefined) {
 	let best: { value: number; currency: string; lead?: number } | undefined;
 	for (const q of quotes ?? []) {
 		const v = num(q?.price?.total?.value);
@@ -318,7 +348,7 @@ function cheapestQuoteFull(quotes: any[] | undefined) {
 	return best;
 }
 
-function extractImportantInfo(opt: any): ImportantInfo | null {
+function extractImportantInfo(opt: SendcloudShippingOption): ImportantInfo | null {
 	const ageCheck = opt?.functionalities?.age_check ?? null;
 	if (ageCheck !== null && ageCheck !== undefined) return null; // drop age-check variants
 
@@ -333,7 +363,7 @@ function extractImportantInfo(opt: any): ImportantInfo | null {
 
 	const signature = Boolean(opt?.functionalities?.signature);
 	const tracked = Boolean(opt?.functionalities?.tracked);
-	const serviceArea = opt?.functionalities?.service_area as ImportantInfo['serviceArea'];
+	const serviceArea = opt?.functionalities?.service_area;
 
 	const weightMinKg = num(opt?.weight?.min?.value);
 	const weightMaxKg = num(opt?.weight?.max?.value);
@@ -371,7 +401,7 @@ function extractImportantInfo(opt: any): ImportantInfo | null {
 	};
 }
 
-function summarizeOptions(list: any[]): ImportantInfo[] {
+function summarizeOptions(list: SendcloudShippingOption[]): ImportantInfo[] {
 	const out: ImportantInfo[] = [];
 	for (const opt of list ?? []) {
 		const s = extractImportantInfo(opt);
@@ -415,7 +445,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 
 	// 3) First call
 	let raw = await callShippingOptions(fetch, url, headers, payloadTry1);
-	let all: any[] = Array.isArray(raw?.data) ? raw.data : [];
+	let all: SendcloudShippingOption[] = Array.isArray(raw?.data) ? raw.data : [];
 
 	debugLog(
 		JSON.stringify({
@@ -447,7 +477,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 		? input.allowed_carriers.map((c) => c.toLowerCase())
 		: Array.from(DEFAULT_ALLOWED_CARRIERS);
 
-	const filteredRaw = all.filter((o: any) => {
+	const filteredRaw = all.filter((o) => {
 		const carrierCode = String(o?.carrier?.code ?? '').toLowerCase();
 		return allowedCarriers.includes(carrierCode);
 	});

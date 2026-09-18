@@ -36,7 +36,20 @@ export const createPendingOrder = async (userId: string) => {
 	return { ...order, items: [] };
 };
 
-export async function updateOrderItems(orderId: string, incomingItems: any[]) {
+// Forme d'un item de commande tel qu'envoyé par le client (panier) —
+// uniquement les champs effectivement lus ci-dessous, le reste (nom, image
+// d'affichage...) est ignoré et recalculé depuis `Product`/`ProductVariant`.
+export type IncomingOrderItem = {
+	id?: string;
+	product?: { id?: string };
+	productId?: string;
+	variant?: { id?: string };
+	variantId?: string;
+	quantity?: number;
+	custom?: { image?: string; userMessage?: string } | { image?: string; userMessage?: string }[];
+};
+
+export async function updateOrderItems(orderId: string, incomingItems: IncomingOrderItem[]) {
 	// console.log('--- Start updating order items (non-destructive) ---');
 	// console.log(`Order ID: ${orderId}`);
 	// console.log('New items:', JSON.stringify(incomingItems, null, 2));
@@ -123,9 +136,9 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 
 				if (newCustomArray.length > 0) {
 					await prisma.custom.createMany({
-						data: newCustomArray.map((c: { image?: string; userMessage?: string }) => ({
-							image: c.image,
-							userMessage: c.userMessage,
+						data: newCustomArray.map((c) => ({
+							image: c.image ?? '',
+							userMessage: c.userMessage ?? '',
 							orderItemId: matchingExisting.id
 						}))
 					});
@@ -151,9 +164,9 @@ export async function updateOrderItems(orderId: string, incomingItems: any[]) {
 
 				if (newCustomArray.length > 0) {
 					await prisma.custom.createMany({
-						data: newCustomArray.map((c: { image?: string; userMessage?: string }) => ({
-							image: c.image,
-							userMessage: c.userMessage,
+						data: newCustomArray.map((c) => ({
+							image: c.image ?? '',
+							userMessage: c.userMessage ?? '',
 							orderItemId: createdOrderItem.id
 						}))
 					});

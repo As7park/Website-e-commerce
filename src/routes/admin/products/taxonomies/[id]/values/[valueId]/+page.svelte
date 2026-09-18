@@ -132,7 +132,7 @@
 								>
 									<Select.Trigger class="w-full">
 										<span>
-											{data.availableParents.find((v: any) => v.id === parentSelectValue)?.value ??
+											{data.availableParents.find((v) => v.id === parentSelectValue)?.value ??
 												'Aucune'}
 										</span>
 									</Select.Trigger>

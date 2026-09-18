@@ -8,7 +8,7 @@
 // -----------------------------------------------------------------------------
 
 import { prisma } from '$lib/server';
-import { updateOrderItems } from '$lib/prisma/order/prendingOrder';
+import { updateOrderItems, type IncomingOrderItem } from '$lib/prisma/order/prendingOrder';
 import { CartForbiddenError } from './errors';
 
 export type PublicCartItem = {
@@ -120,7 +120,7 @@ export function toPublicCart(order: {
  * Refuse une commande d'un autre compte, une commande déjà payée, et un id
  * absent. Les prix sont revalidés dans `updateOrderItems`.
  */
-export async function saveCartForUser(userId: string, orderId: string, items: unknown[]) {
+export async function saveCartForUser(userId: string, orderId: string, items: IncomingOrderItem[]) {
 	const order = await prisma.order.findUnique({
 		where: { id: orderId },
 		select: { id: true, userId: true, status: true }

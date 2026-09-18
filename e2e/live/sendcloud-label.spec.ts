@@ -94,14 +94,17 @@ test.describe('Live — étiquette Sendcloud + webhook', () => {
 					})
 				});
 
-				const data: any = await response.json().catch(() => ({}));
+				const data: Record<string, unknown> = await response.json().catch(() => ({}));
 				expect(response.ok, JSON.stringify(data)).toBe(true);
 
-				const parcelId = Number(data?.parcels?.[0]?.id ?? data?.id);
+				const parcels = data?.parcels as Array<Record<string, unknown>> | undefined;
+				const parcelId = Number(parcels?.[0]?.id ?? data?.id);
 				expect(Number.isFinite(parcelId)).toBe(true);
 				realParcelId = parcelId;
 				realTrackingNumber =
-					data?.tracking_number ?? data?.parcels?.[0]?.tracking_number ?? `E2E${parcelId}`;
+					(data?.tracking_number as string | undefined) ??
+					(parcels?.[0]?.tracking_number as string | undefined) ??
+					`E2E${parcelId}`;
 
 				await setSendcloudParcelId(transaction.id, realParcelId);
 			});

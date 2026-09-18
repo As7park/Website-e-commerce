@@ -2,16 +2,18 @@
 	import { MapLibre, Marker, Popup } from 'svelte-maplibre-gl';
 	import * as Card from '$shadcn/card/index.js';
 	import { MapPin } from 'lucide-svelte';
+	import type maplibregl from 'maplibre-gl';
+	import type { ServicePointDTO } from '$lib/sendcloud/checkoutTypes';
 
 	interface Props {
 		showMap: boolean;
 		isLoadingServicePoints: boolean;
-		servicePoints: any[];
-		selectedPoint: any;
+		servicePoints: ServicePointDTO[];
+		selectedPoint: ServicePointDTO | null;
 		zoom: number;
 		centerCoordinates: [number, number];
-		offsets: any;
-		onMarkerClick: (point: any) => void;
+		offsets: maplibregl.Offset;
+		onMarkerClick: (point: ServicePointDTO) => void;
 	}
 
 	let {

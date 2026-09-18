@@ -27,6 +27,7 @@
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import { estimatePackage } from '$lib/commerce/packageEstimate';
+	import type { ShippingOptionDTO, ServicePointDTO } from '$lib/sendcloud/checkoutTypes';
 
 	let { data } = $props();
 
@@ -46,16 +47,16 @@
 	let selectedBillingAddressId = $state<string | undefined>(undefined);
 
 	// Plus de cartValue local, on utilise $cartStore directement.
-	let shippingOptions = $state<any[]>([]);
+	let shippingOptions = $state<ShippingOptionDTO[]>([]);
 	let selectedShippingOption = $state<string | null>(null);
 	let shippingCost = $state<number>(0);
 
-	let servicePoints = $state<any[]>([]);
+	let servicePoints = $state<ServicePointDTO[]>([]);
 	let isLoadingServicePoints = $state(false); // ✅ Nouvel état de chargement
 
 	let zoom = $state(12);
 	let centerCoordinates = $state<[number, number]>([2.3522, 48.8566]);
-	let selectedPoint = $state<any>(null);
+	let selectedPoint = $state<ServicePointDTO | null>(null);
 	let showMap = $state(false);
 
 	// Code promo
@@ -204,8 +205,8 @@
 		if (selectedPoint) {
 			$createPaymentData.servicePointId = selectedPoint.id.toString();
 			$createPaymentData.servicePointPostNumber = selectedPoint.extra_data?.shop_ref || '';
-			$createPaymentData.servicePointLatitude = selectedPoint.latitude;
-			$createPaymentData.servicePointLongitude = selectedPoint.longitude;
+			$createPaymentData.servicePointLatitude = String(selectedPoint.latitude);
+			$createPaymentData.servicePointLongitude = String(selectedPoint.longitude);
 			$createPaymentData.servicePointType = selectedPoint.shop_type || null;
 			$createPaymentData.servicePointExtraRefCab = selectedPoint.extra_data?.ref_cab || '';
 			$createPaymentData.servicePointExtraShopRef = selectedPoint.extra_data?.shop_ref || '';
@@ -226,7 +227,7 @@
 	 * then call onSelect(point). This is a callback-prop approach
 	 * instead of an event dispatcher.
 	 */
-	function handleMarkerClick(point: any) {
+	function handleMarkerClick(point: ServicePointDTO) {
 		// Plus besoin de validation, l'API filtre déjà les points relais compatibles
 		selectedPoint = point;
 	}
@@ -367,14 +368,14 @@
 		}
 	}
 
-	function chooseShippingOption(chosenOption: any) {
+	function chooseShippingOption(chosenOption: ShippingOptionDTO) {
 		selectedShippingOption = chosenOption.id; // Nouvelle structure : option.id au lieu de option.code
 
-		const costHT = parseFloat(chosenOption.price || 0);
+		const costHT = chosenOption.price || 0;
 		setShippingCostHT(costHT);
 
 		if (chosenOption?.price) {
-			shippingCost = parseFloat(chosenOption.price);
+			shippingCost = chosenOption.price;
 		} else {
 			shippingCost = 0;
 		}

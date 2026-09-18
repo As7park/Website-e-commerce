@@ -282,7 +282,7 @@ Répartition actuelle (après corrections) :
 
 | Règle                                | Occurrences | Statut CI                                                                                                       |
 | ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-explicit-any` | 59          | `warn` — dette de typage, chantier P2 #11 dédié (lot 1 : `Table.svelte`, fait — 65 → 59)                        |
+| `@typescript-eslint/no-explicit-any` | 3           | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés)             |
 | `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                      |
 | `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                 |
 | `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale |
@@ -403,8 +403,8 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 
 ### P2 — Structurant, effort plus élevé
 
-11. 🔄 **Résorber `no-explicit-any` par lots thématiques** — **lot 1 fait**
-    (`Table.svelte` et ses ~8 call sites) : 65 → 59 occurrences.
+11. ~~**Résorber `no-explicit-any` par lots thématiques**~~ **fait** —
+    **lot 1** (`Table.svelte` et ses ~8 call sites) : 65 → 59 occurrences.
     `formatter`/`url`/`condition` typés `unknown`/`TableItem` au lieu de
     `any` (avec ajustement des call sites qui passaient des formatters/
     callbacks à signature trop stricte — `formatDate`, shapes ad-hoc
@@ -416,8 +416,26 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
     (composants fonction Svelte 5) — aucun type de composant Svelte natif
     ne couvre les deux sans passer par `any`, tenté puis abandonné (le
     type `Component` de `svelte` n'accepte pas les classes
-    `SvelteComponentTyped` historiques). Reste 56 occurrences ailleurs
-    dans le code pour de futurs lots.
+    `SvelteComponentTyped` historiques).
+    **lot 2** (le reste, 56 → 0) : domaine Sendcloud/checkout (41
+    occurrences, `src/lib/sendcloud/{label,order,returnValidate}.ts`,
+    `shipping-options`/`webhooks`/`webhooks/sendcloud` `+server.ts`,
+    `post-payment.ts`, `AddressSelector.svelte`, `ShippingOptions.svelte`,
+    `ServicePointMap.svelte`, `checkout/+page.svelte` — types locaux
+    `SendcloudAnnounceResponse`/`SendcloudShippingOption`/
+    `SendcloudReturnValidateResponse`/`SendcloudWebhookPayload` mirroring
+    seulement les champs lus, DTOs partagés `ShippingOptionDTO`/
+    `ServicePointDTO` dans `src/lib/sendcloud/checkoutTypes.ts`) puis les
+    15 occurrences isolées restantes (`serializeData` rendu générique
+    `<T>(obj: T): T` au lieu de `any`/`unknown` pour ne pas casser les
+    appelants qui comptent sur la forme d'entrée, `updateOrderItems`/
+    `saveCartForUser` typés via un nouveau `IncomingOrderItem`,
+    `updateUserSecurity` via `Prisma.UserUpdateInput`, quelques
+    annotations redondantes supprimées dans les pages admin taxonomies/
+    blog/products). `npm run check` (0 erreur/0 warning), ESLint
+    (`no-explicit-any` : 3 occurrences restantes, uniquement les `icon:
+    any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
+    skippés) vérifiés après chaque lot.
 12. ~~**Ajouter `CONTRIBUTING.md` + `CODEOWNERS`**~~ **fait** :
     [CONTRIBUTING.md](CONTRIBUTING.md) (setup, checks avant PR, conventions
     TS strict/Svelte 5/knip) + [CODEOWNERS](CODEOWNERS) (propriétaire
@@ -442,7 +460,7 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 | ------------------------------------------------------------------- | ----------------------------------------------- |
 | `npm run check`                                                     | 0 erreur, 0 warning                             |
 | `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)         |
-| ESLint                                                              | 34 erreurs bloquantes + 65 warnings (voir §3.2) |
+| ESLint                                                              | 34 erreurs bloquantes + 10 warnings (voir §3.2) |
 | Specs Playwright                                                    | 46 fichiers                                     |
 | Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)            |
 | Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 29 / 15                                         |

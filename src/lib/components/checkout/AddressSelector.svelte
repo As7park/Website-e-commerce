@@ -4,9 +4,10 @@
 	import Button from '$shadcn/button/button.svelte';
 	import { MapPin, Check, ChevronsUpDown } from 'lucide-svelte';
 	import { tick } from 'svelte';
+	import type { Address } from '@prisma/client';
 
 	interface Props {
-		addresses: any[];
+		addresses: Address[];
 		selectedAddressId?: string;
 		onAddressSelect: (addressId: string) => void;
 		/** Titre affiché en en-tête (ex. "Adresse de livraison" / "Adresse de facturation"). */
@@ -30,7 +31,7 @@
 	const addressLabel = $derived(
 		selectedAddressId
 			? (() => {
-					const address = addresses.find((a: any) => a.id === selectedAddressId);
+					const address = addresses.find((a) => a.id === selectedAddressId);
 					return address
 						? `${address.first_name} ${address.last_name} — ${address.street}, ${address.city}`
 						: 'Sélectionnez une adresse…';

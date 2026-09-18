@@ -82,6 +82,9 @@ export interface ReturnValidateResult {
 	raw: unknown;
 }
 
+type SendcloudReturnValidateError = { field?: string; message?: string; detail?: string };
+type SendcloudReturnValidateResponse = { errors?: SendcloudReturnValidateError[] };
+
 export async function validateSendcloudReturn(
 	input: ReturnValidateInput
 ): Promise<ReturnValidateResult> {
@@ -102,8 +105,8 @@ export async function validateSendcloudReturn(
 		body: JSON.stringify(requestBody)
 	});
 
-	const raw: any = await response.json().catch(() => ({}));
-	const errors: any[] = Array.isArray(raw?.errors) ? raw.errors : [];
+	const raw: SendcloudReturnValidateResponse = await response.json().catch(() => ({}));
+	const errors: SendcloudReturnValidateError[] = Array.isArray(raw?.errors) ? raw.errors : [];
 	const fieldErrors = errors.map((e) => ({ field: e?.field, message: e?.message ?? e?.detail }));
 
 	// Une erreur sur `from_address`/`to_address` signale un vrai problème

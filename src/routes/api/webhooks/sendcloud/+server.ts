@@ -7,6 +7,19 @@ import {
 	verifySendcloudSignature
 } from '$lib/sendcloud/webhookSignature';
 
+// Forme minimale du webhook `parcel_status_changed`, uniquement les champs
+// effectivement lus ci-dessous (réponse Sendcloud non garantie au-delà).
+type SendcloudWebhookPayload = {
+	action?: string;
+	timestamp?: number;
+	parcel?: {
+		id?: number | string;
+		status?: { id?: number | string; message?: string };
+		tracking_number?: string;
+		label?: { label_printer_url?: string };
+	};
+};
+
 /**
  * Webhook entrant Sendcloud (`parcel_status_changed`).
  *
@@ -41,7 +54,7 @@ export async function POST({ request }: { request: Request }) {
 				: 'SENDCLOUD_WEBHOOK_SECRET'
 	});
 
-	let payload: any;
+	let payload: SendcloudWebhookPayload;
 	try {
 		payload = JSON.parse(rawBody);
 	} catch {

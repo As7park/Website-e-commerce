@@ -33,6 +33,34 @@ type TransactionForLabel = {
 	servicePointId?: string | null;
 };
 
+type SendcloudApiError = {
+	field?: string;
+	detail?: string;
+	message?: string;
+	source?: { pointer?: string };
+};
+
+type SendcloudDocument = {
+	type?: string;
+	document_type?: string;
+	link?: string;
+};
+
+type SendcloudParcel = {
+	id?: number;
+	tracking_number?: string;
+	status?: { code?: string; message?: string };
+};
+
+type SendcloudAnnounceResponse = {
+	id?: number;
+	parcels?: SendcloudParcel[];
+	tracking_number?: string;
+	tracking_numbers?: string[];
+	documents?: SendcloudDocument[];
+	errors?: SendcloudApiError[];
+};
+
 function authHeader() {
 	const pub = process.env.SENDCLOUD_PUBLIC_KEY;
 	const sec = process.env.SENDCLOUD_SECRET_KEY;
@@ -74,14 +102,14 @@ function shopFromAddress() {
  * entrant rapportera ensuite — les deux sont loggés en INFO au premier appel
  * réel pour trancher définitivement (voir plan de migration, étape 3).
  */
-function extractParcelId(data: any): number | null {
+function extractParcelId(data: SendcloudAnnounceResponse): number | null {
 	const fromParcel = Number(data?.parcels?.[0]?.id);
 	if (Number.isFinite(fromParcel)) return fromParcel;
 	const fromShipment = Number(data?.id);
 	return Number.isFinite(fromShipment) ? fromShipment : null;
 }
 
-function extractTrackingNumber(data: any): string | null {
+function extractTrackingNumber(data: SendcloudAnnounceResponse): string | null {
 	return (
 		data?.tracking_number ??
 		data?.parcels?.[0]?.tracking_number ??
@@ -90,11 +118,9 @@ function extractTrackingNumber(data: any): string | null {
 	);
 }
 
-function extractTrackingUrl(data: any): string | null {
+function extractTrackingUrl(data: SendcloudAnnounceResponse): string | null {
 	const documents = Array.isArray(data?.documents) ? data.documents : [];
-	const label = documents.find(
-		(doc: any) => doc?.type === 'label' || doc?.document_type === 'label'
-	);
+	const label = documents.find((doc) => doc?.type === 'label' || doc?.document_type === 'label');
 	return label?.link ?? null;
 }
 
@@ -121,9 +147,13 @@ export async function createSendcloudLabel(transaction: TransactionForLabel) {
 	// manquante lève avant d'appeler Sendcloud, plutôt que d'envoyer une
 	// fausse adresse/coordonnée à un vrai transporteur (SMS/email de livraison
 	// envoyés à un inconnu — préjudice réel, pas une simple erreur cosmétique).
-	const missing = ['address_street', 'address_city', 'address_zip', 'address_country_code'].filter(
-		(key) => !(transaction as any)[key]
-	);
+	const requiredFields: (keyof TransactionForLabel)[] = [
+		'address_street',
+		'address_city',
+		'address_zip',
+		'address_country_code'
+	];
+	const missing = requiredFields.filter((key) => !transaction[key]);
 	if (missing.length > 0) {
 		throw new Error(
 			`Adresse d'expédition incomplète pour la transaction ${transaction.id} (champs manquants : ${missing.join(', ')})`
@@ -183,7 +213,7 @@ export async function createSendcloudLabel(transaction: TransactionForLabel) {
 		body: JSON.stringify(requestBody)
 	});
 
-	const responseData: any = await response.json().catch(() => ({}));
+	const responseData: SendcloudAnnounceResponse = await response.json().catch(() => ({}));
 
 	if (!response.ok) {
 		// Deux formes d'erreur v3 observées en conditions réelles selon
@@ -193,7 +223,7 @@ export async function createSendcloudLabel(transaction: TransactionForLabel) {
 		// un « Field required » sans nom de champ, illisible en dead-letter.
 		const detail = Array.isArray(responseData?.errors)
 			? responseData.errors
-					.map((e: any) => {
+					.map((e) => {
 						const field = e?.field ?? e?.source?.pointer;
 						const message = e?.detail ?? e?.message;
 						return field ? `${field}: ${message}` : message;

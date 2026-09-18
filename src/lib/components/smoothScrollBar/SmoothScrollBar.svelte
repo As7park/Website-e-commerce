@@ -3,6 +3,7 @@
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/dist/ScrollTrigger';
 	import Scrollbar from 'smooth-scrollbar';
+	import type { ScrollStatus } from 'smooth-scrollbar/interfaces/scrollbar';
 
 	let { children } = $props();
 
@@ -31,7 +32,7 @@
 			smoothScroll
 		}));
 
-		const updateScroll = (status: any) => {
+		const updateScroll = (status: ScrollStatus) => {
 			scrollX = status.offset.x;
 			scrollY = status.offset.y;
 

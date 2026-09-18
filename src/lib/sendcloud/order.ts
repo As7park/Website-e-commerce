@@ -4,12 +4,18 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+type SendcloudOrderProduct = {
+	name?: unknown;
+	price?: unknown;
+	quantity?: unknown;
+};
+
 type TxForV3 = {
 	id: string;
 	amount: number;
 	currency: string; // "eur" ou "EUR"
 	status: string; // "paid" etc.
-	products: any; // array [{ name, price, quantity, ... }]
+	products: unknown; // JSON stocké tel quel (`Transaction.products`, `Prisma.JsonValue`) — forme lue dynamiquement via `arr()`
 
 	// adresse
 	address_first_name: string;
@@ -69,8 +75,8 @@ function cur3(x?: string | null) {
 function iso2(x?: string | null) {
 	return String(x || '').toUpperCase();
 }
-function arr(a: any) {
-	return Array.isArray(a) ? a : [];
+function arr(a: unknown): SendcloudOrderProduct[] {
+	return Array.isArray(a) ? (a as SendcloudOrderProduct[]) : [];
 }
 
 export async function createSendcloudOrderV3(tx: TxForV3) {
@@ -86,7 +92,7 @@ export async function createSendcloudOrderV3(tx: TxForV3) {
 				status: { code: 'fulfilled', message: 'Paid in full' },
 				order_created_at: (tx.createdAt ?? new Date()).toISOString(),
 				order_updated_at: new Date().toISOString(),
-				order_items: arr(tx.products).map((p: any) => ({
+				order_items: arr(tx.products).map((p) => ({
 					name: String(p?.name ?? 'Item'),
 					quantity: Number(p?.quantity ?? 1),
 					total_price: {

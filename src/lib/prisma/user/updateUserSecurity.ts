@@ -1,4 +1,5 @@
 import { prisma } from '$lib/server';
+import type { Prisma } from '@prisma/client';
 
 // AUTH-PLUGIN ▼ hachage Argon2 fourni par le module d'auth.
 import { hashPassword } from '$lib/lucia/password';
@@ -17,7 +18,7 @@ export const updateUserSecurity = async (
 	{ isMfaEnabled, passwordHash }: { isMfaEnabled: boolean; passwordHash?: string | null }
 ) => {
 	try {
-		const dataToUpdate: any = { isMfaEnabled };
+		const dataToUpdate: Prisma.UserUpdateInput = { isMfaEnabled };
 
 		// Vérification et hashage du mot de passe si fourni
 		if (passwordHash) {
