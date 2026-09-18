@@ -76,12 +76,18 @@ npm run stripe:listen       # CLI Stripe → POST http://localhost:2000/api/webh
 - **`lint-and-check`** : `npm ci`, `prettier --check` (bloquant), `eslint`
   (non-bloquant — dette pré-existante en cours de résorption, voir
   commentaires dans le workflow), `svelte-check` (bloquant), tests unitaires
-  Vitest (bloquant), `npm audit` (non-bloquant).
+  Vitest (bloquant).
 - **`e2e`** : Postgres jetable en service container (aucun secret réel
   requis, toutes les intégrations externes tournent en mode mock), suite
   Playwright complète hors `e2e/live/**` (specs appelant de vrais services
   externes). Non-bloquant pour l'instant (première itération), à rendre
   bloquant une fois la stabilité confirmée sur plusieurs runs.
+
+Sécurité des dépendances : `.github/workflows/osv-scanner.yml` (scan OSV.dev
+à chaque push sur `main` + hebdomadaire, résultats dans Security > Code
+scanning) et `.github/dependabot.yml` (PRs de mise à jour groupées,
+hebdomadaires) — remplacent l'ancien step `npm audit`, dont l'endpoint est
+cassé côté npm (voir AUDIT_TECHNIQUE.md, §3.1.a).
 
 Voir [AUDIT_TECHNIQUE.md](./AUDIT_TECHNIQUE.md) pour l'état détaillé et la
 feuille de route (dette ESLint, sécurité des dépendances, etc.).

@@ -32,14 +32,14 @@ transcription de conversation), **une intégration PWA jamais réellement
 active** malgré une config qui laissait croire le contraire, et confirmé que
 **le scan de vulnérabilités npm est cassé en silence**, y compris en CI.
 
-| Axe                                   | Note actuelle                                | Ce qui manque pour "professionnel, pris au sérieux"                         |
-| ------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
-| Architecture & modularité             | 🟢 Solide                                    | Rien de bloquant                                                            |
-| Tests (unit + e2e + charge)           | 🟢 Solide                                    | Coverage non mesurée, `lint-and-check` CI énigmatique                       |
-| Sécurité applicative                  | 🟡 Bonne base, un vrai trou trouvé et bouché | `npm audit` cassé, secrets `.env` en clair sur disque, pas de `SECURITY.md` |
-| Qualité de code outillée (lint/types) | 🟡 En progrès mais non bloquant              | ESLint non-bloquant en CI depuis le début (109 erreurs dorment)             |
-| Hygiène du dépôt                      | 🔴 Négligée jusqu'à cet audit                | Fichiers parasites commités, PWA fantôme, doc CI obsolète                   |
-| Gouvernance / process                 | 🔴 Absente                                   | Pas de CONTRIBUTING, CODEOWNERS, Dependabot, SECURITY.md                    |
+| Axe                                   | Note actuelle                                             | Ce qui manque pour "professionnel, pris au sérieux"                               |
+| ------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Architecture & modularité             | 🟢 Solide                                                 | Rien de bloquant                                                                  |
+| Tests (unit + e2e + charge)           | 🟢 Solide                                                 | Coverage non mesurée, `lint-and-check` CI énigmatique                             |
+| Sécurité applicative                  | 🟢 Trou réel bouché, scan de vulnérabilités remis en état | Secrets `.env` en clair sur disque (non chiffrés au repos)                        |
+| Qualité de code outillée (lint/types) | 🟡 En progrès mais non bloquant                           | ESLint non-bloquant en CI depuis le début (109 erreurs dorment)                   |
+| Hygiène du dépôt                      | 🟢 Assainie pendant cet audit                             | Rien de bloquant                                                                  |
+| Gouvernance / process                 | 🟡 Premiers jalons posés                                  | CONTRIBUTING/CODEOWNERS restent à faire, Dependabot alerts à activer manuellement |
 
 ---
 
@@ -164,6 +164,32 @@ accidentelles) traînaient à la racine :
   dans `.gitignore` — le fichier parasite `test` (§1.5) est un accident
   isolé (nom non couvert par un pattern), pas un trou dans le `.gitignore`.
 
+### 1.9 🔴 `npm audit` remplacé par un scan qui fonctionne réellement
+
+Confirmé en §3.1.a : l'endpoint audit legacy de npm renvoie une erreur 400,
+reproduit même après resynchronisation complète du lockfile — le step CI
+(`continue-on-error: true`) avalait cet échec en silence depuis un moment
+indéterminé. Remplacé par :
+
+- **[.github/workflows/osv-scanner.yml](.github/workflows/osv-scanner.yml)**
+  (nouveau) : action officielle Google, base [OSV.dev](https://osv.dev/),
+  scan à chaque push sur `main` + hebdomadaire (lundi 06:30 UTC). Résultats
+  publiés dans **Security → Code scanning** (visible sans creuser les logs
+  d'un run), pas seulement dans la sortie d'un step CI. Volontairement
+  `fail-on-vuln: false` pour ce premier run — à rendre bloquant une fois le
+  bruit initial trié (même logique que le job `e2e` à sa création).
+- **[.github/dependabot.yml](.github/dependabot.yml)** (nouveau) : PRs de
+  mise à jour automatiques, groupées par type (prod/dev), hebdomadaires,
+  majeures jamais groupées (pour ne pas masquer une régression dans un lot).
+- L'ancien step `Audit (production dependencies)` retiré de
+  [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
+**Action manuelle restante, hors de portée depuis cet environnement** :
+activer **Dependabot alerts** (scan de vulnérabilités natif GitHub, distinct
+des PRs de mise à jour ci-dessus) dans _Settings → Code security and
+analysis_ du dépôt — c'est un réglage de repo, pas un fichier à committer,
+seul un accès avec les droits d'administration du repo peut l'activer.
+
 ---
 
 ## 2. Ce qui est déjà solide (à ne pas casser en "améliorant")
@@ -206,15 +232,15 @@ Un audit honnête reconnaît aussi les bons choix déjà faits :
 
 ### 3.1 🔴 Sécurité / fiabilité — à traiter en premier
 
-**a. `npm audit` est cassé, y compris en CI, sans que rien ne le signale.**
-Reproduit en local : `npm audit --omit=dev --audit-level=high` renvoie une
-erreur 400 de l'API npm ("This endpoint is being retired... Invalid package
-tree") même après resynchronisation complète du lockfile. Le job CI
-(`continue-on-error: true`) avale l'échec silencieusement — **le pipeline
-affiche un audit "passé" alors qu'aucun scan n'a réellement eu lieu depuis
-un moment indéterminé.** C'est un angle mort de sécurité classique : le faux
-sentiment de couverture est pire que l'absence de couverture affichée.
-→ Recommandation §4, priorité P0.
+**a. ~~`npm audit` est cassé, y compris en CI, sans que rien ne le signale.~~
+Corrigé (§1.9).** Reproduit en local : `npm audit --omit=dev --audit-level=high`
+renvoyait une erreur 400 de l'API npm ("This endpoint is being retired...
+Invalid package tree") même après resynchronisation complète du lockfile. Le
+job CI (`continue-on-error: true`) avalait l'échec silencieusement — le
+pipeline affichait un audit "passé" alors qu'aucun scan n'avait réellement
+eu lieu depuis un moment indéterminé. C'est un angle mort de sécurité
+classique : le faux sentiment de couverture est pire que l'absence de
+couverture affichée. Remplacé par OSV-Scanner + Dependabot (§1.9).
 
 **b. Secrets en clair sur disque (`.env`, `.env.test`), sans chiffrement
 au repos ni séparation d'accès.** Fonctionnel pour un solo/petite équipe,
@@ -303,18 +329,15 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 
 ### P0 — Cette semaine, effort faible, impact fort
 
-1. **Remplacer `npm audit` par un scanner qui fonctionne réellement.**
-   Deux options concrètes : (a) activer **Dependabot alerts** natif GitHub
-   (gratuit, zéro maintenance, alertes directement dans l'onglet Security du
-   repo) — recommandé en premier ; (b) en complément CI, `npm audit
---omit=dev` via la commande `npm audit signatures`/endpoint bulk, ou un
-   outil dédié (`osv-scanner`). Ne pas laisser le step actuel en l'état : un
-   scan qui échoue silencieusement est plus trompeur qu'un scan absent.
+1. ~~Remplacer `npm audit` par un scanner qui fonctionne réellement.~~
+   **fait** (§1.9) — `.github/workflows/osv-scanner.yml` (OSV-Scanner,
+   résultats dans Security → Code scanning) + `.github/dependabot.yml`.
+   **Reste à faire manuellement** : activer Dependabot alerts dans
+   _Settings → Code security and analysis_ (réglage GitHub, pas un fichier).
 2. ~~Corriger la section CI du README~~ **fait** (§1.7).
 3. ~~Ajouter un `SECURITY.md`~~ **fait** (§1.8) — à enrichir si besoin.
-4. **Activer Dependabot** (`.github/dependabot.yml`) pour npm + GitHub
-   Actions — PRs de mise à jour automatiques, faible bruit si bien
-   configuré (groupé, hebdomadaire).
+4. ~~Activer Dependabot~~ **fait** (§1.9, `.github/dependabot.yml`) — PRs de
+   mise à jour automatiques, groupées par type, hebdomadaires.
 5. **Résoudre l'énigme `lint-and-check`** : demander l'accès au log brut
    authentifié (toi, dans l'onglet Actions) pour identifier l'étape qui
    échoue réellement — actuellement invisible depuis cet environnement.
@@ -369,15 +392,15 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
 
 ## 5. Chiffres de référence (mesurés ce jour)
 
-| Métrique                                                            | Valeur                                      |
-| ------------------------------------------------------------------- | ------------------------------------------- |
-| `npm run check`                                                     | 0 erreur, 0 warning                         |
-| `npm run test:unit`                                                 | 24 tests passés, 2 skippés (8 fichiers)     |
-| ESLint                                                              | 109 erreurs, 0 warning (non-bloquant en CI) |
-| Specs Playwright                                                    | 46 fichiers                                 |
-| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)        |
-| Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 30 / 15                                     |
-| `npm audit`                                                         | Non fonctionnel (erreur 400 endpoint)       |
+| Métrique                                                            | Valeur                                        |
+| ------------------------------------------------------------------- | --------------------------------------------- |
+| `npm run check`                                                     | 0 erreur, 0 warning                           |
+| `npm run test:unit`                                                 | 24 tests passés, 2 skippés (8 fichiers)       |
+| ESLint                                                              | 109 erreurs, 0 warning (non-bloquant en CI)   |
+| Specs Playwright                                                    | 46 fichiers                                   |
+| Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)          |
+| Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 30 / 15                                       |
+| Scan de vulnérabilités                                              | OSV-Scanner + Dependabot (`npm audit` retiré) |
 
 ---
 

@@ -1,0 +1,32 @@
+name: OSV-Scanner Scheduled Scan
+
+# Remplace `npm audit` (retiré de ci.yml) : l'endpoint audit legacy de npm
+# renvoie une erreur 400 depuis un moment indéterminé, y compris en local
+# après resynchronisation complète du lockfile (voir AUDIT_TECHNIQUE.md,
+# §3.1.a) — le step passait `continue-on-error`, donc personne ne voyait
+# jamais l'échec. OSV-Scanner (base OSV.dev, action officielle Google) ne
+# dépend pas de cet endpoint et publie ses résultats dans Security > Code
+# scanning, pas seulement dans les logs d'un run CI.
+
+on:
+  schedule:
+    - cron: '30 6 * * 1' # tous les lundis 06:30 UTC
+  push:
+    branches: [main]
+
+permissions:
+  # Requis pour publier le SARIF sur l'onglet Code scanning.
+  actions: read
+  security-events: write
+  contents: read
+
+jobs:
+  scan-scheduled:
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.6.0
+    with:
+      # Non-bloquant pour l'instant : première exécution sur ce dépôt, sévérité
+      # du volume de vulnérabilités transitives encore inconnue. À rendre
+      # bloquant (retirer cette ligne) une fois les résultats du premier scan
+      # triés (vraies vulnérabilités exploitables vs. bruit sur des
+      # dépendances dev-only).
+      fail-on-vuln: false

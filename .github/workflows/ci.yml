@@ -36,12 +36,6 @@ jobs:
       - name: Unit tests
         run: npm run test:unit -- --run
 
-      - name: Audit (production dependencies)
-        # Non-bloquant pour l'instant : signale les vulnérabilités sans
-        # casser la CI le temps de traiter les cas nécessitant un bump majeur.
-        run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
-
   e2e:
     runs-on: ubuntu-latest
     services:
