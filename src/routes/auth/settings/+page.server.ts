@@ -17,7 +17,7 @@ import {
 } from '$lib/lucia/email-verification';
 import { fail, redirect } from '@sveltejs/kit';
 import { checkEmailAvailability } from '$lib/prisma/email/email';
-import { verifyPasswordHash } from '$lib/lucia/password';
+import { verifyPasswordHash, verifyPasswordStrength } from '$lib/lucia/password';
 import { getUserPasswordHash, getUserRecoverCode, updateUserPassword } from '$lib/lucia/user';
 import {
 	createSession,
@@ -28,7 +28,6 @@ import {
 import { ExpiringTokenBucket } from '$lib/server/rate-limit';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
-import { verifyPasswordStrength } from '$lib/lucia/password';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import type { Actions, RequestEvent } from './$types';
