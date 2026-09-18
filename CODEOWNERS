@@ -1,13 +1,7 @@
 # Voir CONTRIBUTING.md.
-
-#
-
 # Un seul mainteneur actif aujourd'hui : toute PR nécessite sa revue.
-
 # Dès qu'un deuxième contributeur régulier rejoint le projet, ce fichier
-
 # doit être affiné par domaine (ex. `/src/lib/server/sanitizeHtml.ts` vs
-
 # `/e2e/` vs `/docs/`) plutôt que de garder un seul propriétaire global.
 
-- @Pierre-FABIEN
+* @Pierre-FABIEN
