@@ -41,6 +41,7 @@
 
 	/** Regroupe les valeurs assignées par taxonomie : "Catégorie: Actu · Tag: sport, mode". */
 	function formatTaxonomies(taxonomyValues: PostTaxonomyValue[] = []) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map local, jamais assigné à un state, jeté à la fin de la fonction
 		const groups = new Map<string, string[]>();
 		for (const { taxonomyValue } of taxonomyValues) {
 			const label = taxonomyValue.label || taxonomyValue.value;

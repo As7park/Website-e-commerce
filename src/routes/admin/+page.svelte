@@ -38,6 +38,7 @@
 	 * transaction produirait un axe avec autant de catégories distinctes —
 	 * illisible et inutilement coûteux à tracer pour une simple tendance. */
 	const transactionPoints = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map local, jamais assigné à un state, jeté à la fin de la fonction
 		const dailyTotals = new Map<string, number>();
 		for (const tx of transactions) {
 			if (!tx.createdAt) continue;
@@ -149,7 +150,7 @@
 				<Card.Content class="text-muted-foreground text-sm">
 					{#if kpis.lowStockSample.length > 0}
 						<ul class="space-y-0.5">
-							{#each kpis.lowStockSample as product}
+							{#each kpis.lowStockSample as product (product.id)}
 								<li class="truncate">
 									{product.name} — {product.stock} restant{product.stock > 1 ? 's' : ''}
 								</li>

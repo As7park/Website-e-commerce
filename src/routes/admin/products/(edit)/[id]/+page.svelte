@@ -289,7 +289,7 @@
 							</div>
 						</div>
 						<div class="mt-3 flex flex-wrap gap-2 flex-1 w-[300px] rts">
-							{#each $values as image}
+							{#each $values as image (image.name + image.lastModified)}
 								<div class="relative w-[65px] h-[65px]">
 									<img
 										src={URL.createObjectURL(image)}
@@ -302,7 +302,7 @@
 					</div>
 					<div class="mt-3 flex flex-wrap gap-2 flex-1 w-[300px] rts">
 						<p class="text-sm">Ces images seront suppirmées à la suite d'une modification :</p>
-						{#each ($updateProductData.existingImages as string[] | undefined) ?? [] as imageUrl}
+						{#each ($updateProductData.existingImages as string[] | undefined) ?? [] as imageUrl (imageUrl)}
 							<div class="relative w-[65px] h-[65px]">
 								<img src={String(imageUrl)} alt="" class="w-full h-full object-cover rounded" />
 							</div>

@@ -35,10 +35,7 @@
 	// le slider a toujours un intervalle valide à afficher, même sans filtre actif.
 	let sliderMin = $derived(facets.priceBounds.min);
 	let sliderMax = $derived(Math.max(facets.priceBounds.max, facets.priceBounds.min + 1));
-	let priceRange = $state<[number, number]>([0, 0]);
-	$effect(() => {
-		priceRange = [data.minPrice ?? sliderMin, data.maxPrice ?? sliderMax];
-	});
+	let priceRange = $derived<[number, number]>([data.minPrice ?? sliderMin, data.maxPrice ?? sliderMax]);
 
 	/**
 	 * Fusionne des paramètres dans l'URL courante et recharge `load()` — seul
@@ -49,6 +46,7 @@
 	function updateFilters(
 		patch: Record<string, string | number | boolean | string[] | null | undefined>
 	) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, jeté après toString(), jamais assigné à un state
 		const params = new URLSearchParams(appPage.url.search);
 		for (const [key, value] of Object.entries(patch)) {
 			params.delete(key);
@@ -79,6 +77,7 @@
 	}
 
 	function pageHref(target: number): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, jeté après toString(), jamais assigné à un state
 		const params = new URLSearchParams(appPage.url.search);
 		if (target > 1) params.set('page', String(target));
 		else params.delete('page');
@@ -87,6 +86,7 @@
 	}
 
 	let clearSearchHref = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, jeté après toString(), jamais assigné à un state
 		const params = new URLSearchParams(appPage.url.search);
 		params.delete('q');
 		params.delete('page');

@@ -41,11 +41,11 @@
 		<Sidebar.Root class="border-none">
 			<!-- Contenu de la Sidebar -->
 			<Sidebar.Content>
-				{#each navMain as group}
+				{#each navMain as group (group.title)}
 					<Sidebar.Group>
 						<Sidebar.GroupLabel>{group.title}</Sidebar.GroupLabel>
 						<Sidebar.Menu>
-							{#each group.items as item}
+							{#each group.items as item (item.url)}
 								<Sidebar.MenuItem>
 									<Sidebar.MenuButton>
 										<a href={item.url}>{item.title}</a>

@@ -283,9 +283,9 @@ Répartition actuelle (après corrections) :
 | Règle                                | Occurrences | Statut CI                                                                                                                                                                         |
 | ------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@typescript-eslint/no-explicit-any` | 3           | `warn` — dette de typage, chantier P2 #11 **terminé** (lot 1 : `Table.svelte`, 65 → 59 ; lot 2 : Sendcloud/checkout + reliquat, 59 → 3, ne restent que les `icon: any` justifiés) |
-| `svelte/require-each-key`            | 25          | **`error`, bloquant** — sans clé, Svelte peut désynchroniser des nœuds DOM                                                                                                        |
-| `svelte/prefer-svelte-reactivity`    | 9           | **`error`, bloquant** — `new Set()`/`new Map()` natifs en code réactif Svelte 5                                                                                                   |
-| `svelte/prefer-writable-derived`     | 3           | `warn` — anti-pattern documenté (`/memories/repo/svelte5-effect-store-antipattern.md`), réécriture non triviale                                                                   |
+| `svelte/require-each-key`            | 0 (25 corrigées) | **`error`, bloquant** — **résorbé** : clé ajoutée à chacun des 25 `{#each}` (15 fichiers), la plus pertinente sémantiquement (id, url, href, label, clé de tuple...)         |
+| `svelte/prefer-svelte-reactivity`    | 0 (9 traitées) | **`error`, bloquant** — **résorbé** : 2 occurrences (`Table.svelte`, sélection multi-lignes, état réactif réel) converties en `SvelteSet` ; 7 (`Map`/`URLSearchParams` locaux, construits et jetés dans une seule fonction) laissées natives avec `eslint-disable-next-line` justifié |
+| `svelte/prefer-writable-derived`     | 0 (3 corrigées) | `warn` — **résorbé** : les 3 occurrences (`QuantityInput.svelte`, `blog/+page.svelte`, `products/+page.svelte`) remplaçaient un `$state` + `$effect` de resynchronisation par un simple `$derived` réassignable (writable derived, natif Svelte 5.25+) |
 | `svelte/no-at-html-tags`             | 3           | `warn` — 3 usages revus et acceptés (voir §1.1), dont un nouveau (`StructuredData.svelte`, JSON-LD)                                                                               |
 
 **Bugs réels découverts en corrigeant les violations à 1-2 occurrences** :
@@ -460,7 +460,7 @@ any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
 | ------------------------------------------------------------------- | ----------------------------------------------- |
 | `npm run check`                                                     | 0 erreur, 0 warning                             |
 | `npm run test:unit`                                                 | 28 tests passés, 2 skippés (9 fichiers)         |
-| ESLint                                                              | 34 erreurs bloquantes + 10 warnings (voir §3.2) |
+| ESLint                                                              | 0 erreur bloquante + 9 warnings justifiés (voir §3.2) |
 | Specs Playwright                                                    | 46 fichiers                                     |
 | Scripts de charge k6                                                | 4 (catalogue, login, admin, webhook)            |
 | Dépendances prod / dev potentiellement inutilisées (knip, non trié) | 29 / 15                                         |

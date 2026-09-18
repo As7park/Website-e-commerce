@@ -37,7 +37,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each counters as [name, value]}
+					{#each counters as [name, value] (name)}
 						<tr class="border-b">
 							<td class="py-2 pr-4 font-mono">{name}</td>
 							<td class="py-2">{value}</td>
@@ -62,7 +62,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each durations as [name, stats]}
+					{#each durations as [name, stats] (name)}
 						<tr class="border-b">
 							<td class="py-2 pr-4 font-mono">{name}</td>
 							<td class="py-2 pr-4">{stats.count}</td>

@@ -60,7 +60,7 @@
 					{zoom}
 					center={centerCoordinates}
 				>
-					{#each servicePoints as point}
+					{#each servicePoints as point (point.id)}
 						<Marker lnglat={[point.longitude, point.latitude]}>
 							{#snippet content()}
 								<!-- Visuel du marker -->

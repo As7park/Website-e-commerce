@@ -51,6 +51,7 @@
 
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { Button, buttonVariants } from '$shadcn/button';
 	import { cn } from '$lib/components/shadcn/utils.js';
 	import * as Table from '$shadcn/table';
@@ -110,7 +111,7 @@
 		bulkActions = null
 	}: Props = $props();
 
-	let selectedIds = $state<Set<string>>(new Set());
+	let selectedIds = new SvelteSet<string>();
 	let bulkConfirmAction = $state<BulkAction | null>(null);
 	let bulkApplying = $state(false);
 
@@ -258,7 +259,7 @@
 	// jamais quand on coche/décoche une case (qui n'influence pas sa dérivation).
 	$effect(() => {
 		void paginatedItems;
-		selectedIds = new Set();
+		selectedIds.clear();
 	});
 
 	let isAllOnPageSelected = $derived(
@@ -267,26 +268,22 @@
 	let isSomeOnPageSelected = $derived(paginatedItems.some((item) => selectedIds.has(item.id)));
 
 	function toggleSelectItem(id: string, checked: boolean) {
-		const next = new Set(selectedIds);
-		if (checked) next.add(id);
-		else next.delete(id);
-		selectedIds = next;
+		if (checked) selectedIds.add(id);
+		else selectedIds.delete(id);
 	}
 
 	function toggleSelectAllOnPage(checked: boolean) {
-		const next = new Set(selectedIds);
 		for (const item of paginatedItems) {
-			if (checked) next.add(item.id);
-			else next.delete(item.id);
+			if (checked) selectedIds.add(item.id);
+			else selectedIds.delete(item.id);
 		}
-		selectedIds = next;
 	}
 
 	async function runBulkAction(action: BulkAction) {
 		bulkApplying = true;
 		try {
 			await action.onApply(Array.from(selectedIds));
-			selectedIds = new Set();
+			selectedIds.clear();
 		} finally {
 			bulkApplying = false;
 			bulkConfirmAction = null;
@@ -384,7 +381,7 @@
 						<Popover.Content class="p-4 border rounded w-48 bg-white shadow-lg">
 							<div class="mb-2 font-medium">nombre d'items :</div>
 							<RadioGroup.Root bind:value={itemsPerPageString} class="space-y-2">
-								{#each optionPage as option}
+								{#each optionPage as option (option.value)}
 									<div class="flex items-center space-x-2">
 										<RadioGroup.Item value={String(option.value)} id={'option' + option.value} />
 										<Label for={'option' + option.value}>{option.label}</Label>
@@ -437,10 +434,10 @@
 							: ''}
 					</p>
 					<div class="flex flex-wrap items-center gap-2">
-						<Button variant="ghost" size="sm" onclick={() => (selectedIds = new Set())}>
+						<Button variant="ghost" size="sm" onclick={() => selectedIds.clear()}>
 							Désélectionner
 						</Button>
-						{#each bulkActions as action}
+						{#each bulkActions as action (action.label)}
 							<Button
 								variant={action.variant === 'destructive' ? 'destructive' : 'outline'}
 								size="sm"
@@ -591,7 +588,7 @@
 											/>
 										</Table.Head>
 									{/if}
-									{#each visibleColumns as column}
+									{#each visibleColumns as column (column.key)}
 										<Table.Head class="border-r border-r-gray-800 pr-2">
 											<div class="rcb">
 												{column.label}
@@ -615,7 +612,7 @@
 												/>
 											</td>
 										{/if}
-										{#each visibleColumns as column}
+									{#each visibleColumns as column (column.key)}
 											<td class="border border-gray-300 p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
@@ -635,7 +632,7 @@
 										{/each}
 
 										{#if actions && actions.length > 0}
-											{#each actions as action}
+										{#each actions as action (action.name)}
 												<TableCell>
 													{@render actionButton(item, action, 'table')}
 												</TableCell>
@@ -664,7 +661,7 @@
 									</div>
 								{/if}
 								<dl class="space-y-1.5">
-									{#each visibleColumns as column}
+								{#each visibleColumns as column (column.key)}
 										<div class="flex items-baseline justify-between gap-3">
 											<dt class="text-muted-foreground text-xs shrink-0">{column.label}</dt>
 											<dd class="text-sm text-right break-words">
@@ -687,7 +684,7 @@
 
 								{#if actions && actions.length > 0}
 									<div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
-										{#each actions as action}
+										{#each actions as action (action.name)}
 											{@render actionButton(item, action, 'card')}
 										{/each}
 									</div>

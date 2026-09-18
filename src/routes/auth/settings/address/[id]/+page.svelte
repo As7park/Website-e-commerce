@@ -149,7 +149,7 @@
 		</Form.Field>
 
 		<input type="hidden" name="id" bind:value={$updateAddressData.id} />
-		{#each Object.keys($updateAddressData) as key}
+		{#each Object.keys($updateAddressData) as key (key)}
 			<input
 				type="hidden"
 				name={key}

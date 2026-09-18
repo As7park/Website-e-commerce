@@ -48,7 +48,7 @@
 			<!-- Content (bottom-sheet) -->
 			<Drawer.Content class="pb-8 pt-6 md:hidden">
 				<ul class="my-6 flex flex-col gap-4 text-lg font-medium">
-					{#each links as { href, label }}
+					{#each links as { href, label } (href)}
 						<a
 							{href}
 							onclick={() => navigateAndClose(href)}
@@ -73,7 +73,7 @@
 
 		<!-- ─── Links desktop -->
 		<ul class="hidden md:flex">
-			{#each links as { href, label }}
+			{#each links as { href, label } (href)}
 				<li>
 					<a
 						{href}

@@ -259,7 +259,7 @@
 							</div>
 						</div>
 						<div class="mt-3 flex flex-wrap gap-2 flex-1 w-[300px] rts">
-							{#each $values as image}
+							{#each $values as image (image.name + image.lastModified)}
 								<div class="relative w-[65px] h-[65px]">
 									<img
 										src={URL.createObjectURL(image)}

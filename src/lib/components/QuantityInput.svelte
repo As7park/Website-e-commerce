@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-
 	interface Props {
 		value: number;
 		min?: number;
@@ -22,11 +20,9 @@
 	}: Props = $props();
 
 	// Copie éditable locale, resynchronisée si la valeur externe change
-	// (ex : clamp appliqué par le store après un commit précédent).
-	let draft = $state(untrack(() => value));
-	$effect(() => {
-		draft = value;
-	});
+	// (ex : clamp appliqué par le store après un commit précédent) — un
+	// $derived écrasable, pas besoin d'un $effect pour la resynchroniser.
+	let draft = $derived(value);
 
 	function commit() {
 		let next = Math.trunc(draft);

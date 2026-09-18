@@ -10,6 +10,16 @@ ainsi que les autres secrets de l'application selon le même schéma.
   (`.gitignore` : `.env`, `.env.*`, avec exceptions explicites `.env.example`
   et `.env.test.example` qui ne contiennent que des placeholders). Chaque
   développeur les recrée localement à partir de ces fichiers d'exemple.
+  **Chiffrement au repos, gratuit** : le chiffrement disque de l'OS
+  (FileVault/BitLocker/LUKS, souvent déjà actif par défaut) couvre déjà le
+  scénario réaliste pour un solo (perte/vol de la machine) — combiné à
+  `chmod 600 .env` (lecture réservée à l'utilisateur courant), pas d'outil
+  supplémentaire nécessaire. Pour aller plus loin sans dépendre d'un
+  service tiers : [`sops`](https://github.com/getsops/sops) +
+  [`age`](https://github.com/FiloSottile/age) (tous deux open source,
+  gratuits, sans compte) chiffrent le `.env` valeur par valeur avec une clé
+  `age` gardée hors du repo — le fichier chiffré peut alors être commité
+  sans risque.
 - **Production/Preview (Vercel)** : "Environment Variables" du dashboard
   Vercel (Project → Settings → Environment Variables). Chiffrées au repos
   côté Vercel, jamais visibles en clair dans les logs de build, scindées par

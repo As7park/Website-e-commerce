@@ -210,7 +210,7 @@
 	{/if}
 
 	{#if type === 'article' && tags.length > 0}
-		{#each tags as tag}
+		{#each tags as tag (tag)}
 			<meta property="article:tag" content={tag} />
 		{/each}
 	{/if}

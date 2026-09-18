@@ -17,15 +17,13 @@
 	let tags = $derived(data.tags);
 	let page = $derived(data.page);
 	let totalPages = $derived(Math.max(1, Math.ceil(data.total / data.perPage)));
-	let searchInput = $state('');
-	$effect(() => {
-		searchInput = data.search;
-	});
+	let searchInput = $derived(data.search);
 
 	let hasActiveFilters = $derived(!!activeCategoryId || !!activeTagId || !!data.search);
 
 	/** Fusionne des paramètres dans l'URL courante. Toute modification de filtre revient à la page 1, sauf pagination elle-même. */
 	function filterHref(patch: Record<string, string | number | null | undefined>): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, jeté après toString(), jamais assigné à un state
 		const params = new URLSearchParams(appPage.url.search);
 		for (const [key, value] of Object.entries(patch)) {
 			params.delete(key);
@@ -38,6 +36,7 @@
 	}
 
 	function pageHref(target: number): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, jeté après toString(), jamais assigné à un state
 		const params = new URLSearchParams(appPage.url.search);
 		if (target > 1) params.set('page', String(target));
 		else params.delete('page');

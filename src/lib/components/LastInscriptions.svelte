@@ -14,7 +14,7 @@
 	</Card.Header>
 	<Card.Content class="grid gap-6">
 		<!-- On boucle sur chaque user pour l'afficher dans un bloc similaire -->
-		{#each users as user}
+		{#each users as user (user.id)}
 			<div class="flex items-center justify-between space-x-4">
 				<div class="flex items-center space-x-4">
 					<Avatar.Root>

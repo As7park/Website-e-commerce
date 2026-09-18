@@ -69,7 +69,7 @@
 						<DropdownMenu.Content class="w-56">
 							<DropdownMenu.Label>Role</DropdownMenu.Label>
 							<DropdownMenu.Separator />
-							{#each roleOptions as option}
+							{#each roleOptions as option (option)}
 								<DropdownMenu.Item onclick={() => ($form.role = option)}>
 									{option}
 								</DropdownMenu.Item>
@@ -103,7 +103,7 @@
 			</Form.Field>
 
 			<div class="rts">
-				{#each $form.addresses as address, index}
+				{#each $form.addresses as address, index (address.id)}
 					<div class="address-form rounded border m-5 p-5 min-w-[500px]">
 						<div class="mb-4">
 							<AddressAutocomplete
@@ -194,7 +194,7 @@
 						</Form.Field>
 
 						<input type="hidden" name="id" bind:value={address.id} />
-						{#each Object.keys(address) as key}
+						{#each Object.keys(address) as key (key)}
 							<input type="hidden" name={key} value={address[key as keyof typeof address] ?? ''} />
 						{/each}
 

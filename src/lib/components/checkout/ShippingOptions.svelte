@@ -49,7 +49,7 @@
 		</Card.Header>
 		<Card.Content>
 			<div class="space-y-4">
-				{#each groupShippingOptions(shippingOptions) as group}
+				{#each groupShippingOptions(shippingOptions) as group (group.type)}
 					<div class="space-y-3">
 						<!-- En-tête du groupe -->
 						<div class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
