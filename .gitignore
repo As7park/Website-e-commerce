@@ -1,0 +1,34 @@
+test-results
+playwright-report
+e2e-videos
+node_modules
+coverage
+
+# Output
+.output
+.vercel
+/.svelte-kit
+/build
+.vite_cache
+
+# TinyMCE self-hosted — copié depuis node_modules/tinymce par scripts/copy-tinymce.mjs (postinstall)
+/static/tinymce
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env — `.env.test` contient les identifiants de la base de test, il reste ignoré.
+.env
+.env.*
+!.env.example
+!.env.test.example
+# Chiffré via sops+age (voir .sops.yaml, docs/secrets-rotation.md) : committable.
+!.env.enc
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# k6 — généré par prisma/seed-webhook-fixtures.js, jamais à committer.
+k6/webhook-fixtures.json

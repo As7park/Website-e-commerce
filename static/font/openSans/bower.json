@@ -1,0 +1,14 @@
+{
+	"name": "open-sans-woff",
+	"main": ["./open-sans.css", "./fonts/**/*"],
+	"homepage": "https://github.com/sorenson/open-sans-woff",
+	"authors": [
+		"Brandon Buttars <bbuttars@sorensonemedia.com>",
+		"Gustavo Henke <gustavo@injoin.com.br>",
+		"Martin Domke <martin.domke@gateprotect.com>"
+	],
+	"description": "The Open Sans fontface with only woff",
+	"keywords": ["font"],
+	"license": "Apache License version 2.0",
+	"ignore": ["**/.*", "node_modules", "bower_components", "test", "tests"]
+}

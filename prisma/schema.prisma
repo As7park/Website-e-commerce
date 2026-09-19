@@ -1,0 +1,1103 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Connexion directe (sans pooler) requise par `prisma migrate` sur Neon.
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+// PROMO-PLUGIN
+enum PromoType {
+  PERCENTAGE
+  FIXED
+}
+
+// PRODUCT-PLUGIN : type de donnée d'une taxonomie, détermine la saisie/l'affichage
+// (déduit automatiquement côté UI, jamais configuré séparément du type).
+enum TaxonomyType {
+  TEXT
+  COLOR
+  NUMBER
+  BOOLEAN
+  DATE
+}
+
+/// Statut d'une demande de retour (`ReturnRequest`), voir StoreSettings.returnsEnabled.
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  REFUNDED
+  /// Alternative à REFUNDED : crédité sous forme de solde `GiftCard` au lieu
+  /// d'un remboursement Stripe (voir `ReturnRequest.giftCardId`).
+  CREDITED
+}
+
+// AUTH __________________________________________________________________________________
+//
+// AUTH-PLUGIN : `Session`, `EmailVerificationRequest` et `PasswordResetSession`
+// n'existent que pour l'authentification et se suppriment ensemble.
+//
+// `User` est en revanche partagé : le commerce s'y rattache (`Address`, `Order`,
+// `Transaction`). Retirer l'authentification revient donc à retirer ses champs
+// d'identification, pas la table. Voir docs/auth/retrait.md.
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  /// Facultatif : un compte créé via Google n'en possède pas.
+  username     String?
+  /// Argon2id. Nul pour les comptes Google (aucun mot de passe local).
+  passwordHash String?
+  /// Code de secours 2FA, chiffré puis encodé en base64 (algorithme selon `encryptionVersion`).
+  recoveryCode String?
+
+  emailVerified     Boolean @default(false)
+  /// La 2FA est exigée sur ce compte (distinct de « une clé TOTP existe »).
+  isMfaEnabled      Boolean @default(false)
+  /// Secret TOTP chiffré (algorithme selon `encryptionVersion`). Jamais exposé au client.
+  totpKey           Bytes?
+  /// 1 = AES-128-GCM (legacy), 2 = AES-256-GCM. Bascule à 2 automatiquement
+  /// à la prochaine authentification réussie qui déchiffre `totpKey`/`recoveryCode`.
+  encryptionVersion Int     @default(1)
+
+  /// Identifiant Google, présent uniquement pour les comptes OAuth.
+  googleId String? @unique
+  name     String?
+  picture  String?
+
+  /// Client Stripe créé au premier ajout d'une carte enregistrée
+  /// (`savedPaymentsEnabled`) — jamais créé pour le paiement simple.
+  stripeCustomerId String? @unique
+
+  /// Consentement aux emails marketing (relances, retour en stock,
+  /// nouveautés) — jamais les emails transactionnels (facture, confirmation
+  /// de commande, réinitialisation de mot de passe), toujours envoyés.
+  /// `false` par défaut : opt-in explicite, pas opt-out.
+  marketingEmailsOptIn Boolean @default(false)
+
+  role Role @default(CLIENT)
+
+  /// Code de parrainage unique, généré à la création du compte
+  /// (`generateUniqueReferralCode`) — jamais deviné, jamais réutilisé.
+  referralCode String @unique
+  /// Compte parrain, posé une seule fois à l'inscription si `?ref=<code>`
+  /// désignait un compte existant et que le module était actif à ce moment-là.
+  referredById String?
+  referredBy   User?   @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  /// Filleuls parrainés par ce compte.
+  referrals    User[]  @relation("Referrals")
+
+  // Relations commerce
+  addresses           Address[]
+  orders              Order[]
+  transactions        Transaction[]
+  reviews             Review[]
+  productQuestions    ProductQuestion[]
+  wishlistItems       WishlistItem[]
+  savedPaymentMethods SavedPaymentMethod[]
+  returnRequests      ReturnRequest[]
+  loyaltyAwards       LoyaltyAward[]
+  referralRewards     ReferralReward[]
+  stockAlerts         StockAlert[]
+
+  // Relations d'authentification (disparaissent avec le module)
+  sessions                  Session[]
+  emailVerificationRequests EmailVerificationRequest[] @relation("UserEmailVerificationRequests")
+  passwordResetSessions     PasswordResetSession[]     @relation("UserPasswordResetSessions")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  /// Token de session, tel qu'il figure dans le cookie. À traiter comme un secret :
+  /// un accès en lecture à cette table permet d'usurper les sessions ouvertes.
+  id                String   @id
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  expiresAt         DateTime
+  /// La 2FA a été validée pour cette session précise, pas seulement pour le compte.
+  twoFactorVerified Boolean  @default(false)
+  /// Fournisseur OAuth à l'origine de la session (« google »), sinon nul.
+  oauthProvider     String?
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Code à 8 caractères envoyé par email, à la création du compte comme au
+/// changement d'adresse. Une seule requête vivante par utilisateur : la
+/// précédente est supprimée avant d'en créer une nouvelle.
+model EmailVerificationRequest {
+  id        String   @id
+  user      User     @relation("UserEmailVerificationRequests", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  /// Adresse à vérifier, qui peut différer de `user.email` lors d'un changement.
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_requests")
+}
+
+/// Réinitialisation de mot de passe en trois temps : code reçu par email, puis
+/// 2FA si le compte l'exige, puis saisie du nouveau mot de passe. Les deux
+/// drapeaux tracent la progression et interdisent de sauter une étape.
+model PasswordResetSession {
+  id                String   @id
+  user              User     @relation("UserPasswordResetSessions", fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  email             String
+  code              String
+  expiresAt         DateTime
+  emailVerified     Boolean  @default(false)
+  twoFactorVerified Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_sessions")
+}
+
+// COMMERCE ______________________________________________________________________________
+
+model Address {
+  id                 String   @id @default(cuid())
+  first_name         String
+  last_name          String
+  phone              String
+  company            String?
+  street_number      String
+  street             String
+  city               String
+  county             String
+  state              String
+  stateLetter        String
+  state_code         String
+  zip                String
+  country            String
+  country_code       String
+  ISO_3166_1_alpha_3 String
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Une adresse du carnet peut servir de livraison et/ou de facturation selon
+  // la commande (choix fait au checkout, indépendamment l'une de l'autre).
+  shippingOrders     Order[]  @relation("OrderShippingAddress")
+  billingOrders      Order[]  @relation("OrderBillingAddress")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// COMMERCE-PLUGIN : commande PENDING (panier) puis PAID après webhook Stripe.
+model Order {
+  id                  String      @id @default(cuid())
+  userId              String
+  // Adresse de livraison (colis Sendcloud) et adresse de facturation
+  // (facture PDF) : deux champs distincts depuis la séparation shipping/billing
+  // — jusque là une seule adresse servait aux deux usages. Peuvent pointer
+  // vers la même `Address` (cas « identique à l'adresse de livraison », le
+  // défaut au checkout).
+  shippingAddressId   String?
+  billingAddressId    String?
+  subtotal            Float       @default(0)
+  tax                 Float       @default(0)
+  total               Float       @default(0)
+  status              OrderStatus @default(PENDING)
+  promoCode           String?
+  discountAmount      Float       @default(0)
+  /// Carte cadeau appliquée : `giftCardAmount` est déjà inclus dans
+  /// `discountAmount` ci-dessus (qui reste la remise totale utilisée par le
+  /// calcul de facture) — ces deux champs ne servent qu'à l'affichage /
+  /// l'audit du détail de la remise.
+  giftCardCode        String?
+  giftCardAmount      Float       @default(0)
+  /// Relance panier abandonné (`StoreSettings.cartRecoveryEnabled`,
+  /// `$lib/server/jobs/cartRecovery.ts`) : horodatage de chaque email envoyé,
+  /// pour ne jamais relancer deux fois le même palier sur la même commande.
+  cartReminder1SentAt DateTime?
+  cartReminder2SentAt DateTime?
+  /// Relance avis produit post-livraison (`StoreSettings.reviewReminderEnabled`,
+  /// `$lib/server/jobs/reviewReminder.ts`) : posé une seule fois, jamais
+  /// réinitialisé — un seul rappel par commande, contrairement aux deux
+  /// paliers de `cartReminder*SentAt` ci-dessus.
+  reviewReminderSentAt DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  items               OrderItem[]
+
+  shippingOption String?
+  shippingCost   Float?
+
+  // Champs plats pour les informations du point relais
+  servicePointId           String?
+  servicePointPostNumber   String?
+  servicePointLatitude     String?
+  servicePointLongitude    String?
+  servicePointType         String?
+  servicePointExtraRefCab  String?
+  servicePointExtraShopRef String?
+
+  // Une commande est conservée si son utilisateur est supprimé : l'effacement
+  // se fait par anonymisation, pas par suppression (obligation comptable).
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  shippingAddress Address?             @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  billingAddress  Address?             @relation("OrderBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
+  statusHistory   OrderStatusHistory[]
+  transactions    Transaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  // `findPendingOrder`/`pendingOrderHandle` (hooks.server.ts) filtrent sur
+  // les deux à chaque requête authentifiée — composite dédié plutôt que
+  // deux index séparés.
+  @@index([userId, status])
+  // Sert la purge des paniers PENDING abandonnés ($lib/server/jobs/cleanup.ts) :
+  // filtre status + updatedAt ensemble, pas juste chacun séparément.
+  @@index([status, updatedAt])
+  // Anticipe un listing de commandes filtré par statut et trié par date
+  // (roadmap post-audit) : aucun `findMany` ne l'exploite encore aujourd'hui,
+  // mais c'est le composite recommandé pour ce genre de requête paginée.
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  /// Variante sélectionnée, si le produit en propose (`ProductVariant`).
+  /// `null` pour un produit sans variante — comportement inchangé.
+  variantId String?
+  quantity  Int
+  price     Float
+  custom    Custom[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // PRODUCT-PLUGIN / COMMERCE-PLUGIN : Restrict — un produit déjà commandé ne
+  // doit pas pouvoir détruire l'historique de vente. OrderItem.productId est
+  // le couplage catalogue → tunnel.
+  product Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // Même garde que `product` ci-dessus : une variante déjà commandée reste
+  // supprimable seulement une fois son historique purgé (jamais en cascade).
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+/// Variante simple d'un produit (étiquette libre, pas d'axes combinatoires) :
+/// stock propre, prix optionnel qui surcharge `Product.price` quand renseigné.
+/// Gérée depuis `/admin/products/[id]/variants`, jamais depuis le formulaire
+/// produit principal (délibérément séparé — ce formulaire est déjà chargé).
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  label     String
+  sku       String?  @unique
+  /// `null` = utilise `Product.price` tel quel.
+  price     Float?
+  stock     Int      @default(0)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  changedAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_status_histories")
+}
+
+model Product {
+  // PRODUCT-PLUGIN : cœur du catalogue. Les OrderItem du commerce y font référence.
+  id              String                 @id @default(cuid())
+  name            String
+  description     String
+  price           Float
+  stock           Int
+  images          String[]
+  slug            String                 @unique
+  colorProduct    String
+  /// Référence interne, distincte de `id` (cuid non lisible) — affichée en
+  /// admin et sur la facture, jamais utilisée comme clé de recherche Prisma.
+  sku             String?                @unique
+  /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
+  /// prix réellement facturé — pas de logique de remise appliquée ici).
+  compareAtPrice  Float?
+  /// Fin de vente flash : bandeau + compte à rebours vitrine tant que cette
+  /// date est dans le futur. Se combine avec `compareAtPrice` pour le prix
+  /// barré, mais fonctionne aussi seul (juste l'urgence du minuteur).
+  flashSaleEndsAt DateTime?
+  categories      ProductCategory[]
+  orderItems      OrderItem[]
+  reviews         Review[]
+  questions       ProductQuestion[]
+  wishlistedBy    WishlistItem[]
+  stockAlerts     StockAlert[]
+  /// Variantes simples (étiquette libre : « Taille 54 », « Or blanc »...),
+  /// chacune avec son propre stock et un prix optionnel qui surcharge
+  /// `price` ci-dessus. Un produit sans variante se comporte exactement
+  /// comme avant leur introduction — jamais de variante implicite créée.
+  variants        ProductVariant[]
+  /// Facette catalogue « Matière » — taxonomie gérée depuis
+  /// `/admin/products` (section Matières), pas un champ libre : évite que
+  /// « Or »/« or »/« OR » cohabitent et cassent le filtre.
+  /// Legacy : remplacé par `taxonomyValues` (voir `Taxonomy`), retiré en migration B
+  /// une fois la bascule vérifiée.
+  materialId      String?
+  material        Material?              @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  /// Système générique de taxonomies (Matière, Catégorie, Couleur, ...) —
+  /// remplace à terme `materialId`/`categories` ci-dessus.
+  taxonomyValues  ProductTaxonomyValue[]
+  /// Poids réel de l'unité en kg. `null` = pas encore renseigné par l'admin,
+  /// `$lib/commerce/packageEstimate.ts` retombe alors sur une estimation par
+  /// défaut (bijou standard) pour ne pas casser le calcul de colis Sendcloud
+  /// tant que le catalogue n'est pas rempli.
+  weight          Float?
+  /// Dimensions unitaires en cm, mêmes règles de repli que `weight` ci-dessus.
+  length          Float?
+  width           Float?
+  height          Float?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([materialId])
+  @@map("products")
+}
+
+model Material {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+
+  @@map("materials")
+}
+
+// PRODUCT-PLUGIN : système générique de taxonomies, remplace à terme `Material`
+// et `Category`/`ProductCategory` ci-dessus (retrait prévu en migration B).
+// `Taxonomy` = le type (« Matière », « Couleur »...), `TaxonomyValue` = ses
+// valeurs possibles (avec hiérarchie optionnelle via `parentId`),
+// `ProductTaxonomyValue` = l'assignation à un produit.
+model Taxonomy {
+  id         String          @id @default(cuid())
+  name       String          @unique
+  /// Utilisé comme nom de paramètre de filtre catalogue (`?<slug>=valeur`).
+  slug       String          @unique
+  type       TaxonomyType    @default(TEXT)
+  /// true = plusieurs valeurs par produit (ex: Catégorie), false = une seule (ex: Matière).
+  multiple   Boolean         @default(true)
+  /// Bornes de validation à la saisie d'une valeur, utilisées seulement si `type = NUMBER`.
+  numberMin  Float?
+  numberMax  Float?
+  numberUnit String?
+  values     TaxonomyValue[]
+  createdAt  DateTime        @default(now())
+
+  @@map("taxonomies")
+}
+
+model TaxonomyValue {
+  id         String   @id @default(cuid())
+  taxonomyId String
+  taxonomy   Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+
+  /// Stockage brut interprété selon `taxonomy.type` : TEXT/COLOR -> texte libre,
+  /// NUMBER -> parsable en Float, BOOLEAN -> "true"/"false", DATE -> ISO 8601.
+  value       String
+  /// Libellé affiché si différent de `value`.
+  label       String?
+  description String?
+  image       String?
+  /// Code additionnel selon le type (hex pour COLOR, ex: #FF0000).
+  code        String?
+
+  parentId String?
+  parent   TaxonomyValue?  @relation("TaxonomyValueHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children TaxonomyValue[] @relation("TaxonomyValueHierarchy")
+
+  products ProductTaxonomyValue[]
+
+  @@unique([taxonomyId, value])
+  @@index([parentId])
+  @@map("taxonomy_values")
+}
+
+model ProductTaxonomyValue {
+  id              String        @id @default(cuid())
+  productId       String
+  taxonomyValueId String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  taxonomyValue   TaxonomyValue @relation(fields: [taxonomyValueId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, taxonomyValueId])
+  @@index([taxonomyValueId])
+  @@map("product_taxonomy_values")
+}
+
+model Review {
+  // PRODUCT-PLUGIN : un avis par compte et par produit (contrainte unique
+  // plutôt qu'une limite applicative — vrai même sous requêtes concurrentes).
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("reviews")
+}
+
+/// Question posée par un client sur une fiche produit, distincte des avis
+/// (`Review`) : pas de note, réponse écrite par un admin avant publication —
+/// une question non répondue reste invisible du public (pas de file
+/// « en attente » affichée aux visiteurs). Activable/désactivable via
+/// `StoreSettings.productQnaEnabled`.
+model ProductQuestion {
+  id         String    @id @default(cuid())
+  productId  String
+  userId     String
+  question   String
+  answer     String?
+  answeredAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_questions")
+}
+
+/// File d'attente « Me prévenir » : un compte s'inscrit sur un produit en
+/// rupture (`Product.stock <= 0`) et reçoit un e-mail une seule fois dès
+/// que le stock repasse au-dessus de 0. Contrainte unique par compte et par
+/// produit — `notifiedAt` distingue une inscription encore en attente
+/// (`null`) d'une déjà notifiée ; se réinscrire après notification remet
+/// `notifiedAt` à `null` plutôt que de créer une seconde ligne. Complète le
+/// module Questions produit (même patron : lié à un compte, jamais un
+/// simple e-mail anonyme). Activable/désactivable via
+/// `StoreSettings.stockAlertsEnabled`.
+model StockAlert {
+  id         String    @id @default(cuid())
+  productId  String
+  userId     String
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@map("stock_alerts")
+}
+
+model Custom {
+  id          String    @id @default(cuid())
+  image       String
+  userMessage String
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orderItemId])
+  @@map("customizations")
+}
+
+// COMMERCE-PLUGIN : écriture permanente après paiement. Surface admin `/admin/sales`.
+model Transaction {
+  id              String  @id @default(cuid())
+  stripePaymentId String  @unique
+  /// Nullable : la transaction est l'écriture permanente, la commande est transitoire.
+  orderId         String?
+  userId          String?
+  amount          Float
+  currency        String
+
+  /// PaymentIntent Stripe de la session (`session.payment_intent`, déjà
+  /// présent dans le payload `checkout.session.completed` sans appel API
+  /// supplémentaire) — sert uniquement à rattacher un litige
+  /// (`charge.dispute.*`, qui ne référence que ce PaymentIntent) sans devoir
+  /// interroger Stripe depuis le webhook.
+  stripePaymentIntentId String? @unique
+
+  /// Litige Stripe (`charge.dispute.created`/`.closed`, webhook
+  /// `/api/webhooks`) — jamais résolu automatiquement, juste tracé et
+  /// alerté (`$lib/server/disputeAlert.ts`). `disputeId` sert de garde
+  /// d'idempotence contre un retry du même évènement webhook.
+  disputeId       String?   @unique
+  disputeStatus   String?
+  disputeReason   String?
+  disputeAmount   Float?
+  disputeOpenedAt DateTime?
+  disputeClosedAt DateTime?
+
+  customer_details_email String? @default("")
+  customer_details_name  String? @default("")
+  customer_details_phone String? @default("")
+
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shippingOption String
+  shippingCost   Float
+
+  // Informations sur le mode d'expédition
+  shippingMethodId   Int
+  shippingMethodName String
+
+  // Informations supplémentaires Sendcloud
+  sendcloudParcelId       Int?
+  trackingNumber          String?
+  trackingUrl             String?
+  /// Posé après le premier succès de `createSendcloudOrder` (job post-paiement) :
+  /// garde d'idempotence contre un retry QStash qui recréerait la commande.
+  sendcloudOrderCreatedAt DateTime?
+
+  /// Dernier statut transporteur reçu du webhook Sendcloud (`parcel.status`),
+  /// affiché tel quel dans `OrderTrackingPanel` — jamais interprété côté code.
+  shippingStatusCode      Int?
+  shippingStatusMessage   String?
+  shippingStatusUpdatedAt DateTime?
+
+  // Dimensions et poids du colis selon l'API Sendcloud
+  package_length         Float
+  package_width          Float
+  package_height         Float
+  package_dimension_unit String
+  package_weight         Float
+  package_weight_unit    String
+  package_volume         Float
+  package_volume_unit    String
+
+  // Adresse d'expédition figée au moment du paiement
+  address_first_name         String
+  address_last_name          String
+  address_phone              String
+  address_company            String?
+  address_street_number      String
+  address_street             String
+  address_city               String
+  address_county             String
+  address_state              String
+  address_stateLetter        String
+  address_state_code         String
+  address_zip                String
+  address_country            String
+  address_country_code       String
+  address_ISO_3166_1_alpha_3 String
+
+  // Adresse de facturation figée au moment du paiement (facture PDF) — peut
+  // différer de l'adresse d'expédition ci-dessus depuis la séparation
+  // shipping/billing du checkout.
+  billing_first_name         String
+  billing_last_name          String
+  billing_phone              String
+  billing_company            String?
+  billing_street_number      String
+  billing_street             String
+  billing_city               String
+  billing_county             String
+  billing_state              String
+  billing_stateLetter        String
+  billing_state_code         String
+  billing_zip                String
+  billing_country            String
+  billing_country_code       String
+  billing_ISO_3166_1_alpha_3 String
+
+  // Point relais
+  servicePointId           String?
+  servicePointPostNumber   String?
+  servicePointLatitude     String?
+  servicePointLongitude    String?
+  servicePointType         String?
+  servicePointExtraRefCab  String?
+  servicePointExtraShopRef String?
+
+  /// Instantané des produits commandés (jsonb).
+  products Json
+
+  /// Instantané fiscal figé au paiement (lot 2).
+  invoiceNumber  String? @unique
+  subtotalHt     Float   @default(0)
+  taxRate        Float   @default(5.5)
+  taxAmount      Float   @default(0)
+  discountAmount Float   @default(0)
+  promoCode      String?
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  returnRequest ReturnRequest?
+
+  @@index([status])
+  // Sert `/auth/settings/factures` (getTransactionsByUserId.ts) : filtre
+  // userId + tri createdAt ensemble, pas juste chacun séparément.
+  @@index([userId, createdAt])
+  @@map("transactions")
+}
+
+/// Compteur annuel des numéros FAC-AAAA-n.
+model InvoiceCounter {
+  year Int @id
+  last Int
+
+  @@map("invoice_counters")
+}
+
+/// Compteur annuel des numéros d'avoir AV-AAAA-n (`ReturnRequest.creditNoteNumber`),
+/// séquence indépendante de `InvoiceCounter` — un avoir n'est pas une facture.
+model CreditNoteCounter {
+  year Int @id
+  last Int
+
+  @@map("credit_note_counters")
+}
+
+/// Traçabilité de l'export comptable mensuel envoyé
+/// (`$lib/server/jobs/accountingExport.ts`) — un enregistrement par période
+/// (`YYYY-MM`) empêche un double envoi si le job est rejoué (retry QStash,
+/// relance manuelle) : contrairement au verrou Redis (`withLock`, éphémère
+/// et absent en dev/e2e sans Upstash), cet enregistrement persiste.
+model AccountingExportLog {
+  period           String   @id
+  sentAt           DateTime @default(now())
+  transactionCount Int
+
+  @@map("accounting_export_logs")
+}
+
+model ProductCategory {
+  id         String @id @default(cuid())
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@index([categoryId])
+  @@map("product_categories")
+}
+
+model Category {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  products  ProductCategory[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("categories")
+}
+
+// PROMO-PLUGIN : remises checkout. Hors COMMERCE (Order.promoCode reste une colonne du tunnel).
+model PromoCode {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  type             PromoType
+  value            Float
+  minAmount        Float?
+  usageLimit       Int?
+  usageCount       Int       @default(0)
+  expiresAt        DateTime?
+  active           Boolean   @default(true)
+  /// Si renseigné, ce code est une récompense de fidélité : accordé
+  /// automatiquement quand un compte atteint ce nombre de commandes payées
+  /// (`StoreSettings.loyaltyEnabled`), voir `LoyaltyAward`. Rien à voir avec
+  /// `usageLimit`/`expiresAt` ci-dessus qui restent des garde-fous normaux.
+  loyaltyThreshold Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  loyaltyAwards LoyaltyAward[]
+
+  @@index([active])
+  @@map("promo_codes")
+}
+
+/// Trace qu'un compte a déjà reçu la récompense de fidélité d'un code donné —
+/// évite un double envoi si le webhook Stripe est retenté (seuil de commandes
+/// payées atteint une seule fois, mais l'événement peut être livré 2x).
+model LoyaltyAward {
+  id                String   @id @default(cuid())
+  userId            String
+  promoCodeId       String
+  orderCountAtAward Int
+  createdAt         DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promoCodeId])
+  @@map("loyalty_awards")
+}
+
+// BLOG-PLUGIN ____________________________________________________________________________
+
+model BlogPost {
+  id         String        @id @default(cuid())
+  title      String
+  content    String
+  slug       String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  published  Boolean       @default(false)
+  author     BlogAuthor    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  authorId   String
+  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
+  comments   BlogComment[]
+  tags       BlogPostTag[]
+  /// Remplace à terme `category`/`tags` ci-dessus (migration en cours, voir BlogTaxonomy).
+  taxonomyValues BlogPostTaxonomyValue[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([published, createdAt])
+  @@map("blog_posts")
+}
+
+model BlogAuthor {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  posts     BlogPost[]
+  createdAt DateTime   @default(now())
+
+  @@map("blog_authors")
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  posts       BlogPost[]
+  createdAt   DateTime   @default(now())
+
+  @@map("blog_categories")
+}
+
+model BlogComment {
+  id        String   @id @default(cuid())
+  content   String
+  author    String
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@map("blog_comments")
+}
+
+model BlogTag {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  posts     BlogPostTag[]
+  createdAt DateTime      @default(now())
+
+  @@map("blog_tags")
+}
+
+model BlogPostTag {
+  id     String   @id @default(cuid())
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId  String
+
+  @@unique([postId, tagId])
+  @@index([tagId])
+  @@map("blog_post_tags")
+}
+
+// BLOG-PLUGIN : système générique de taxonomies (remplace à terme `BlogCategory`
+// et `BlogTag`/`BlogPostTag` ci-dessus). Tables dédiées au blog (pas de
+// dépendance vers `Taxonomy`/`TaxonomyValue` PRODUCT-PLUGIN) pour garder le
+// blog retirable indépendamment du catalogue produit.
+model BlogTaxonomy {
+  id        String              @id @default(cuid())
+  name      String              @unique
+  /// Utilisé comme nom de paramètre de filtre vitrine (`?<slug>=valeur`).
+  slug      String              @unique
+  /// true = plusieurs valeurs par article (ex: Tag), false = une seule (ex: Catégorie).
+  multiple  Boolean             @default(true)
+  values    BlogTaxonomyValue[]
+  createdAt DateTime            @default(now())
+
+  @@map("blog_taxonomies")
+}
+
+model BlogTaxonomyValue {
+  id         String                  @id @default(cuid())
+  taxonomyId String
+  taxonomy   BlogTaxonomy            @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  value      String
+  /// Libellé affiché si différent de `value`.
+  label      String?
+  posts      BlogPostTaxonomyValue[]
+  createdAt  DateTime                @default(now())
+
+  @@unique([taxonomyId, value])
+  @@map("blog_taxonomy_values")
+}
+
+model BlogPostTaxonomyValue {
+  id              String            @id @default(cuid())
+  postId          String
+  taxonomyValueId String
+  post            BlogPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  taxonomyValue   BlogTaxonomyValue @relation(fields: [taxonomyValueId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, taxonomyValueId])
+  @@index([taxonomyValueId])
+  @@map("blog_post_taxonomy_values")
+}
+
+// CONTACT-PLUGIN : messages du formulaire public `/contact`.
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("contact_submissions")
+}
+
+/// Trace des actions admin sensibles (suppression de compte, changement de
+/// rôle). Pas de relation FK vers `User` sur `actorId`/`targetId` : le journal
+/// doit rester lisible même après suppression de l'un des deux comptes.
+/// Interrupteurs des modules e-commerce optionnels (roadmap post-audit) —
+/// ligne unique (`id = "singleton"`), gérée depuis `/admin/settings`. Un
+/// module désactivé n'apparaît nulle part côté vitrine, il n'est pas juste
+/// masqué visuellement : chaque route publique concernée vérifie le flag
+/// avant de lire/écrire ses propres données.
+model StoreSettings {
+  id                   String   @id @default("singleton")
+  wishlistEnabled      Boolean  @default(false)
+  crossSellEnabled     Boolean  @default(false)
+  returnsEnabled       Boolean  @default(false)
+  savedPaymentsEnabled Boolean  @default(false)
+  loyaltyEnabled       Boolean  @default(false)
+  giftCardsEnabled     Boolean  @default(false)
+  productQnaEnabled    Boolean  @default(false)
+  cartRecoveryEnabled  Boolean  @default(false)
+  flashSaleEnabled     Boolean  @default(false)
+  referralEnabled      Boolean  @default(false)
+  stockAlertsEnabled   Boolean  @default(false)
+  /// Bundle « Souvent achetés ensemble » (`$lib/prisma/bundles/bundles.ts`) :
+  /// suggestion panier + petite remise automatique, basées sur la
+  /// co-occurrence réelle dans `OrderItem` — pas de table dédiée.
+  frequentlyBoughtTogetherEnabled Boolean @default(false)
+  reviewReminderEnabled Boolean @default(false)
+  /// Alerte wishlist (baisse de prix / vente flash), voir
+  /// `$lib/server/jobs/wishlistPriceAlert.ts` — converge `wishlistEnabled` et
+  /// `flashSaleEnabled` sans dépendre directement de ces deux flags.
+  wishlistPriceAlertEnabled Boolean @default(false)
+  updatedAt            DateTime @updatedAt
+
+  @@map("store_settings")
+}
+
+/// Récompense de parrainage — une seule ligne par filleul (`referredId`),
+/// posée à sa toute première commande payée, jamais aux suivantes. Le lien
+/// vers la carte cadeau (`giftCardId`) n'est qu'un texte, comme `PromoCode`
+/// sur `Order` : pas de FK vers `GiftCard`, la carte reste consultable et
+/// gérable indépendamment depuis /admin/gift-cards. Activable/désactivable
+/// via `StoreSettings.referralEnabled`.
+model ReferralReward {
+  id         String   @id @default(cuid())
+  referrerId String
+  /// Un seul filleul ne peut déclencher qu'une seule récompense.
+  referredId String   @unique
+  giftCardId String
+  createdAt  DateTime @default(now())
+
+  referrer User @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral_rewards")
+}
+
+/// Carte cadeau à solde décroissant. Pas de relation FK vers `Order` — même
+/// choix que `PromoCode` (référencée par son `code`, en texte, sur la
+/// commande) : la carte reste consultable/désactivable indépendamment de
+/// l'historique des commandes qui l'ont utilisée.
+/// Activable/désactivable via `StoreSettings.giftCardsEnabled`.
+model GiftCard {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  initialValue   Float
+  /// Solde restant, décrémenté à chaque utilisation en caisse (voir
+  /// PROMO-PLUGIN : même moment que `PromoCode.usageCount`, c'est-à-dire à la
+  /// création de la session Stripe, pas à la confirmation du paiement — un
+  /// panier Stripe abandonné consomme donc le solde, comme pour un code promo).
+  balance        Float
+  active         Boolean   @default(true)
+  expiresAt      DateTime?
+  recipientEmail String?
+  note           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([active])
+  @@map("gift_cards")
+}
+
+/// Liste d'envies — un produit par compte au plus une fois (contrainte
+/// unique). Activable/désactivable via `StoreSettings.wishlistEnabled`.
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  /// Prix du produit au moment de l'ajout (ou de la dernière alerte envoyée)
+  /// — baseline comparée à `Product.price` par
+  /// `$lib/server/jobs/wishlistPriceAlert.ts` : une nouvelle alerte n'est
+  /// envoyée que si le prix courant repasse strictement sous cette valeur,
+  /// jamais deux fois pour la même baisse.
+  lastNotifiedPrice           Float?
+  /// Même principe pour la vente flash en cours : une nouvelle date (nouvelle
+  /// vente flash) redéclenche une alerte, la même jamais deux fois.
+  lastNotifiedFlashSaleEndsAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  /// `productId` seul n'est pas couvert par l'unique (userId, productId) —
+  /// nécessaire pour `listWishlistItemsForProduct` (scan à chaque
+  /// changement de prix/vente flash d'un produit).
+  @@index([productId])
+  @@map("wishlist_items")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
+}
+
+/// Carte enregistrée (`StoreSettings.savedPaymentsEnabled`) — jamais de PAN/CVC
+/// stocké ici, uniquement les métadonnées d'affichage. La source de vérité
+/// (carte utilisable) reste le `PaymentMethod` Stripe, attaché au
+/// `User.stripeCustomerId`.
+model SavedPaymentMethod {
+  id                    String   @id @default(cuid())
+  userId                String
+  stripePaymentMethodId String   @unique
+  brand                 String
+  last4                 String
+  expMonth              Int
+  expYear               Int
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_payment_methods")
+}
+
+/// Demande de retour (`StoreSettings.returnsEnabled`) sur une transaction déjà
+/// payée. `stripeRefundId` posé une fois le remboursement Stripe confirmé par
+/// l'admin (`?/approve`) — jamais avant, `?/reject` n'en crée pas.
+model ReturnRequest {
+  id                   String       @id @default(cuid())
+  transactionId        String
+  userId               String
+  reason               String
+  status               ReturnStatus @default(REQUESTED)
+  stripeRefundId       String?
+  /// Posé à la place de `stripeRefundId` quand l'admin choisit de créditer le
+  /// compte (`?/creditStore`, status CREDITED) plutôt que de rembourser via
+  /// Stripe. Pas de relation formelle vers `GiftCard` — même découplage par
+  /// id/code en texte que `PromoCode`/`GiftCard` ailleurs dans le schéma.
+  giftCardId           String?
+  /// Étiquette de retour Sendcloud — posée à l'approbation, best-effort : un
+  /// échec Sendcloud ne bloque jamais le remboursement (voir la route admin).
+  returnTrackingNumber String?
+  returnTrackingUrl    String?
+  /// Numéro d'avoir (AV-AAAA-00001, `$lib/server/creditNote/number.ts`), posé
+  /// dans la même transaction DB que le passage REFUNDED/CREDITED — jamais
+  /// régénéré (le statut ne peut plus repasser par REQUESTED).
+  creditNoteNumber     String?      @unique
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId])
+  @@index([userId])
+  @@index([status])
+  @@map("return_requests")
+}

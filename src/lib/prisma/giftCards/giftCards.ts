@@ -1,0 +1,183 @@
+/**
+ * Cartes cadeaux — solde décroissant, même esprit que les codes promo
+ * (PROMO-PLUGIN : `$lib/prisma/promo/promo.ts`) mais avec un solde qui
+ * survit à plusieurs utilisations partielles au lieu d'un compteur
+ * d'utilisation. Activable/désactivable via `StoreSettings.giftCardsEnabled`.
+ */
+import { randomBytes } from 'crypto';
+import { prisma } from '$lib/server';
+import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+
+type CreateGiftCardInput = {
+	initialValue: number;
+	recipientEmail?: string | null;
+	note?: string | null;
+	expiresAt?: string | null;
+};
+
+type UpdateGiftCardInput = {
+	active: boolean;
+	recipientEmail?: string | null;
+	note?: string | null;
+	expiresAt?: string | null;
+};
+
+const GIFT_CARD_SORTABLE = ['code', 'initialValue', 'balance', 'expiresAt', 'createdAt'] as const;
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans caractères ambigus (0/O, 1/I/L)
+
+const normalizeCode = (code: string) => code.trim().toUpperCase();
+
+function randomSegment(length: number): string {
+	const bytes = randomBytes(length);
+	let segment = '';
+	for (let i = 0; i < length; i++) {
+		segment += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+	}
+	return segment;
+}
+
+/** `GIFT-XXXX-XXXX-XXXX`, retire une collision improbable en retentant. */
+async function generateUniqueGiftCardCode(): Promise<string> {
+	for (let attempt = 0; attempt < 5; attempt++) {
+		const code = `GIFT-${randomSegment(4)}-${randomSegment(4)}-${randomSegment(4)}`;
+		const existing = await prisma.giftCard.findUnique({ where: { code } });
+		if (!existing) return code;
+	}
+	throw new Error('Impossible de générer un code de carte cadeau unique');
+}
+
+/** Liste paginée pour `/admin/gift-cards` : recherche sur le code, tri sur les colonnes affichées. */
+export const getAllGiftCards = async (params: ListParams = {}) => {
+	const { page, perPage, skip, search, sort, dir } = normalizeListParams(params, {
+		perPage: 20,
+		defaultSort: 'createdAt',
+		sortable: GIFT_CARD_SORTABLE
+	});
+
+	const where = search
+		? { code: { contains: normalizeCode(search), mode: 'insensitive' as const } }
+		: undefined;
+
+	const [items, total] = await Promise.all([
+		prisma.giftCard.findMany({
+			where,
+			orderBy: { [sort]: dir },
+			skip,
+			take: perPage
+		}),
+		prisma.giftCard.count({ where })
+	]);
+	return { items, total, page, perPage, search, sort, dir };
+};
+
+export const getGiftCardById = async (id: string) => {
+	return await prisma.giftCard.findUnique({ where: { id } });
+};
+
+export const getGiftCardByCode = async (code: string) => {
+	return await prisma.giftCard.findUnique({ where: { code: normalizeCode(code) } });
+};
+
+export const createGiftCard = async (data: CreateGiftCardInput) => {
+	const code = await generateUniqueGiftCardCode();
+	return await prisma.giftCard.create({
+		data: {
+			code,
+			initialValue: data.initialValue,
+			balance: data.initialValue,
+			recipientEmail: data.recipientEmail || null,
+			note: data.note || null,
+			expiresAt: data.expiresAt ? new Date(data.expiresAt) : null
+		}
+	});
+};
+
+/**
+ * Ne touche jamais `code`/`initialValue`/`balance` : la valeur d'une carte
+ * est fixée à l'émission, seul son statut/métadonnées sont modifiables ici.
+ * Un ajustement de solde volontaire (SAV) passe par `adjustGiftCardBalance`,
+ * geste distinct et explicite plutôt qu'un champ parmi d'autres du formulaire.
+ */
+export const updateGiftCard = async (id: string, data: UpdateGiftCardInput) => {
+	return await prisma.giftCard.update({
+		where: { id },
+		data: {
+			active: data.active,
+			recipientEmail: data.recipientEmail || null,
+			note: data.note || null,
+			expiresAt: data.expiresAt ? new Date(data.expiresAt) : null
+		}
+	});
+};
+
+/** Ajustement manuel du solde (SAV : geste commercial, remboursement partiel...). */
+export const adjustGiftCardBalance = async (id: string, newBalance: number) => {
+	return await prisma.giftCard.update({
+		where: { id },
+		data: { balance: Math.max(0, newBalance) }
+	});
+};
+
+export const deleteGiftCard = async (id: string) => {
+	return await prisma.giftCard.delete({ where: { id } });
+};
+
+export type ValidateGiftCardResult = {
+	valid: boolean;
+	reason?: string;
+	amount: number;
+	giftCard: Awaited<ReturnType<typeof getGiftCardByCode>>;
+};
+
+/**
+ * Source de vérité côté serveur : valide une carte cadeau et calcule le
+ * montant réellement applicable, plafonné par `maxApplicable` (le reste à
+ * payer une fois la remise éventuelle d'un code promo déjà déduite).
+ */
+export const validateGiftCard = async (
+	rawCode: string | undefined | null,
+	maxApplicable: number
+): Promise<ValidateGiftCardResult> => {
+	const code = normalizeCode(rawCode ?? '');
+	if (!code) {
+		return { valid: false, reason: 'Aucun code fourni', amount: 0, giftCard: null };
+	}
+
+	const giftCard = await getGiftCardByCode(code);
+	if (!giftCard) {
+		return { valid: false, reason: 'Carte cadeau introuvable', amount: 0, giftCard: null };
+	}
+	if (!giftCard.active) {
+		return { valid: false, reason: 'Cette carte cadeau est inactive', amount: 0, giftCard };
+	}
+	if (giftCard.expiresAt && giftCard.expiresAt.getTime() < Date.now()) {
+		return { valid: false, reason: 'Cette carte cadeau a expiré', amount: 0, giftCard };
+	}
+	if (giftCard.balance <= 0) {
+		return {
+			valid: false,
+			reason: 'Le solde de cette carte cadeau est épuisé',
+			amount: 0,
+			giftCard
+		};
+	}
+
+	const amount = parseFloat(Math.min(giftCard.balance, Math.max(0, maxApplicable)).toFixed(2));
+
+	return { valid: true, amount, giftCard };
+};
+
+/** Décrémente le solde après usage ; désactive la carte quand le solde est épuisé. */
+export const decrementGiftCardBalance = async (id: string, amount: number) => {
+	const giftCard = await prisma.giftCard.findUnique({ where: { id } });
+	if (!giftCard) return null;
+
+	const nextBalance = Math.max(0, parseFloat((giftCard.balance - amount).toFixed(2)));
+	return await prisma.giftCard.update({
+		where: { id },
+		data: {
+			balance: nextBalance,
+			active: nextBalance > 0 ? giftCard.active : false
+		}
+	});
+};

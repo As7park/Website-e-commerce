@@ -1,0 +1,646 @@
+# Tests end-to-end
+
+La suite Playwright couvre les domaines suivants, exécutés en séquence (un seul
+worker) :
+
+- authentification : un parcours unique, `e2e/auth/journey.spec.ts` ;
+- administration : accès (`e2e/admin/security.spec.ts`), CRUD des comptes
+  (`e2e/admin/users.spec.ts`), modules e-commerce optionnels
+  (`e2e/admin/settings.spec.ts`) et export/purge/import CSV
+  (`e2e/admin/exports.spec.ts`) ;
+- catalogue : vitrine (`e2e/products/catalog.spec.ts`), CRUD admin produits +
+  actions groupées (`e2e/products/admin.spec.ts`, `e2e/products/admin-bulk.spec.ts`),
+  taxonomies génériques (`e2e/products/taxonomies.spec.ts`), avis
+  (`e2e/products/reviews.spec.ts`), questions & réponses
+  (`e2e/products/questions.spec.ts`), variantes (`e2e/products/variants.spec.ts`)
+  liste d'envies (`e2e/products/wishlist.spec.ts`), alerte wishlist baisse de
+  prix/vente flash (`e2e/products/wishlist-price-alert.spec.ts`) et ventes
+  croisées (`e2e/products/cross-sell.spec.ts`) ;
+- commerce : panier (connecté + invité), checkout, webhook Stripe, ventes,
+  retours/SAV, moyens de paiement enregistrés (`e2e/commerce/*.spec.ts`) et
+  cartes cadeaux (`e2e/gift-cards/*.spec.ts`) ;
+- blog : vitrine (`e2e/blog/catalog.spec.ts`) et CRUD admin articles
+  (`e2e/blog/admin.spec.ts`) ;
+- codes promo : CRUD admin (`e2e/promo/admin.spec.ts`), validation
+  (`e2e/promo/validate.spec.ts`) et fidélité (`e2e/promo/loyalty.spec.ts`) ;
+- contact : formulaire (`e2e/contact/form.spec.ts`) et lecture admin
+  (`e2e/contact/admin.spec.ts`) ;
+- services live : Brevo (`e2e/live/brevo.spec.ts`), Sendcloud
+  (`e2e/live/sendcloud.spec.ts`) et Cloudinary (`e2e/live/cloudinary.spec.ts`),
+  ignorés si les clés sont factices.
+
+## Authentification
+
+Un seul scénario, `e2e/auth/journey.spec.ts`, joue tout le cycle de vie d'un
+compte dans une session de navigateur unique : inscription, vérification
+d'adresse, changement de mot de passe, changement d'adresse, mot de passe oublié,
+double authentification, code de secours, déconnexion.
+
+Le choix d'un parcours continu plutôt que de fichiers séparés est délibéré :
+
+- les états s'enchaînent réellement (une adresse changée reste changée, un mot de
+  passe remplacé cesse de fonctionner), ce que des tests indépendants ne
+  vérifient pas ;
+- l'enregistrement vidéo produit une seule prise, lisible de bout en bout ;
+- les limiteurs de débit, tous en mémoire du serveur, sont sollicités une fois
+  chacun au lieu d'être saturés par des tests parallèles.
+
+## Lancer les tests
+
+```bash
+npm run test:e2e          # exécution simple
+npm run test:e2e:video    # avec vidéo, copiée dans e2e-videos/
+npm run test:e2e:headed   # navigateur visible, avec vidéo
+npm run test:e2e:ui       # mode interactif Playwright
+npm run test:e2e:report   # dernier rapport HTML
+```
+
+Le parcours étant un test unique de deux à trois minutes, les rapporteurs
+standard n'écriraient rien avant la fin. `e2e/support/step-reporter.ts` annonce
+donc chaque étape en direct :
+
+```
+[00:56] ✓ 1. Les pages protégées sont fermées aux visiteurs anonymes (54413 ms)
+[01:06] ✓ 2. Inscription : les saisies invalides sont refusées (9680 ms)
+```
+
+Pour suivre le déroulé à l'écran, `test:e2e:headed` ouvre le navigateur (sous WSL,
+via WSLg). Les délais d'action sont bornés à 20 s : un geste qui n'aboutit pas
+échoue vite, en nommant le geste fautif, au lieu d'épuiser le délai du test.
+
+Prérequis :
+
+- `.env.test` à la racine (voir `.env.test.example`). Il pointe sur le schéma
+  PostgreSQL `e2e`, distinct du schéma de développement ;
+- `npx playwright install chromium` une première fois ;
+- la base Neon accessible. Les URL contenant `&` **doivent** rester entre
+  guillemets dans `.env.test`.
+
+Playwright démarre son propre Vite sur le **port 2001**, avec `.env.test`
+(schéma `e2e`, SMTP local). `npm run dev` reste sur le **2000** et n'est pas
+arrêté. Ne lancez pas la suite contre le serveur de développement : les helpers
+Prisma écriraient dans `e2e` pendant que l'UI lirait `public`.
+
+`SMTP_HOST` / `SMTP_PORT` doivent rester le puits (`127.0.0.1:2525`). Les
+identifiants Brevo vont dans `SMTP_LIVE_*` : le spec `e2e/live/brevo.spec.ts`
+s'en sert sans changer le serveur Vite. Ne jamais pointer `SMTP_HOST` e2e vers
+`smtp-relay.brevo.com` : `waitForEmailCode` ne verrait plus rien.
+
+Le port e2e se surcharge avec `E2E_PORT` si 2001 est déjà pris.
+
+Le serveur compile chaque route à la première visite, ce qui explique la
+première étape particulièrement lente — une cinquantaine de secondes pour neuf
+pages jamais visitées. Ce n'est pas un blocage.
+
+## Procédures — ce que font les tests
+
+Les titres numérotés sont ceux des `test.step(...)` dans les specs. Pour changer
+ce qui est testé : modifier cette liste, le `test.step` du même numéro, puis le
+code métier. Les copies par module sont dans `docs/auth`, `docs/admin`, `docs/products`,
+`docs/commerce` et `docs/blog`.
+
+Chaque étape joue d'abord les cas refusés, puis le cas accepté. Un refus est
+confirmé par l'interface **et** par l'état en base.
+
+### Auth — `e2e/auth/journey.spec.ts`
+
+Un seul scénario continu (les états s'enchaînent).
+
+| #   | Étape                                                            | Refusé                                          | Accepté                                    |
+| --- | ---------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| 1   | Les pages protégées sont fermées aux visiteurs anonymes          | 9 routes `GUARDED_PAGES`                        | redirection login / mot de passe oublié    |
+| 2   | Inscription : les saisies invalides sont refusées                | pseudo court, email HTML, 5 règles MDP          | reste sur `/auth/signup`, pas de session   |
+| 3   | Inscription : le compte est créé, non vérifié                    | —                                               | session, `emailVerified=false`, hash argon |
+| 4   | Vérification de l'adresse : les codes invalides sont rejetés     | code trop court, code inexistant                | `emailVerified` reste faux                 |
+| 5   | Vérification de l'adresse : un renvoi invalide le code précédent | ancien code après « Renvoyer »                  | nouveau code → `/auth`, vérifié            |
+| 6   | Mot de passe : un mot de passe courant erroné ne change rien     | MDP trop court, courant faux                    | hash inchangé                              |
+| 7   | Mot de passe : le changement révoque les autres sessions         | —                                               | 1 session, cookie conservé                 |
+| 8   | Connexion : les identifiants erronés sont refusés                | compte inconnu, ancien MDP, MDP faux            | pas de cookie                              |
+| 9   | Connexion : le nouveau mot de passe est accepté                  | —                                               | redirection `/`                            |
+| 10  | Changement d'email : une adresse déjà prise est refusée          | email occupé                                    | email du compte inchangé                   |
+| 11  | Changement d'email : effectif après validation du code           | avant le code, email encore l'ancien            | code reçu sur la **nouvelle** adresse      |
+| 12  | Mot de passe oublié : demande et code invalides                  | email inconnu, code faux, GET `/reset-password` | reste sur verify-email                     |
+| 13  | Mot de passe oublié : réinitialisation avec le bon code          | MDP trop court                                  | 1 session, `/auth`                         |
+| 14  | 2FA : un code de configuration invalide n’enregistre rien        | TOTP court / faux                               | `totpKey` reste null                       |
+| 15  | 2FA : configuration acceptée et code de secours délivré          | —                                               | code affiché = code chiffré en base        |
+| 16  | 2FA : la session reste bridée jusqu’à la saisie du code          | TOTP faux, GET `/auth/settings`                 | après Verify → `/auth`                     |
+| 17  | Code de secours : refusé s’il est faux, à usage unique sinon     | trop court, faux                                | 2FA retirée, nouveau recovery              |
+| 18  | Reconfiguration de la 2FA puis déconnexion complète              | TOTP calculé sur une clé périmée                | setup OK, `signOut`, 0 session             |
+
+Test à part : déconnexion depuis le tiroir panier (`signOutFromCart`) — cookie
+absent, 0 session, GET `/auth/settings` → `/auth/login`.
+
+Constantes du spec à ajuster en même temps : `GUARDED_PAGES`, `WEAK_PASSWORDS`.
+
+### Admin accès — `e2e/admin/security.spec.ts`
+
+Routes fermées : `ADMIN_PATHS` dans `e2e/support/admin.ts`.
+
+| #   | Étape                                              | Geste                                           | Preuve                        |
+| --- | -------------------------------------------------- | ----------------------------------------------- | ----------------------------- |
+| 1   | Un visiteur anonyme est renvoyé à la connexion     | GET chaque `ADMIN_PATHS`                        | `/auth/login`                 |
+| 2   | Un CLIENT est renvoyé à l’accueil                  | inscription + GET chaque path                   | `/`                           |
+| 3   | Un CLIENT ne peut pas muter (users, promo)         | POST `?/deleteUser`, `?/deletePromo`            | lignes encore en base         |
+| 4   | Un ADMIN atteint le tableau de bord et les comptes | `promoteToAdmin` + GET `/admin`, `/admin/users` | titres Accueil / Utilisateurs |
+
+### Admin utilisateurs — `e2e/admin/users.spec.ts`
+
+| #   | Étape                                    | Geste                               | Preuve                                            |
+| --- | ---------------------------------------- | ----------------------------------- | ------------------------------------------------- |
+| 1   | La liste affiche les emails, sans secret | recherche dans le tableau           | 3 emails visibles ; pas de hash / totp / recovery |
+| 2   | Promotion CLIENT → ADMIN                 | crayon « edit » → menu ADMIN → Save | URL `/admin/users/:id`, `role === ADMIN`          |
+| 3   | Un rôle hors enum est refusé             | POST `SUPERUSER`                    | `role` reste `CLIENT`                             |
+| 4   | La MFA se bascule depuis la fiche        | checkbox + Save                     | `isMfaEnabled === true`                           |
+| 5   | Suppression d’un CLIENT                  | dialogue Continue                   | disparu du tableau **et** de la base              |
+
+Test à part (sans numéro) : un CLIENT qui GET `/admin/users/:id` d'un autre
+compte est renvoyé à `/`.
+
+### Admin modules e-commerce — `e2e/admin/settings.spec.ts`
+
+| #   | Étape                                                                | Geste                 | Preuve                                      |
+| --- | -------------------------------------------------------------------- | --------------------- | ------------------------------------------- |
+| 1   | Les modules apparaissent désactivés au départ                        | GET `/admin/settings` | `data-state="unchecked"` sur les 5 switches |
+| 2   | Activer la liste d'envies — enregistré immédiatement (pas de bouton) | switch                | `StoreSettings.wishlistEnabled === true`    |
+| 3   | Rechargée, la page reflète l'état enregistré                         | reload                | `data-state="checked"` sur le bon switch    |
+
+Test à part : un CLIENT POST sur `/admin/settings` — les réglages en base ne
+changent pas.
+
+### Ventes croisées — `e2e/products/cross-sell.spec.ts`
+
+| #   | Étape                                                       | Geste             | Preuve                              |
+| --- | ----------------------------------------------------------- | ----------------- | ----------------------------------- |
+| 1   | Module désactivé : bloc absent malgré la catégorie partagée | GET fiche produit | pas de titre « Vous aimerez aussi » |
+| 2   | Module activé : produit de la même catégorie affiché        | GET fiche produit | lien vers le produit lié visible    |
+
+### Admin exports — `e2e/admin/exports.spec.ts`
+
+La purge est jouée sur `products`, avec un seuil de 365 jours (le préréglage de
+l'UI) et des lignes vieillies de 400 jours (`createOldCatalogProduct`) — jamais
+un seuil de 0 jour, qui recouperait aussi les fiches fraîches d'autres specs.
+
+| #   | Étape                                                                | Geste                                  | Preuve                                                       |
+| --- | -------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| 1   | Export CSV téléchargeable, colonnes attendues                        | GET `/admin/exports/products`          | `Content-Type: text/csv`, en-tête et nom du produit présents |
+| 2   | Aperçu de purge : compte les lignes de plus de 365 jours             | Prévisualiser                          | delta de +2 par rapport à la base                            |
+| 3   | Purge : supprime la ligne libre, ignore la ligne liée à une commande | Confirmer la suppression               | `1 ligne(s) supprimée(s), 1 ignorée(s)`                      |
+| 4   | Réimport : une ligne modifiée met à jour le prix                     | Importer un CSV réexporté puis modifié | `0 créé(s), 1 mis à jour`, prix changé en base               |
+
+Le blocage anonyme/CLIENT de `/admin/exports`, `/admin/exports/products` et
+`/admin/exports/products/purge` est couvert par `ADMIN_PATHS` dans
+`e2e/admin/security.spec.ts`, pas dupliqué ici.
+
+### Catalogue vitrine — `e2e/products/catalog.spec.ts`
+
+| #   | Étape                                   | Geste                  | Preuve                                                    |
+| --- | --------------------------------------- | ---------------------- | --------------------------------------------------------- |
+| 1   | La liste affiche le nom Prisma          | GET `/products`        | titres Catalogue + nom, libellé de la valeur de taxonomie |
+| 2   | La fiche s’ouvre par slug               | GET `/products/[slug]` | nom, prix, ligne en base                                  |
+| 3   | Un slug inconnu renvoie 404             | GET slug absent        | statut 404                                                |
+| 4   | Pas d’UI d’édition admin sur la vitrine | HTML de `/products`    | pas de `/admin/products` ni `passwordHash`                |
+
+### Catalogue admin — `e2e/products/admin.spec.ts`
+
+Les produits du CRUD courant sont posés en Prisma (`createCatalogProduct`).
+L'upload Cloudinary est un spec live (`e2e/live/cloudinary.spec.ts`), joué
+seulement si `CLOUDINARY_*` n'est pas factice.
+
+| #   | Étape                                           | Geste                            | Preuve                                        |
+| --- | ----------------------------------------------- | -------------------------------- | --------------------------------------------- |
+| 1   | La liste admin affiche les produits             | GET `/admin/products`, recherche | ligne du tableau Produits                     |
+| 2   | Création Prisma visible sur la vitrine          | GET `/products`                  | heading du nom + ligne en base                |
+| 3   | Édition prix et stock                           | fiche admin → 9,99 / 7 → Save    | DB + fiche publique « 9.99 € », « Stock : 7 » |
+| 4   | Suppression d’un produit sans commande          | dialogue Continue                | produit absent en base                        |
+| 5   | Un produit commandé est refusé à la suppression | même geste sur un `OrderItem`    | produit **encore** en base                    |
+
+Test à part : un CLIENT POST `?/deleteProduct` — le produit reste.
+
+### Catalogue taxonomies — `e2e/products/taxonomies.spec.ts`
+
+| #   | Étape                                                    | Geste                         | Preuve                                                  |
+| --- | -------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| 1   | Création depuis `/admin/products/taxonomies/create`      | Save changes                  | ligne du tableau Taxonomies                             |
+| 2   | Création d'une valeur pour cette taxonomie               | Save changes                  | ligne dans le tableau Valeurs                           |
+| 3   | Association à un produit depuis la fiche admin           | case cochée → Save changes    | `ProductTaxonomyValue` en base                          |
+| 4   | Filtre catalogue par taxonomie                           | GET `/products?<slug>=valeur` | produit présent ; valeur inconnue → absent              |
+| 5   | Renommage de la valeur                                   | Save changes                  | valeur mise à jour en base et dans le tableau           |
+| 6   | Suppression de la taxonomie : cascade sur valeur/produit | dialogue Continue             | taxonomie et valeur absentes, produit sans cette valeur |
+
+Test à part : un CLIENT POST `?/createTaxonomy` — aucune taxonomie créée.
+
+### Avis produit — `e2e/products/reviews.spec.ts`
+
+| #   | Étape                                              | Geste                                | Preuve                                                    |
+| --- | -------------------------------------------------- | ------------------------------------ | --------------------------------------------------------- |
+| 1   | Anonyme : invité à se connecter, pas de formulaire | GET `/products/[slug]`               | lien « Connectez-vous », pas de `form[action="?/review"]` |
+| 2   | Connecté : note et commentaire publiés             | étoiles + commentaire → Publier      | toast, commentaire affiché, `Review` en base              |
+| 3   | Un second avis du même compte est refusé           | POST `?/review` rejoué               | 409, `AlreadyReviewedError`                               |
+| 4   | Modération admin : liste puis suppression          | `/admin/products/reviews` → Continue | avis absent en base                                       |
+
+Test à part : un CLIENT POST `?/deleteReview` sur l'avis d'un autre — l'avis reste.
+
+### Liste d'envies — `e2e/products/wishlist.spec.ts`
+
+| #   | Étape                                                 | Geste                                                                   | Preuve                                        |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Module désactivé : bouton absent, page et API fermées | GET `/products/[slug]`, `/auth/settings/wishlist`, POST `/api/wishlist` | bouton absent, 404, 404                       |
+| 2   | Module activé : ajout depuis la fiche produit         | clic cœur                                                               | `WishlistItem` créé, libellé « Retirer… »     |
+| 3   | La liste du compte affiche le produit                 | GET `/auth/settings/wishlist`                                           | carte produit visible                         |
+| 4   | Retrait depuis la page liste d'envies                 | bouton Retirer                                                          | carte disparue, ligne absente en base         |
+| 5   | Ré-ajout puis retrait depuis la fiche produit         | clic cœur × 2                                                           | libellé revient à « Ajouter… », ligne absente |
+
+Test à part : un anonyme POST `/api/wishlist` — 401.
+
+### Alerte wishlist : baisse de prix / vente flash — `e2e/products/wishlist-price-alert.spec.ts`
+
+Event-triggered depuis `updateProductById` (seul point d'écriture de
+`price`/`flashSaleEndsAt`) : fallback synchrone dans la requête admin quand
+QStash n'est pas configuré, même mécanique que `stock-alerts.spec.ts`.
+
+| #   | Étape                                               | Geste                                  | Preuve                                                 |
+| --- | --------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| 1   | Ajout à la liste d'envies (baseline = prix courant) | clic cœur                              | `WishlistItem.lastNotifiedPrice` = prix courant        |
+| 2   | Baisse de prix admin déclenche une alerte           | fiche admin → prix plus bas → Save     | e-mail reçu, `lastNotifiedPrice` mis à jour            |
+| 3   | Ré-enregistrer le même prix ne renvoie rien         | Save changes sans changement           | boîte mail vide                                        |
+| 4   | Nouvelle baisse redéclenche une alerte              | fiche admin → prix encore plus bas     | e-mail reçu, `lastNotifiedPrice` mis à jour de nouveau |
+| 5   | Nouvelle vente flash déclenche une alerte           | fiche admin → `flashSaleEndsAt` future | e-mail reçu, `lastNotifiedFlashSaleEndsAt` renseigné   |
+| 6   | Ré-enregistrer la même vente flash ne renvoie rien  | Save changes avec la même date         | boîte mail vide                                        |
+
+Test à part : module désactivé (`wishlistPriceAlertEnabled: false`) — la
+baisse de prix admin ne déclenche aucun e-mail, `lastNotifiedPrice` reste
+inchangé.
+
+### Auth adresses — `e2e/auth/address.spec.ts`
+
+La Base Adresse Nationale (BAN, `api-adresse.data.gouv.fr`) est appelée pour de
+vrai dès que `SECRET_ADDRESS_SEARCH_MODE` n'est pas `e2e`. Sinon la fixture
+`Rue des Tests` est renvoyée.
+
+| #   | Étape        | Geste                          | Preuve                       |
+| --- | ------------ | ------------------------------ | ---------------------------- |
+| 1   | Anonyme      | GET `/auth/settings/address`   | `/auth/login`                |
+| 2   | Requête vide | GET `/api/address-search`      | 400                          |
+| 3   | Création     | suggestions BAN → Enregistrer  | 1 adresse, ville Toulouse    |
+| 4   | IDOR         | GET/POST une adresse étrangère | 404 / adresse encore en base |
+| 5   | Suppression  | Delete address                 | ligne absente                |
+
+### Auth Google — `e2e/auth/google.spec.ts`
+
+Le départ (`GET /auth/login/google`) va toujours vers `accounts.google.com`.
+Le callback sans écran Google n'existe que si `GOOGLE_CLIENT_ID` est factice
+(`e2e-google-client-id`). Avec de vraies clés, l'écran de consentement Google
+reste manuel (ajoutez `http://localhost:2001/auth/login/google/callback` dans
+la console Google).
+
+### Live Brevo — `e2e/live/brevo.spec.ts`
+
+Ignoré si `SMTP_LIVE_HOST` / `USER` / `PASS` sont factices. Sinon :
+
+| #   | Étape                       | Geste                                     | Preuve                      |
+| --- | --------------------------- | ----------------------------------------- | --------------------------- |
+| 1   | Auth SMTP                   | `transporter.verify()` vers `SMTP_LIVE_*` | Brevo accepte le login      |
+| 2   | Envoi (si `E2E_LIVE_INBOX`) | `sendVerificationEmail`                   | `accepted` contient l'inbox |
+
+Sans `E2E_LIVE_INBOX`, le spec s'arrête après l'étape 1.
+
+Si `verify()` échoue en `525 Unauthorized IP`, l'adresse de la machine n'est
+pas dans la liste d'IPs autorisées du SMTP Brevo.
+
+### Live Cloudinary — `e2e/live/cloudinary.spec.ts`
+
+Ignoré si `CLOUDINARY_CLOUD_NAME` / `API_KEY` / `API_SECRET` sont factices
+(`e2e`). Sinon :
+
+| #   | Étape     | Geste                    | Preuve                  |
+| --- | --------- | ------------------------ | ----------------------- |
+| 1   | Ping      | `cloudinary.api.ping()`  | `status: ok`            |
+| 2   | Upload UI | create produit + PNG 1×1 | redirection liste admin |
+| 3   | URL       | lecture Prisma           | `res.cloudinary.com`    |
+
+### Live Sendcloud — `e2e/live/sendcloud.spec.ts`
+
+Ignoré si `SENDCLOUD_PUBLIC_KEY` / `SECRET_KEY` / `INTEGRATION_ID` sont factices
+(`e2e` / `0`). Les étiquettes ne sont **pas** créées : le webhook Stripe skippe
+Sendcloud dès que `PUBLIC_ENV=test`.
+
+| #   | Étape         | Geste                                  | Preuve                   |
+| --- | ------------- | -------------------------------------- | ------------------------ |
+| 1   | Options       | POST `/api/sendcloud/shipping-options` | `data` non vide          |
+| 2   | Points relais | POST `/api/sendcloud/service-points`   | au moins un point        |
+| 3   | Checkout UI   | adresse → options                      | « Options de livraison » |
+| 4   | Persistance   | POST `?/checkout` (`shippingCost` 0)   | `servicePointId` en base |
+
+### Commerce panier — `e2e/commerce/cart.spec.ts`
+
+| #   | Étape                          | Geste                        | Preuve               |
+| --- | ------------------------------ | ---------------------------- | -------------------- |
+| 1   | Fiche : ajouter au panier      | bouton « Ajouter au panier » | UI + `OrderItem`     |
+| 2   | save-cart d'une autre commande | POST id étranger             | 403                  |
+| 3   | Prix posté ≠ catalogue         | POST `price: 0.01`           | persisté = catalogue |
+
+### Commerce panier invité — `e2e/commerce/guest.spec.ts`
+
+| #   | Étape                            | Geste                  | Preuve                                 |
+| --- | -------------------------------- | ---------------------- | -------------------------------------- |
+| 1   | Anonyme : ajouter puis recharger | bouton puis reload     | item encore visible                    |
+| 2   | Anonyme puis inscription         | signup après add       | `OrderItem` en base, localStorage vide |
+| 3   | Compte + invité (autre produit)  | login après add invité | les deux lignes en base                |
+
+### Commerce checkout — `e2e/commerce/checkout.spec.ts`
+
+| #   | Étape                                 | Geste         | Preuve                             |
+| --- | ------------------------------------- | ------------- | ---------------------------------- |
+| 1   | Anonyme GET `/checkout`               | navigation    | `/auth/login`                      |
+| 2   | CLIENT avec panier                    | `/checkout`   | sélecteur d'adresse                |
+| 3   | POST sans adresse / sans être proprio | `?/checkout`  | 400 / 403                          |
+| 4   | Paiement simulé                       | helper Prisma | l'order payée n'est plus `PENDING` |
+
+### Commerce webhook Stripe — `e2e/commerce/stripe.spec.ts`
+
+| #   | Étape                        | Geste                              | Preuve                         |
+| --- | ---------------------------- | ---------------------------------- | ------------------------------ |
+| 1   | Signature invalide           | POST `/api/webhooks` HMAC faux     | 400                            |
+| 2   | `checkout.session.completed` | POST signé (secret e2e)            | `Order` `PAID` + `Transaction` |
+| 3   | Facture compte               | GET `/auth/settings/factures/[id]` | HTML contient l'id             |
+| 4   | Facture admin                | GET `/admin/sales/facture/[id]`    | HTML contient l'id             |
+| 5   | Bordereau admin              | GET `/admin/sales/bordereau/[id]`  | HTML contient l'id             |
+
+### Commerce ventes — `e2e/commerce/sales.spec.ts`
+
+| #   | Étape                               | Geste                  | Preuve        |
+| --- | ----------------------------------- | ---------------------- | ------------- |
+| 1   | ADMIN voit la transaction           | `/admin/sales`         | cellule email |
+| 2   | CLIENT GET `/admin/sales`           | navigation             | `/`           |
+| 3   | Facture user : uniquement la sienne | GET facture d'un autre | 404           |
+
+### Commerce retours / SAV — `e2e/commerce/returns.spec.ts`
+
+Le remboursement Stripe réel (`?/approve`) n'est pas rejouable : les transactions
+de test viennent de `simulatePaidOrder`, sans vraie Checkout Session Stripe.
+On vérifie que l'échec est géré proprement (`fail(500)`), pas le remboursement.
+Le crédit compte (`?/creditStore`) n'appelle jamais Stripe : entièrement
+rejouable.
+
+| #   | Étape                                                    | Geste                                       | Preuve                                                   |
+| --- | -------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
+| 1   | Module désactivé : routes compte fermées                 | GET `/auth/settings/returns[...]`           | 404                                                      |
+| 2   | Demande de retour envoyée                                | formulaire motif → Envoyer                  | `ReturnRequest` `REQUESTED`                              |
+| 3   | Une seconde demande n'est pas proposée                   | revisite de la page                         | formulaire absent, statut affiché                        |
+| 4   | Admin : la demande est visible et refusable              | `/admin/returns` → Refuser → Confirmer      | statut `REJECTED`                                        |
+| 5   | Admin : crédit compte au lieu du remboursement           | Créditer le compte → Confirmer              | statut `CREDITED`, `GiftCard` émise, e-mail avec le code |
+| 6   | Crédit indisponible si cartes cadeaux désactivées        | bouton absent, `giftCardsEnabled` à `false` | statut inchangé `REQUESTED`                              |
+| 7   | Admin : l'approbation échoue proprement sans Stripe réel | Approuver + rembourser → Confirmer          | message d'échec, statut inchangé                         |
+
+Test à part : IDOR — un compte ne peut pas ouvrir la demande d'un autre (404).
+Le blocage anonyme/CLIENT de `/admin/returns` est couvert par `ADMIN_PATHS`
+dans `e2e/admin/security.spec.ts`.
+
+### Commerce moyens de paiement enregistrés — `e2e/commerce/saved-payments.spec.ts`
+
+L'ajout de carte (`?/attach`) passe par un `SetupIntent` Stripe réel (Stripe
+Elements côté client) : non rejouable en e2e. Les cartes sont insérées
+directement en base (`createSavedPaymentMethod`), comme si `attach` avait déjà
+réussi — seules lecture, carte par défaut et suppression sont couvertes.
+
+| #   | Étape                                          | Geste                               | Preuve                              |
+| --- | ---------------------------------------------- | ----------------------------------- | ----------------------------------- |
+| 1   | Module désactivé : route et SetupIntent fermés | GET / POST                          | 404 / 404                           |
+| 2   | Liste : les deux cartes sont affichées         | GET `/auth/settings/saved-payments` | marque + 4 derniers chiffres        |
+| 3   | Changement de carte par défaut                 | bouton étoile                       | `isDefault` bascule en base         |
+| 4   | Suppression                                    | bouton corbeille                    | carte absente de l'UI et de la base |
+
+Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre
+(POST direct, ligne toujours en base ensuite).
+
+### Commerce relance panier abandonné — `e2e/commerce/cart-recovery.spec.ts`
+
+Scan périodique (`$lib/server/jobs/cartRecovery.ts`), pas un job déclenché
+par une action utilisateur : le job est appelé directement via
+`POST /api/jobs/cart-recovery` (en-tête `CRON_SECRET`, comme Vercel Cron en
+repli sans QStash). `Order.updatedAt` est reculé via une écriture SQL directe
+(`backdateOrder`) pour simuler l'ancienneté du panier sans attendre 1h/24h.
+
+| #   | Étape                                         | Geste                      | Preuve                                                    |
+| --- | --------------------------------------------- | -------------------------- | --------------------------------------------------------- |
+| 1   | Module désactivé : aucune relance même à 30h  | flag à `false` + job       | `cartReminder1/2SentAt` restent `null`, aucun e-mail      |
+| 2   | Palier 1 (10 %) à 1h30                        | `backdateOrder(1.5)` + job | e-mail avec code `RELANCE-…`, `cartReminder1SentAt` posé  |
+| 3   | Rejouer le job tout de suite : pas de doublon | job une seconde fois       | aucun nouvel e-mail                                       |
+| 4   | Palier 2 (15 %) à 25h                         | `backdateOrder(25)` + job  | second e-mail, code différent, `cartReminder2SentAt` posé |
+
+### Relance avis produit — `e2e/products/review-reminder.spec.ts`
+
+Même principe : scan périodique (`$lib/server/jobs/reviewReminder.ts`), job
+appelé directement via `POST /api/jobs/review-reminder` (même en-tête
+`CRON_SECRET`), `Order.updatedAt` reculé via `backdateOrder` pour simuler une
+commande `SHIPPED` de plus ou moins de 7 jours.
+
+| #   | Étape                                         | Geste                        | Preuve                                                                   |
+| --- | --------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| 1   | Module désactivé : aucune relance             | flag à `false` + job         | `reviewReminderSentAt` reste `null`, aucun e-mail                        |
+| 2   | Trop récente (2 jours)                        | `backdateOrder(24*2)` + job  | pas encore de relance                                                    |
+| 3   | 10 jours : relance envoyée                    | `backdateOrder(24*10)` + job | e-mail avec lien `/products/[slug]#reviews`, `reviewReminderSentAt` posé |
+| 4   | Rejouer le job tout de suite : pas de doublon | job une seconde fois         | aucun nouvel e-mail                                                      |
+
+### Fidélité — `e2e/promo/loyalty.spec.ts`
+
+Pas de système séparé : un `PromoCode` actif avec `loyaltyThreshold` est
+comparé au nombre de commandes payées du compte après chaque webhook
+(`src/lib/server/jobs/loyalty.ts`, fallback synchrone sans QStash configuré
+en e2e — signer le webhook suffit à déclencher la vérification).
+
+| #   | Étape                                              | Geste            | Preuve                                   |
+| --- | -------------------------------------------------- | ---------------- | ---------------------------------------- |
+| 1   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
+| 2   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
+| 3   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
+
+### Blog vitrine — `e2e/blog/catalog.spec.ts`
+
+| #   | Étape                            | Geste                      | Preuve                                 |
+| --- | -------------------------------- | -------------------------- | -------------------------------------- |
+| 1   | La liste affiche le titre Prisma | GET `/blog`                | titres Blog + nom, lien catégorie      |
+| 2   | La fiche s’ouvre par slug        | GET `/blog/[slug]`         | titre, auteur, ligne en base           |
+| 3   | Un slug inconnu renvoie 404      | GET slug absent            | statut 404                             |
+| 4   | Un brouillon n’est pas public    | GET slug `published=false` | 404, absent de la liste                |
+| 5   | Pas d’UI d’édition admin         | HTML de `/blog`            | pas de `/admin/blog` ni `passwordHash` |
+
+### Blog admin — `e2e/blog/admin.spec.ts`
+
+La création UI (TinyMCE) n'est pas jouée. Les articles sont posés en Prisma
+(`createBlogPost`). L'édition du titre aussi (`updateBlogPostTitle`).
+
+| #   | Étape                                  | Geste                        | Preuve                           |
+| --- | -------------------------------------- | ---------------------------- | -------------------------------- |
+| 1   | La liste admin affiche les articles    | GET `/admin/blog`, recherche | ligne du tableau Articles        |
+| 2   | Création Prisma visible sur la vitrine | GET `/blog`                  | heading du titre + ligne en base |
+| 3   | Édition Prisma du titre                | helper Prisma                | DB + titre public                |
+| 4   | Suppression                            | dialogue Continue            | article absent en base           |
+| 5   | Dépublier                              | `published=false` en Prisma  | GET slug → 404                   |
+
+Test à part : un CLIENT POST `?/deleteBlogPost` — l'article reste.
+
+### Promo admin — `e2e/promo/admin.spec.ts`
+
+La création passe par Prisma. L'édition de la valeur et la suppression passent
+par l'UI.
+
+| #   | Étape                | Geste                         | Preuve              |
+| --- | -------------------- | ----------------------------- | ------------------- |
+| 1   | Liste admin          | GET `/admin/promo`, recherche | ligne du code       |
+| 2   | Édition de la valeur | fiche → 15 → Enregistrer      | `value` en base     |
+| 3   | Suppression          | dialogue Continue             | code absent en base |
+
+Test à part : un CLIENT POST `?/deletePromo` — le code reste.
+
+### Promo validation — `e2e/promo/validate.spec.ts`
+
+| #   | Étape                      | Geste                                   | Preuve            |
+| --- | -------------------------- | --------------------------------------- | ----------------- |
+| 1   | Pourcentage accepté        | POST `/api/promo/validate` 10 % / 100 € | remise 10         |
+| 2   | Inconnu / inactif / expiré | POST                                    | `valid: false`    |
+| 3   | Montant min. et quota      | POST sous le seuil / quota plein        | `valid: false`    |
+| 4   | Checkout : appliqué        | UI « Appliquer »                        | toast + remise    |
+| 5   | Checkout : refusé          | code faux                               | champ encore vide |
+
+### Contact formulaire — `e2e/contact/form.spec.ts`
+
+| #   | Étape                    | Geste                       | Preuve                                  |
+| --- | ------------------------ | --------------------------- | --------------------------------------- |
+| 1   | Envoi valide             | remplir + Envoyer           | toast + ligne en base                   |
+| 2   | Email invalide (serveur) | POST `?/send`               | pas de ligne (400 ou `fail` Superforms) |
+| 3   | Limiteur                 | 5 envois valides puis un 6ᵉ | 5 lignes, 429                           |
+
+### Contact admin — `e2e/contact/admin.spec.ts`
+
+| #   | Étape       | Geste                            | Preuve              |
+| --- | ----------- | -------------------------------- | ------------------- |
+| 1   | Liste admin | GET `/admin/contacts`, recherche | ligne email         |
+| 2   | Fiche       | GET `/admin/contacts/view/[id]`  | nom, sujet, message |
+
+Test à part : un CLIENT GET `/admin/contacts` → `/`.
+
+Hors périmètre encore : Checkout Stripe hébergé (carte réelle).
+`incrementUsage` n'est pas joué (il suit `stripe.checkout.sessions.create`).
+Sendcloud est couvert par `e2e/live/sendcloud.spec.ts` (options et relais, pas
+d'étiquette).
+
+## Architecture des utilitaires
+
+`e2e/support/` contient tout ce qui n'est pas le scénario lui-même.
+
+- **`db.ts`** — client Prisma branché explicitement sur l'URL de `.env.test`, et
+  lectures d'état (`requireUser`, `countSessions`, `getRecoveryCode`,
+  `getTotpKey`). Les secrets chiffrés sont déchiffrés ici : le module applicatif
+  `src/lib/lucia/encryption.ts` dépend de `$env/static/private` et n'est pas
+  importable hors du bundle SvelteKit. Chaque lecture passe par `resilient()`,
+  qui rejoue la requête si Neon sort de veille, pour qu'une coupure réseau ne se
+  lise pas comme une régression.
+- **`smtp-sink.ts`** — serveur SMTP en mémoire qui capte les emails sortants et
+  les expose sur une petite API HTTP (`SMTP_HTTP_PORT`). Aucun email ne sort de
+  la machine. Les identifiants Brevo live sont `SMTP_LIVE_*`, lus seulement par
+  `e2e/live/brevo.spec.ts`.
+- **`mailbox.ts`** — lecture de cette boîte. `waitForEmailCode(adresse)` attend
+  l'email destiné à une adresse, décode le corps _quoted-printable_ et en extrait
+  le code à usage unique. Les codes sont donc relevés là où l'utilisateur les
+  lit, et non en base : si l'envoi casse, le test casse.
+- **`fixtures.ts`** — un compte neuf par test, supprimé à la fin, et une adresse
+  IP unique injectée via `X-Forwarded-For` pour que les limiteurs par IP repartent
+  de zéro.
+- **`flows.ts`** — gestes réutilisables (connexion, déconnexion, saisie de code,
+  configuration TOTP) et petites aides d'assertion. Toutes les saisies passent par
+  `fillStable()`, voir plus bas.
+- **`step-reporter.ts`** — l'avancement en direct dans la console.
+- **`global-setup.ts`** — applique les migrations sur le schéma `e2e`, purge les
+  comptes de test résiduels, démarre la boîte SMTP, et referme tout à la fin.
+
+## Points d'attention pour faire évoluer le scénario
+
+**Limiteurs de débit.** Ils vivent en mémoire du serveur et ne sont pas réinitialisés
+entre les étapes. Ajouter des tentatives invalides consomme un budget réel ; le
+tableau ci-dessous donne les marges disponibles.
+
+| Limiteur                                | Budget              | Clé        | Consommé par le parcours   |
+| --------------------------------------- | ------------------- | ---------- | -------------------------- |
+| `hooks.server.ts`                       | 100 / 1 s           | IP         | ~60 requêtes               |
+| signup `ipBucket`                       | 3 / 10 s            | IP         | 1                          |
+| login `throttler`                       | 0,1,2,4,8,16… s     | compte     | 2 échecs                   |
+| `verify-email` (saisie du code)         | 5 / 30 min          | compte     | 4 ← marge la plus mince    |
+| `sendVerificationEmailBucket` (renvoi)  | 3 / 10 min          | compte     | 1                          |
+| `forgot-password` (IP et compte)        | 3 / 60 s            | IP, compte | 1                          |
+| `reset-password/verify-email`           | 5 / 30 min          | compte     | 2                          |
+| `totpBucket`                            | 5 / 30 min          | compte     | 2                          |
+| `recoveryCodeBucket`                    | 3 / 60 min          | compte     | 2                          |
+| `contactFormLimiter` (`/contact?/send`) | 5 valides, 1 / 60 s | IP         | 5 (puis 429, spec contact) |
+
+Le throttler de connexion impose une attente **croissante** entre deux échecs sur
+un même compte : `waitOutLoginThrottle()` la fait patienter explicitement. Sans
+cela, la tentative suivante reçoit « Too many requests » au lieu du message
+attendu. Toute nouvelle tentative de connexion ratée décale d'un cran toutes les
+suivantes.
+
+**Validation côté client.** Chaque formulaire déclare `validators: zodClient(...)`.
+Une saisie invalide est donc bloquée dans le navigateur et n'atteint jamais le
+serveur : ces cas ne consomment aucun budget, mais ils ne prouvent rien sur la
+validation serveur. Pour tester celle-ci, il faut poster directement via
+`request.post()`.
+
+**Messages.** Les erreurs serveur remontent en toast (`svelte-sonner`) et,
+lorsqu'elles portent sur un champ, également sous le champ. `expectMessage()`
+retient la première occurrence pour éviter l'échec du mode strict de Playwright.
+
+**Saisies après un refus.** Superforms réinjecte les données postées dans le
+formulaire quand l'action échoue. Ce rendu peut survenir juste après la saisie
+suivante et l'écraser : le champ affiche alors la bonne valeur au moment où on
+l'observe, mais c'est l'ancienne qui repart au serveur. D'où `fillStable()`, qui
+laisse passer un cycle de rendu et réessaie tant que la saisie ne tient pas. Toute
+nouvelle saisie doit passer par cette aide, `locator.fill()` seul étant instable
+sur ces formulaires.
+
+**Résultats d'action et superforms.** Une action pilotée par superforms doit
+toujours renvoyer son `form`, via `message(form, …)` ou `fail(400, { form })`. Un
+`fail()` portant une autre charge laisse le client croire que la soumission est
+toujours en cours : le formulaire refuse alors toute nouvelle tentative, sans
+message ni erreur visible. C'est exactement ce que le scénario a mis au jour sur
+`/auth/verify-email`, en soumettant un code erroné avant le bon.
+
+**Sélecteurs.** Les composants shadcn-svelte réservent des surprises : `CardTitle`
+rend un `div` (donc `getByText`, pas `getByRole('heading')`), et un `Button` avec
+`href` rend un `<a>` (donc `getByRole('link')`).
+
+**Slash final.** Les redirections serveur visent `/auth/`, que SvelteKit normalise
+en `/auth`. D'où `waitForPath()` / `currentPath()`, qui comparent des chemins sans
+slash final, plutôt que des motifs glob.
+
+**Nettoyage.** La fixture supprime le compte de son adresse d'origine. Comme le
+scénario change l'adresse en cours de route, il termine par un `deleteUser()`
+explicite sur l'adresse finale. Les commandes doivent partir avant l'utilisateur :
+l'application crée un panier dès qu'un utilisateur connecté charge une page, et la
+relation `Order → User` est en `Restrict`.
+
+## Hors périmètre
+
+- **Écran de consentement Google** : le départ OAuth est réel ; la saisie du
+  compte Google n'est pas automatisée. Le callback e2e n'existe que si
+  `GOOGLE_CLIENT_ID` est factice.
+- **Activation de la 2FA par l'interface** : le commutateur est commenté dans les
+  paramètres alors que l'action serveur existe. Le scénario pose donc le drapeau
+  en base (`enableMfa`) pour atteindre les parcours 2FA. À remplacer par un vrai
+  clic si l'interface est rétablie.
+- **Second facteur pendant la réinitialisation de mot de passe**
+  (`/auth/reset-password/2fa`) : la 2FA n'est configurée qu'après cette étape du
+  parcours. Le couvrir demanderait un second compte.
+- **Expiration des codes et des sessions** : dépend du temps, à traiter avec une
+  horloge simulée plutôt qu'en attendant.
+
+## Dépannage
+
+| Symptôme                                                                                         | Cause probable                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http://localhost:2001 is already used` ou `EADDRINUSE 2525`                                     | Un Vite e2e ou le puits SMTP d'une exécution interrompue occupe le port. Libérer : `fuser -k 2001/tcp 2525/tcp 2526/tcp`. Ne pas tuer le 2000 (`npm run dev`).                                    |
+| Vite refuse un fichier sous un autre dépôt (`Lezardoises`, `outside of Vite serving allow list`) | Un service worker PWA d'un autre projet est resté accroché à `localhost:2000`. Recharger une fois (le hook client le retire en dev) ou, dans Chrome : Application → Service Workers → Unregister. |
+| `Can't reach database server`                                                                    | Neon en veille ou IPv6 capricieux sous WSL. Les lectures rejouent déjà ; relancer.                                                                                                                |
+| Le test attend un code d'email indéfiniment                                                      | La boîte SMTP n'a pas démarré, ou `SMTP_HOST` de `.env.test` pointe vers Brevo au lieu de `127.0.0.1`. Les clés live vont dans `SMTP_LIVE_*`.                                                     |
+| « Too many requests » inattendu                                                                  | Une tentative invalide a été ajoutée sans marge. Voir le tableau des limiteurs.                                                                                                                   |
+| Les données de dev sont modifiées                                                                | `DATABASE_URL` de `.env.test` ne contient pas `schema=e2e`, ou les guillemets manquent autour de l'URL.                                                                                           |
+| `strict mode violation` sur un message                                                           | Message présent en toast et sous le champ : utiliser `expectMessage()`.                                                                                                                           |

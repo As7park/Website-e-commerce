@@ -1,0 +1,71 @@
+// -----------------------------------------------------------------------------
+// Double authentification : quotas de tentatives et code de secours.
+//
+// `resetUser2FAWithRecoveryCode` est la porte de sortie quand l'application
+// d'authentification est perdue : le code de secours est consommé (remplacé par
+// un nouveau), la clé TOTP effacée et toutes les sessions du compte
+// invalidées — en une seule transaction, pour qu'un code ne puisse pas servir
+// deux fois.
+// -----------------------------------------------------------------------------
+
+import { findUserWithRecoveryCode } from '$lib/prisma/user/user';
+import { prisma } from '$lib/server';
+import { decryptToString, encryptString, type EncryptionVersion } from './encryption';
+import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { generateRandomRecoveryCode } from './utils';
+import { isValidId } from './ids';
+
+export const totpBucket = new ExpiringTokenBucket<string>(5, 60 * 30, '2fa-totp');
+export const recoveryCodeBucket = new ExpiringTokenBucket<string>(3, 60 * 60, '2fa-recovery-code');
+
+export async function resetUser2FAWithRecoveryCode(
+	userId: string,
+	recoveryCode: string
+): Promise<boolean> {
+	// Vérification du format de l'identifiant
+	if (!isValidId(userId)) {
+		throw new Error('Invalid user ID format');
+	}
+
+	// Récupérer le code de récupération chiffré
+	const user = await findUserWithRecoveryCode(userId);
+
+	if (!user || !user.recoveryCode) {
+		return false;
+	}
+
+	// Déchiffrer le code de récupération après décodage Base64
+	const userRecoveryCode = decryptToString(
+		Buffer.from(user.recoveryCode, 'base64'),
+		user.encryptionVersion as EncryptionVersion
+	);
+	if (recoveryCode !== userRecoveryCode) {
+		return false;
+	}
+
+	// Générer un nouveau code de récupération chiffré (toujours en AES-256 :
+	// ce chemin régénère systématiquement le code, donc s'auto-migre).
+	const newRecoveryCode = generateRandomRecoveryCode();
+	const encryptedNewRecoveryCode = Buffer.from(encryptString(newRecoveryCode)).toString('base64');
+
+	// Mettre à jour le code de récupération et réinitialiser la 2FA
+	const result = await prisma.$transaction([
+		prisma.session.updateMany({
+			where: { userId },
+			data: { twoFactorVerified: false }
+		}),
+		prisma.user.updateMany({
+			where: {
+				id: userId,
+				recoveryCode: user.recoveryCode
+			},
+			data: {
+				recoveryCode: encryptedNewRecoveryCode,
+				totpKey: null,
+				encryptionVersion: 2
+			}
+		})
+	]);
+
+	return result[1].count > 0;
+}

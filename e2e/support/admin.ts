@@ -1,0 +1,82 @@
+import { expect, type Page } from '@playwright/test';
+import { fillSignupForm, submitCode, waitForPath } from './flows';
+import { clearMailbox, waitForEmailCode } from './mailbox';
+import type { Account } from './account';
+
+/**
+ * Routes du back-office à fermer aux non-administrateurs.
+ *
+ * Les identifiants `[id]` n'ont pas besoin d'exister : la garde du hook s'applique
+ * avant le `load` de la page, donc avant un 404.
+ */
+export const ADMIN_PATHS = [
+	'/admin',
+	'/admin/sales',
+	'/admin/sales/facture/placeholder',
+	'/admin/sales/bordereau/placeholder',
+	'/admin/users',
+	'/admin/users/placeholder',
+	'/admin/products',
+	'/admin/products/create',
+	'/admin/products/placeholder',
+	'/admin/products/taxonomies/create',
+	'/admin/products/taxonomies/placeholder',
+	'/admin/products/taxonomies/placeholder/values/create',
+	'/admin/products/taxonomies/placeholder/values/placeholder',
+	'/admin/products/reviews',
+	'/admin/settings',
+	'/admin/exports',
+	'/admin/exports/products',
+	'/admin/exports/products/purge',
+	'/admin/blog',
+	'/admin/blog/post/create',
+	'/admin/blog/post/placeholder',
+	'/admin/blog/taxonomies/create',
+	'/admin/blog/taxonomies/placeholder',
+	'/admin/blog/taxonomies/placeholder/values/create',
+	'/admin/blog/taxonomies/placeholder/values/placeholder',
+	'/admin/promo',
+	'/admin/promo/create',
+	'/admin/promo/placeholder',
+	'/admin/returns',
+	'/admin/contacts',
+	'/admin/contacts/view/placeholder'
+] as const;
+
+/** Inscrit le compte, confirme l'adresse, et s'arrête sur l'espace connecté.
+ * `refCode` simule l'arrivée depuis un lien de parrainage (`?ref=<code>`). */
+export async function signUpAndVerify(page: Page, account: Account, refCode?: string) {
+	await page.goto(refCode ? `/auth/signup?ref=${refCode}` : '/auth/signup');
+	await expect(page.getByRole('heading', { name: 'Créer un compte' })).toBeVisible({
+		timeout: 60_000
+	});
+	await clearMailbox();
+	await fillSignupForm(page, {
+		username: account.username,
+		email: account.email,
+		password: account.password
+	});
+	await page.getByRole('button', { name: "S'inscrire" }).click();
+	await waitForPath(page, '/auth/verify-email');
+
+	const code = await waitForEmailCode(account.email);
+	await submitCode(page, code);
+	await waitForPath(page, '/auth');
+}
+
+/** Origine courante, pour les POST same-origin (contrôle CSRF de SvelteKit). */
+export function pageOrigin(page: Page): string {
+	return new URL(page.url()).origin;
+}
+
+/**
+ * En-têtes d'une action SvelteKit (`use:enhance`). Sans eux, `fail(400)`
+ * re-rend la page en 200 HTML au lieu de renvoyer le statut de l'action.
+ */
+export function sveltekitActionHeaders(origin: string) {
+	return {
+		Origin: origin,
+		'x-sveltekit-action': 'true',
+		Accept: 'application/json'
+	};
+}
