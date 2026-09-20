@@ -544,7 +544,14 @@
 <!-- SEO pour la page checkout -->
 <SEO pageKey="checkout" />
 
-<div class="min-h-screen w-[100vw]">
+<nav class="shop-breadcrumb"><a href="/">Accueil</a> / <a href="/products">Boutique</a> / Paiement</nav>
+
+<!-- SHOP-DESIGN : reskin léger — pas de maquette source pour cette page (AS7park
+	n'a pas de tunnel de paiement). On réutilise le thème sombre déjà construit
+	et testé pour tout le site (classe `dark`, voir app.css) plutôt que d'inventer
+	des couleurs, pour rester cohérent avec la vitrine sans toucher à la
+	structure ni à la logique du tunnel (Stripe, Sendcloud, promo, carte cadeau). -->
+<div class="min-h-screen w-[100vw] dark">
 	<SmoothScrollBar>
 		<div class="container mx-auto px-4 py-8 max-w-7xl">
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-[100px]">

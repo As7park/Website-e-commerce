@@ -1151,3 +1151,150 @@ html.shop-is-loading * {
 	color: var(--shop-text);
 	border-color: var(--shop-border-strong) !important;
 }
+
+/* ---------- Barre de recherche générique (boutique, blog) ---------- */
+.shop-search-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 420px;
+	margin: 24px auto 0;
+}
+.shop-search-bar input {
+	flex: 1;
+	padding: 10px 12px;
+	border: 1px solid var(--shop-border-strong);
+	background: var(--shop-bg);
+	color: var(--shop-text);
+	font: inherit;
+	font-size: 13px;
+}
+.shop-search-bar input:focus {
+	outline: none;
+	border-color: var(--shop-text);
+}
+
+/* ---------- Pagination texte (Précédent/Suivant), variante de .shop-pagination ---------- */
+.shop-pagination-text {
+	align-items: center;
+}
+.shop-pagination-text .shop-btn {
+	width: auto;
+	height: auto;
+	padding: 8px 16px;
+}
+
+/* ---------- Lien "réinitialiser les filtres", listes à sidebar ---------- */
+.shop-reset-filters {
+	background: none;
+	border: none;
+	padding: 0;
+	font: inherit;
+	font-size: 13px;
+	color: var(--shop-text-muted);
+	text-decoration: underline;
+	cursor: pointer;
+	text-align: left;
+	width: fit-content;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.shop-reset-filters:hover {
+	color: var(--shop-text);
+}
+
+/* ---------- Filtre actif (lien texte, ex: catégories du blog) ---------- */
+.shop-filter-group a.shop-active-filter {
+	color: var(--shop-text);
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+/* ---------- Tag (blog) ---------- */
+.shop-tag {
+	font-size: 12px;
+	padding: 4px 10px;
+	border: 1px solid var(--shop-border-strong);
+	border-radius: 999px;
+	color: var(--shop-text-muted);
+	transition:
+		color 0.2s ease,
+		border-color 0.2s ease;
+}
+.shop-tag:hover,
+.shop-tag.shop-active-filter {
+	color: var(--shop-text);
+	border-color: var(--shop-text);
+}
+
+/* ---------- Sidebar filtres : repli mobile (boutique, blog) ---------- */
+@media (max-width: 860px) {
+	.shop-listing-layout {
+		display: block;
+	}
+	.shop-filters {
+		margin-bottom: 24px;
+	}
+}
+
+/* ---------- Typographie du contenu riche (article de blog, TinyMCE) ---------- */
+.shop-prose {
+	max-width: 68ch;
+	line-height: 1.7;
+	font-size: 15px;
+}
+.shop-prose h1,
+.shop-prose h2,
+.shop-prose h3,
+.shop-prose h4 {
+	font-family: var(--shop-font-display);
+	font-weight: 400;
+	margin: 1.6em 0 0.6em;
+	line-height: 1.2;
+}
+.shop-prose h2 {
+	font-size: 22px;
+}
+.shop-prose h3 {
+	font-size: 18px;
+}
+.shop-prose p {
+	margin: 0 0 1.1em;
+}
+.shop-prose ul,
+.shop-prose ol {
+	margin: 0 0 1.1em;
+	padding-left: 1.4em;
+}
+.shop-prose li {
+	margin-bottom: 0.4em;
+}
+.shop-prose a {
+	color: var(--shop-text);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.shop-prose a:hover {
+	color: var(--shop-orange);
+}
+.shop-prose blockquote {
+	margin: 1.4em 0;
+	padding: 0.2em 0 0.2em 1.2em;
+	border-left: 2px solid var(--shop-border-strong);
+	color: var(--shop-text-muted);
+	font-style: italic;
+}
+.shop-prose img {
+	margin: 1.4em 0;
+	border-radius: 2px;
+}
+.shop-prose strong {
+	font-weight: 700;
+}
+.shop-prose code {
+	background: var(--shop-bg-muted);
+	padding: 0.15em 0.4em;
+	border-radius: 3px;
+	font-size: 0.9em;
+}

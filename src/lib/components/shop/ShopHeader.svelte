@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { Search, User } from 'lucide-svelte';
+	import { User } from 'lucide-svelte';
 	import Cart from '$lib/components/cart/Cart.svelte';
+	import SearchDialog from '$lib/components/shop/SearchDialog.svelte';
 
 	// AUTH-PLUGIN : lien compte adapté selon la session (login vs espace client).
 	let { data } = $props();
@@ -35,9 +36,7 @@
 			</ul>
 		</nav>
 		<div class="shop-header-actions">
-			<a href="/products" aria-label="Rechercher un produit" class="shop-icon-ph">
-				<Search size={13} strokeWidth={2} />
-			</a>
+			<SearchDialog />
 			<!-- AUTH-PLUGIN -->
 			<a href={accountHref} aria-label="Compte" class="shop-icon-ph">
 				<User size={13} strokeWidth={2} />
