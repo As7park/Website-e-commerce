@@ -77,6 +77,7 @@
 
 /* ---------- Placeholders ---------- */
 .shop-ph {
+	position: relative;
 	background: var(--shop-placeholder-bg);
 	border: 1px dashed var(--shop-border-strong);
 	color: var(--shop-placeholder-text);

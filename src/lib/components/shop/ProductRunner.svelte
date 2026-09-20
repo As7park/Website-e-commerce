@@ -6,6 +6,7 @@
 	   ========================================================= */
 	import { goto } from '$app/navigation';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	type Product = {
 		id: string;
@@ -151,7 +152,11 @@
 						</div>
 						<div class="art">
 							{#if product.images?.[0]}
-								<img src={product.images[0]} alt={product.name} loading="lazy" />
+								<img
+									src={optimizedImageUrl(product.images[0], 400)}
+									alt={product.name}
+									loading="lazy"
+								/>
 							{:else}
 								<svg viewBox="0 0 40 40" aria-hidden="true">
 									<rect x="13" y="6" width="14" height="30" rx="3" />
