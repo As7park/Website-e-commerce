@@ -34,7 +34,11 @@
 	/* ------------------------------------------------------------------
 	   PROPS & ÉTAT
 	------------------------------------------------------------------ */
-	let { data } = $props();
+	// SHOP-DESIGN : même composant, deux thèmes. `shop` sort le tiroir de son
+	// portail par défaut (`document.body`) vers `#shop-scope` — sinon les
+	// variables CSS `--shop-*` (définies sur ce conteneur, jamais sur `:root`)
+	// ne seraient pas héritées par le contenu porté, qui resterait sans style.
+	let { data, variant = 'default' }: { data: any; variant?: 'default' | 'shop' } = $props();
 
 	let user = $derived(data.user ?? null);
 	let sidebarOpen = $state(false);
@@ -149,35 +153,242 @@
 	};
 </script>
 
-<!-- ----------------------------------------------------------------- -->
-<!--  BOUTON PANIER                                                   -->
-<!-- ----------------------------------------------------------------- -->
-<div
-	class="cartButton ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20"
->
-	<div class="absolute z-50 ccc">
-		<Sheet.Root bind:open={sidebarOpen}>
-			<Sheet.Trigger>
-				{#snippet child({ props })}
-					<button
-						{...props}
-						class="relative m-5 h-8 w-8 ccc"
-						class:text-black={currentMode.current === 'light'}
-						class:text-white={currentMode.current === 'dark'}
-					>
-						<ShoppingCart class="w-8 h-8 absolute right-0 top-0 stroke-current transition-colors" />
-						<Badge class="bulletCart font-bold absolute z-10 left-0 bottom-0">
-							{$cart?.items?.length ?? 0}
-						</Badge>
-					</button>
-				{/snippet}
-			</Sheet.Trigger>
+{#snippet cartTrigger(props: Record<string, unknown>)}
+	{#if variant === 'shop'}
+		<button {...props} class="shop-icon-ph shop-cart-link" aria-label="Panier">
+			<ShoppingCart size={13} />
+			{#if ($cart?.items?.length ?? 0) > 0}
+				<span class="shop-cart-count">{$cart.items.length}</span>
+			{/if}
+		</button>
+	{:else}
+		<button
+			{...props}
+			class="relative m-5 h-8 w-8 ccc"
+			class:text-black={currentMode.current === 'light'}
+			class:text-white={currentMode.current === 'dark'}
+		>
+			<ShoppingCart class="w-8 h-8 absolute right-0 top-0 stroke-current transition-colors" />
+			<Badge class="bulletCart font-bold absolute z-10 left-0 bottom-0">
+				{$cart?.items?.length ?? 0}
+			</Badge>
+		</button>
+	{/if}
+{/snippet}
 
-			<!-- ----------------------------------------------------------------- -->
-			<!--  CONTENU DU TIROIR                                                -->
-			<!-- ----------------------------------------------------------------- -->
-			<Sheet.Content class="p-0 min-w-fit">
-				<SmoothScrollBar>
+{#if variant === 'shop'}
+	<Sheet.Root bind:open={sidebarOpen}>
+		<Sheet.Trigger>
+			{#snippet child({ props })}
+				{@render cartTrigger(props)}
+			{/snippet}
+		</Sheet.Trigger>
+
+		<Sheet.Content class="p-0 min-w-fit shop-cart-sheet" portalProps={{ to: '#shop-scope' }}>
+			<SmoothScrollBar>
+				<div class="p-4">
+					<h2 class="text-2xl font-bold mb-4">Votre panier</h2>
+
+					{#if isNativeOrder}
+						<p class="mb-4">
+							Pour les commandes non-personnalisées, la quantité totale est limitée à 72 unités.
+						</p>
+					{/if}
+
+					{#if $cart && $cart.items && $cart.items.length > 0}
+						<div class="max-h-[500px] overflow-y-auto">
+							{#each $cart.items as item (item.id)}
+								{@const isCustomItem = Boolean(
+									item.custom && Array.isArray(item.custom) && item.custom.length > 0
+								)}
+								<div class="p-4 border rounded-lg shadow-sm flex justify-between items-center mb-2">
+									<img
+										src={optimizedImageUrl(
+											(item.custom &&
+												Array.isArray(item.custom) &&
+												item.custom.length > 0 &&
+												item.custom[0].image) ||
+												(Array.isArray(item.product.images)
+													? item.product.images[0]
+													: item.product.images) ||
+												'',
+											100
+										)}
+										alt={item.product.name}
+										class="w-20 h-20 object-cover mr-5"
+									/>
+
+									<div class="flex-1 mx-4">
+										<h3 class="text-lg font-semibold">
+											{item.product.name}
+											{#if item.variant}
+												<span class="text-sm font-normal opacity-70">— {item.variant.label}</span>
+											{/if}
+											{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
+												<span class="text-sm font-normal opacity-70">Custom</span>
+											{/if}
+										</h3>
+										<p class="opacity-80">
+											{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
+												{getCustomCanPrice(item.quantity).toFixed(2)}€ l'unité
+											{:else}
+												{(item.variant?.price ?? item.product.price).toFixed(2)}€
+											{/if}
+										</p>
+
+										<QuantityInput
+											value={item.quantity}
+											max={maxQuantityFor(item, isCustomItem)}
+											onCommit={(v) =>
+												changeQuantity(item.product.id, v, item.custom?.[0]?.id, item.variant?.id)}
+										/>
+										{#if !isCustomItem && totalNonCustomQuantity > 72}
+											<p class="text-xs text-red-500 mt-1">
+												Limite de 72 unités atteinte pour les commandes non-personnalisées
+											</p>
+										{/if}
+									</div>
+									<div class="flex flex-col items-end">
+										<p class="text-lg font-semibold">
+											{#if item.custom && Array.isArray(item.custom) && item.custom.length > 0}
+												{(getCustomCanPrice(item.quantity) * item.quantity).toFixed(2)}€
+											{:else}
+												{(item.price * item.quantity).toFixed(2)}€
+											{/if}
+										</p>
+										<button
+											onclick={() =>
+												handleRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
+											class="text-red-500 hover:text-red-400"
+										>
+											<Trash />
+										</button>
+									</div>
+								</div>
+							{/each}
+						</div>
+
+						<div class="mt-4 border-t pt-4 space-y-2">
+							<div class="flex justify-between">
+								<span>Subtotal :</span>
+								<span>{($cart.subtotal ?? 0).toFixed(2)} €</span>
+							</div>
+							<div class="flex justify-between">
+								<span>TVA (5,5 %) :</span>
+								<span>{($cart.tax ?? 0).toFixed(2)} €</span>
+							</div>
+							<div class="flex justify-between font-semibold text-xl">
+								<span>Total :</span>
+								<span>{isFinite($cart.total) ? $cart.total.toFixed(2) : '0.00'} €</span>
+							</div>
+						</div>
+
+						{#if bundleSuggestions.length > 0}
+							<div class="mt-4 border-t pt-4">
+								<h3 class="text-sm font-semibold mb-2">Souvent achetés ensemble</h3>
+								{#each bundleSuggestions as suggestion (suggestion.id)}
+									<div class="flex items-center justify-between gap-2 py-1">
+										<div class="flex items-center gap-2 min-w-0">
+											<img
+												src={optimizedImageUrl(suggestion.images[0] ?? '', 60)}
+												alt={suggestion.name}
+												class="w-12 h-12 object-cover shrink-0"
+											/>
+											<div class="min-w-0">
+												<p class="text-sm truncate">{suggestion.name}</p>
+												<p class="text-xs opacity-70">{suggestion.price.toFixed(2)}€</p>
+											</div>
+										</div>
+										<button
+											type="button"
+											class="shop-btn shop-btn-outline shrink-0"
+											style="width:auto; height:auto; padding:6px 12px;"
+											onclick={() => addSuggestionToCart(suggestion)}
+										>
+											Ajouter
+										</button>
+									</div>
+								{/each}
+								<p class="text-xs opacity-70 mt-1">
+									Petite remise automatique appliquée au paiement si ces produits restent ensemble
+									dans le panier.
+								</p>
+							</div>
+						{/if}
+					{:else}
+						<p>Votre panier est vide.</p>
+					{/if}
+
+					{#if user}
+						<div class="ccc" style="gap:8px; margin-top:16px;">
+							<a
+								href="/checkout"
+								class="shop-btn shop-btn-block"
+								onclick={() => (sidebarOpen = false)}
+							>
+								Checkout
+							</a>
+							<a
+								href="/auth/settings"
+								class="shop-btn shop-btn-outline shop-btn-block"
+								onclick={() => (sidebarOpen = false)}
+							>
+								Mes paramètres
+							</a>
+							{#if user.role === 'ADMIN'}
+								<a
+									href="/admin"
+									class="shop-btn shop-btn-outline shop-btn-block"
+									onclick={() => (sidebarOpen = false)}
+								>
+									Dashboard
+								</a>
+							{/if}
+							<form method="POST" action="/auth?/signout" use:enhance={enhanceSignOut}>
+								<button type="submit" class="shop-btn shop-btn-outline shop-btn-block">
+									Se déconnecter
+								</button>
+							</form>
+						</div>
+					{:else}
+						<div class="text-center mt-4">
+							<p class="mb-2">
+								Veuillez vous
+								<a href="/auth/login" onclick={() => (sidebarOpen = false)} class="underline"
+									>connecter</a
+								>
+								ou
+								<a href="/auth/signup" onclick={() => (sidebarOpen = false)} class="underline"
+									>vous inscrire</a
+								>
+								pour finaliser votre commande.
+							</p>
+						</div>
+					{/if}
+				</div>
+			</SmoothScrollBar>
+		</Sheet.Content>
+	</Sheet.Root>
+{:else}
+	<!-- ----------------------------------------------------------------- -->
+	<!--  BOUTON PANIER                                                   -->
+	<!-- ----------------------------------------------------------------- -->
+	<div
+		class="cartButton ccc relative h-[50px] w-[50px] rounded-[10px] border border-white bg-white/20"
+	>
+		<div class="absolute z-50 ccc">
+			<Sheet.Root bind:open={sidebarOpen}>
+				<Sheet.Trigger>
+					{#snippet child({ props })}
+						{@render cartTrigger(props)}
+					{/snippet}
+				</Sheet.Trigger>
+
+				<!-- ----------------------------------------------------------------- -->
+				<!--  CONTENU DU TIROIR                                                -->
+				<!-- ----------------------------------------------------------------- -->
+				<Sheet.Content class="p-0 min-w-fit">
+					<SmoothScrollBar>
 					<div class="p-4">
 						<h2 class="text-2xl font-bold mb-4">Votre panier</h2>
 
@@ -386,3 +597,4 @@
 		</Sheet.Root>
 	</div>
 </div>
+{/if}

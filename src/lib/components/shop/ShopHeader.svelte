@@ -45,7 +45,7 @@
 			<!-- AUTH-PLUGIN -->
 			<!-- COMMERCE-PLUGIN : tiroir panier partagé avec le reste du site. -->
 			<div class="shop-cart-slot">
-				<Cart {data} />
+				<Cart {data} variant="shop" />
 			</div>
 			<!-- COMMERCE-PLUGIN -->
 		</div>

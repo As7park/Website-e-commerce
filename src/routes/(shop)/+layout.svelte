@@ -18,7 +18,7 @@
 	/>
 </svelte:head>
 
-<div class="shop-scope">
+<div id="shop-scope" class="shop-scope">
 	<ShopHeader {data} />
 	{#key $page.url.pathname}
 		<div in:fade={{ duration: 280, delay: 60 }}>

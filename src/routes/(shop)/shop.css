@@ -1144,3 +1144,10 @@ html.shop-is-loading,
 html.shop-is-loading * {
 	cursor: none !important;
 }
+
+/* ---------- Tiroir panier (Sheet portée dans #shop-scope) ---------- */
+.shop-cart-sheet {
+	background: var(--shop-bg) !important;
+	color: var(--shop-text);
+	border-color: var(--shop-border-strong) !important;
+}
