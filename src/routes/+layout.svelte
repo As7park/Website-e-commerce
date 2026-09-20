@@ -38,6 +38,13 @@
 
 	let { children, data } = $props();
 
+	// SHOP-DESIGN : la vitrine `(shop)` porte son propre chrome (ShopHeader/
+	// ShopFooter/WheelCursor, thème sombre shop.css) — pas de Navigation ni de
+	// SmoothScrollBar ici pour ces routes, pour éviter un double header. Les
+	// effets ci-dessous (hydratation panier, etc.) restent inconditionnels :
+	// ils sont fonctionnels, pas liés à ce chrome visuel.
+	let isShopRoute = $derived($page.route.id?.startsWith('/(shop)') ?? false);
+
 	/** Dernière identité pour laquelle le panier a été hydraté (`guest` ou user id). */
 	let hydratedFor: string | null = null;
 	let hydratingCart = false;
@@ -198,24 +205,29 @@
 	<meta name="theme-color" content="#4285f4" />
 </svelte:head>
 
-{#if !$firstLoadComplete}
-	<Loader />
-{/if}
-{#if $isClient}
-	<div>
-		<ModeWatcher />
-		<Navigation {data} />
-		<div class="ccc relative m-0 h-screen w-screen max-w-none overflow-hidden p-0">
-			<div class="absolute top-0 left-0 z-[1] h-screen w-screen overflow-hidden">
-				<SmoothScrollBar>
-					<main class="max-w-[100vw] overflow-hidden">
-						<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
-							{@render children()}
-						</div>
-					</main>
-				</SmoothScrollBar>
+{#if isShopRoute}
+	{@render children()}
+	<Toaster />
+{:else}
+	{#if !$firstLoadComplete}
+		<Loader />
+	{/if}
+	{#if $isClient}
+		<div>
+			<ModeWatcher />
+			<Navigation {data} />
+			<div class="ccc relative m-0 h-screen w-screen max-w-none overflow-hidden p-0">
+				<div class="absolute top-0 left-0 z-[1] h-screen w-screen overflow-hidden">
+					<SmoothScrollBar>
+						<main class="max-w-[100vw] overflow-hidden">
+							<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
+								{@render children()}
+							</div>
+						</main>
+					</SmoothScrollBar>
+				</div>
 			</div>
+			<Toaster />
 		</div>
-		<Toaster />
-	</div>
+	{/if}
 {/if}

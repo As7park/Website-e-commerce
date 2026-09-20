@@ -196,25 +196,36 @@ queue — fonctionnel, mais alloue plus de temps de fonction par requête.
 
 ### Vercel Cron vs QStash — limite du plan Hobby
 
-`vercel.json` déclare `/api/jobs/cart-recovery` toutes les 30 minutes
-(`*/30 * * * *`). **Le plan Vercel Hobby limite les Cron Jobs à une exécution
-par jour** : ce fichier tel quel fait échouer le déploiement sur un projet
-Hobby (`Hobby accounts are limited to daily cron jobs`). `/api/jobs/cleanup`
-(quotidien) reste compatible Hobby.
+`vercel.json` ne déclare plus aucun Cron Job (bloc `crons` retiré) : le plan
+Vercel Hobby limite les Cron Jobs à une exécution par jour, et l'entrée
+`/api/jobs/cart-recovery` (`*/30 * * * *`) faisait échouer le déploiement
+(`Hobby accounts are limited to daily cron jobs`). Plutôt que de ne
+retirer que cette entrée, les 4 jobs (`cleanup`, `cart-recovery`,
+`accounting-export`, `review-reminder`) ont été retirés de `vercel.json`.
 
-Deux options, à choisir selon le plan Vercel du projet :
+**Conséquence : sans action supplémentaire, aucun de ces 4 jobs ne se
+déclenche en production.** Deux options :
 
-- **Plan Pro/Enterprise** : aucun changement nécessaire, `*/30 * * * *`
-  fonctionne tel quel.
-- **Plan Hobby** : soit passer par QStash pour la relance panier (schedule
-  ci-dessus, qui n'est pas soumis à cette limite) et retirer/espacer l'entrée
-  `cart-recovery` de `vercel.json` (ou la passer à une fréquence quotidienne
-  en filet de sécurité), soit upgrader le plan.
+- **Plan Pro/Enterprise** : réintroduire le bloc `crons` dans `vercel.json`
+  avec les 4 entrées (voir l'historique git du fichier, commit
+  `delete cron jobs`, pour les schedules d'origine) — plus de limite de
+  fréquence.
+- **Plan Hobby (recommandé ici)** : passer par QStash pour les 4 jobs, non
+  soumis à cette limite. Configurer `QSTASH_TOKEN`,
+  `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` (voir section
+  QStash ci-dessus) puis enregistrer les 4 schedules après déploiement :
+
+  ```bash
+  APP_URL=https://<domaine-prod> QSTASH_TOKEN=... npm run jobs:register-cleanup-schedule
+  APP_URL=https://<domaine-prod> QSTASH_TOKEN=... npm run jobs:register-cart-recovery-schedule
+  APP_URL=https://<domaine-prod> QSTASH_TOKEN=... npm run jobs:register-accounting-export-schedule
+  APP_URL=https://<domaine-prod> QSTASH_TOKEN=... npm run jobs:register-review-reminder-schedule
+  ```
 
 Chaque route de job accepte les deux déclencheurs (signature QStash **ou**
-`Authorization: Bearer $CRON_SECRET` de Vercel Cron) — les deux mécanismes
-peuvent cohabiter sans changement de code, seule la déclaration
-`vercel.json` est contrainte par le plan.
+`Authorization: Bearer $CRON_SECRET` de Vercel Cron) — donc si `crons` est
+un jour réintroduit dans `vercel.json`, aucun changement de code n'est
+nécessaire.
 
 ## Sentry (observabilité, plan gratuit compatible)
 
