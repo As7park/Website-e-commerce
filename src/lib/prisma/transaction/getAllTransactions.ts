@@ -2,6 +2,7 @@
 import { prisma } from '$lib/server';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 import { formatDisputeStatus } from '$lib/server/dispute';
+import { formatRiskLevel } from '$lib/server/fraud';
 
 const TRANSACTION_SORTABLE = ['amount', 'createdAt', 'status'] as const;
 
@@ -53,6 +54,15 @@ export const getAllTransactions = async (params: ListParams = {}) => {
 			disputeLabel: transaction.disputeStatus
 				? formatDisputeStatus(transaction.disputeStatus)
 				: null,
+			riskLabel: transaction.riskLevel
+				? `${formatRiskLevel(transaction.riskLevel)} (${transaction.riskScore ?? '?'})`
+				: null,
+			riskBadgeVariant:
+				transaction.riskLevel === 'high'
+					? ('destructive' as const)
+					: transaction.riskLevel === 'medium'
+						? ('outline' as const)
+						: ('secondary' as const),
 			user: undefined
 		}));
 

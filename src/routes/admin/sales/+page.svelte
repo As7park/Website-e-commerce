@@ -28,7 +28,8 @@
 			key: 'disputeLabel',
 			label: 'Litige',
 			formatter: (value: unknown) => (typeof value === 'string' ? value : '—')
-		}
+		},
+		{ key: 'riskLevel', label: 'Risque' }
 	];
 
 	const transactionActions = [

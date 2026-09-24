@@ -198,6 +198,32 @@ pour éviter un aller-retour serveur. Toutes les lectures/écritures sont
 encadrées d'un `try/catch` (navigation privée, quota dépassé) : une panne de
 `localStorage` masque simplement la section, elle ne casse jamais la page.
 
+**Relance e-mail, module séparé et indépendant.** Activable depuis
+`/admin/settings` (`StoreSettings.recentlyViewedReminderEnabled`, voir
+[docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)) —
+sans rapport avec l'affichage ci-dessus, qui reste inchangé et fonctionne
+pour tout visiteur, y compris anonyme. La relance, elle, ne concerne que les
+comptes connectés : ce projet n'a aucune identité visiteur anonyme côté
+serveur (le panier invité, `$lib/commerce/guestCart.ts`, est lui aussi
+délibérément 100 % `localStorage`, fusionné en base seulement à
+l'inscription/connexion) — impossible de relancer par e-mail quelqu'un dont
+le serveur ne connaît pas encore l'adresse.
+
+Chaque visite d'une fiche produit par un compte connecté pose/actualise une
+ligne `ProductView` (`userId`, `productId`, `viewedAt`,
+`$lib/prisma/products/productViews.ts`, appelé depuis le `load()` de
+`/products/[slug]`, indépendamment du flag). Le job périodique
+`$lib/server/jobs/recentlyViewedReminder.ts` (route
+`/api/jobs/recently-viewed-reminder`, même double authentification QStash/
+`CRON_SECRET` que les autres jobs) sélectionne les consultations d'au moins
+24h sans achat depuis (vérifié via `OrderItem`/`Order.status IN (PAID,
+SHIPPED)`, même filtre que « Souvent achetés ensemble ») et sans relance déjà
+envoyée, puis groupe les candidats par compte et envoie **un seul e-mail
+digest** listant jusqu'à 5 produits — jamais un e-mail par produit, pour ne
+pas submerger un compte ayant consulté plusieurs fiches. Chaque
+`ProductView` n'est relancée qu'une seule fois (`reminderSentAt`, jamais
+réinitialisé, même logique que `Order.reviewReminderSentAt`).
+
 ### Liste d'envies & ventes croisées
 
 Deux modules activables depuis `/admin/settings` (voir

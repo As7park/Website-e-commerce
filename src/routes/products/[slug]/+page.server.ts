@@ -19,6 +19,7 @@ import {
 	listPublicQuestionsForProduct
 } from '$lib/prisma/productQuestions/productQuestions';
 import { isPendingStockAlert } from '$lib/prisma/stockAlerts/stockAlerts';
+import { recordProductView } from '$lib/prisma/products/productViews';
 
 /**
  * Fiche produit publique.
@@ -65,7 +66,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		crossSellEnabled ? getRelatedProducts(product.id, categoryIds) : [],
 		productQnaEnabled ? listPublicQuestionsForProduct(product.id) : [],
 		superValidate(zod(askQuestionSchema)),
-		stockAlertsEnabled && userId ? isPendingStockAlert(userId, product.id) : false
+		stockAlertsEnabled && userId ? isPendingStockAlert(userId, product.id) : false,
+		// Sert uniquement à la relance e-mail (`recentlyViewedReminderEnabled`) —
+		// indépendant du flag, comme un `Order` PENDING existe indépendamment de
+		// `cartRecoveryEnabled`. Jamais pour un visiteur anonyme : aucune
+		// identité serveur à relancer par e-mail tant qu'il n'a pas de compte.
+		userId ? recordProductView(userId, product.id) : null
 	]);
 
 	return {

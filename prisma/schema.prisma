@@ -115,6 +115,7 @@ model User {
   loyaltyAwards       LoyaltyAward[]
   referralRewards     ReferralReward[]
   stockAlerts         StockAlert[]
+  productViews        ProductView[]
 
   // Relations d'authentification (disparaissent avec le module)
   sessions                  Session[]
@@ -248,6 +249,14 @@ model Order {
   /// réinitialisé — un seul rappel par commande, contrairement aux deux
   /// paliers de `cartReminder*SentAt` ci-dessus.
   reviewReminderSentAt DateTime?
+  /// Détection de fraude (`StoreSettings.fraudDetectionEnabled`,
+  /// `$lib/server/fraud.ts`) : posés par l'action `checkout` avant toute
+  /// tentative de paiement, jamais recalculés ensuite. Recopiés sur
+  /// `Transaction` au moment du webhook, même pattern que les adresses
+  /// aplaties ci-dessous.
+  riskScore   Int?
+  riskLevel   String?
+  riskFactors String[] @default([])
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   items               OrderItem[]
@@ -378,6 +387,7 @@ model Product {
   questions       ProductQuestion[]
   wishlistedBy    WishlistItem[]
   stockAlerts     StockAlert[]
+  views           ProductView[]
   /// Variantes simples (étiquette libre : « Taille 54 », « Or blanc »...),
   /// chacune avec son propre stock et un prix optionnel qui surcharge
   /// `price` ci-dessus. Un produit sans variante se comporte exactement
@@ -669,6 +679,12 @@ model Transaction {
   servicePointExtraRefCab  String?
   servicePointExtraShopRef String?
 
+  /// Détection de fraude — recopié depuis `Order` au moment du webhook, même
+  /// pattern que les adresses aplaties ci-dessus (voir `Order.riskScore`).
+  riskScore   Int?
+  riskLevel   String?
+  riskFactors String[] @default([])
+
   /// Instantané des produits commandés (jsonb).
   products Json
 
@@ -951,9 +967,68 @@ model StoreSettings {
   /// `$lib/server/jobs/wishlistPriceAlert.ts` — converge `wishlistEnabled` et
   /// `flashSaleEnabled` sans dépendre directement de ces deux flags.
   wishlistPriceAlertEnabled Boolean @default(false)
+  /// Calcule un score de risque à chaque tentative de checkout
+  /// (`$lib/server/fraud.ts`) et le pose sur `Order`/`Transaction`. Affiché
+  /// dans `/admin/sales`, indépendant du blocage ci-dessous.
+  fraudDetectionEnabled Boolean @default(false)
+  /// N'a d'effet que si `fraudDetectionEnabled` est aussi actif (vérifié
+  /// dans le code, pas seulement documenté) : bloque la commande (jamais de
+  /// session Stripe créée) quand le score atteint le niveau `high`.
+  fraudBlockingEnabled Boolean @default(false)
+  /// Relance e-mail (digest, `$lib/server/jobs/recentlyViewedReminder.ts`)
+  /// pour un produit consulté (`ProductView`) puis jamais acheté — comptes
+  /// connectés uniquement, aucun suivi de visiteur anonyme dans ce projet.
+  recentlyViewedReminderEnabled Boolean @default(false)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")
+}
+
+/// Trace d'une tentative de commande bloquée par la détection de fraude
+/// (`StoreSettings.fraudBlockingEnabled`, `$lib/server/fraud.ts`) — sans
+/// cette table, une commande bloquée n'a ni `Order` payée ni `Transaction`,
+/// donc rien ne la rend visible dans `/admin/sales` : `/admin/fraud` lit
+/// cette table pour permettre au support de retrouver un client bloqué à
+/// tort. Pas de FK vers `User`/`Order` : trace permanente, ne doit jamais
+/// disparaître si le compte ou la commande est supprimé ensuite (même
+/// raison que `Transaction.userId`/`orderId`, tous deux nullable).
+model FraudBlock {
+  id          String   @id @default(cuid())
+  userId      String
+  orderId     String
+  email       String
+  riskScore   Int
+  riskLevel   String
+  riskFactors String[]
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("fraud_blocks")
+}
+
+/// Consultation d'une fiche produit par un compte connecté — sert
+/// uniquement à la relance e-mail (`StoreSettings.recentlyViewedReminderEnabled`,
+/// `$lib/server/jobs/recentlyViewedReminder.ts`). Sans rapport avec l'historique
+/// vitrine « Récemment consultés » (`$lib/store/recentlyViewed.ts`), qui reste
+/// 100 % `localStorage` et fonctionne aussi pour un visiteur anonyme — ce
+/// modèle ne couvre que les visiteurs connectés, seuls identifiables par
+/// e-mail pour une relance. Une seule ligne par (compte, produit) : une
+/// revisite met juste à jour `viewedAt`, ne réinitialise jamais
+/// `reminderSentAt` une fois posé (même logique que
+/// `Order.reviewReminderSentAt` : un seul rappel, jamais réinitialisé).
+model ProductView {
+  id             String    @id @default(cuid())
+  userId         String
+  productId      String
+  viewedAt       DateTime  @default(now())
+  reminderSentAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([reminderSentAt, viewedAt])
+  @@map("product_views")
 }
 
 /// Récompense de parrainage — une seule ligne par filleul (`referredId`),

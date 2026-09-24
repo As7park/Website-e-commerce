@@ -16,6 +16,10 @@
 		{
 			"path": "/api/jobs/review-reminder",
 			"schedule": "0 6 * * *"
+		},
+		{
+			"path": "/api/jobs/recently-viewed-reminder",
+			"schedule": "0 8 * * *"
 		}
 	]
 }

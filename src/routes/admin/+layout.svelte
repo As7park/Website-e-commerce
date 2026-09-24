@@ -27,6 +27,9 @@
 				...(data.returnsEnabled
 					? [{ title: 'retours', url: '/admin/returns' }] // COMMERCE-PLUGIN
 					: []),
+				...(data.fraudDetectionEnabled
+					? [{ title: 'fraude', url: '/admin/fraud' }] // COMMERCE-PLUGIN
+					: []),
 				{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN
 				{ title: 'métriques', url: '/admin/metrics' },
 				{ title: 'exports', url: '/admin/exports' },

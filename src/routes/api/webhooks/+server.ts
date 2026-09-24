@@ -326,6 +326,13 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				servicePointExtraRefCab: order.servicePointExtraRefCab ?? null,
 				servicePointExtraShopRef: order.servicePointExtraShopRef ?? null,
 
+				// Détection de fraude — recopié tel quel depuis `Order` (posé par
+				// l'action `checkout`, avant la tentative de paiement), même pattern
+				// que les adresses ci-dessus.
+				riskScore: order.riskScore ?? null,
+				riskLevel: order.riskLevel ?? null,
+				riskFactors: order.riskFactors ?? [],
+
 				// Produits (JSON)
 				invoiceNumber,
 				subtotalHt: invoiceTotals.subtotalHt,

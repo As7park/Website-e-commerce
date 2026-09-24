@@ -30,6 +30,9 @@ export interface StoreFeatureFlags {
 	frequentlyBoughtTogetherEnabled: boolean;
 	reviewReminderEnabled: boolean;
 	wishlistPriceAlertEnabled: boolean;
+	fraudDetectionEnabled: boolean;
+	fraudBlockingEnabled: boolean;
+	recentlyViewedReminderEnabled: boolean;
 }
 
 const DEFAULT_FLAGS: StoreFeatureFlags = {
@@ -46,7 +49,10 @@ const DEFAULT_FLAGS: StoreFeatureFlags = {
 	stockAlertsEnabled: false,
 	frequentlyBoughtTogetherEnabled: false,
 	reviewReminderEnabled: false,
-	wishlistPriceAlertEnabled: false
+	wishlistPriceAlertEnabled: false,
+	fraudDetectionEnabled: false,
+	fraudBlockingEnabled: false,
+	recentlyViewedReminderEnabled: false
 };
 
 /** Lecture mise en cache — utilisée par les routes publiques. */
@@ -70,7 +76,10 @@ export async function getStoreFeatureFlags(): Promise<StoreFeatureFlags> {
 			stockAlertsEnabled: row.stockAlertsEnabled,
 			frequentlyBoughtTogetherEnabled: row.frequentlyBoughtTogetherEnabled,
 			reviewReminderEnabled: row.reviewReminderEnabled,
-			wishlistPriceAlertEnabled: row.wishlistPriceAlertEnabled
+			wishlistPriceAlertEnabled: row.wishlistPriceAlertEnabled,
+			fraudDetectionEnabled: row.fraudDetectionEnabled,
+			fraudBlockingEnabled: row.fraudBlockingEnabled,
+			recentlyViewedReminderEnabled: row.recentlyViewedReminderEnabled
 		};
 	});
 }

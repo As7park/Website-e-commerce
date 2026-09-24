@@ -23,6 +23,8 @@ import {
 } from '$lib/prisma/referral/referral';
 import { computeBundleDiscount, BUNDLE_DISCOUNT_PERCENT } from '$lib/prisma/bundles/bundles';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { computeFraudScore } from '$lib/server/fraud';
+import { log } from '$lib/server/log';
 import { prisma } from '$lib/server';
 import {
 	assertOrderOwnedBy,
@@ -151,8 +153,13 @@ export const actions: Actions = {
 		// Carte cadeau : plafonnée par ce qu'il reste à payer une fois la remise
 		// promo ci-dessus déduite. Comme pour `validatePromo`, seul ce calcul
 		// serveur fait foi — jamais un montant envoyé par le client.
-		const { giftCardsEnabled, referralEnabled, frequentlyBoughtTogetherEnabled } =
-			await getStoreFeatureFlags();
+		const {
+			giftCardsEnabled,
+			referralEnabled,
+			frequentlyBoughtTogetherEnabled,
+			fraudDetectionEnabled,
+			fraudBlockingEnabled
+		} = await getStoreFeatureFlags();
 		const remainderAfterPromo = Math.max(0, productTotalTTC - promoDiscount);
 
 		// BUNDLE-PLUGIN ▼ même garde que promo/parrainage : recalculée ici depuis
@@ -190,8 +197,48 @@ export const actions: Actions = {
 		// s'il en existe déjà un pour ce compte — n'en crée jamais un ici.
 		const currentUser = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { stripeCustomerId: true }
+			select: { stripeCustomerId: true, email: true }
 		});
+
+		// Détection de fraude (`StoreSettings.fraudDetectionEnabled`) : calculée
+		// ici, juste avant la session Stripe, jamais après — un score élevé
+		// n'ouvre jamais de session quand `fraudBlockingEnabled` est aussi actif
+		// (voir `$lib/server/fraud.ts` et docs/commerce/README.md pour le choix
+		// « avant paiement » plutôt qu'une capture Stripe différée).
+		if (fraudDetectionEnabled) {
+			const risk = await computeFraudScore({
+				userId,
+				userEmail: currentUser?.email ?? '',
+				shippingAddressId,
+				billingAddressId
+			});
+			await prisma.order.update({
+				where: { id: orderId },
+				data: { riskScore: risk.score, riskLevel: risk.level, riskFactors: risk.factors }
+			});
+
+			if (fraudBlockingEnabled && risk.level === 'high') {
+				await prisma.fraudBlock.create({
+					data: {
+						userId,
+						orderId,
+						email: currentUser?.email ?? '',
+						riskScore: risk.score,
+						riskLevel: risk.level,
+						riskFactors: risk.factors
+					}
+				});
+				log('WARN', 'fraud', 'Commande bloquée avant paiement', {
+					userId,
+					orderId,
+					score: risk.score,
+					factors: risk.factors
+				});
+				// Message générique : jamais le détail des facteurs déclenchés, même
+				// logique anti-oracle que `guestTrackingLimiter` (docs/commerce/README.md).
+				error(403, 'Cette commande ne peut pas être finalisée pour le moment. Contactez le support si besoin.');
+			}
+		}
 
 		const session = await createCheckoutSession({
 			order,
