@@ -10,28 +10,28 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 
 ## Frontière du module
 
-| Emplacement                                                                                   | Contenu                                                                                           |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --- | ------------------------- | -------------------------------------------- |
-| `src/lib/commerce/`                                                                           | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
-| `src/lib/prisma/order/` et `src/lib/prisma/transaction/`                                      | DAO Prisma                                                                                        |
-| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`                                             | panier client                                                                                     |
-| `src/routes/api/save-cart/`                                                                   | persistance panier                                                                                |
-| `src/routes/checkout/`                                                                        | tunnel + succès                                                                                   |
-| `src/routes/api/webhooks/`                                                                    | Stripe `checkout.session.completed`                                                               |
-| `src/lib/server/jobs/post-payment.ts`                                                         | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
-| `src/routes/api/jobs/post-payment/`                                                           | endpoint appelé par la queue (QStash)                                                             |
-| `src/routes/admin/sales/`                                                                     | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
-| `src/routes/auth/settings/returns/`                                                           | demande de retour côté compte                                                                     |
-| `src/routes/admin/returns/`                                                                   | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN)                 |
-| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts`                           | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
-| `src/routes/auth/settings/saved-payments/`                                                    | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
-| `src/lib/prisma/giftCards/`                                                                   | DAO cartes cadeaux (solde décroissant)                                                            |
-| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/`                         | émission/gestion admin, validation côté checkout                                                  |
-| `src/lib/sendcloud/returnLabel.ts`                                                            | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                |
-| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/` | suivi de commande sans compte (n° facture + email)                                                |
-| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/`                   | relance panier abandonné (scan périodique, voir plus bas)                                         |
-| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/`               | relance avis produit post-livraison (scan périodique, voir plus bas)                              |
-| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas)              |
+| Emplacement                                                                                      | Contenu                                                                                           |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | --- | ------------------------- | -------------------------------------------- |
+| `src/lib/commerce/`                                                                              | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
+| `src/lib/prisma/order/` et `src/lib/prisma/transaction/`                                         | DAO Prisma                                                                                        |
+| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`                                                | panier client                                                                                     |
+| `src/routes/api/save-cart/`                                                                      | persistance panier                                                                                |
+| `src/routes/checkout/`                                                                           | tunnel + succès                                                                                   |
+| `src/routes/api/webhooks/`                                                                       | Stripe `checkout.session.completed`                                                               |
+| `src/lib/server/jobs/post-payment.ts`                                                            | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
+| `src/routes/api/jobs/post-payment/`                                                              | endpoint appelé par la queue (QStash)                                                             |
+| `src/routes/admin/sales/`                                                                        | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
+| `src/routes/auth/settings/returns/`                                                              | demande de retour côté compte                                                                     |
+| `src/routes/admin/returns/`                                                                      | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN)                 |
+| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts`                              | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
+| `src/routes/auth/settings/saved-payments/`                                                       | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
+| `src/lib/prisma/giftCards/`                                                                      | DAO cartes cadeaux (solde décroissant)                                                            |
+| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/`                            | émission/gestion admin, validation côté checkout                                                  |
+| `src/lib/sendcloud/returnLabel.ts`                                                               | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                |
+| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/`    | suivi de commande sans compte (n° facture + email)                                                |
+| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/`                      | relance panier abandonné (scan périodique, voir plus bas)                                         |
+| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/`                  | relance avis produit post-livraison (scan périodique, voir plus bas)                              |
+| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas)                |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -375,7 +375,7 @@ porte que `metadata`, aucun `capture_method` nulle part dans ce projet). Un
 blocage « avant capture » aurait supposé de passer tout le tunnel en capture
 manuelle — nouveau webhook `payment_intent.requires_capture`, actions admin
 capturer/annuler, gestion de l'expiration Stripe à 7 jours, impact sur
-*toutes* les commandes puisque le mode de capture est global à l'intégration.
+_toutes_ les commandes puisque le mode de capture est global à l'intégration.
 À la place, `computeFraudScore` (`$lib/server/fraud.ts`) est appelé dans
 l'action `checkout` (`src/routes/checkout/+page.server.ts`), juste avant
 `createCheckoutSession` : si le score dépasse le seuil, aucune session
@@ -387,12 +387,12 @@ tunnel de paiement existant.
 convention que `ABANDONED_ORDER_DAYS`/`REVIEW_REMINDER_DELAY_DAYS` ailleurs
 dans ce projet) :
 
-| Facteur | Condition | Poids |
-| --- | --- | --- |
-| Vélocité de commandes | ≥ 3 `Transaction` payées sur les dernières 24h pour ce compte | +40 |
-| Écart adresse facturation/livraison | Adresses différentes, pays différent | +30 |
-| Écart adresse facturation/livraison | Adresses différentes, même pays mais ville/code postal différent | +15 |
-| E-mail jetable | Domaine dans `$lib/server/fraud/disposableEmailDomains.ts` (liste statique, à enrichir manuellement) | +30 |
+| Facteur                             | Condition                                                                                            | Poids |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | ----- |
+| Vélocité de commandes               | ≥ 3 `Transaction` payées sur les dernières 24h pour ce compte                                        | +40   |
+| Écart adresse facturation/livraison | Adresses différentes, pays différent                                                                 | +30   |
+| Écart adresse facturation/livraison | Adresses différentes, même pays mais ville/code postal différent                                     | +15   |
+| E-mail jetable                      | Domaine dans `$lib/server/fraud/disposableEmailDomains.ts` (liste statique, à enrichir manuellement) | +30   |
 
 Score plafonné à 100. Bandes : `< 30` → Faible, `30-59` → Moyen, `≥ 60` →
 Élevé. La vélocité compte les `Transaction` (commandes réellement payées),
@@ -648,13 +648,13 @@ critique du blocage, prouvé en conditions réelles plutôt que mocké. `src/lib
 (chaque facteur isolé, cumul, bornes exactes des bandes) ; ce spec e2e ne
 reprouve pas cette arithmétique, il vérifie le câblage réel.
 
-| #   | Étape                                                    | Geste                                          | Preuve                                                          |
-| --- | --------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------ |
-| 1   | Risque faible                                            | `?/checkout` normal                            | 303 vers Stripe, `Order.riskLevel = low`, aucun `FraudBlock`     |
-| 2   | Écart d'adresse (pays différent) — détecté, pas bloquant | adresses livraison/facturation FR/DE           | 303 vers Stripe quand même, `riskLevel = medium`, score 30       |
-| 3   | Vélocité + e-mail jetable combinés (score 70)            | 3 transactions payées récentes + domaine jetable | `error(403)`, pas de session Stripe, `FraudBlock` créé            |
-| 3b  | Visible dans `/admin/fraud`                              | ADMIN consulte la page                          | l'e-mail du compte bloqué apparaît                                |
-| 4   | Badge de risque dans `/admin/sales`                      | transaction avec risque simulé                  | badge « Élevé (72) » visible                                     |
+| #   | Étape                                                    | Geste                                            | Preuve                                                       |
+| --- | -------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+| 1   | Risque faible                                            | `?/checkout` normal                              | 303 vers Stripe, `Order.riskLevel = low`, aucun `FraudBlock` |
+| 2   | Écart d'adresse (pays différent) — détecté, pas bloquant | adresses livraison/facturation FR/DE             | 303 vers Stripe quand même, `riskLevel = medium`, score 30   |
+| 3   | Vélocité + e-mail jetable combinés (score 70)            | 3 transactions payées récentes + domaine jetable | `error(403)`, pas de session Stripe, `FraudBlock` créé       |
+| 3b  | Visible dans `/admin/fraud`                              | ADMIN consulte la page                           | l'e-mail du compte bloqué apparaît                           |
+| 4   | Badge de risque dans `/admin/sales`                      | transaction avec risque simulé                   | badge « Élevé (72) » visible                                 |
 
 Le compte « à risque » (étape 3) navigue dans un contexte navigateur isolé
 (`browser.newContext()`), jamais sur le `page` du compte principal : il doit
@@ -759,13 +759,13 @@ Même principe : `POST /api/jobs/recently-viewed-reminder` (même en-tête
 (upsert Prisma classique, pas de raw SQL nécessaire — `viewedAt` n'est pas
 `@updatedAt`).
 
-| #   | Étape                                | Geste                                     | Preuve                                                    |
-| --- | ------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| 1   | Module désactivé : aucune relance     | flag à `false` + job                       | `reminderSentAt` reste `null`, aucun e-mail                  |
-| 2   | Trop récente (2h)                     | `createProductView(viewedAt: -2h)` + job   | pas encore de relance                                         |
-| 3   | 48h, jamais achetée : digest envoyé   | `createProductView(viewedAt: -48h)` + job  | e-mail digest avec lien `/products/[slug]`, `reminderSentAt` posé |
-| 4   | Rejouer le job tout de suite : pas de doublon | job une seconde fois              | aucun nouvel e-mail                                           |
-| 5   | Produit acheté entre-temps            | `linkProductToOrder(status: 'PAID')` + job | jamais dans le digest, `reminderSentAt` reste `null`          |
+| #   | Étape                                         | Geste                                      | Preuve                                                            |
+| --- | --------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------- |
+| 1   | Module désactivé : aucune relance             | flag à `false` + job                       | `reminderSentAt` reste `null`, aucun e-mail                       |
+| 2   | Trop récente (2h)                             | `createProductView(viewedAt: -2h)` + job   | pas encore de relance                                             |
+| 3   | 48h, jamais achetée : digest envoyé           | `createProductView(viewedAt: -48h)` + job  | e-mail digest avec lien `/products/[slug]`, `reminderSentAt` posé |
+| 4   | Rejouer le job tout de suite : pas de doublon | job une seconde fois                       | aucun nouvel e-mail                                               |
+| 5   | Produit acheté entre-temps                    | `linkProductToOrder(status: 'PAID')` + job | jamais dans le digest, `reminderSentAt` reste `null`              |
 
 ```bash
 npm run test:e2e

@@ -236,7 +236,10 @@ export const actions: Actions = {
 				});
 				// Message générique : jamais le détail des facteurs déclenchés, même
 				// logique anti-oracle que `guestTrackingLimiter` (docs/commerce/README.md).
-				error(403, 'Cette commande ne peut pas être finalisée pour le moment. Contactez le support si besoin.');
+				error(
+					403,
+					'Cette commande ne peut pas être finalisée pour le moment. Contactez le support si besoin.'
+				);
 			}
 		}
 

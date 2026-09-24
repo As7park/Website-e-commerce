@@ -13,9 +13,7 @@ export const getFraudBlocks = async (params: ListParams = {}) => {
 		sortable: FRAUD_BLOCK_SORTABLE
 	});
 
-	const where = search
-		? { email: { contains: search, mode: 'insensitive' as const } }
-		: undefined;
+	const where = search ? { email: { contains: search, mode: 'insensitive' as const } } : undefined;
 
 	try {
 		const [rows, total] = await Promise.all([

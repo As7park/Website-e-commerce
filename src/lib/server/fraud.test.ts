@@ -37,7 +37,11 @@ describe('computeFraudScore', () => {
 	it('aucun facteur déclenché → score 0, niveau low', async () => {
 		const { computeFraudScore } = await import('./fraud');
 
-		const result = await computeFraudScore({ ...baseInput, shippingAddressId: 'same', billingAddressId: 'same' });
+		const result = await computeFraudScore({
+			...baseInput,
+			shippingAddressId: 'same',
+			billingAddressId: 'same'
+		});
 
 		expect(result).toEqual({ score: 0, level: 'low', factors: [] });
 	});
@@ -46,18 +50,26 @@ describe('computeFraudScore', () => {
 		transactionCount.mockResolvedValue(3);
 		const { computeFraudScore } = await import('./fraud');
 
-		const result = await computeFraudScore({ ...baseInput, shippingAddressId: 'same', billingAddressId: 'same' });
+		const result = await computeFraudScore({
+			...baseInput,
+			shippingAddressId: 'same',
+			billingAddressId: 'same'
+		});
 
 		expect(result.score).toBe(40);
 		expect(result.level).toBe('medium');
 		expect(result.factors).toEqual(['Vélocité de commandes']);
 	});
 
-	it("vélocité sous le seuil (2 transactions) → aucun facteur déclenché", async () => {
+	it('vélocité sous le seuil (2 transactions) → aucun facteur déclenché', async () => {
 		transactionCount.mockResolvedValue(2);
 		const { computeFraudScore } = await import('./fraud');
 
-		const result = await computeFraudScore({ ...baseInput, shippingAddressId: 'same', billingAddressId: 'same' });
+		const result = await computeFraudScore({
+			...baseInput,
+			shippingAddressId: 'same',
+			billingAddressId: 'same'
+		});
 
 		expect(result.score).toBe(0);
 		expect(result.factors).toEqual([]);
@@ -66,7 +78,11 @@ describe('computeFraudScore', () => {
 	it('adresses identiques (même id) → jamais de lecture Address, aucun écart', async () => {
 		const { computeFraudScore } = await import('./fraud');
 
-		const result = await computeFraudScore({ ...baseInput, shippingAddressId: 'x', billingAddressId: 'x' });
+		const result = await computeFraudScore({
+			...baseInput,
+			shippingAddressId: 'x',
+			billingAddressId: 'x'
+		});
 
 		expect(addressFindUnique).not.toHaveBeenCalled();
 		expect(result.factors).toEqual([]);

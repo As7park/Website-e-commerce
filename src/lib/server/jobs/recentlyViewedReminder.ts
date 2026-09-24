@@ -62,7 +62,11 @@ async function purchasedProductIds(userId: string, productIds: string[]): Promis
 	return new Set(purchased.map((item) => item.productId));
 }
 
-async function sendDigest(userId: string, email: string, candidates: Candidate[]): Promise<boolean> {
+async function sendDigest(
+	userId: string,
+	email: string,
+	candidates: Candidate[]
+): Promise<boolean> {
 	const lockKey = `recently-viewed-reminder:${userId}`;
 	const sent = await withLock(lockKey, 60, async () => {
 		// Re-vérifié sous verrou : un candidat a pu être acheté ou déjà relancé
@@ -89,7 +93,8 @@ async function sendDigest(userId: string, email: string, candidates: Candidate[]
 			.join('\n');
 		const linksHtml = toRemind
 			.map(
-				(c) => `<li>${c.product.name} — <a href="${productUrl(c.product.slug)}">voir le produit</a></li>`
+				(c) =>
+					`<li>${c.product.name} — <a href="${productUrl(c.product.slug)}">voir le produit</a></li>`
 			)
 			.join('');
 

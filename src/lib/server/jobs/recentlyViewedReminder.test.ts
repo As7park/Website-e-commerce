@@ -23,22 +23,27 @@ vi.mock('$lib/server', () => ({
 vi.mock('$lib/server/smtp-mail', () => ({ sendMail }));
 vi.mock('$lib/server/storeSettings', () => ({ getStoreFeatureFlags }));
 
-function view(overrides: Partial<{
-	id: string;
-	userId: string;
-	productId: string;
-	viewedAt: Date;
-	email: string;
-	productName: string;
-	productSlug: string;
-}> = {}) {
+function view(
+	overrides: Partial<{
+		id: string;
+		userId: string;
+		productId: string;
+		viewedAt: Date;
+		email: string;
+		productName: string;
+		productSlug: string;
+	}> = {}
+) {
 	return {
 		id: overrides.id ?? 'view_1',
 		userId: overrides.userId ?? 'user_1',
 		productId: overrides.productId ?? 'product_1',
 		viewedAt: overrides.viewedAt ?? new Date(Date.now() - 48 * 60 * 60 * 1000),
 		user: { id: overrides.userId ?? 'user_1', email: overrides.email ?? 'client@example.com' },
-		product: { name: overrides.productName ?? 'Bague Solitaire', slug: overrides.productSlug ?? 'bague-solitaire' }
+		product: {
+			name: overrides.productName ?? 'Bague Solitaire',
+			slug: overrides.productSlug ?? 'bague-solitaire'
+		}
 	};
 }
 
@@ -120,7 +125,10 @@ describe('runRecentlyViewedReminderJob', () => {
 		);
 		productViewFindMany.mockImplementation(async (args: any) => {
 			if (args?.where?.id?.in) {
-				return args.where.id.in.map((id: string) => ({ id, productId: id.replace('view', 'product') }));
+				return args.where.id.in.map((id: string) => ({
+					id,
+					productId: id.replace('view', 'product')
+				}));
 			}
 			return views;
 		});

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
-import { pageOrigin, signUpAndVerify, promoteToAdmin } from '../support/admin';
+import { pageOrigin, signUpAndVerify } from '../support/admin';
 import type { Account } from '../support/account';
 import {
 	createCatalogProduct,
@@ -14,6 +14,7 @@ import {
 	getStoreFeatureFlags,
 	getTransactionById,
 	linkProductToOrder,
+	promoteToAdmin,
 	requireUser,
 	setStoreFeatureFlags,
 	setTransactionRisk,
@@ -36,7 +37,8 @@ async function addToCartAndGetPendingOrder(
 ) {
 	await page.goto(`/products/${productSlug}`);
 	const save = page.waitForResponse(
-		(response) => response.url().includes('/api/save-cart') && response.request().method() === 'POST'
+		(response) =>
+			response.url().includes('/api/save-cart') && response.request().method() === 'POST'
 	);
 	await page.getByRole('button', { name: 'Ajouter au panier' }).click();
 	await save;
