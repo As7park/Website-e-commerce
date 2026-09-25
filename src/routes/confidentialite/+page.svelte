@@ -84,12 +84,13 @@
 				>.
 			</p>
 			<p class="text-sm">
-				Pour toute autre demande (accès complet à vos données, effacement, portabilité), utilisez le <a
-					href="/contact"
-					class="underline">formulaire de contact</a
-				>
-				en précisant l'objet de votre demande RGPD. Vous disposez également du droit d'introduire une
-				réclamation auprès de la CNIL (<a
+				L'export complet de vos données (portabilité) et la suppression de votre compte (effacement)
+				sont disponibles en libre-service depuis
+				<a href="/auth/settings/donnees" class="underline">Mon compte → Mes données</a> — aucune
+				demande par e-mail n'est nécessaire pour ces deux droits. Pour toute autre demande, utilisez
+				le <a href="/contact" class="underline">formulaire de contact</a> en précisant l'objet de
+				votre demande RGPD. Vous disposez également du droit d'introduire une réclamation auprès de
+				la CNIL (<a
 					href="https://www.cnil.fr"
 					target="_blank"
 					rel="noopener noreferrer"

@@ -135,6 +135,11 @@ export async function promoteToAdmin(email: string) {
 	await resilient(() => db.user.update({ where: { email }, data: { role: 'ADMIN' } }));
 }
 
+/** Simule un compte sans mot de passe (façon Google) pour tester le repli confirmText de la suppression RGPD. */
+export async function clearUserPassword(email: string) {
+	await resilient(() => db.user.update({ where: { email }, data: { passwordHash: null } }));
+}
+
 /** Code promo jetable (admin, API de validation, checkout). */
 export async function createPromoCode(
 	code: string,
