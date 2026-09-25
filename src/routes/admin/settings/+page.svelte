@@ -4,46 +4,10 @@
 	import { Switch } from '$shadcn/switch';
 	import { Label } from '$shadcn/label';
 	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import * as Form from '$shadcn/form';
 	import * as Dialog from '$shadcn/dialog';
 	import { toast } from 'svelte-sonner';
-	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { vatRateSchema } from '$lib/schema/settings/vatSchema';
-	import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
 
 	let { data, form } = $props();
-
-	const vatForm = superForm(
-		untrack(() => data.vatForm),
-		{
-			validators: zodClient(vatRateSchema),
-			id: 'vatRate'
-		}
-	);
-	const { form: vatFormData, enhance: vatEnhance, message: vatMessage } = vatForm;
-
-	$effect(() => {
-		if ($vatMessage) toast.success($vatMessage);
-	});
-
-	const deliveryForm = superForm(
-		untrack(() => data.deliveryForm),
-		{
-			validators: zodClient(deliveryEstimateSchema),
-			id: 'deliveryEstimate'
-		}
-	);
-	const {
-		form: deliveryFormData,
-		enhance: deliveryEnhance,
-		message: deliveryMessage
-	} = deliveryForm;
-
-	$effect(() => {
-		if ($deliveryMessage) toast.success($deliveryMessage);
-	});
 
 	type FlagKey =
 		| 'wishlistEnabled'
@@ -266,86 +230,6 @@
 </svelte:head>
 
 <div class="px-6 space-y-6 max-w-5xl">
-	<div class="border rounded-lg p-5 space-y-3 max-w-sm">
-		<div>
-			<h2 class="text-lg font-semibold">Taux de TVA</h2>
-			<p class="text-sm text-muted-foreground">
-				Appliqué à tout le catalogue (prix TTC, factures). Vérifiez le taux applicable à vos
-				produits avant de le modifier — voir <code>CONFORMITE_ECOMMERCE.md</code>.
-			</p>
-		</div>
-		<form method="POST" action="?/updateVatRate" use:vatEnhance class="flex items-end gap-3">
-			<Form.Field name="vatRatePercent" form={vatForm} class="flex-1">
-				<Form.Control>
-					<Form.Label>Taux (%)</Form.Label>
-					<Input
-						name="vatRatePercent"
-						type="number"
-						step="0.1"
-						min="0"
-						max="100"
-						bind:value={$vatFormData.vatRatePercent}
-					/>
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
-			<Button type="submit">Enregistrer</Button>
-		</form>
-	</div>
-
-	<div class="border rounded-lg p-5 space-y-3 max-w-sm">
-		<div>
-			<h2 class="text-lg font-semibold">Délai de livraison annoncé</h2>
-			<p class="text-sm text-muted-foreground">
-				Affiché au client avant validation de commande (Code conso. art. L216-1). Laissez les deux
-				champs vides pour ne rien afficher — voir <code>CONFORMITE_ECOMMERCE.md</code>.
-			</p>
-		</div>
-		<form
-			method="POST"
-			action="?/updateDeliveryEstimate"
-			use:deliveryEnhance
-			class="flex items-end gap-3"
-		>
-			<Form.Field name="minDays" form={deliveryForm} class="flex-1">
-				<Form.Control>
-					<Form.Label>Min (jours)</Form.Label>
-					<Input
-						name="minDays"
-						type="number"
-						min="1"
-						max="60"
-						bind:value={$deliveryFormData.minDays}
-					/>
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
-			<Form.Field name="maxDays" form={deliveryForm} class="flex-1">
-				<Form.Control>
-					<Form.Label>Max (jours)</Form.Label>
-					<Input
-						name="maxDays"
-						type="number"
-						min="1"
-						max="60"
-						bind:value={$deliveryFormData.maxDays}
-					/>
-				</Form.Control>
-				<Form.FieldErrors />
-			</Form.Field>
-			<Button type="submit">Enregistrer</Button>
-		</form>
-	</div>
-
-	<div class="border rounded-lg p-5 space-y-2 max-w-sm">
-		<h2 class="text-lg font-semibold">Identité de l'entreprise</h2>
-		<p class="text-sm text-muted-foreground">
-			Raison sociale, SIRET, adresse... déplacée sur sa propre page — voir
-			<code>CONFORMITE_ECOMMERCE.md</code>.
-		</p>
-		<Button href="/admin/identite" variant="outline">Modifier l'identité de l'entreprise</Button>
-	</div>
-
 	<div>
 		<h1 class="text-2xl font-semibold">Modules e-commerce</h1>
 		<p class="text-sm text-muted-foreground">
@@ -356,7 +240,6 @@
 
 	<form
 		method="POST"
-		action="?/updateModules"
 		bind:this={formEl}
 		use:enhance={() => {
 			pending = true;

@@ -20,7 +20,7 @@ import {
 test.describe('Admin — délai de livraison', () => {
 	test.setTimeout(4 * 60_000);
 
-	test('modifié depuis /admin/settings, affiché au checkout', async ({ page, account }) => {
+	test('modifié depuis /admin/livraison, affiché au checkout', async ({ page, account }) => {
 		const originalFlags = await getStoreFeatureFlags();
 		const created = await createCatalogProduct({ price: 100 });
 		const { product } = created;
@@ -50,10 +50,10 @@ test.describe('Admin — délai de livraison', () => {
 			});
 
 			await test.step('2. Formulaire admin : 2 à 4 jours persistés', async () => {
-				await page.goto('/admin/settings');
-				await waitForPath(page, '/admin/settings');
+				await page.goto('/admin/livraison');
+				await waitForPath(page, '/admin/livraison');
 
-				const response = await page.request.post('/admin/settings?/updateDeliveryEstimate', {
+				const response = await page.request.post('/admin/livraison', {
 					form: { minDays: '2', maxDays: '4' },
 					headers: sveltekitActionHeaders(origin)
 				});

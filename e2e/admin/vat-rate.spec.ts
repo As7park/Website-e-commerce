@@ -22,7 +22,7 @@ import {
 test.describe('Admin — taux de TVA', () => {
 	test.setTimeout(4 * 60_000);
 
-	test('modifié depuis /admin/settings, propagé au calcul du panier', async ({ page, account }) => {
+	test('modifié depuis /admin/tva, propagé au calcul du panier', async ({ page, account }) => {
 		const originalFlags = await getStoreFeatureFlags();
 		const created = await createCatalogProduct({ price: 100 });
 		const { product } = created;
@@ -35,10 +35,10 @@ test.describe('Admin — taux de TVA', () => {
 			const origin = pageOrigin(page);
 
 			await test.step('1. Formulaire admin : 20 % persisté', async () => {
-				await page.goto('/admin/settings');
-				await waitForPath(page, '/admin/settings');
+				await page.goto('/admin/tva');
+				await waitForPath(page, '/admin/tva');
 
-				const response = await page.request.post('/admin/settings?/updateVatRate', {
+				const response = await page.request.post('/admin/tva', {
 					form: { vatRatePercent: '20' },
 					headers: sveltekitActionHeaders(origin)
 				});

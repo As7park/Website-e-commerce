@@ -25,7 +25,7 @@ sections correspondantes plus bas, marquées ✅ mise à jour) :
    `[À COMPLÉTER]` tant que personne ne les a saisis, je ne peux pas les
    inventer à la place de l'entreprise, voir la section 3.
 2. **Taux de TVA configurable** — remplace l'ancienne constante figée à
-   5,5 % : `StoreSettings.vatRate`, modifiable depuis `/admin/settings`.
+   5,5 % : `StoreSettings.vatRate`, modifiable depuis `/admin/tva`.
    Le taux par défaut reste 5,5 % (comportement inchangé tant qu'un admin
    ne le modifie pas explicitement) — **le taux réellement applicable
    (20 % attendu pour la bijouterie) reste à confirmer par un
@@ -104,7 +104,7 @@ la même fonction correcte (`$lib/prisma/user/anonymizeUser.ts`).
   vérifier si ce module est activé en production).
 - Délai de livraison engagé (Code conso. L216-1) : même principe que le
   taux de TVA — `StoreSettings.estimatedDelivery{Min,Max}Days`,
-  configurable depuis `/admin/settings`, `null` par défaut (rien affiché
+  configurable depuis `/admin/livraison`, `null` par défaut (rien affiché
   tant que l'admin n'a pas saisi une vraie estimation), affiché au
   checkout avant validation de commande une fois renseigné.
 
@@ -175,6 +175,14 @@ En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
 - Reste hors périmètre : SEO propre à chaque sous-page admin/compte
   (au-delà du `noindex` uniforme).
 
+**Mise à jour (navigation admin)** : le taux de TVA et le délai de
+livraison, jusque-là deux formulaires empilés en haut de la page
+« Modules e-commerce » (`/admin/settings`), ont chacun leur propre page
+(`/admin/tva`, `/admin/livraison`) avec une entrée dédiée dans la
+navigation admin — même principe que l'identité de l'entreprise
+(`/admin/identite`, section 3). `/admin/settings` ne porte plus que les
+interrupteurs de modules.
+
 ---
 
 ## 1. Protection des données personnelles (RGPD + CNIL)
@@ -193,14 +201,14 @@ En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
 
 ## 2. Droit de la consommation & vente à distance
 
-| Obligation                                   | Base légale                                    | État constaté             | Piste                                                                                                                                                                                                                                                           |
-| -------------------------------------------- | ---------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CGV                                          | Code com. L441-1, Code conso. L111-1           | ✅ `/cgv` + case à cocher | Case obligatoire dans l'action `checkout`, revalidée côté serveur                                                                                                                                                                                               |
-| Droit de rétractation (14 j)                 | Code conso. L221-18 à L221-28                  | ✅ `ReturnRequest.kind`   | `WITHDRAWAL` vs `WARRANTY`, sans motif requis pour une rétractation, remboursement déjà intégral (frais de port inclus) dans les deux cas                                                                                                                       |
-| Exclusion pour biens personnalisés           | Code conso. L221-28, 3°                        | ✅ Appliqué               | Option masquée côté client ET revérifiée côté serveur si `Transaction.shippingOption === 'no_shipping'`                                                                                                                                                         |
-| Garantie légale de conformité + vices cachés | Code conso. L217-3 s., Code civil art. 1641 s. | ✅ `/cgv` section 6       | Mention déjà présente (conformité + vices cachés), acceptée avant validation de commande via la case CGV                                                                                                                                                        |
-| Médiateur de la consommation                 | Code conso. L616-1 s.                          | 🟡 Partiel                | Section dédiée dans `/mentions-legales` + renvoi dans `/cgv` ; reste à désigner et contractualiser un médiateur réel (décision métier, deux options de référence déjà listées)                                                                                  |
-| Délai de livraison engagé                    | Code conso. L216-1 s.                          | ✅ Configurable           | `StoreSettings.estimatedDelivery{Min,Max}Days`, modifiable depuis `/admin/settings` (même principe que le taux de TVA : `null` par défaut, rien affiché tant que l'admin n'a pas saisi une vraie estimation) — affiché au checkout avant validation de commande |
+| Obligation                                   | Base légale                                    | État constaté             | Piste                                                                                                                                                                                                                                                            |
+| -------------------------------------------- | ---------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CGV                                          | Code com. L441-1, Code conso. L111-1           | ✅ `/cgv` + case à cocher | Case obligatoire dans l'action `checkout`, revalidée côté serveur                                                                                                                                                                                                |
+| Droit de rétractation (14 j)                 | Code conso. L221-18 à L221-28                  | ✅ `ReturnRequest.kind`   | `WITHDRAWAL` vs `WARRANTY`, sans motif requis pour une rétractation, remboursement déjà intégral (frais de port inclus) dans les deux cas                                                                                                                        |
+| Exclusion pour biens personnalisés           | Code conso. L221-28, 3°                        | ✅ Appliqué               | Option masquée côté client ET revérifiée côté serveur si `Transaction.shippingOption === 'no_shipping'`                                                                                                                                                          |
+| Garantie légale de conformité + vices cachés | Code conso. L217-3 s., Code civil art. 1641 s. | ✅ `/cgv` section 6       | Mention déjà présente (conformité + vices cachés), acceptée avant validation de commande via la case CGV                                                                                                                                                         |
+| Médiateur de la consommation                 | Code conso. L616-1 s.                          | 🟡 Partiel                | Section dédiée dans `/mentions-legales` + renvoi dans `/cgv` ; reste à désigner et contractualiser un médiateur réel (décision métier, deux options de référence déjà listées)                                                                                   |
+| Délai de livraison engagé                    | Code conso. L216-1 s.                          | ✅ Configurable           | `StoreSettings.estimatedDelivery{Min,Max}Days`, modifiable depuis `/admin/livraison` (même principe que le taux de TVA : `null` par défaut, rien affiché tant que l'admin n'a pas saisi une vraie estimation) — affiché au checkout avant validation de commande |
 
 ## 3. Mentions légales & identification (LCEN)
 
@@ -213,8 +221,8 @@ En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
 
 | Obligation                    | Base légale                             | État constaté           | Piste                                                                                                                                                                                                                                                                                            |
 | ----------------------------- | --------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable         | `StoreSettings.vatRate`, modifiable depuis `/admin/settings` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain                                                                                                                                            |
-| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret`/`.vat` imprimés sur le PDF facture/avoir et l'aperçu HTML — priorité à l'identité saisie depuis `/admin/settings` (section 3), repli sur `INVOICE_COMPANY_*` (env) puis sur un placeholder manifestement fictif si rien n'est saisi                                       |
+| Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable         | `StoreSettings.vatRate`, modifiable depuis `/admin/tva` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain                                                                                                                                                 |
+| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret`/`.vat` imprimés sur le PDF facture/avoir et l'aperçu HTML — priorité à l'identité saisie depuis `/admin/identite` (section 3), repli sur `INVOICE_COMPANY_*` (env) puis sur un placeholder manifestement fictif si rien n'est saisi                                       |
 | Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | ✅ Corrigé              | Catalogue, fiche produit (+ ventes croisées, récemment consultés), liste d'envies affichaient le prix HT stocké sans conversion — désormais convertis en TTC à l'affichage (`toTTC()`, `$lib/utils/price.ts`) ; panier/commande restent inchangés (HT + TVA déjà détaillés séparément, conforme) |
 | Guichet unique TVA (OSS)      | CGI art. 298 sexdecies-G                | ❌ Manquant             | Pertinent seulement au-delà de 10 000 €/an de ventes hors France vers l'UE                                                                                                                                                                                                                       |
 

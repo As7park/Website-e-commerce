@@ -35,6 +35,8 @@
 				{ title: 'métriques', url: '/admin/metrics' },
 				{ title: 'exports', url: '/admin/exports' },
 				{ title: 'identité de l’entreprise', url: '/admin/identite' },
+				{ title: 'taux de TVA', url: '/admin/tva' },
+				{ title: 'délai de livraison', url: '/admin/livraison' },
 				{ title: 'modules', url: '/admin/settings' }
 			]
 		}
