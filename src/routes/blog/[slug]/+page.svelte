@@ -1,12 +1,51 @@
 <script lang="ts">
 	import { Badge } from '$shadcn/badge';
 	import * as Card from '$shadcn/card';
+	import SEO from '$lib/components/SEO.svelte';
+	import StructuredData from '$lib/components/StructuredData.svelte';
+	import { seoConfig } from '$lib/seo.config';
 
 	let { data } = $props();
 	let post = $derived(data.post);
 	let tags = $derived(post.tags.map((link) => link.tag).filter((tag) => tag.name));
 	let relatedPosts = $derived(data.relatedPosts);
+
+	// Pas de champ `excerpt` en base (contenu HTML saisi via TinyMCE) : une
+	// description est dérivée du texte brut, tronquée à la longueur usuelle
+	// d'un extrait affiché par Google (~155-160 caractères).
+	let plainExcerpt = $derived(
+		post.content
+			.replace(/<[^>]+>/g, ' ')
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, 160)
+	);
+
+	let breadcrumbData = $derived({
+		itemListElement: [
+			{ '@type': 'ListItem', position: 1, name: 'Accueil', item: seoConfig.site.url },
+			{ '@type': 'ListItem', position: 2, name: 'Blog', item: `${seoConfig.site.url}/blog` },
+			{
+				'@type': 'ListItem',
+				position: 3,
+				name: post.title,
+				item: `${seoConfig.site.url}/blog/${post.slug}`
+			}
+		]
+	});
 </script>
+
+<SEO
+	type="article"
+	title={post.title}
+	description={plainExcerpt}
+	publishedTime={new Date(post.createdAt).toISOString()}
+	modifiedTime={new Date(post.updatedAt).toISOString()}
+	author={post.author.name}
+	section={post.category?.name}
+	tags={tags.map((tag) => tag.name)}
+/>
+<StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
 <article class="mx-auto max-w-[760px] px-6 pt-24 pb-12">
 	<p class="mb-6">

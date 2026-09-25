@@ -126,6 +126,7 @@ export async function getPublishedPostBySlug(slug: string) {
 			slug: true,
 			content: true,
 			createdAt: true,
+			updatedAt: true,
 			author: { select: { name: true } },
 			...publicPostTaxonomySelect
 		}

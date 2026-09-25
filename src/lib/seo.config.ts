@@ -73,21 +73,10 @@ export const seoConfig = {
 				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir nos bijoux.',
 			keywords: 'page non trouvée, erreur 404, MadeInDiamonds',
 			image: '/og-error.jpg'
-		},
-		auth: {
-			title: 'Authentification — MadeInDiamonds',
-			description:
-				'Connectez-vous à votre compte MadeInDiamonds pour suivre vos commandes et vos bijoux favoris.',
-			keywords: 'connexion, authentification, compte, MadeInDiamonds',
-			image: '/og-auth.jpg'
-		},
-		admin: {
-			title: 'Administration — MadeInDiamonds',
-			description:
-				'Panneau d’administration MadeInDiamonds. Gérez vos produits, commandes et utilisateurs.',
-			keywords: 'administration, gestion, produits, commandes, utilisateurs, MadeInDiamonds',
-			image: '/og-admin.jpg'
 		}
+		// `auth` et `admin` retirés : tout /auth/* et /admin/* est en `noindex`
+		// (voir les +layout.svelte respectifs), un titre SEO dédié n'a plus
+		// d'utilité pour des pages jamais indexées.
 	},
 
 	// Configuration des réseaux sociaux

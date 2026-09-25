@@ -2,6 +2,7 @@
 	// Importation des composants principaux
 	import * as Sidebar from '$shadcn/sidebar/index.js';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import SEO from '$lib/components/SEO.svelte';
 
 	let { data, children } = $props();
 
@@ -39,6 +40,10 @@
 		}
 	]);
 </script>
+
+<!-- Back-office jamais indexable, quelle que soit la sous-page — posé une
+     seule fois ici plutôt que sur chaque route admin, actuelle ou future. -->
+<SEO noindex nofollow />
 
 <div class="w-screen h-screen">
 	<Sidebar.Provider>

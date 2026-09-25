@@ -8,8 +8,8 @@
 	});
 </script>
 
-<!-- SEO pour la page de succès -->
-<SEO pageKey="checkoutSuccess" />
+<!-- Page transactionnelle, jamais de valeur SEO -->
+<SEO pageKey="checkoutSuccess" noindex nofollow />
 
 <div class="min-h-screen w-[100vw]">
 	<div class="min-h-screen flex flex-col justify-center items-center text-center p-8">

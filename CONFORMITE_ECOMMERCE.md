@@ -129,13 +129,45 @@ ils renvoient vers `/mentions-legales`.
 
 **Mise à jour (SEO)** : `src/lib/seo.config.ts` contenait des métadonnées
 génériques d'un ancien boilerplate (« studio web, agence web, identité
-visuelle... ») sans rapport avec la bijouterie — confirmé qu'aucune autre
-copie de ce texte n'existe ailleurs dans le dépôt. Réécrit pour décrire
-la vraie activité (bijoux, joaillerie, diamants, métaux précieux). Au
-passage, deux pages n'avaient aucune balise SEO du tout (`/products`,
-`/blog` — jamais de `<SEO>` monté) : ajoutées. Reste un gap plus large,
-hors périmètre ici : chaque article de blog (`/blog/[slug]`) n'a pas non
-plus de SEO dédié par article.
+visuelle... ») sans rapport avec la bijouterie — réécrit pour décrire la
+vraie activité. `/products` et `/blog` n'avaient aucune balise SEO du
+tout (`<SEO>` jamais monté) : ajoutées.
+
+En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
+
+- **Vrai bug trouvé** : `src/app.html` portait sa propre copie statique
+  complète (description, mots-clés, robots, Open Graph, Twitter,
+  canonical) — avec le même texte « studio web » resté du boilerplate,
+  raté lors du premier nettoyage. Cette copie statique coexistait sur
+  **chaque page du site** avec les balises dynamiques de `SEO.svelte`,
+  produisant des balises `<meta>` en double (confirmé par un test e2e :
+  `/auth/login` affichait à la fois `noindex` et `index, follow`). Retiré
+  entièrement de `app.html` — `SEO.svelte`, monté sur chaque page/layout,
+  est désormais la seule source.
+- **Sitemap** : `/products/[slug]` n'apparaissait jamais dans
+  `/sitemap.xml` (seul le blog était requêté) — corrigé.
+- **Zones privées** : aucune page n'envoyait `noindex` — `/admin/*` et
+  `/auth/*` (y compris `/auth/settings/*`) sont désormais en `noindex`
+  posé une seule fois au niveau du layout (`+layout.svelte`), pas page par
+  page, pour couvrir automatiquement toute sous-page future. `/checkout`,
+  `/checkout/success` et `/suivi-commande` (transactionnels, aucune valeur
+  SEO) également passés en `noindex`.
+- **Articles de blog** (`/blog/[slug]`) : aucun SEO propre à l'article
+  (titre/description génériques du site) — corrigé, avec JSON-LD
+  `Article` (pas de champ `excerpt` en base : description dérivée du
+  contenu HTML, tronquée).
+- **Fil d'Ariane** (`BreadcrumbList`) : prévu dans le composant mais
+  jamais utilisé — ajouté sur les fiches produit et les articles de blog.
+- **Images Open Graph** : aucune des images référencées
+  (`/og-home.jpg`, etc., ni `/og-image.jpg` dans l'ancien `app.html`)
+  n'existe réellement dans `static/` — 404 sur les partages sociaux, sauf
+  la fiche produit qui utilise la vraie photo. Je ne peux pas générer ces
+  visuels de marque, à fournir par l'entreprise.
+- `robots.txt` ne bloque que `/api/` : volontaire, un `Disallow` sur une
+  page en `noindex` empêcherait Google de crawler la page et donc de
+  voir la balise `noindex` elle-même.
+- Reste hors périmètre : SEO propre à chaque sous-page admin/compte
+  (au-delà du `noindex` uniforme), tests de contraste OG image.
 
 ---
 

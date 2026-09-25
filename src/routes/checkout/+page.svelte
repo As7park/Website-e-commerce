@@ -550,8 +550,8 @@
 	});
 </script>
 
-<!-- SEO pour la page checkout -->
-<SEO pageKey="checkout" />
+<!-- Page transactionnelle, jamais de valeur SEO -->
+<SEO pageKey="checkout" noindex nofollow />
 
 <div class="min-h-screen w-[100vw]">
 	<SmoothScrollBar>

@@ -22,6 +22,24 @@ const getBlogPosts = async () => {
 	}
 };
 
+// PRODUCT-PLUGIN : pas de champ `published`/`visible` sur `Product` — tout
+// produit créé est déjà navigable publiquement sur `/products/[slug]`
+// (même en rupture, juste marqué « Épuisé »), donc tous inclus ici sans filtre.
+const getProducts = async () => {
+	try {
+		const products = await prisma.product.findMany({
+			select: {
+				slug: true,
+				updatedAt: true
+			}
+		});
+		return products;
+	} catch (error) {
+		console.error('Erreur lors de la récupération des produits:', error);
+		return [];
+	}
+};
+
 // Fonction pour extraire les chemins des fichiers
 const extractPaths = () => {
 	const paths: Array<{ path: string; priority: string; changefreq: string }> = [];
@@ -93,7 +111,8 @@ const escapeXml = (str: string): string => {
 // Fonction pour générer le sitemap XML
 const generateSitemap = (
 	paths: Array<{ path: string; priority: string; changefreq: string }>,
-	blogPosts: Array<{ slug: string; updatedAt: Date }>
+	blogPosts: Array<{ slug: string; updatedAt: Date }>,
+	products: Array<{ slug: string; updatedAt: Date }>
 ) => {
 	const currentDate = new Date().toISOString();
 
@@ -106,6 +125,16 @@ ${paths
         <changefreq>${escapeXml(changefreq)}</changefreq>
         <priority>${escapeXml(priority)}</priority>
         <lastmod>${escapeXml(currentDate)}</lastmod>
+    </url>`
+	)
+	.join('\n')}
+${products
+	.map(
+		(product) => `    <url>
+        <loc>${escapeXml(sitemapConfig.site + '/products/' + product.slug)}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+        <lastmod>${escapeXml(product.updatedAt.toISOString())}</lastmod>
     </url>`
 	)
 	.join('\n')}
@@ -125,8 +154,8 @@ ${blogPosts
 // Handler GET pour servir le sitemap
 export const GET: RequestHandler = async () => {
 	const paths = extractPaths();
-	const blogPosts = await getBlogPosts();
-	const body = generateSitemap(paths, blogPosts);
+	const [blogPosts, products] = await Promise.all([getBlogPosts(), getProducts()]);
+	const body = generateSitemap(paths, blogPosts, products);
 	return new Response(body, {
 		headers: {
 			'Content-Type': 'application/xml',

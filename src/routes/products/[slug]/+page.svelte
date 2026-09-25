@@ -16,6 +16,8 @@
 	import * as Select from '$shadcn/select';
 	import { Badge } from '$shadcn/badge';
 	import SEO from '$lib/components/SEO.svelte';
+	import StructuredData from '$lib/components/StructuredData.svelte';
+	import { seoConfig } from '$lib/seo.config';
 	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 	import QuantityInput from '$lib/components/QuantityInput.svelte';
@@ -41,6 +43,27 @@
 	let categoryNames = $derived(
 		product.categories.map((link) => link.category.name).filter(Boolean)
 	);
+
+	// Un seul niveau de catégorie (pas les taxonomies) : le catalogue filtre
+	// désormais par taxonomies génériques, pas par `Category` ici — un lien
+	// de fil d'Ariane qui ne filtrerait rien serait pire que pas de lien.
+	let breadcrumbData = $derived({
+		itemListElement: [
+			{ '@type': 'ListItem', position: 1, name: 'Accueil', item: seoConfig.site.url },
+			{
+				'@type': 'ListItem',
+				position: 2,
+				name: 'Nos bijoux',
+				item: `${seoConfig.site.url}/products`
+			},
+			{
+				'@type': 'ListItem',
+				position: 3,
+				name: product.name,
+				item: `${seoConfig.site.url}/products/${product.slug}`
+			}
+		]
+	});
 
 	let inWishlist = $state(untrack(() => data.inWishlist));
 	let wishlistBusy = $state(false);
@@ -209,6 +232,7 @@
 	ratingValue={data.reviewSummary.average}
 	reviewCount={data.reviewSummary.count}
 />
+<StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
 <article class="mx-auto max-w-[960px] px-6 pt-24 pb-12">
 	<p class="mb-6">

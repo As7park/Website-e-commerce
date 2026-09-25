@@ -1,6 +1,13 @@
 # https://www.robotstxt.org/robotstxt.html
+#
+# /admin, /auth et /checkout ne sont volontairement PAS listés ici : ils
+# portent une balise <meta name="robots" content="noindex"> (voir les
+# +layout.svelte respectifs). Les bloquer ici empêcherait Google de
+# crawler ces pages et donc de voir cette balise noindex — un Disallow
+# peut laisser une URL bloquée indexée sans extrait ("aucune information
+# n'est disponible"), alors que noindex l'exclut proprement.
 User-agent: *
-Disallow:
+Disallow: /api/
 
 # Sitemap
 Sitemap: https://madeindiamonds.com/sitemap.xml
