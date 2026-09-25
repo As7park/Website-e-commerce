@@ -84,6 +84,19 @@ test.describe('SEO', () => {
 		await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
 	});
 
+	test('app.html ne fuite jamais de contenu <head> dans le <body>', async ({ page }) => {
+		// Régression précise : app.html mentionnait autrefois `%sveltekit.head%`
+		// en toutes lettres à l'intérieur d'un commentaire HTML — SvelteKit
+		// remplace ce jeton partout où le texte apparaît dans le fichier, sans
+		// tenir compte des commentaires, ce qui rouvrait le commentaire en
+		// plein milieu et laissait fuiter tout le <head> (polices, meta...) en
+		// texte visible dans le <body> de chaque page.
+		await page.goto('/');
+		const bodyText = await page.locator('body').innerText();
+		expect(bodyText).not.toContain('@font-face');
+		expect(bodyText).not.toContain('sveltekit.head');
+	});
+
 	test('image Open Graph par défaut résolue (pas de 404)', async ({ page }) => {
 		await page.goto('/');
 		const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
