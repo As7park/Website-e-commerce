@@ -122,6 +122,7 @@
 								<button
 									onclick={() =>
 										onRemoveFromCart(item.product.id, item.custom?.[0]?.id, item.variant?.id)}
+									aria-label="Retirer {item.product.name} du panier"
 									class="text-destructive hover:text-destructive/80"
 								>
 									<Trash class="w-4 h-4" />

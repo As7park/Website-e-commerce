@@ -127,7 +127,7 @@ test.describe('Auth — adresses', () => {
 				// l'hydratation Svelte n'ait attaché le handler, sans jamais soumettre
 				// le formulaire (confirmé : un clic normal, qui attend que l'élément
 				// soit stable, réussit systématiquement).
-				await page.getByRole('button', { name: 'Delete address' }).click();
+				await page.getByRole('button', { name: "Supprimer l'adresse" }).click();
 				await expect.poll(async () => findAddressById(own.id), { timeout: 15_000 }).toBeNull();
 			});
 		} finally {

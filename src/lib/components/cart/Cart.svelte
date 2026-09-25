@@ -161,6 +161,10 @@
 				{#snippet child({ props })}
 					<button
 						{...props}
+						aria-label="Voir le panier ({$cart?.items?.length ?? 0} article{($cart?.items?.length ??
+							0) > 1
+							? 's'
+							: ''})"
 						class="relative m-5 h-8 w-8 ccc"
 						class:text-black={currentMode.current === 'light'}
 						class:text-white={currentMode.current === 'dark'}
@@ -264,6 +268,7 @@
 														item.custom?.[0]?.id,
 														item.variant?.id
 													)}
+												aria-label="Retirer {item.product.name} du panier"
 												class="text-red-600 hover:text-red-800"
 											>
 												<Trash />

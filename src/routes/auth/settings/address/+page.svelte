@@ -63,7 +63,7 @@
 				size="sm"
 				class="inline-flex items-center gap-1 w-[100%]"
 				onclick={add}
-				aria-label="Add address"
+				aria-label="Ajouter une adresse"
 			>
 				<Plus size="16" /> Add
 			</Button>
@@ -97,7 +97,7 @@
 						<button
 							type="button"
 							class="inline-flex items-center gap-1 text-primary hover:underline"
-							aria-label="Edit address"
+							aria-label="Modifier l'adresse"
 							onclick={() => edit(address.id)}
 						>
 							<Pencil size="16" />
@@ -113,7 +113,7 @@
 							<button
 								type="submit"
 								class="inline-flex items-center gap-1 text-destructive hover:underline"
-								aria-label="Delete address"
+								aria-label="Supprimer l'adresse"
 								onclick={() => ($deleteAddressData.id = address.id)}
 							>
 								<Trash size="16" />

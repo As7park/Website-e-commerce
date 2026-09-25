@@ -211,12 +211,18 @@
 {/if}
 {#if $isClient}
 	<div>
+		<a
+			href="#main-content"
+			class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline focus:outline-2 focus:outline-ring"
+		>
+			Aller au contenu
+		</a>
 		<ModeWatcher />
 		<Navigation {data} />
 		<div class="ccc relative m-0 h-screen w-screen max-w-none overflow-hidden p-0">
 			<div class="absolute top-0 left-0 z-[1] h-screen w-screen overflow-hidden">
 				<SmoothScrollBar>
-					<main class="max-w-[100vw] overflow-hidden">
+					<main id="main-content" class="max-w-[100vw] overflow-hidden">
 						<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
 							{@render children()}
 							<Footer />
