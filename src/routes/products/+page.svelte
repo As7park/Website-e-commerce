@@ -16,6 +16,7 @@
 	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 	import { toTTC } from '$lib/utils/price';
+	import SEO from '$lib/components/SEO.svelte';
 
 	let { data } = $props();
 
@@ -109,6 +110,8 @@
 		return Math.round((1 - price / compareAt) * 100);
 	}
 </script>
+
+<SEO pageKey="products" />
 
 {#snippet filterSections(idPrefix: string)}
 	<Accordion.Root

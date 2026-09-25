@@ -125,11 +125,17 @@ tant qu'un champ n'est pas rempli), pied de page (`Footer.svelte`, nom
 affiché dans le copyright, replie sur le nom de marque tant que la raison
 sociale n'est pas saisie), factures/avoirs PDF, aperçu HTML de facture et
 e-mails de facture/avoir. `/cgv` et `/confidentialite` ne dupliquent rien,
-ils renvoient vers `/mentions-legales`. Une chose distincte relevée au
-passage, hors périmètre de cette fonctionnalité : `src/lib/seo.config.ts`
-contient des métadonnées SEO génériques d'un ancien boilerplate
-(« studio web, agence web ») sans rapport avec la bijouterie — un problème
-de contenu SEO, pas d'identité légale, non corrigé ici.
+ils renvoient vers `/mentions-legales`.
+
+**Mise à jour (SEO)** : `src/lib/seo.config.ts` contenait des métadonnées
+génériques d'un ancien boilerplate (« studio web, agence web, identité
+visuelle... ») sans rapport avec la bijouterie — confirmé qu'aucune autre
+copie de ce texte n'existe ailleurs dans le dépôt. Réécrit pour décrire
+la vraie activité (bijoux, joaillerie, diamants, métaux précieux). Au
+passage, deux pages n'avaient aucune balise SEO du tout (`/products`,
+`/blog` — jamais de `<SEO>` monté) : ajoutées. Reste un gap plus large,
+hors périmètre ici : chaque article de blog (`/blog/[slug]`) n'a pas non
+plus de SEO dédié par article.
 
 ---
 

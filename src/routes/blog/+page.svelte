@@ -7,6 +7,7 @@
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
+	import SEO from '$lib/components/SEO.svelte';
 
 	let { data } = $props();
 
@@ -49,6 +50,8 @@
 		goto(filterHref({ q: searchInput.trim() || null }), { keepFocus: true, noScroll: true });
 	}
 </script>
+
+<SEO pageKey="blog" />
 
 <div class="relative box-border min-h-screen w-full px-8 pt-24 pb-8">
 	<h1 class="mb-6 text-center text-[1.75rem] font-light tracking-tight">Blog</h1>

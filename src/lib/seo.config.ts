@@ -1,24 +1,25 @@
-// Configuration SEO pour MadeInDiamonds
+// Configuration SEO pour MadeInDiamonds — boutique de bijoux et joaillerie
+// en ligne (bagues, colliers, créations en métaux précieux et diamants).
 export const seoConfig = {
 	// Informations de base du site
 	site: {
 		name: 'MadeInDiamonds',
 		url: 'https://madeindiamonds.com',
 		description:
-			'MadeInDiamonds — studio web. Sites vitrines, e-commerce, identité visuelle et applications sur-mesure.',
+			'MadeInDiamonds — joaillerie en ligne. Bagues, colliers et bijoux en métaux précieux et diamants, livrés en France et en Europe.',
 		keywords:
-			'studio web, agence web, site vitrine, e-commerce, identité visuelle, application web, MadeInDiamonds',
+			'bijouterie en ligne, joaillerie, bagues, colliers, diamants, métaux précieux, bijoux sur-mesure, MadeInDiamonds',
 		author: 'MadeInDiamonds',
 		locale: 'fr_FR'
 	},
 
 	// Métadonnées par défaut
 	defaults: {
-		title: 'MadeInDiamonds — Studio web & identités digitales',
+		title: 'MadeInDiamonds — Joaillerie en ligne',
 		description:
-			'Découvrez MadeInDiamonds, studio web spécialisé dans les sites vitrines, boutiques en ligne, identités visuelles et applications sur-mesure.',
+			'Découvrez MadeInDiamonds, joaillerie en ligne spécialisée dans les bagues, colliers et créations en métaux précieux et diamants.',
 		keywords:
-			'studio web, agence web, site vitrine, e-commerce, identité visuelle, application web, MadeInDiamonds',
+			'bijouterie en ligne, joaillerie, bagues, colliers, diamants, métaux précieux, MadeInDiamonds',
 		image: '/og-default.jpg',
 		type: 'website'
 	},
@@ -26,66 +27,65 @@ export const seoConfig = {
 	// Configuration des pages principales
 	pages: {
 		home: {
-			title: 'MadeInDiamonds — Studio web & identités digitales',
+			title: 'MadeInDiamonds — Bijoux et joaillerie en ligne',
 			description:
-				'Découvrez MadeInDiamonds, studio web spécialisé dans les sites vitrines, boutiques en ligne, identités visuelles et applications sur-mesure.',
-			keywords:
-				'studio web, agence web, site vitrine, e-commerce, identité visuelle, MadeInDiamonds',
+				'Découvrez la collection MadeInDiamonds : bagues, colliers et créations en métaux précieux et diamants, livrées en France et en Europe.',
+			keywords: 'bijouterie en ligne, joaillerie, bagues, colliers, diamants, MadeInDiamonds',
 			image: '/og-home.jpg'
 		},
 		blog: {
-			title: 'Blog — Design, produit et culture web',
+			title: 'Blog — Conseils bijoux et joaillerie',
 			description:
-				'Actualités, retours d’expérience et conseils du studio MadeInDiamonds sur le design, le développement et la stratégie digitale.',
-			keywords: 'blog studio web, design, UX, développement, actualités MadeInDiamonds',
+				"Guides d'entretien, tendances et actualités de la joaillerie par MadeInDiamonds.",
+			keywords: 'blog joaillerie, entretien bijoux, tendances bijoux, MadeInDiamonds',
 			image: '/og-blog.jpg'
 		},
-		catalogue: {
-			title: 'Offres — Prestations du studio MadeInDiamonds',
+		products: {
+			title: 'Nos bijoux — Bagues, colliers et créations en diamants',
 			description:
-				'Explorez nos offres : site vitrine, e-commerce, identité visuelle, application web et maintenance.',
-			keywords: 'offres studio web, site vitrine, e-commerce, identité visuelle, application web',
-			image: '/og-catalogue.jpg'
+				'Parcourez la collection MadeInDiamonds : bagues, colliers et boucles d’oreilles en métaux précieux et diamants.',
+			keywords: 'bagues, colliers, boucles d’oreilles, diamants, métaux précieux, bijoux',
+			image: '/og-products.jpg'
 		},
 		contact: {
-			title: 'Contact — Parlons de votre projet MadeInDiamonds',
+			title: 'Contact — Une question sur une commande ou un bijou',
 			description:
-				'Contactez le studio MadeInDiamonds pour un site, une identité ou une application. Discutons de votre brief.',
-			keywords: 'contact studio web, devis, projet digital, MadeInDiamonds',
+				'Contactez MadeInDiamonds pour toute question sur nos bijoux, une commande ou un rendez-vous.',
+			keywords: 'contact bijouterie, service client, commande, MadeInDiamonds',
 			image: '/og-contact.jpg'
 		},
 		checkout: {
-			title: 'Commande — Finalisez votre projet MadeInDiamonds',
+			title: 'Commande — Finalisez votre achat',
 			description:
-				'Finalisez votre commande de prestation MadeInDiamonds. Paiement sécurisé et confirmation par e-mail.',
-			keywords: 'commande studio web, paiement sécurisé, projet digital, MadeInDiamonds',
+				'Finalisez votre commande de bijoux MadeInDiamonds. Paiement sécurisé et confirmation par e-mail.',
+			keywords: 'commande bijoux, paiement sécurisé, joaillerie en ligne',
 			image: '/og-checkout.jpg'
 		},
 		checkoutSuccess: {
 			title: 'Commande confirmée — MadeInDiamonds',
-			description: 'Votre commande MadeInDiamonds a été confirmée. Merci pour votre confiance.',
+			description: 'Votre commande de bijoux a été confirmée. Merci pour votre confiance.',
 			keywords: 'commande confirmée, succès, MadeInDiamonds',
 			image: '/og-checkout-success.jpg'
 		},
 		error: {
 			title: 'Page non trouvée — MadeInDiamonds',
 			description:
-				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir le studio MadeInDiamonds.',
-			keywords: 'page non trouvée, erreur 404, MadeInDiamonds, studio web',
+				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir nos bijoux.',
+			keywords: 'page non trouvée, erreur 404, MadeInDiamonds',
 			image: '/og-error.jpg'
 		},
 		auth: {
 			title: 'Authentification — MadeInDiamonds',
 			description:
-				'Connectez-vous à votre compte MadeInDiamonds pour suivre vos projets et vos commandes.',
+				'Connectez-vous à votre compte MadeInDiamonds pour suivre vos commandes et vos bijoux favoris.',
 			keywords: 'connexion, authentification, compte, MadeInDiamonds',
 			image: '/og-auth.jpg'
 		},
 		admin: {
 			title: 'Administration — MadeInDiamonds',
 			description:
-				'Panneau d’administration MadeInDiamonds. Gérez vos offres, commandes et utilisateurs.',
-			keywords: 'administration, gestion, offres, commandes, utilisateurs, MadeInDiamonds',
+				'Panneau d’administration MadeInDiamonds. Gérez vos produits, commandes et utilisateurs.',
+			keywords: 'administration, gestion, produits, commandes, utilisateurs, MadeInDiamonds',
 			image: '/og-admin.jpg'
 		}
 	},
