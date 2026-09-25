@@ -158,16 +158,22 @@ En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
   contenu HTML, tronquée).
 - **Fil d'Ariane** (`BreadcrumbList`) : prévu dans le composant mais
   jamais utilisé — ajouté sur les fiches produit et les articles de blog.
-- **Images Open Graph** : aucune des images référencées
-  (`/og-home.jpg`, etc., ni `/og-image.jpg` dans l'ancien `app.html`)
-  n'existe réellement dans `static/` — 404 sur les partages sociaux, sauf
-  la fiche produit qui utilise la vraie photo. Je ne peux pas générer ces
-  visuels de marque, à fournir par l'entreprise.
+- **Images Open Graph** : aucune des images référencées n'existait
+  réellement dans `static/` (404 sur les partages sociaux, sauf la fiche
+  produit qui utilise la vraie photo). Une vraie photo de bijou ou un
+  logo ne peuvent pas être inventés — mais une carte de marque
+  typographique, si. `scripts/generate-og-image.mjs` (Playwright, déjà
+  une dépendance e2e, pas de package ajouté) génère
+  `static/og-default.jpg` (1200×630) : fond sombre, nom de marque dans le
+  même traitement que le logo de chargement du site (`Loader.svelte`),
+  accent doré. Toutes les pages sans photo dédiée y pointent. Reste à
+  remplacer par un vrai visuel de marque quand l'entreprise en fournit
+  un — relancer le script après tout changement d'identité.
 - `robots.txt` ne bloque que `/api/` : volontaire, un `Disallow` sur une
   page en `noindex` empêcherait Google de crawler la page et donc de
   voir la balise `noindex` elle-même.
 - Reste hors périmètre : SEO propre à chaque sous-page admin/compte
-  (au-delà du `noindex` uniforme), tests de contraste OG image.
+  (au-delà du `noindex` uniforme).
 
 ---
 

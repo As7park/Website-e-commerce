@@ -74,4 +74,25 @@ test.describe('SEO', () => {
 			await deleteBlogPost(post.id);
 		}
 	});
+
+	test('une seule balise robots par page (pas de doublon app.html + SEO.svelte)', async ({
+		page
+	}) => {
+		await page.goto('/');
+		await expect(page.locator('meta[name="robots"]')).toHaveCount(1);
+		await expect(page.locator('meta[name="description"]')).toHaveCount(1);
+		await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+	});
+
+	test('image Open Graph par défaut résolue (pas de 404)', async ({ page }) => {
+		await page.goto('/');
+		const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
+		expect(ogImage).toBeTruthy();
+		// `ogImage` est une URL absolue vers le domaine de production
+		// (`seoConfig.site.url`) : on ne teste que le chemin, contre le
+		// serveur e2e local, jamais le vrai domaine.
+		const path = new URL(ogImage!).pathname;
+		const response = await page.request.get(path);
+		expect(response.status()).toBe(200);
+	});
 });

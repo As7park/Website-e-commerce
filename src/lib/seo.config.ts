@@ -24,55 +24,56 @@ export const seoConfig = {
 		type: 'website'
 	},
 
-	// Configuration des pages principales
+	// Configuration des pages principales — `image` identique partout
+	// (`/og-default.jpg`) tant qu'aucun visuel distinct par page n'existe.
 	pages: {
 		home: {
 			title: 'MadeInDiamonds — Bijoux et joaillerie en ligne',
 			description:
 				'Découvrez la collection MadeInDiamonds : bagues, colliers et créations en métaux précieux et diamants, livrées en France et en Europe.',
 			keywords: 'bijouterie en ligne, joaillerie, bagues, colliers, diamants, MadeInDiamonds',
-			image: '/og-home.jpg'
+			image: '/og-default.jpg'
 		},
 		blog: {
 			title: 'Blog — Conseils bijoux et joaillerie',
 			description:
 				"Guides d'entretien, tendances et actualités de la joaillerie par MadeInDiamonds.",
 			keywords: 'blog joaillerie, entretien bijoux, tendances bijoux, MadeInDiamonds',
-			image: '/og-blog.jpg'
+			image: '/og-default.jpg'
 		},
 		products: {
 			title: 'Nos bijoux — Bagues, colliers et créations en diamants',
 			description:
 				'Parcourez la collection MadeInDiamonds : bagues, colliers et boucles d’oreilles en métaux précieux et diamants.',
 			keywords: 'bagues, colliers, boucles d’oreilles, diamants, métaux précieux, bijoux',
-			image: '/og-products.jpg'
+			image: '/og-default.jpg'
 		},
 		contact: {
 			title: 'Contact — Une question sur une commande ou un bijou',
 			description:
 				'Contactez MadeInDiamonds pour toute question sur nos bijoux, une commande ou un rendez-vous.',
 			keywords: 'contact bijouterie, service client, commande, MadeInDiamonds',
-			image: '/og-contact.jpg'
+			image: '/og-default.jpg'
 		},
 		checkout: {
 			title: 'Commande — Finalisez votre achat',
 			description:
 				'Finalisez votre commande de bijoux MadeInDiamonds. Paiement sécurisé et confirmation par e-mail.',
 			keywords: 'commande bijoux, paiement sécurisé, joaillerie en ligne',
-			image: '/og-checkout.jpg'
+			image: '/og-default.jpg'
 		},
 		checkoutSuccess: {
 			title: 'Commande confirmée — MadeInDiamonds',
 			description: 'Votre commande de bijoux a été confirmée. Merci pour votre confiance.',
 			keywords: 'commande confirmée, succès, MadeInDiamonds',
-			image: '/og-checkout-success.jpg'
+			image: '/og-default.jpg'
 		},
 		error: {
 			title: 'Page non trouvée — MadeInDiamonds',
 			description:
 				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir nos bijoux.',
 			keywords: 'page non trouvée, erreur 404, MadeInDiamonds',
-			image: '/og-error.jpg'
+			image: '/og-default.jpg'
 		}
 		// `auth` et `admin` retirés : tout /auth/* et /admin/* est en `noindex`
 		// (voir les +layout.svelte respectifs), un titre SEO dédié n'a plus
