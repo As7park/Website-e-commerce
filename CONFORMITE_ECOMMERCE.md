@@ -20,7 +20,7 @@ sections correspondantes plus bas, marquées ✅ mise à jour) :
    `/confidentialite` + pied de page + bannière cookies + case CGV
    obligatoire au checkout. Les champs d'identité de l'entreprise (SIRET,
    adresse, capital social...) sont désormais **saisissables depuis
-   `/admin/settings`** (`StoreSettings.company*`) et affichés
+   `/admin/identite`** (`StoreSettings.company*`) et affichés
    dynamiquement sur `/mentions-legales` et les factures/avoirs — restent
    `[À COMPLÉTER]` tant que personne ne les a saisis, je ne peux pas les
    inventer à la place de l'entreprise, voir la section 3.
@@ -111,13 +111,25 @@ la même fonction correcte (`$lib/prisma/user/anonymizeUser.ts`).
 **Mise à jour (identité de l'entreprise)** : raison sociale, forme
 juridique, capital social, adresse du siège, SIRET, n° de TVA
 intracommunautaire, directeur de publication, téléphone et e-mail sont
-désormais saisissables depuis `/admin/settings` (`StoreSettings.company*`)
-au lieu d'être figés en `[À COMPLÉTER]` dans le code ou pilotés uniquement
-par des variables d'environnement (`INVOICE_COMPANY_*`, conservées comme
-repli). Alimente à la fois `/mentions-legales` (placeholder tant qu'un
-champ n'est pas rempli) et les factures/avoirs PDF. Reste, comme avant,
-une saisie humaine — le code ne peut toujours pas deviner l'identité
-réelle de l'entreprise.
+désormais saisissables depuis **`/admin/identite`** (page dédiée, retirée
+de `/admin/settings`, `StoreSettings.company*`) au lieu d'être figés en
+`[À COMPLÉTER]` dans le code ou pilotés uniquement par des variables
+d'environnement (`INVOICE_COMPANY_*`, conservées comme repli). Reste,
+comme avant, une saisie humaine — le code ne peut toujours pas deviner
+l'identité réelle de l'entreprise.
+
+Vérifié : chaque endroit du site qui affiche cette identité la lit bien
+depuis cette même source (`getCompanyIdentity()`/`getInvoiceCompany()`),
+sans copie figée qui pourrait diverger — `/mentions-legales` (placeholder
+tant qu'un champ n'est pas rempli), pied de page (`Footer.svelte`, nom
+affiché dans le copyright, replie sur le nom de marque tant que la raison
+sociale n'est pas saisie), factures/avoirs PDF, aperçu HTML de facture et
+e-mails de facture/avoir. `/cgv` et `/confidentialite` ne dupliquent rien,
+ils renvoient vers `/mentions-legales`. Une chose distincte relevée au
+passage, hors périmètre de cette fonctionnalité : `src/lib/seo.config.ts`
+contient des métadonnées SEO génériques d'un ancien boilerplate
+(« studio web, agence web ») sans rapport avec la bijouterie — un problème
+de contenu SEO, pas d'identité légale, non corrigé ici.
 
 ---
 
@@ -150,7 +162,7 @@ réelle de l'entreprise.
 
 | Obligation                | Base légale       | État constaté           | Piste                                                                                                                                                                                                                                                                                                                                                         |
 | ------------------------- | ----------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page « Mentions légales » | LCEN art. 6-III-1 | 🟡 Saisissable en admin | Raison sociale, forme juridique, capital social, adresse, SIRET, TVA intracommunautaire, directeur de publication : configurables depuis `/admin/settings` (`StoreSettings.company*`), affichés dynamiquement sur `/mentions-legales` et sur les factures/avoirs — reste `[À COMPLÉTER]` tant que personne ne les a saisis, ce qui reste une décision humaine |
+| Page « Mentions légales » | LCEN art. 6-III-1 | 🟡 Saisissable en admin | Raison sociale, forme juridique, capital social, adresse, SIRET, TVA intracommunautaire, directeur de publication : configurables depuis `/admin/identite` (`StoreSettings.company*`), affichés dynamiquement sur `/mentions-legales` et sur les factures/avoirs — reste `[À COMPLÉTER]` tant que personne ne les a saisis, ce qui reste une décision humaine |
 | CGU                       | Bonne pratique    | ✅ `/cgu`               | Couvre le contenu utilisateur (avis, questions produit, commentaires blog) et la responsabilité associée                                                                                                                                                                                                                                                      |
 
 ## 4. Facturation, prix & fiscalité

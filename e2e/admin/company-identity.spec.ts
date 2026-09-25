@@ -12,7 +12,7 @@ import { getStoreFeatureFlags, promoteToAdmin, setStoreFeatureFlags } from '../s
 test.describe('Admin — identité de l’entreprise', () => {
 	test.setTimeout(4 * 60_000);
 
-	test('modifiée depuis /admin/settings, affichée sur /mentions-legales', async ({
+	test('modifiée depuis /admin/identite, affichée sur /mentions-legales', async ({
 		page,
 		account
 	}) => {
@@ -35,10 +35,10 @@ test.describe('Admin — identité de l’entreprise', () => {
 			});
 
 			await test.step('2. Formulaire admin : identité persistée', async () => {
-				await page.goto('/admin/settings');
-				await waitForPath(page, '/admin/settings');
+				await page.goto('/admin/identite');
+				await waitForPath(page, '/admin/identite');
 
-				const response = await page.request.post('/admin/settings?/updateCompanyIdentity', {
+				const response = await page.request.post('/admin/identite', {
 					form: {
 						name: 'Bijoux Test SASU',
 						legalForm: 'SASU',
@@ -62,9 +62,15 @@ test.describe('Admin — identité de l’entreprise', () => {
 
 			await test.step('3. Affichée sur /mentions-legales, plus de placeholder', async () => {
 				await page.goto('/mentions-legales');
-				await expect(page.getByText('Bijoux Test SASU')).toBeVisible();
+				// Le nom apparaît aussi dans le pied de page (`Footer.svelte`),
+				// d'où `.first()` pour viser la section « Éditeur du site ».
+				await expect(page.getByText('Bijoux Test SASU').first()).toBeVisible();
 				await expect(page.getByText('123 456 789 00012')).toBeVisible();
 				await expect(page.getByText('[À COMPLÉTER]')).toHaveCount(0);
+			});
+
+			await test.step('4. Affichée dans le pied de page', async () => {
+				await expect(page.locator('footer').getByText('Bijoux Test SASU')).toBeVisible();
 			});
 		} finally {
 			await setStoreFeatureFlags(originalFlags);

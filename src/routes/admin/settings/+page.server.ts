@@ -12,8 +12,6 @@ import { getVatRate, updateVatRate } from '$lib/server/vat';
 import { vatRateSchema } from '$lib/schema/settings/vatSchema';
 import { getDeliveryEstimate, updateDeliveryEstimate } from '$lib/server/delivery';
 import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
-import { getCompanyIdentity, updateCompanyIdentity } from '$lib/server/companyIdentity';
-import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
 import { log } from '$lib/server/log';
 
 const FLAG_KEYS = [
@@ -56,24 +54,7 @@ export const load = (async ({ locals }) => {
 		zod(deliveryEstimateSchema),
 		{ id: 'deliveryEstimate' }
 	);
-	const companyIdentity = await getCompanyIdentity();
-	const companyForm = await superValidate(
-		{
-			name: companyIdentity.name ?? '',
-			legalForm: companyIdentity.legalForm ?? '',
-			shareCapital: companyIdentity.shareCapital ?? '',
-			address: companyIdentity.address ?? '',
-			city: companyIdentity.city ?? '',
-			siret: companyIdentity.siret ?? '',
-			vatNumber: companyIdentity.vatNumber ?? '',
-			publicationDirector: companyIdentity.publicationDirector ?? '',
-			phone: companyIdentity.phone ?? '',
-			email: companyIdentity.email ?? ''
-		},
-		zod(companyIdentitySchema),
-		{ id: 'companyIdentity' }
-	);
-	return { flags, vatForm, deliveryForm, companyForm };
+	return { flags, vatForm, deliveryForm };
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
@@ -156,53 +137,6 @@ export const actions: Actions = {
 			console.error('Error updating delivery estimate:', error);
 			return fail(500, {
 				deliveryForm: form,
-				message: "La mise à jour n'a pas pu être enregistrée."
-			});
-		}
-	},
-
-	/**
-	 * Identité de l'entreprise (`StoreSettings.company*`) — voir
-	 * CONFORMITE_ECOMMERCE.md : alimente `/mentions-legales` et les
-	 * factures/avoirs, remplace les `[À COMPLÉTER]` et les variables
-	 * d'environnement `INVOICE_COMPANY_*`. Un champ vide reste `null` (pas
-	 * de valeur inventée).
-	 */
-	updateCompanyIdentity: async ({ request, locals }) => {
-		requireAdmin(locals);
-		const formData = await request.formData();
-		const form = await superValidate(formData, zod(companyIdentitySchema), {
-			id: 'companyIdentity'
-		});
-
-		if (!form.valid) {
-			return fail(400, { companyForm: form });
-		}
-
-		try {
-			const blank = (value: string | undefined) => (value && value.trim() ? value.trim() : null);
-			await updateCompanyIdentity({
-				name: blank(form.data.name),
-				legalForm: blank(form.data.legalForm),
-				shareCapital: blank(form.data.shareCapital),
-				address: blank(form.data.address),
-				city: blank(form.data.city),
-				siret: blank(form.data.siret),
-				vatNumber: blank(form.data.vatNumber),
-				publicationDirector: blank(form.data.publicationDirector),
-				phone: blank(form.data.phone),
-				email: blank(form.data.email)
-			});
-			log(
-				'INFO',
-				'admin-settings',
-				`Identité de l'entreprise mise à jour par ${locals.user.email}`
-			);
-			return message(form, 'Identité de l’entreprise mise à jour');
-		} catch (error) {
-			console.error('Error updating company identity:', error);
-			return fail(500, {
-				companyForm: form,
 				message: "La mise à jour n'a pas pu être enregistrée."
 			});
 		}

@@ -225,7 +225,7 @@
 					<main id="main-content" class="max-w-[100vw] overflow-hidden">
 						<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
 							{@render children()}
-							<Footer />
+							<Footer companyName={data.companyName} />
 						</div>
 					</main>
 				</SmoothScrollBar>

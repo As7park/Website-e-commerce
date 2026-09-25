@@ -2,6 +2,7 @@ import type { LayoutServerLoad } from './$types';
 import { toPublicCart } from '$lib/commerce/cart';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { getVatRate } from '$lib/server/vat';
+import { getCompanyIdentity } from '$lib/server/companyIdentity';
 
 /**
  * Données partagées par toutes les pages.
@@ -20,9 +21,15 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	// `guestCart.ts`) ne portent plus une constante figée à 5,5 %.
 	const vatRate = await getVatRate();
 
+	// Nom affiché dans le pied de page (`Footer.svelte`) — priorité à la
+	// raison sociale saisie depuis `/admin/identite`, repli sur le nom de
+	// marque en dur tant qu'elle n'est pas renseignée (comportement inchangé).
+	const { name: companyName } = await getCompanyIdentity();
+
 	return {
 		frequentlyBoughtTogetherEnabled,
 		vatRate,
+		companyName,
 		// AUTH-PLUGIN ▼ alimente le menu compte (`Cart.svelte`, `Navigation.svelte`).
 		// Projection explicite : `locals.user` porte aussi la clé TOTP chiffrée, qui
 		// ne doit jamais quitter le serveur. Toute nouvelle propriété doit être
