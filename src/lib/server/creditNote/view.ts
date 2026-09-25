@@ -7,6 +7,7 @@
  * COMMERCE-PLUGIN
  */
 import { buildInvoiceView, type InvoiceSource } from '../invoice/view';
+import type { InvoiceCompany } from '$lib/invoice/types';
 import type { CreditNoteReason, CreditNoteView } from '$lib/creditNote/types';
 
 const REASON_LABELS: Record<CreditNoteReason, string> = {
@@ -17,9 +18,10 @@ const REASON_LABELS: Record<CreditNoteReason, string> = {
 export function buildCreditNoteView(
 	source: InvoiceSource,
 	number: string,
-	reason: CreditNoteReason
+	reason: CreditNoteReason,
+	company: InvoiceCompany
 ): CreditNoteView {
-	const invoice = buildInvoiceView(source);
+	const invoice = buildInvoiceView(source, company);
 
 	return {
 		id: source.id,

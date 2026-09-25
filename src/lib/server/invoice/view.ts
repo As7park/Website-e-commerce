@@ -9,8 +9,7 @@
  *
  * COMMERCE-PLUGIN
  */
-import type { InvoiceLine, InvoiceView } from '$lib/invoice/types';
-import { getInvoiceCompany } from './company';
+import type { InvoiceCompany, InvoiceLine, InvoiceView } from '$lib/invoice/types';
 import { snapshotInvoiceTotals } from './totals';
 
 export type { InvoiceLine, InvoiceView };
@@ -75,7 +74,7 @@ function readLines(raw: unknown): InvoiceLine[] {
 	});
 }
 
-export function buildInvoiceView(source: InvoiceSource): InvoiceView {
+export function buildInvoiceView(source: InvoiceSource, company: InvoiceCompany): InvoiceView {
 	const lines = readLines(source.products);
 	const computed = snapshotInvoiceTotals({
 		lines: lines.map((line) => ({ price: line.unitPrice, quantity: line.quantity })),
@@ -129,6 +128,6 @@ export function buildInvoiceView(source: InvoiceSource): InvoiceView {
 		totalTtc,
 		currency: (source.currency || 'eur').toUpperCase(),
 		filename: `Facture_${number}.pdf`,
-		company: getInvoiceCompany()
+		company
 	};
 }

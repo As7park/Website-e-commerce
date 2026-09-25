@@ -28,6 +28,16 @@ const source = {
 	products: [{ name: 'Bague', price: 100, quantity: 1 }]
 };
 
+const company = {
+	name: 'MadeInDiamonds Test',
+	address: '1 Rue des Tests',
+	city: '82000 Montauban, France',
+	phone: '0600000000',
+	email: 'contact@example.test',
+	vat: 'FR00000000000',
+	siret: '000 000 000 00000'
+};
+
 describe('snapshotInvoiceTotals', () => {
 	it('applique 5,5 % sur le HT et soustrait la remise', () => {
 		const totals = snapshotInvoiceTotals({
@@ -50,7 +60,7 @@ describe('formatInvoiceNumber', () => {
 
 describe('buildInvoiceView', () => {
 	it('utilise l’instantané figé et le numéro FAC', () => {
-		const invoice = buildInvoiceView(source);
+		const invoice = buildInvoiceView(source, company);
 		expect(invoice.number).toBe('FAC-2026-00001');
 		expect(invoice.taxRate).toBe(5.5);
 		expect(invoice.subtotalHt).toBe(100);
@@ -61,14 +71,14 @@ describe('buildInvoiceView', () => {
 	});
 
 	it('inclut le SIRET du vendeur (mentions obligatoires facture)', () => {
-		const invoice = buildInvoiceView(source);
+		const invoice = buildInvoiceView(source, company);
 		expect(invoice.company.siret).toBeTruthy();
 	});
 });
 
 describe('renderInvoicePdf', () => {
 	it('produit un buffer PDF', () => {
-		const pdf = renderInvoicePdf(buildInvoiceView(source));
+		const pdf = renderInvoicePdf(buildInvoiceView(source, company));
 		expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
 		expect(pdf.byteLength).toBeGreaterThan(200);
 	});

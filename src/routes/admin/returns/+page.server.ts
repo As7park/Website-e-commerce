@@ -16,6 +16,7 @@ import { sendMail } from '$lib/server/smtp-mail';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { buildCreditNoteView } from '$lib/server/creditNote/view';
 import { sendCreditNoteEmail } from '$lib/server/creditNote/email';
+import { getInvoiceCompany } from '$lib/server/invoice/company';
 
 /**
  * Gestion admin des demandes de retour (`ReturnRequest`).
@@ -94,7 +95,8 @@ export const actions: Actions = {
 				const creditNote = buildCreditNoteView(
 					returnRequest.transaction,
 					updated.creditNoteNumber!,
-					'REFUND'
+					'REFUND',
+					await getInvoiceCompany()
 				);
 				await sendCreditNoteEmail(creditNote);
 			} catch (creditNoteErr) {
@@ -164,7 +166,8 @@ export const actions: Actions = {
 			const creditNote = buildCreditNoteView(
 				returnRequest.transaction,
 				updated.creditNoteNumber!,
-				'STORE_CREDIT'
+				'STORE_CREDIT',
+				await getInvoiceCompany()
 			);
 			await sendCreditNoteEmail(creditNote);
 		} catch (creditNoteErr) {

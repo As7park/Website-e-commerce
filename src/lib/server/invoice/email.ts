@@ -10,6 +10,7 @@ import { sendMail } from '$lib/server/smtp-mail';
 import { formatMoney } from '$lib/utils/formatMoney';
 import { renderInvoicePdf } from './pdf';
 import { buildInvoiceView, type InvoiceSource } from './view';
+import { getInvoiceCompany } from './company';
 
 export function shouldSendInvoiceEmail(): boolean {
 	return !isDummySecret(process.env.SMTP_HOST);
@@ -21,7 +22,7 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 		return false;
 	}
 
-	const invoice = buildInvoiceView(source);
+	const invoice = buildInvoiceView(source, await getInvoiceCompany());
 	const to = source.customer_details_email?.trim();
 	if (!to || to === 'N/A') {
 		console.warn('📧 Facture : destinataire manquant, e-mail ignoré');

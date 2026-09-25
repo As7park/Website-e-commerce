@@ -1044,7 +1044,17 @@ export async function getStoreFeatureFlags() {
 				recentlyViewedReminderEnabled: true,
 				vatRate: true,
 				estimatedDeliveryMinDays: true,
-				estimatedDeliveryMaxDays: true
+				estimatedDeliveryMaxDays: true,
+				companyName: true,
+				companyLegalForm: true,
+				companyShareCapital: true,
+				companyAddress: true,
+				companyCity: true,
+				companySiret: true,
+				companyVatNumber: true,
+				companyPublicationDirector: true,
+				companyPhone: true,
+				companyEmail: true
 			}
 		})
 	);
@@ -1071,6 +1081,16 @@ export async function setStoreFeatureFlags(patch: {
 	vatRate?: number;
 	estimatedDeliveryMinDays?: number | null;
 	estimatedDeliveryMaxDays?: number | null;
+	companyName?: string | null;
+	companyLegalForm?: string | null;
+	companyShareCapital?: string | null;
+	companyAddress?: string | null;
+	companyCity?: string | null;
+	companySiret?: string | null;
+	companyVatNumber?: string | null;
+	companyPublicationDirector?: string | null;
+	companyPhone?: string | null;
+	companyEmail?: string | null;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

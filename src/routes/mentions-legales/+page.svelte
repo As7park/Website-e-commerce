@@ -1,5 +1,25 @@
 <script lang="ts">
 	import SEO from '$lib/components/SEO.svelte';
+
+	let { data } = $props();
+
+	const PLACEHOLDER = '[À COMPLÉTER]';
+	function orPlaceholder(value: string | null): string {
+		return value?.trim() ? value : PLACEHOLDER;
+	}
+
+	let identityIncomplete = $derived(
+		[
+			data.company.name,
+			data.company.legalForm,
+			data.company.shareCapital,
+			data.company.address,
+			data.company.siret,
+			data.company.vatNumber,
+			data.company.publicationDirector,
+			data.company.email
+		].some((value) => !value?.trim())
+	);
 </script>
 
 <SEO
@@ -13,19 +33,30 @@
 
 		<section class="space-y-2">
 			<h2 class="text-lg font-semibold">Éditeur du site</h2>
-			<p class="text-sm text-muted-foreground">
-				⚠️ Informations à compléter avant mise en production — voir
-				<code>CONFORMITE_ECOMMERCE.md</code> à la racine du projet.
-			</p>
+			{#if identityIncomplete}
+				<p class="text-sm text-muted-foreground">
+					⚠️ Informations à compléter avant mise en production — saisissables depuis
+					<code>/admin/settings</code>.
+				</p>
+			{/if}
 			<ul class="space-y-1 text-sm">
-				<li><strong>Raison sociale :</strong> [À COMPLÉTER]</li>
-				<li><strong>Forme juridique :</strong> [À COMPLÉTER]</li>
-				<li><strong>Capital social :</strong> [À COMPLÉTER]</li>
-				<li><strong>Adresse du siège social :</strong> [À COMPLÉTER]</li>
-				<li><strong>SIRET :</strong> [À COMPLÉTER]</li>
-				<li><strong>Numéro de TVA intracommunautaire :</strong> [À COMPLÉTER]</li>
-				<li><strong>Directeur de la publication :</strong> [À COMPLÉTER]</li>
-				<li><strong>E-mail de contact :</strong> [À COMPLÉTER]</li>
+				<li><strong>Raison sociale :</strong> {orPlaceholder(data.company.name)}</li>
+				<li><strong>Forme juridique :</strong> {orPlaceholder(data.company.legalForm)}</li>
+				<li><strong>Capital social :</strong> {orPlaceholder(data.company.shareCapital)}</li>
+				<li>
+					<strong>Adresse du siège social :</strong>
+					{orPlaceholder(data.company.address)}{data.company.city ? `, ${data.company.city}` : ''}
+				</li>
+				<li><strong>SIRET :</strong> {orPlaceholder(data.company.siret)}</li>
+				<li>
+					<strong>Numéro de TVA intracommunautaire :</strong>
+					{orPlaceholder(data.company.vatNumber)}
+				</li>
+				<li>
+					<strong>Directeur de la publication :</strong>
+					{orPlaceholder(data.company.publicationDirector)}
+				</li>
+				<li><strong>E-mail de contact :</strong> {orPlaceholder(data.company.email)}</li>
 			</ul>
 		</section>
 

@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getTransactionById } from '$lib/prisma/transaction/getTransactionById';
 import { buildInvoiceView } from '$lib/server/invoice/view';
+import { getInvoiceCompany } from '$lib/server/invoice/company';
 
 /**
  * Facture admin.
@@ -20,7 +21,7 @@ export const load = (async ({ params }) => {
 	}
 
 	return {
-		invoice: buildInvoiceView(transaction),
+		invoice: buildInvoiceView(transaction, await getInvoiceCompany()),
 		pdfHref: `/admin/sales/facture/${transaction.id}/pdf`,
 		backHref: '/admin/sales',
 		backLabel: 'Retour aux ventes'

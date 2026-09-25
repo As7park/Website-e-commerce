@@ -1001,6 +1001,22 @@ model StoreSettings {
   /// vraie estimation depuis `/admin/settings`, aucune date inventée).
   estimatedDeliveryMinDays Int?
   estimatedDeliveryMaxDays Int?
+  /// Identité de l'entreprise (`$lib/server/companyIdentity.ts`), saisie
+  /// depuis `/admin/settings` — remplace les `[À COMPLÉTER]` de
+  /// `/mentions-legales` et les variables d'environnement `INVOICE_COMPANY_*`
+  /// (`$lib/server/invoice/company.ts`, conservées comme repli si non
+  /// saisi ici). `null` partout par défaut : personne ne peut deviner ces
+  /// informations à la place de l'entreprise.
+  companyName                String?
+  companyLegalForm           String?
+  companyShareCapital        String?
+  companyAddress             String?
+  companyCity                String?
+  companySiret               String?
+  companyVatNumber           String?
+  companyPublicationDirector String?
+  companyPhone               String?
+  companyEmail               String?
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

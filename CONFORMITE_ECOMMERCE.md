@@ -19,8 +19,11 @@ sections correspondantes plus bas, marquées ✅ mise à jour) :
 1. **Pages légales créées** — `/mentions-legales`, `/cgv`,
    `/confidentialite` + pied de page + bannière cookies + case CGV
    obligatoire au checkout. Les champs d'identité de l'entreprise (SIRET,
-   adresse, capital social...) restent `[À COMPLÉTER]` — je ne peux pas les
-   inventer, voir la section 3.
+   adresse, capital social...) sont désormais **saisissables depuis
+   `/admin/settings`** (`StoreSettings.company*`) et affichés
+   dynamiquement sur `/mentions-legales` et les factures/avoirs — restent
+   `[À COMPLÉTER]` tant que personne ne les a saisis, je ne peux pas les
+   inventer à la place de l'entreprise, voir la section 3.
 2. **Taux de TVA configurable** — remplace l'ancienne constante figée à
    5,5 % : `StoreSettings.vatRate`, modifiable depuis `/admin/settings`.
    Le taux par défaut reste 5,5 % (comportement inchangé tant qu'un admin
@@ -105,6 +108,17 @@ la même fonction correcte (`$lib/prisma/user/anonymizeUser.ts`).
   tant que l'admin n'a pas saisi une vraie estimation), affiché au
   checkout avant validation de commande une fois renseigné.
 
+**Mise à jour (identité de l'entreprise)** : raison sociale, forme
+juridique, capital social, adresse du siège, SIRET, n° de TVA
+intracommunautaire, directeur de publication, téléphone et e-mail sont
+désormais saisissables depuis `/admin/settings` (`StoreSettings.company*`)
+au lieu d'être figés en `[À COMPLÉTER]` dans le code ou pilotés uniquement
+par des variables d'environnement (`INVOICE_COMPANY_*`, conservées comme
+repli). Alimente à la fois `/mentions-legales` (placeholder tant qu'un
+champ n'est pas rempli) et les factures/avoirs PDF. Reste, comme avant,
+une saisie humaine — le code ne peut toujours pas deviner l'identité
+réelle de l'entreprise.
+
 ---
 
 ## 1. Protection des données personnelles (RGPD + CNIL)
@@ -134,17 +148,17 @@ la même fonction correcte (`$lib/prisma/user/anonymizeUser.ts`).
 
 ## 3. Mentions légales & identification (LCEN)
 
-| Obligation                | Base légale       | État constaté                | Piste                                                                                                                                                                                   |
-| ------------------------- | ----------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page « Mentions légales » | LCEN art. 6-III-1 | 🟡 `/mentions-legales` créée | Structure + hébergeur (Vercel, adresse réelle) en place ; raison sociale/SIRET/TVA/directeur de publication encore `[À COMPLÉTER]` — je ne peux pas inventer l'identité de l'entreprise |
-| CGU                       | Bonne pratique    | ✅ `/cgu`                    | Couvre le contenu utilisateur (avis, questions produit, commentaires blog) et la responsabilité associée                                                                                |
+| Obligation                | Base légale       | État constaté           | Piste                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | ----------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page « Mentions légales » | LCEN art. 6-III-1 | 🟡 Saisissable en admin | Raison sociale, forme juridique, capital social, adresse, SIRET, TVA intracommunautaire, directeur de publication : configurables depuis `/admin/settings` (`StoreSettings.company*`), affichés dynamiquement sur `/mentions-legales` et sur les factures/avoirs — reste `[À COMPLÉTER]` tant que personne ne les a saisis, ce qui reste une décision humaine |
+| CGU                       | Bonne pratique    | ✅ `/cgu`               | Couvre le contenu utilisateur (avis, questions produit, commentaires blog) et la responsabilité associée                                                                                                                                                                                                                                                      |
 
 ## 4. Facturation, prix & fiscalité
 
 | Obligation                    | Base légale                             | État constaté           | Piste                                                                                                                                                                                                                                                                                            |
 | ----------------------------- | --------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable         | `StoreSettings.vatRate`, modifiable depuis `/admin/settings` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain                                                                                                                                            |
-| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret` (nouveau champ, `INVOICE_COMPANY_SIRET`) imprimé sur le PDF facture/avoir et l'aperçu HTML, à côté du n° de TVA déjà présent ; valeur toujours un placeholder tant que la vraie identité d'entreprise n'est pas saisie (section 3)                                        |
+| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret`/`.vat` imprimés sur le PDF facture/avoir et l'aperçu HTML — priorité à l'identité saisie depuis `/admin/settings` (section 3), repli sur `INVOICE_COMPANY_*` (env) puis sur un placeholder manifestement fictif si rien n'est saisi                                       |
 | Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | ✅ Corrigé              | Catalogue, fiche produit (+ ventes croisées, récemment consultés), liste d'envies affichaient le prix HT stocké sans conversion — désormais convertis en TTC à l'affichage (`toTTC()`, `$lib/utils/price.ts`) ; panier/commande restent inchangés (HT + TVA déjà détaillés séparément, conforme) |
 | Guichet unique TVA (OSS)      | CGI art. 298 sexdecies-G                | ❌ Manquant             | Pertinent seulement au-delà de 10 000 €/an de ventes hors France vers l'UE                                                                                                                                                                                                                       |
 
