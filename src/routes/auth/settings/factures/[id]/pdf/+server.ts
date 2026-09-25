@@ -28,5 +28,5 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	}
 
 	const invoice = buildInvoiceView(transaction, await getInvoiceCompany());
-	return pdfDownloadResponse(renderInvoicePdf(invoice), invoice.filename);
+	return pdfDownloadResponse(await renderInvoicePdf(invoice), invoice.filename);
 };

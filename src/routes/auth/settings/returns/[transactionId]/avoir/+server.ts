@@ -41,5 +41,5 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		reason,
 		await getInvoiceCompany()
 	);
-	return pdfDownloadResponse(renderCreditNotePdf(creditNote), creditNote.filename);
+	return pdfDownloadResponse(await renderCreditNotePdf(creditNote), creditNote.filename);
 };

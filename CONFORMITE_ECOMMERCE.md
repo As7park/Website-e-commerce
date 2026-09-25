@@ -166,14 +166,26 @@ En creusant plus loin pour une gestion SEO plus solide (audit dédié) :
   une dépendance e2e, pas de package ajouté) génère
   `static/og-default.jpg` (1200×630) : fond sombre, nom de marque dans le
   même traitement que le logo de chargement du site (`Loader.svelte`),
-  accent doré. Toutes les pages sans photo dédiée y pointent. Reste à
-  remplacer par un vrai visuel de marque quand l'entreprise en fournit
-  un — relancer le script après tout changement d'identité.
+  accent doré. Toutes les pages sans photo dédiée y pointent tant que
+  l'entreprise n'a pas fourni de vrai logo (voir point suivant).
 - `robots.txt` ne bloque que `/api/` : volontaire, un `Disallow` sur une
   page en `noindex` empêcherait Google de crawler la page et donc de
   voir la balise `noindex` elle-même.
 - Reste hors périmètre : SEO propre à chaque sous-page admin/compte
   (au-delà du `noindex` uniforme).
+
+**Mise à jour (logo de l'entreprise)** : `/admin/identite` permet
+désormais d'envoyer un vrai logo (PNG/JPEG, même mécanisme d'upload
+Cloudinary que les images produit — `StoreSettings.companyLogoUrl`,
+`null` par défaut, jamais de logo inventé). Utilisé à trois endroits :
+JSON-LD `Organization` (`SEO.svelte`, remplace une référence
+`/logo.png` qui n'a jamais existé), en-tête des factures/avoirs PDF (le
+logo est récupéré et incrusté au moment de la génération,
+`fetchLogoForPdf` — best-effort, une facture se génère toujours même si
+l'image est injoignable) et affiché sur `/mentions-legales`. Ne remplace
+pas `og-default.jpg` : une carte 1200×630 composée automatiquement à
+partir d'un logo carré risquerait d'être mal cadrée, contrairement à la
+carte typographique dédiée ci-dessus.
 
 **Mise à jour (navigation admin)** : le taux de TVA et le délai de
 livraison, jusque-là deux formulaires empilés en haut de la page

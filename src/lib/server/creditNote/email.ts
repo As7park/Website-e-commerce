@@ -27,7 +27,7 @@ export async function sendCreditNoteEmail(creditNote: CreditNoteView): Promise<b
 		return false;
 	}
 
-	const pdf = renderCreditNotePdf(creditNote);
+	const pdf = await renderCreditNotePdf(creditNote);
 	const amount = formatMoney(creditNote.amount, creditNote.currency);
 
 	await sendMail({

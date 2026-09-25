@@ -35,7 +35,8 @@ const company = {
 	phone: '0600000000',
 	email: 'contact@example.test',
 	vat: 'FR00000000000',
-	siret: '000 000 000 00000'
+	siret: '000 000 000 00000',
+	logoUrl: null
 };
 
 describe('snapshotInvoiceTotals', () => {
@@ -77,8 +78,8 @@ describe('buildInvoiceView', () => {
 });
 
 describe('renderInvoicePdf', () => {
-	it('produit un buffer PDF', () => {
-		const pdf = renderInvoicePdf(buildInvoiceView(source, company));
+	it('produit un buffer PDF', async () => {
+		const pdf = await renderInvoicePdf(buildInvoiceView(source, company));
 		expect(pdf.subarray(0, 4).toString()).toBe('%PDF');
 		expect(pdf.byteLength).toBeGreaterThan(200);
 	});

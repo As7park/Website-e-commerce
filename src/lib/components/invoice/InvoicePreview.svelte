@@ -43,6 +43,13 @@
 				<Card.Title>Émetteur</Card.Title>
 			</Card.Header>
 			<Card.Content class="space-y-1 text-sm">
+				{#if invoice.company.logoUrl}
+					<img
+						src={invoice.company.logoUrl}
+						alt="Logo {invoice.company.name}"
+						class="mb-2 h-12 w-auto object-contain"
+					/>
+				{/if}
 				<p class="font-medium">{invoice.company.name}</p>
 				<p>{invoice.company.address}</p>
 				<p>{invoice.company.city}</p>

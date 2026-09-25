@@ -1,8 +1,9 @@
 /**
  * Identité de l'entreprise (`StoreSettings.company*`, ligne unique
  * `id = "singleton"`, même ligne que `$lib/server/storeSettings.ts`) —
- * saisie depuis `/admin/settings`, consommée par `/mentions-legales` et
- * par les factures/avoirs (`$lib/server/invoice/company.ts`).
+ * saisie depuis `/admin/identite`, consommée par `/mentions-legales`, le
+ * JSON-LD `Organization` (`SEO.svelte`) et les factures/avoirs
+ * (`$lib/server/invoice/company.ts`, PDF inclus pour le logo).
  *
  * Chaque champ est `null` tant que l'admin ne l'a pas saisi — aucune
  * valeur inventée à sa place (voir CONFORMITE_ECOMMERCE.md).
@@ -27,6 +28,9 @@ export type CompanyIdentity = {
 	publicationDirector: string | null;
 	phone: string | null;
 	email: string | null;
+	/** URL Cloudinary — voir `/admin/identite` (upload), même mécanisme que
+	 * les images produit (`cloudinary.uploader.upload`, folder `identite`). */
+	logoUrl: string | null;
 };
 
 export async function getCompanyIdentity(): Promise<CompanyIdentity> {
@@ -45,7 +49,8 @@ export async function getCompanyIdentity(): Promise<CompanyIdentity> {
 				companyVatNumber: true,
 				companyPublicationDirector: true,
 				companyPhone: true,
-				companyEmail: true
+				companyEmail: true,
+				companyLogoUrl: true
 			}
 		});
 		return {
@@ -58,7 +63,8 @@ export async function getCompanyIdentity(): Promise<CompanyIdentity> {
 			vatNumber: row?.companyVatNumber ?? null,
 			publicationDirector: row?.companyPublicationDirector ?? null,
 			phone: row?.companyPhone ?? null,
-			email: row?.companyEmail ?? null
+			email: row?.companyEmail ?? null,
+			logoUrl: row?.companyLogoUrl ?? null
 		};
 	});
 }
@@ -76,7 +82,8 @@ export async function updateCompanyIdentity(identity: CompanyIdentity): Promise<
 			companyVatNumber: identity.vatNumber,
 			companyPublicationDirector: identity.publicationDirector,
 			companyPhone: identity.phone,
-			companyEmail: identity.email
+			companyEmail: identity.email,
+			companyLogoUrl: identity.logoUrl
 		}
 	});
 	await bumpCacheVersion(CACHE_NAMESPACE);

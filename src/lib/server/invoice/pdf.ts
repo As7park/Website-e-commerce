@@ -6,19 +6,33 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatMoney } from '$lib/utils/formatMoney';
+import { fetchLogoForPdf } from './logo';
 import type { InvoiceView } from './view';
 
 function money(amount: number, currency: string): string {
 	return formatMoney(amount, currency);
 }
 
-export function renderInvoicePdf(invoice: InvoiceView): Buffer {
+export async function renderInvoicePdf(invoice: InvoiceView): Promise<Buffer> {
 	const doc = new jsPDF();
 	const { company } = invoice;
 
 	doc.setFontSize(16);
 	doc.setFont('helvetica', 'bold');
 	doc.text('FACTURE', 105, 20, { align: 'center' });
+
+	// Logo en haut à droite, ratio préservé — jamais de placeholder si aucun
+	// logo n'est fourni ou n'a pas pu être récupéré (voir fetchLogoForPdf).
+	const logo = await fetchLogoForPdf(company.logoUrl);
+	if (logo) {
+		const props = doc.getImageProperties(logo.dataUri);
+		const maxWidth = 40;
+		const maxHeight = 20;
+		const ratio = Math.min(maxWidth / props.width, maxHeight / props.height);
+		const width = props.width * ratio;
+		const height = props.height * ratio;
+		doc.addImage(logo.dataUri, logo.format, 196 - width, 12, width, height);
+	}
 
 	doc.setFontSize(10);
 	doc.setFont('helvetica', 'normal');

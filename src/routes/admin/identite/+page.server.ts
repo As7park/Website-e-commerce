@@ -5,14 +5,18 @@ import type { PageServerLoad } from './$types';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
 import { getCompanyIdentity, updateCompanyIdentity } from '$lib/server/companyIdentity';
 import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
+import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
+import cloudinary from '$lib/server/cloudinary';
 import { log } from '$lib/server/log';
+
+const LOGO_FOLDER = 'identite';
 
 /**
  * Identité de l'entreprise (`StoreSettings.company*`) — voir
- * CONFORMITE_ECOMMERCE.md : alimente `/mentions-legales` et les
- * factures/avoirs, remplace les `[À COMPLÉTER]` et les variables
- * d'environnement `INVOICE_COMPANY_*`. Un champ vide reste `null` (pas de
- * valeur inventée).
+ * CONFORMITE_ECOMMERCE.md : alimente `/mentions-legales`, le JSON-LD
+ * `Organization` (`SEO.svelte`) et les factures/avoirs (texte + logo),
+ * remplace les `[À COMPLÉTER]` et les variables d'environnement
+ * `INVOICE_COMPANY_*`. Un champ vide reste `null` (pas de valeur inventée).
  *
  * ADMIN-PLUGIN : page dédiée (déplacée depuis `/admin/settings`) — une
  * saisie qui n'a lieu qu'une fois ou rarement, distincte des interrupteurs
@@ -37,7 +41,7 @@ export const load = (async ({ locals }) => {
 		zod(companyIdentitySchema),
 		{ id: 'companyIdentity' }
 	);
-	return { companyForm };
+	return { companyForm, logoUrl: companyIdentity.logoUrl };
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
@@ -52,6 +56,42 @@ export const actions: Actions = {
 			return fail(400, { companyForm: form });
 		}
 
+		const current = await getCompanyIdentity();
+		let logoUrl = current.logoUrl;
+
+		const logoFile = formData.get('logo');
+		const removeLogo = formData.get('removeLogo') === 'on';
+
+		if (logoFile instanceof File && logoFile.size > 0) {
+			try {
+				const buffer = await logoFile.arrayBuffer();
+				const base64String = Buffer.from(buffer).toString('base64');
+				const uploadResponse = await cloudinary.uploader.upload(
+					`data:${logoFile.type};base64,${base64String}`,
+					{ folder: LOGO_FOLDER }
+				);
+				logoUrl = uploadResponse.secure_url;
+			} catch (error) {
+				console.error('Error uploading logo:', error);
+				return fail(500, { companyForm: form, message: "L'envoi du logo a échoué." });
+			}
+		} else if (removeLogo) {
+			logoUrl = null;
+		}
+
+		// Ancien logo remplacé ou supprimé : nettoyé côté Cloudinary, jamais
+		// bloquant (même logique best-effort que l'édition produit).
+		if (current.logoUrl && current.logoUrl !== logoUrl) {
+			const publicId = getPublicIdFromUrl(current.logoUrl);
+			if (publicId) {
+				try {
+					await cloudinary.uploader.destroy(`${LOGO_FOLDER}/${publicId}`);
+				} catch (error) {
+					console.error('Error deleting previous logo:', error);
+				}
+			}
+		}
+
 		try {
 			const blank = (value: string | undefined) => (value && value.trim() ? value.trim() : null);
 			await updateCompanyIdentity({
@@ -64,7 +104,8 @@ export const actions: Actions = {
 				vatNumber: blank(form.data.vatNumber),
 				publicationDirector: blank(form.data.publicationDirector),
 				phone: blank(form.data.phone),
-				email: blank(form.data.email)
+				email: blank(form.data.email),
+				logoUrl
 			});
 			log(
 				'INFO',

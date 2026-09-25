@@ -7,6 +7,9 @@ export type InvoiceCompany = {
 	email: string;
 	vat: string;
 	siret: string;
+	/** URL Cloudinary du logo (`/admin/identite`) — `null` si non fourni,
+	 * jamais de logo par défaut inventé. */
+	logoUrl: string | null;
 };
 
 export type InvoiceLine = {

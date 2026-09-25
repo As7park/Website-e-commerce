@@ -29,7 +29,7 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 		return false;
 	}
 
-	const pdf = renderInvoicePdf(invoice);
+	const pdf = await renderInvoicePdf(invoice);
 	const total = formatMoney(invoice.totalTtc, invoice.currency);
 	// Repli localhost:2000 (port de `npm run dev`) uniquement pour ne jamais
 	// envoyer de lien cassé sans APP_URL/VERCEL_URL configurée ; en prod ces

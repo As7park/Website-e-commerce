@@ -1002,7 +1002,7 @@ model StoreSettings {
   estimatedDeliveryMinDays Int?
   estimatedDeliveryMaxDays Int?
   /// Identité de l'entreprise (`$lib/server/companyIdentity.ts`), saisie
-  /// depuis `/admin/settings` — remplace les `[À COMPLÉTER]` de
+  /// depuis `/admin/identite` — remplace les `[À COMPLÉTER]` de
   /// `/mentions-legales` et les variables d'environnement `INVOICE_COMPANY_*`
   /// (`$lib/server/invoice/company.ts`, conservées comme repli si non
   /// saisi ici). `null` partout par défaut : personne ne peut deviner ces
@@ -1017,7 +1017,12 @@ model StoreSettings {
   companyPublicationDirector String?
   companyPhone               String?
   companyEmail               String?
-  updatedAt            DateTime @updatedAt
+  /// URL Cloudinary du logo (upload direct depuis `/admin/identite`, même
+  /// mécanisme que les images produit). Utilisé pour le JSON-LD
+  /// `Organization` (`SEO.svelte`) et l'en-tête des factures/avoirs PDF —
+  /// jamais de logo par défaut inventé si non fourni.
+  companyLogoUrl              String?
+  updatedAt                   DateTime @updatedAt
 
   @@map("store_settings")
 }

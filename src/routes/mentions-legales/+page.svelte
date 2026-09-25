@@ -29,6 +29,13 @@
 
 <div class="relative box-border min-h-screen w-full px-8 pt-24 pb-16">
 	<div class="mx-auto w-full max-w-[760px] space-y-8">
+		{#if data.company.logoUrl}
+			<img
+				src={data.company.logoUrl}
+				alt="Logo {data.company.name ?? 'de l’entreprise'}"
+				class="h-16 w-auto object-contain"
+			/>
+		{/if}
 		<h1 class="text-2xl font-bold">Mentions légales</h1>
 
 		<section class="space-y-2">

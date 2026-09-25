@@ -1054,7 +1054,8 @@ export async function getStoreFeatureFlags() {
 				companyVatNumber: true,
 				companyPublicationDirector: true,
 				companyPhone: true,
-				companyEmail: true
+				companyEmail: true,
+				companyLogoUrl: true
 			}
 		})
 	);
@@ -1091,6 +1092,7 @@ export async function setStoreFeatureFlags(patch: {
 	companyPublicationDirector?: string | null;
 	companyPhone?: string | null;
 	companyEmail?: string | null;
+	companyLogoUrl?: string | null;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

@@ -80,21 +80,22 @@
 		[noindex ? 'noindex' : 'index', nofollow ? 'nofollow' : 'follow'].join(', ')
 	);
 
-	// Données structurées pour l'organisation
-	const organizationData = {
+	// Données structurées pour l'organisation — `logo` uniquement si un vrai
+	// logo a été fourni depuis `/admin/identite` (`+layout.server.ts` le
+	// propage à `$page.data`), jamais un fichier inventé/absent.
+	const organizationData = $derived({
 		name: seoConfig.site.name,
 		url: seoConfig.site.url,
-		logo: {
-			'@type': 'ImageObject',
-			url: `${seoConfig.site.url}/logo.png`
-		},
+		...($page.data.companyLogoUrl
+			? { logo: { '@type': 'ImageObject', url: $page.data.companyLogoUrl } }
+			: {}),
 		description: seoConfig.site.description,
 		sameAs: [
 			'https://www.instagram.com/madeindiamonds/',
 			'https://www.facebook.com/madeindiamonds/',
 			'https://www.linkedin.com/company/madeindiamonds/'
 		]
-	};
+	});
 
 	// Données structurées pour le site web
 	const websiteData = $derived({
