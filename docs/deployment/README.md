@@ -62,10 +62,6 @@ Preview Deployments doivent aussi fonctionner).
 | `SENTRY_DSN` / `PUBLIC_SENTRY_DSN`                       | recommandé              | Sentry      | erreurs + traces serveur/navigateur                              |
 | `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT`    | non (CI uniquement)     | Sentry      | upload des source maps, désactivé par défaut                     |
 
-`SECRET_CONTENTFUL_SPACE_ID` / `SECRET_CONTENTFUL_ACCESS_TOKEN` figurent dans
-`.env.example` mais ne sont référencées par aucun code actuel (CMS non
-câblé) — à ignorer tant qu'aucune fonctionnalité ne les consomme.
-
 ### `APP_URL` vs `VERCEL_URL` — piège spécifique à Vercel
 
 `resolveAppUrl()` (`src/lib/server/app-url.ts`, `src/lib/server/qstash.ts`)

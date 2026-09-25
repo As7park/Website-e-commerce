@@ -175,7 +175,6 @@ document), pas juste une case à cocher.
 | Upstash (Redis + QStash)   | Cache, verrous, file d'attente de jobs         | Confirmé, en usage actif                                                                                                                                              |
 | Google                     | Connexion OAuth (si utilisée par le client)    | Confirmé, en usage conditionnel                                                                                                                                       |
 | **Sentry**                 | Monitoring d'erreurs (serveur + navigateur)    | **Confirmé présent (`SENTRY_DSN`), absent de l'audit précédent** — peut capturer des IP/contextes de requête ; aucun `Sentry.setUser()` explicite trouvé dans le code |
-| **Contentful**             | CMS headless                                   | **Clés présentes en variables d'environnement, aucun usage trouvé dans le code** — probablement vestige, à confirmer ou retirer des accès                             |
 | **TinyMCE**                | Éditeur de texte riche (back-office)           | Clé API présente, SDK chargé côté client admin — à vérifier si le cloud TinyMCE est réellement utilisé ou seulement la version auto-hébergée                          |
 | api-adresse.data.gouv.fr   | Autocomplétion d'adresse                       | API publique gouvernementale, sans clé — pas un sous-traitant au sens RGPD                                                                                            |
 
@@ -196,12 +195,11 @@ Pixel, Matomo...), aucune IA/LLM, aucun SMS.
 3. **Blocage automatique de fraude = décision automatisée** (`fraudBlockingEnabled`)
    — vérifier l'applicabilité de l'art. 22 RGPD avant activation en
    production (droit à une intervention humaine).
-4. **Contentful** semble être un sous-traitant configuré mais inutilisé — à
-   confirmer avant de le lister comme destinataire réel dans une politique
-   de confidentialité, ou à retirer si effectivement inutilisé.
-5. **Sentry** n'apparaît pas dans `/confidentialite` (`src/routes/confidentialite/+page.svelte`
-   liste les sous-traitants mais pas celui-ci) — à ajouter si confirmé actif
-   en production, avec une vérification de ce qu'il capture réellement
-   (IP, corps de requête, éventuel PII dans les messages d'erreur).
+4. ~~**Contentful** semble être un sous-traitant configuré mais inutilisé~~
+   — retiré (`.env.example`, `.env.test.example`, CI) : clés supprimées,
+   plus aucun accès à révoquer.
+5. **Sentry** ajouté à `/confidentialite` (était absent) — reste à vérifier
+   ce qu'il capture réellement (IP, corps de requête, éventuel PII dans les
+   messages d'erreur).
 6. **Identité du responsable de traitement et DPO** — voir en haut de
    document, même blocage que les mentions légales.

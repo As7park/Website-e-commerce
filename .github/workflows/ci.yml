@@ -117,8 +117,6 @@ jobs:
       CLOUDINARY_API_KEY: e2e
       CLOUDINARY_API_SECRET: e2e
       PUBLIC_TINYMCE_API_KEY: e2e
-      SECRET_CONTENTFUL_SPACE_ID: e2e
-      SECRET_CONTENTFUL_ACCESS_TOKEN: e2e
       SECRET_ADDRESS_SEARCH_MODE: e2e
     steps:
       - uses: actions/checkout@v4
