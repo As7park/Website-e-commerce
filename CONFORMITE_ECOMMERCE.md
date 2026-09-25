@@ -33,10 +33,8 @@ sections correspondantes plus bas, marquées ✅ mise à jour) :
    masqué sur les commandes sur-mesure (exclusion légale), remboursement
    déjà intégral (frais de port inclus) dans les deux cas.
 
-⚠️ Migration Prisma générée (`prisma/migrations/20260924140000_add_vat_rate_and_return_kind`)
-mais **pas encore appliquée à la base** — nécessite une confirmation
-explicite (voir échange de session, le classificateur automatique refuse
-`prisma migrate deploy` par défaut).
+✅ Migration Prisma (`prisma/migrations/20260924140000_add_vat_rate_and_return_kind`)
+appliquée à la base.
 
 Pour situer par rapport à `AUDIT_TECHNIQUE.md` : la purge RGPD automatisée
 déjà en place (`$lib/server/jobs/cleanup.ts` — sessions expirées, tokens,
