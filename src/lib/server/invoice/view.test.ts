@@ -59,6 +59,11 @@ describe('buildInvoiceView', () => {
 		expect(invoice.filename).toBe('Facture_FAC-2026-00001.pdf');
 		expect(invoice.lines).toEqual([{ name: 'Bague', quantity: 1, unitPrice: 100, lineTotal: 100 }]);
 	});
+
+	it('inclut le SIRET du vendeur (mentions obligatoires facture)', () => {
+		const invoice = buildInvoiceView(source);
+		expect(invoice.company.siret).toBeTruthy();
+	});
 });
 
 describe('renderInvoicePdf', () => {

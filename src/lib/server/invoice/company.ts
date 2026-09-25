@@ -20,6 +20,7 @@ export function getInvoiceCompany(): InvoiceCompany {
 		city: envOr('INVOICE_COMPANY_CITY', '75000 Paris, France'),
 		phone: envOr('INVOICE_COMPANY_PHONE', '+33 1 23 45 67 89'),
 		email: envOr('INVOICE_COMPANY_EMAIL', 'contact@madeindiamonds.com'),
-		vat: envOr('INVOICE_COMPANY_VAT', 'FR123456789')
+		vat: envOr('INVOICE_COMPANY_VAT', 'FR123456789'),
+		siret: envOr('INVOICE_COMPANY_SIRET', '000 000 000 00000')
 	};
 }

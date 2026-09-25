@@ -15,8 +15,8 @@ import {
 test.describe('Pages légales', () => {
 	test.setTimeout(6 * 60_000);
 
-	test('les trois pages répondent, liées depuis le pied de page', async ({ page }) => {
-		for (const path of ['/mentions-legales', '/cgv', '/confidentialite']) {
+	test('les pages répondent, liées depuis le pied de page', async ({ page }) => {
+		for (const path of ['/mentions-legales', '/cgv', '/cgu', '/confidentialite']) {
 			const response = await page.goto(path);
 			expect(response?.status()).toBe(200);
 		}
@@ -27,7 +27,14 @@ test.describe('Pages légales', () => {
 			'href',
 			'/mentions-legales'
 		);
-		await expect(footer.getByRole('link', { name: 'CGV' })).toHaveAttribute('href', '/cgv');
+		await expect(footer.getByRole('link', { name: 'CGV', exact: true })).toHaveAttribute(
+			'href',
+			'/cgv'
+		);
+		await expect(footer.getByRole('link', { name: 'CGU', exact: true })).toHaveAttribute(
+			'href',
+			'/cgu'
+		);
 		await expect(
 			footer.getByRole('link', { name: 'Confidentialité', exact: true })
 		).toHaveAttribute('href', '/confidentialite');

@@ -49,6 +49,7 @@
 				<p>Tél. {invoice.company.phone}</p>
 				<p>{invoice.company.email}</p>
 				<p>TVA {invoice.company.vat}</p>
+				<p>SIRET {invoice.company.siret}</p>
 			</Card.Content>
 		</Card.Root>
 

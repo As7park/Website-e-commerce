@@ -41,52 +41,94 @@ explicite (voir échange de session, le classificateur automatique refuse
 Pour situer par rapport à `AUDIT_TECHNIQUE.md` : la purge RGPD automatisée
 déjà en place (`$lib/server/jobs/cleanup.ts` — sessions expirées, tokens,
 paniers abandonnés) couvre le principe de minimisation des données
-(RGPD art. 5.1.e), **pas** le droit à l'effacement sur demande d'une
-personne (art. 17, section 1 ci-dessous) — deux obligations différentes,
-la seconde reste à construire.
+(RGPD art. 5.1.e), **distinct** du droit à l'effacement sur demande d'une
+personne (art. 17) — désormais traité lui aussi, voir section 1.
+
+**Mise à jour (RGPD)** : les droits à la portabilité (art. 20) et à
+l'effacement (art. 17) sont maintenant en self-service depuis
+`/auth/settings/donnees` — export JSON complet, suppression par
+**anonymisation** (jamais une suppression physique du compte :
+`Order`/`Transaction` restent conservés, obligation comptable). Au
+passage, un vrai bug a été trouvé et corrigé dans le flux admin existant
+(`/admin/users?/deleteUser`) : il supprimait purement et simplement les
+commandes du compte avant suppression, contredisant le commentaire du
+schéma qui exige leur conservation — les deux flux partagent désormais
+la même fonction correcte (`$lib/prisma/user/anonymizeUser.ts`).
+
+**Mise à jour (consommation, mentions, fiscal)** :
+
+- `/cgu` créée (contenu utilisateur : avis, questions produit,
+  commentaires blog), liée depuis le pied de page.
+- Garantie légale de conformité + vices cachés : déjà correctement
+  couverte par `/cgv` section 6, acceptée avant commande via la case
+  CGV — statut corrigé dans le tableau (était noté comme manquant à
+  tort).
+- Médiateur de la consommation : section dédiée déjà présente dans
+  `/mentions-legales` avec deux médiateurs de référence ; reste une
+  vraie désignation contractuelle à faire par un humain, je ne peux pas
+  la fabriquer.
+- **Vrai bug trouvé et corrigé** : le catalogue, la fiche produit
+  (+ ventes croisées, récemment consultés) et la liste d'envies
+  affichaient `Product.price` (HT, stocké tel quel en base) directement
+  au consommateur, sans conversion TVA — alors que le panier/checkout
+  appliquent bien la TVA séparément. Contraire à l'Arrêté du 3 déc. 1987
+  (prix annoncé au consommateur = TTC). Corrigé par une conversion à
+  l'affichage uniquement (`toTTC()`, `$lib/utils/price.ts`) ; le prix HT
+  transmis au panier reste inchangé pour ne pas casser le calcul
+  panier/commande. Le filtre de prix du catalogue (curseur, bornes) a
+  été converti en cohérence.
+- Facture PDF : le SIRET vendeur était totalement absent du modèle et du
+  template (seul le n° de TVA existait, en placeholder d'environnement)
+  — ajouté (`InvoiceCompany.siret`, `INVOICE_COMPANY_SIRET`), même
+  logique de surcharge par variable d'environnement que les autres
+  champs vendeur.
+- Titrage/poinçon métal précieux : pas un manque de code — le système
+  générique de taxonomies (`/admin/products/taxonomies`) permet déjà de
+  créer ce champ et de le remplir par produit, reste une tâche de saisie
+  de données réelles.
 
 ---
 
 ## 1. Protection des données personnelles (RGPD + CNIL)
 
-| Obligation                       | Base légale                    | État constaté            | Piste                                                                                                        |
-| -------------------------------- | ------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Politique de confidentialité     | RGPD art. 13-14                | ✅ `/confidentialite`    | Distincte des CGV                                                                                            |
-| Bannière cookies/traceurs        | Directive ePrivacy, reco. CNIL | ✅ `CookieNotice.svelte` | Information (aucun traceur non essentiel actif) plutôt qu'un consentement, cohérent avec l'état réel du site |
-| Consentement marketing opt-in    | RGPD art. 6                    | ✅ En place              | `User.marketingEmailsOptIn`, défaut `false`, déjà bien distingué des e-mails transactionnels                 |
-| Sécurité technique des données   | RGPD art. 32                   | ✅ En place              | Argon2id, TOTP/recovery chiffrés AES, 2FA — bon niveau technique                                             |
-| Minimisation / purge automatique | RGPD art. 5.1.e                | ✅ En place              | `cleanup.ts` — sessions, tokens, paniers `PENDING` abandonnés                                                |
-| Droit d'accès et rectification   | RGPD art. 15-16                | 🟡 Partiel               | Rectification via `/auth/settings` déjà possible ; pas de vue « toutes mes données »                         |
-| Droit à la portabilité           | RGPD art. 20                   | ❌ Manquant              | Export JSON/CSV des données du compte                                                                        |
-| Droit à l'effacement sur demande | RGPD art. 17                   | 🟡 Partiel               | Suppression existe côté admin (`/admin/users?/deleteUser`) ; pas de canal self-service ni de délai documenté |
-| Registre des traitements         | RGPD art. 30                   | ❌ Hors code             | Document interne, pas une fonctionnalité                                                                     |
+| Obligation                       | Base légale                    | État constaté                 | Piste                                                                                                                                                                                                    |
+| -------------------------------- | ------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Politique de confidentialité     | RGPD art. 13-14                | ✅ `/confidentialite`         | Distincte des CGV                                                                                                                                                                                        |
+| Bannière cookies/traceurs        | Directive ePrivacy, reco. CNIL | ✅ `CookieNotice.svelte`      | Information (aucun traceur non essentiel actif) plutôt qu'un consentement, cohérent avec l'état réel du site                                                                                             |
+| Consentement marketing opt-in    | RGPD art. 6                    | ✅ En place                   | `User.marketingEmailsOptIn`, défaut `false`, déjà bien distingué des e-mails transactionnels                                                                                                             |
+| Sécurité technique des données   | RGPD art. 32                   | ✅ En place                   | Argon2id, TOTP/recovery chiffrés AES, 2FA — bon niveau technique                                                                                                                                         |
+| Minimisation / purge automatique | RGPD art. 5.1.e                | ✅ En place                   | `cleanup.ts` — sessions, tokens, paniers `PENDING` abandonnés                                                                                                                                            |
+| Droit d'accès et rectification   | RGPD art. 15-16                | 🟡 Partiel                    | Rectification via `/auth/settings` déjà possible ; pas de vue « toutes mes données »                                                                                                                     |
+| Droit à la portabilité           | RGPD art. 20                   | ✅ `/auth/settings/donnees`   | Export JSON complet (profil, adresses, commandes, factures, avis, questions, liste d'envies, retours, fidélité)                                                                                          |
+| Droit à l'effacement sur demande | RGPD art. 17                   | ✅ Anonymisation self-service | `anonymizeUser()` — jamais de suppression physique du compte, `Order`/`Transaction` conservés (obligation comptable) ; même fonction réutilisée par l'admin (bug de perte de données corrigé au passage) |
+| Registre des traitements         | RGPD art. 30                   | ❌ Hors code                  | Document interne, pas une fonctionnalité                                                                                                                                                                 |
 
 ## 2. Droit de la consommation & vente à distance
 
-| Obligation                                   | Base légale                                    | État constaté             | Piste                                                                                                                                     |
-| -------------------------------------------- | ---------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| CGV                                          | Code com. L441-1, Code conso. L111-1           | ✅ `/cgv` + case à cocher | Case obligatoire dans l'action `checkout`, revalidée côté serveur                                                                         |
-| Droit de rétractation (14 j)                 | Code conso. L221-18 à L221-28                  | ✅ `ReturnRequest.kind`   | `WITHDRAWAL` vs `WARRANTY`, sans motif requis pour une rétractation, remboursement déjà intégral (frais de port inclus) dans les deux cas |
-| Exclusion pour biens personnalisés           | Code conso. L221-28, 3°                        | ✅ Appliqué               | Option masquée côté client ET revérifiée côté serveur si `Transaction.shippingOption === 'no_shipping'`                                   |
-| Garantie légale de conformité + vices cachés | Code conso. L217-3 s., Code civil art. 1641 s. | ❌ Manquant               | Mention obligatoire même si la garantie existe par la loi sans mention                                                                    |
-| Médiateur de la consommation                 | Code conso. L616-1 s.                          | ❌ Manquant               | Désigner un médiateur agréé, afficher ses coordonnées                                                                                     |
-| Délai de livraison engagé                    | Code conso. L216-1 s.                          | 🟡 Partiel                | Suivi Sendcloud après expédition ; aucune date engagée avant commande                                                                     |
+| Obligation                                   | Base légale                                    | État constaté             | Piste                                                                                                                                                                          |
+| -------------------------------------------- | ---------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CGV                                          | Code com. L441-1, Code conso. L111-1           | ✅ `/cgv` + case à cocher | Case obligatoire dans l'action `checkout`, revalidée côté serveur                                                                                                              |
+| Droit de rétractation (14 j)                 | Code conso. L221-18 à L221-28                  | ✅ `ReturnRequest.kind`   | `WITHDRAWAL` vs `WARRANTY`, sans motif requis pour une rétractation, remboursement déjà intégral (frais de port inclus) dans les deux cas                                      |
+| Exclusion pour biens personnalisés           | Code conso. L221-28, 3°                        | ✅ Appliqué               | Option masquée côté client ET revérifiée côté serveur si `Transaction.shippingOption === 'no_shipping'`                                                                        |
+| Garantie légale de conformité + vices cachés | Code conso. L217-3 s., Code civil art. 1641 s. | ✅ `/cgv` section 6       | Mention déjà présente (conformité + vices cachés), acceptée avant validation de commande via la case CGV                                                                       |
+| Médiateur de la consommation                 | Code conso. L616-1 s.                          | 🟡 Partiel                | Section dédiée dans `/mentions-legales` + renvoi dans `/cgv` ; reste à désigner et contractualiser un médiateur réel (décision métier, deux options de référence déjà listées) |
+| Délai de livraison engagé                    | Code conso. L216-1 s.                          | 🟡 Partiel                | Suivi Sendcloud après expédition ; aucune date engagée avant commande                                                                                                          |
 
 ## 3. Mentions légales & identification (LCEN)
 
 | Obligation                | Base légale       | État constaté                | Piste                                                                                                                                                                                   |
 | ------------------------- | ----------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Page « Mentions légales » | LCEN art. 6-III-1 | 🟡 `/mentions-legales` créée | Structure + hébergeur (Vercel, adresse réelle) en place ; raison sociale/SIRET/TVA/directeur de publication encore `[À COMPLÉTER]` — je ne peux pas inventer l'identité de l'entreprise |
-| CGU                       | Bonne pratique    | ❌ Manquant                  | Utile : le site accepte du contenu utilisateur (avis, questions produit, commentaires blog)                                                                                             |
+| CGU                       | Bonne pratique    | ✅ `/cgu`                    | Couvre le contenu utilisateur (avis, questions produit, commentaires blog) et la responsabilité associée                                                                                |
 
 ## 4. Facturation, prix & fiscalité
 
-| Obligation                    | Base légale                             | État constaté   | Piste                                                                                                                                                 |
-| ----------------------------- | --------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable | `StoreSettings.vatRate`, modifiable depuis `/admin/settings` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain |
-| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | 🟡 Partiel      | `invoiceNumber`/`subtotalHt`/`taxRate`/`taxAmount` déjà en base ; vérifier que le PDF affiche SIRET + n° TVA vendeur                                  |
-| Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | 🟡 Partiel      | À confirmer sur la fiche produit vitrine, pas seulement au checkout                                                                                   |
-| Guichet unique TVA (OSS)      | CGI art. 298 sexdecies-G                | ❌ Manquant     | Pertinent seulement au-delà de 10 000 €/an de ventes hors France vers l'UE                                                                            |
+| Obligation                    | Base légale                             | État constaté           | Piste                                                                                                                                                                                                                                                                                            |
+| ----------------------------- | --------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable         | `StoreSettings.vatRate`, modifiable depuis `/admin/settings` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain                                                                                                                                            |
+| Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret` (nouveau champ, `INVOICE_COMPANY_SIRET`) imprimé sur le PDF facture/avoir et l'aperçu HTML, à côté du n° de TVA déjà présent ; valeur toujours un placeholder tant que la vraie identité d'entreprise n'est pas saisie (section 3)                                        |
+| Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | ✅ Corrigé              | Catalogue, fiche produit (+ ventes croisées, récemment consultés), liste d'envies affichaient le prix HT stocké sans conversion — désormais convertis en TTC à l'affichage (`toTTC()`, `$lib/utils/price.ts`) ; panier/commande restent inchangés (HT + TVA déjà détaillés séparément, conforme) |
+| Guichet unique TVA (OSS)      | CGI art. 298 sexdecies-G                | ❌ Manquant             | Pertinent seulement au-delà de 10 000 €/an de ventes hors France vers l'UE                                                                                                                                                                                                                       |
 
 ## 5. Paiement en ligne
 
@@ -97,16 +139,16 @@ la seconde reste à construire.
 
 ## 6. Spécifique métaux précieux & diamants
 
-| Obligation                         | Base légale                                 | État constaté | Piste                                                                                                                                                 |
-| ---------------------------------- | ------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Titrage/poinçon métal précieux     | CGI art. 521 s.                             | ❌ Manquant   | `Material` est un simple libellé (`{ id, name }`), aucun champ de titrage structuré — à vérifier en priorité côté fournisseur                         |
-| Traçabilité/certification diamants | Processus de Kimberley, normes sectorielles | 🟡 Partiel    | Rejoint l'idée « certificat d'authenticité » de `FEATURE_IDEAS.md` — ici adossée à une vraie obligation de transparence, pas qu'un argument marketing |
+| Obligation                         | Base légale                                 | État constaté  | Piste                                                                                                                                                                                                                                                                                  |
+| ---------------------------------- | ------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Titrage/poinçon métal précieux     | CGI art. 521 s.                             | 🟡 Infra dispo | Aucun champ dédié, mais le système générique de taxonomies (`/admin/products/taxonomies`, type `NUMBER` + unité) permet déjà de créer une taxonomie « Titrage » et de saisir une valeur par produit — reste une tâche de saisie de données réelles (fournisseur), pas de développement |
+| Traçabilité/certification diamants | Processus de Kimberley, normes sectorielles | 🟡 Partiel     | Rejoint l'idée « certificat d'authenticité » de `FEATURE_IDEAS.md` — ici adossée à une vraie obligation de transparence, pas qu'un argument marketing                                                                                                                                  |
 
 ## 7. Accessibilité numérique
 
-| Obligation | Base légale                       | État constaté | Piste                                                                                      |
-| ---------- | --------------------------------- | ------------- | ------------------------------------------------------------------------------------------ |
-| RGAA       | Loi n°2005-102, décret n°2019-768 | ⬜ Non audité | Audit dédié nécessaire (contraste, clavier, ARIA) si le seuil de CA applicable est atteint |
+| Obligation | Base légale                       | État constaté       | Piste                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | --------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RGAA       | Loi n°2005-102, décret n°2019-768 | 🟡 Audit léger fait | Pas un audit de certification (nécessite un expert RGAA si le seuil de CA applicable est atteint), mais un passage ciblé sur les pages clientes (catalogue, fiche produit, checkout, compte, pages légales) : `lang="fr"` déjà présent, alt text déjà correct partout, aucun `<div onclick>` au clavier-inaccessible détecté. Corrigé : champ de recherche catalogue sans nom accessible, boutons icône seule sans `aria-label` (panier, retirer un article du panier x2, moyens de paiement enregistrés, interrupteurs mode sombre/plein écran), `aria-label` en anglais sur la page adresses (incohérent avec le reste du site en français), lien « Aller au contenu » ajouté (absent auparavant). **Reste à vérifier manuellement** : contraste des couleurs (`text-muted-foreground` très utilisé pour le texte secondaire, à mesurer dans un navigateur en clair et sombre) — pas calculable sans rendu réel. |
 
 ---
 

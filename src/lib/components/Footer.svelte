@@ -2,6 +2,7 @@
 	const legalLinks = [
 		{ href: '/mentions-legales', label: 'Mentions légales' },
 		{ href: '/cgv', label: 'CGV' },
+		{ href: '/cgu', label: 'CGU' },
 		{ href: '/confidentialite', label: 'Confidentialité' },
 		{ href: '/contact', label: 'Contact' }
 	];

@@ -15,6 +15,7 @@
 	import X from 'lucide-svelte/icons/x';
 	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
+	import { toTTC } from '$lib/utils/price';
 
 	let { data } = $props();
 
@@ -214,6 +215,7 @@
 				name="q"
 				value={search}
 				placeholder="Rechercher un produit"
+				aria-label="Rechercher un produit"
 				class="pl-8"
 			/>
 		</div>
@@ -328,10 +330,10 @@
 										{product.description}
 									</p>
 									<div class="flex items-baseline gap-2">
-										<p class="text-base">{product.price.toFixed(2)} €</p>
+										<p class="text-base">{toTTC(product.price, data.vatRate).toFixed(2)} €</p>
 										{#if product.compareAtPrice && product.compareAtPrice > product.price}
 											<p class="text-sm text-muted-foreground line-through">
-												{product.compareAtPrice.toFixed(2)} €
+												{toTTC(product.compareAtPrice, data.vatRate).toFixed(2)} €
 											</p>
 										{/if}
 									</div>

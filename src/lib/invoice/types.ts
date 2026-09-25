@@ -6,6 +6,7 @@ export type InvoiceCompany = {
 	phone: string;
 	email: string;
 	vat: string;
+	siret: string;
 };
 
 export type InvoiceLine = {

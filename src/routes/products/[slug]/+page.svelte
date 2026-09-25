@@ -19,6 +19,7 @@
 	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 	import QuantityInput from '$lib/components/QuantityInput.svelte';
+	import { toTTC } from '$lib/utils/price';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -104,6 +105,9 @@
 	let selectedVariant = $derived(product.variants.find((v) => v.id === selectedVariantId) ?? null);
 	let displayedPrice = $derived(selectedVariant?.price ?? product.price);
 	let displayedStock = $derived(selectedVariant?.stock ?? product.stock);
+	// Affichage uniquement — le panier reçoit toujours le prix HT (voir
+	// addToCart plus bas), la TVA y est calculée séparément.
+	let displayedPriceTTC = $derived(toTTC(displayedPrice, data.vatRate));
 	let quantity = $state(1);
 
 	function handleAddToCart() {
@@ -199,7 +203,7 @@
 	title={product.name}
 	description={product.description}
 	image={product.images[0] ? optimizedImageUrl(product.images[0], 800) : undefined}
-	price={displayedPrice}
+	price={displayedPriceTTC}
 	availability={displayedStock > 0 ? 'InStock' : 'OutOfStock'}
 	sku={product.sku ?? undefined}
 	ratingValue={data.reviewSummary.average}
@@ -243,10 +247,10 @@
 			</div>
 
 			<div class="mb-4 flex items-center gap-3">
-				<p class="text-2xl">{displayedPrice.toFixed(2)} €</p>
+				<p class="text-2xl">{displayedPriceTTC.toFixed(2)} €</p>
 				{#if !selectedVariant && hasDiscount}
 					<p class="text-lg text-muted-foreground line-through">
-						{(product.compareAtPrice as number).toFixed(2)} €
+						{toTTC(product.compareAtPrice as number, data.vatRate).toFixed(2)} €
 					</p>
 					<Badge variant="destructive">-{discountPercent}%</Badge>
 				{/if}
@@ -344,7 +348,9 @@
 							</div>
 							<Card.Content class="p-3">
 								<p class="line-clamp-1 text-sm font-medium">{related.name}</p>
-								<p class="text-sm text-muted-foreground">{related.price.toFixed(2)} €</p>
+								<p class="text-sm text-muted-foreground">
+									{toTTC(related.price, data.vatRate).toFixed(2)} €
+								</p>
 							</Card.Content>
 						</Card.Root>
 					</a>
@@ -374,7 +380,9 @@
 							</div>
 							<Card.Content class="p-3">
 								<p class="line-clamp-1 text-sm font-medium">{viewed.name}</p>
-								<p class="text-sm text-muted-foreground">{viewed.price.toFixed(2)} €</p>
+								<p class="text-sm text-muted-foreground">
+									{toTTC(viewed.price, data.vatRate).toFixed(2)} €
+								</p>
 							</Card.Content>
 						</Card.Root>
 					</a>

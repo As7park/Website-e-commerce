@@ -29,6 +29,7 @@ export function renderCreditNotePdf(creditNote: CreditNoteView): Buffer {
 	doc.text(`Tél: ${company.phone}`, 14, 58);
 	doc.text(`Email: ${company.email}`, 14, 64);
 	doc.text(`TVA: ${company.vat}`, 14, 70);
+	doc.text(`SIRET: ${company.siret}`, 14, 76);
 
 	doc.text('Émis à :', 130, 40);
 	doc.text(creditNote.customerName, 130, 46);

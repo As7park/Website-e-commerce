@@ -20,6 +20,7 @@ import {
 } from '$lib/prisma/productQuestions/productQuestions';
 import { isPendingStockAlert } from '$lib/prisma/stockAlerts/stockAlerts';
 import { recordProductView } from '$lib/prisma/products/productViews';
+import { getVatRate } from '$lib/server/vat';
 
 /**
  * Fiche produit publique.
@@ -48,6 +49,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const categoryIds = product.categories.map((link) => link.categoryId);
 
 	const [
+		vatRate,
 		reviewSummary,
 		reviews,
 		userReview,
@@ -58,6 +60,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		askForm,
 		stockAlertSubscribed
 	] = await Promise.all([
+		getVatRate(),
 		getReviewSummary(product.id),
 		listReviewsForProduct(product.id),
 		userId ? getUserReviewForProduct(product.id, userId) : null,
@@ -76,6 +79,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		product,
+		vatRate,
 		reviewSummary,
 		reviews,
 		hasReviewed: Boolean(userReview),
