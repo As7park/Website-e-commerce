@@ -1,4 +1,6 @@
 import { fail, type Actions } from '@sveltejs/kit';
+import { superValidate, message } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
 import {
@@ -6,6 +8,8 @@ import {
 	updateStoreFeatureFlags,
 	type StoreFeatureFlags
 } from '$lib/server/storeSettings';
+import { getVatRate, updateVatRate } from '$lib/server/vat';
+import { vatRateSchema } from '$lib/schema/settings/vatSchema';
 import { log } from '$lib/server/log';
 
 const FLAG_KEYS = [
@@ -38,11 +42,18 @@ const FLAG_KEYS = [
 export const load = (async ({ locals }) => {
 	assertAdmin(locals);
 	const flags = await getStoreFeatureFlagsUncached();
-	return { flags };
+	const vatRate = await getVatRate();
+	const vatForm = await superValidate({ vatRatePercent: vatRate * 100 }, zod(vatRateSchema), {
+		id: 'vatRate'
+	});
+	return { flags, vatForm };
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	// SvelteKit interdit de mélanger une action `default` avec des actions
+	// nommées sur la même route (`updateVatRate` ci-dessous) — nommée elle
+	// aussi, jamais `default`.
+	updateModules: async ({ request, locals }) => {
 		requireAdmin(locals);
 		const formData = await request.formData();
 
@@ -58,6 +69,33 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error updating store settings:', error);
 			return fail(500, { message: "La mise à jour n'a pas pu être enregistrée." });
+		}
+	},
+
+	/**
+	 * Taux de TVA (`StoreSettings.vatRate`) — voir `CONFORMITE_ECOMMERCE.md` :
+	 * remplace l'ancienne constante figée à 5,5 %, incorrecte pour de la
+	 * bijouterie (taux normal attendu). Saisi en pourcentage, converti en
+	 * fraction avant écriture.
+	 */
+	updateVatRate: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const form = await superValidate(formData, zod(vatRateSchema), { id: 'vatRate' });
+
+		if (!form.valid) {
+			return fail(400, { vatForm: form });
+		}
+
+		try {
+			await updateVatRate(form.data.vatRatePercent / 100);
+			log('INFO', 'admin-settings', `Taux de TVA mis à jour par ${locals.user.email}`, {
+				vatRatePercent: form.data.vatRatePercent
+			});
+			return message(form, 'Taux de TVA mis à jour');
+		} catch (error) {
+			console.error('Error updating VAT rate:', error);
+			return fail(500, { vatForm: form, message: "La mise à jour n'a pas pu être enregistrée." });
 		}
 	}
 };

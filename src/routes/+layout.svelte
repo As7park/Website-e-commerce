@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Navigation from './../lib/components/Navigation.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import '@fontsource-variable/open-sans';
 	import '@fontsource-variable/raleway';
 	import '../app.css';
@@ -18,7 +20,7 @@
 	} from '$lib/store/initialLoaderStore';
 	import { page } from '$app/stores';
 
-	import { resetCart, setCart } from '$lib/store/Data/cartStore';
+	import { resetCart, setCart, setVatRate } from '$lib/store/Data/cartStore';
 	import { setCartSyncAuthenticated, startSync } from '$lib/store/Data/cartSync';
 	import {
 		clearGuestCart,
@@ -57,9 +59,15 @@
 			cart.subtotal,
 			cart.tax,
 			cart.shippingCost,
-			parseFloat((cart.shippingCost * 0.055).toFixed(2))
+			parseFloat((cart.shippingCost * data.vatRate).toFixed(2))
 		);
 	}
+
+	// Taux de TVA courant (`StoreSettings.vatRate`), propagé au store panier
+	// client dès qu'il change — plus de constante figée à 5,5 % côté client.
+	$effect(() => {
+		setVatRate(data.vatRate);
+	});
 
 	$effect(() => {
 		const unsubscribe = page.subscribe(() => {
@@ -99,7 +107,7 @@
 					const guest = readGuestCart();
 					if (guest.items.length) {
 						const items = guestToStoreItems(guest);
-						const { subtotal, tax } = totalsFromItems(items);
+						const { subtotal, tax } = totalsFromItems(items, data.vatRate);
 						applyStoreCart({
 							id: '',
 							userId: '',
@@ -211,11 +219,13 @@
 					<main class="max-w-[100vw] overflow-hidden">
 						<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
 							{@render children()}
+							<Footer />
 						</div>
 					</main>
 				</SmoothScrollBar>
 			</div>
 		</div>
 		<Toaster />
+		<CookieNotice />
 	</div>
 {/if}

@@ -180,12 +180,21 @@ export function guestToStoreItems(guest: GuestCart): StoreCartItem[] {
 	});
 }
 
-export function totalsFromItems(items: StoreCartItem[]): { subtotal: number; tax: number } {
+/**
+ * `vatRate` vient de `+layout.server.ts` (`data.vatRate`,
+ * `StoreSettings.vatRate`) — code client, pas d'accès Prisma direct ici.
+ * Repli sur l'ancien taux fixe si l'appelant ne le fournit pas encore
+ * (avant hydratation), pour rester robuste.
+ */
+export function totalsFromItems(
+	items: StoreCartItem[],
+	vatRate = 0.055
+): { subtotal: number; tax: number } {
 	const subtotal = items.reduce(
 		(sum, item) => sum + (item.variant?.price ?? item.product.price) * item.quantity,
 		0
 	);
-	const tax = parseFloat((subtotal * 0.055).toFixed(2));
+	const tax = parseFloat((subtotal * vatRate).toFixed(2));
 	return { subtotal, tax };
 }
 

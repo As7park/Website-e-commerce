@@ -48,6 +48,15 @@ enum ReturnStatus {
   CREDITED
 }
 
+/// Distingue la rétractation légale (Code conso. L221-18 à L221-28 : 14
+/// jours, sans motif à fournir) d'un retour SAV/garantie classique — même
+/// flux d'approbation ensuite (`ReturnRequest.status`), seule la nature de
+/// la demande change.
+enum ReturnKind {
+  WITHDRAWAL
+  WARRANTY
+}
+
 // AUTH __________________________________________________________________________________
 //
 // AUTH-PLUGIN : `Session`, `EmailVerificationRequest` et `PasswordResetSession`
@@ -979,6 +988,13 @@ model StoreSettings {
   /// pour un produit consulté (`ProductView`) puis jamais acheté — comptes
   /// connectés uniquement, aucun suivi de visiteur anonyme dans ce projet.
   recentlyViewedReminderEnabled Boolean @default(false)
+  /// Taux de TVA appliqué au catalogue (fraction, ex. 0.20 = 20 %), lu par
+  /// `$lib/server/vat.ts` — remplace l'ancienne constante `TVA_RATE` figée
+  /// à 5,5 % dans le code (taux réduit, incorrect pour de la bijouterie qui
+  /// relève du taux normal en France). Valeur de défaut = l'ancienne
+  /// constante, pour ne rien changer silencieusement en production tant que
+  /// l'admin n'a pas lui-même ajusté le taux depuis `/admin/settings`.
+  vatRate Float @default(0.055)
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")
@@ -1150,6 +1166,10 @@ model ReturnRequest {
   transactionId        String
   userId               String
   reason               String
+  /// Rétractation légale (14 jours, sans motif) ou retour SAV/garantie —
+  /// voir `ReturnKind`. `WARRANTY` par défaut : les demandes créées avant
+  /// l'introduction de ce champ restent lisibles comme des retours SAV.
+  kind                 ReturnKind   @default(WARRANTY)
   status               ReturnStatus @default(REQUESTED)
   stripeRefundId       String?
   /// Posé à la place de `stripeRefundId` quand l'admin choisit de créditer le

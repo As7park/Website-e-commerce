@@ -1,6 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { toPublicCart } from '$lib/commerce/cart';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { getVatRate } from '$lib/server/vat';
 
 /**
  * Données partagées par toutes les pages.
@@ -14,8 +15,14 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	const { frequentlyBoughtTogetherEnabled } = await getStoreFeatureFlags();
 	// BUNDLE-PLUGIN ▲
 
+	// Taux de TVA courant (`StoreSettings.vatRate`, `$lib/server/vat.ts`) —
+	// exposé ici pour que les stores panier côté client (`cartStore.ts`,
+	// `guestCart.ts`) ne portent plus une constante figée à 5,5 %.
+	const vatRate = await getVatRate();
+
 	return {
 		frequentlyBoughtTogetherEnabled,
+		vatRate,
 		// AUTH-PLUGIN ▼ alimente le menu compte (`Cart.svelte`, `Navigation.svelte`).
 		// Projection explicite : `locals.user` porte aussi la clé TOTP chiffrée, qui
 		// ne doit jamais quitter le serveur. Toute nouvelle propriété doit être

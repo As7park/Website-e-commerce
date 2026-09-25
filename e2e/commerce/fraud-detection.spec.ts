@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { APIResponse } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
@@ -47,6 +48,23 @@ async function addToCartAndGetPendingOrder(
 	return pending!;
 }
 
+/**
+ * `page.request.post` n'est pas une navigation de page : SvelteKit renvoie
+ * alors le résultat d'une action `throw redirect(...)` comme un 200 avec un
+ * corps JSON `{ type: 'redirect', status, location }` plutôt qu'une vraie
+ * redirection HTTP (confirmé en conditions réelles, vraie session Stripe
+ * créée dans les deux cas — seule la forme de la réponse diffère selon le
+ * client). `error(...)`, lui, reste un vrai code HTTP quel que soit le
+ * client (voir les étapes bloquées de ce même fichier).
+ */
+async function expectRedirectTo(response: APIResponse, substring: string) {
+	expect(response.status()).toBe(200);
+	const body = await response.json();
+	expect(body.type).toBe('redirect');
+	expect(body.status).toBe(303);
+	expect(body.location).toContain(substring);
+}
+
 test.describe('Commerce — détection de fraude', () => {
 	test.setTimeout(8 * 60_000);
 
@@ -79,14 +97,14 @@ test.describe('Commerce — détection de fraude', () => {
 						shippingAddressId: address.id,
 						billingAddressId: address.id,
 						shippingOption: 'no_shipping',
-						shippingCost: '0'
+						shippingCost: '0',
+						cgvAccepted: 'on'
 					},
 					headers: { Origin: origin },
 					maxRedirects: 0
 				});
 
-				expect(response.status()).toBe(303);
-				expect(response.headers()['location']).toContain('checkout.stripe.com');
+				await expectRedirectTo(response, 'checkout.stripe.com');
 
 				const order = await getOrderById(pending.id);
 				expect(order?.riskLevel).toBe('low');
@@ -110,14 +128,14 @@ test.describe('Commerce — détection de fraude', () => {
 						shippingAddressId: address.id,
 						billingAddressId: foreignAddress.id,
 						shippingOption: 'no_shipping',
-						shippingCost: '0'
+						shippingCost: '0',
+						cgvAccepted: 'on'
 					},
 					headers: { Origin: origin },
 					maxRedirects: 0
 				});
 
-				expect(response.status()).toBe(303);
-				expect(response.headers()['location']).toContain('checkout.stripe.com');
+				await expectRedirectTo(response, 'checkout.stripe.com');
 
 				const order = await getOrderById(pending.id);
 				expect(order?.riskLevel).toBe('medium');
@@ -159,7 +177,8 @@ test.describe('Commerce — détection de fraude', () => {
 							shippingAddressId: riskyAddress.id,
 							billingAddressId: riskyAddress.id,
 							shippingOption: 'no_shipping',
-							shippingCost: '0'
+							shippingCost: '0',
+							cgvAccepted: 'on'
 						},
 						headers: { Origin: riskyOrigin },
 						maxRedirects: 0
@@ -186,7 +205,10 @@ test.describe('Commerce — détection de fraude', () => {
 					await promoteToAdmin(account.email);
 					await page.goto(`/admin/fraud?q=${encodeURIComponent(disposableAccount!.email)}`);
 					await waitForPath(page, '/admin/fraud');
-					await expect(page.getByText(disposableAccount!.email)).toBeVisible();
+					// `Table.svelte` rend simultanément une vue desktop (table) et une
+					// vue mobile (cartes) — l'une des deux est masquée en CSS mais toutes
+					// deux existent dans le DOM, d'où `.first()` pour lever l'ambiguïté.
+					await expect(page.getByText(disposableAccount!.email).first()).toBeVisible();
 				});
 			});
 
@@ -204,7 +226,7 @@ test.describe('Commerce — détection de fraude', () => {
 				// n'apparaîtrait pas forcément sur la première page sans ce filtre.
 				await page.goto(`/admin/sales?q=${encodeURIComponent(account.email)}`);
 				await waitForPath(page, '/admin/sales');
-				await expect(page.getByText('Élevé (72)')).toBeVisible();
+				await expect(page.getByText('Élevé (72)').first()).toBeVisible();
 
 				const stored = await getTransactionById(transaction.id);
 				expect(stored?.riskLevel).toBe('high');

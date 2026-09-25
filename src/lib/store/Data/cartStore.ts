@@ -6,7 +6,23 @@ import { writable } from 'svelte/store';
 
 // Plafond de quantité cumulée pour les commandes non-personnalisées.
 const NATIVE_ORDER_MAX_QUANTITY = 72;
-const VAT_RATE = 0.055;
+// Taux de TVA courant — valeur de repli avant la première hydratation
+// depuis `+layout.server.ts` (`StoreSettings.vatRate`, `$lib/server/vat.ts`).
+// Ce store n'a pas d'accès Prisma direct (code client) : `setVatRate` est
+// appelée depuis `+layout.svelte` dès que `data.vatRate` est disponible.
+let currentVatRate = 0.055;
+
+/** Met à jour le taux de TVA utilisé par ce store et recalcule le panier en cours. */
+export function setVatRate(rate: number) {
+	if (!Number.isFinite(rate) || rate === currentVatRate) return;
+	currentVatRate = rate;
+	cart.update((c) => {
+		recalcSubtotalAndTax(c);
+		c.shippingTax = parseFloat((c.shippingCost * currentVatRate).toFixed(2));
+		recalcFinalTotal(c);
+		return c;
+	});
+}
 
 export type OrderItem = {
 	id: string;
@@ -103,7 +119,7 @@ function recalcSubtotalAndTax(c: CartState) {
 			: (item.variant?.price ?? item.product.price);
 		return sum + unitPrice * item.quantity;
 	}, 0);
-	c.tax = parseFloat((c.subtotal * VAT_RATE).toFixed(2));
+	c.tax = parseFloat((c.subtotal * currentVatRate).toFixed(2));
 }
 
 /**
@@ -150,7 +166,7 @@ function calcTotal(subtotal = 0, tax = 0, shippingCost = 0, shippingTax = 0) {
 export function setShippingCostHT(newShippingCost: number) {
 	cart.update((c) => {
 		c.shippingCost = newShippingCost;
-		c.shippingTax = parseFloat((newShippingCost * VAT_RATE).toFixed(2));
+		c.shippingTax = parseFloat((newShippingCost * currentVatRate).toFixed(2));
 		recalcFinalTotal(c);
 		return c;
 	});

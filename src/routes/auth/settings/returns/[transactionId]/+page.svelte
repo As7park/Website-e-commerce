@@ -2,9 +2,12 @@
 	import * as Card from '$shadcn/card';
 	import { Button } from '$shadcn/button';
 	import { Textarea } from '$shadcn/textarea';
+	import * as RadioGroup from '$shadcn/radio-group/index.js';
+	import { Label } from '$shadcn/label';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { formatDate } from '$lib/utils/formatDate';
 
 	let { data, form } = $props();
 
@@ -15,6 +18,29 @@
 		REFUNDED: 'Remboursée',
 		CREDITED: 'Créditée'
 	};
+
+	const KIND_LABELS: Record<string, string> = {
+		WITHDRAWAL: 'Rétractation (14 jours)',
+		WARRANTY: 'Retour SAV / garantie'
+	};
+
+	// Dérivé plutôt qu'un `$state` posé par effet : se réinitialise seul à
+	// chaque changement de commande (navigation entre deux `[transactionId]`,
+	// même instance de composant réutilisée par SvelteKit).
+	// `kindOverride` capture uniquement un choix explicite de l'utilisateur ;
+	// une nouvelle commande (id différent) l'ignore et repart de la valeur
+	// par défaut.
+	let kindOverride = $state<{ id: string; kind: 'WITHDRAWAL' | 'WARRANTY' } | null>(null);
+	let kind = $derived(
+		kindOverride?.id === data.transaction.id
+			? kindOverride.kind
+			: data.withdrawalEligible
+				? 'WITHDRAWAL'
+				: 'WARRANTY'
+	);
+	function setKind(value: 'WITHDRAWAL' | 'WARRANTY') {
+		kindOverride = { id: data.transaction.id, kind: value };
+	}
 
 	$effect(() => {
 		if (form?.message) {
@@ -48,6 +74,9 @@
 			<Card.Content>
 				<p class="font-medium">
 					{STATUS_LABELS[data.returnRequest.status] ?? data.returnRequest.status}
+				</p>
+				<p class="mt-1 text-sm text-muted-foreground">
+					Type : {KIND_LABELS[data.returnRequest.kind] ?? data.returnRequest.kind}
 				</p>
 				<p class="mt-2 text-sm text-muted-foreground">Motif : {data.returnRequest.reason}</p>
 				{#if data.returnRequest.status === 'REFUNDED'}
@@ -117,8 +146,60 @@
 					};
 				}}
 			>
-				<Card.Content>
-					<Textarea name="reason" placeholder="Expliquez la raison du retour" required rows={4} />
+				<Card.Content class="space-y-4">
+					{#if data.withdrawalEligible}
+						<RadioGroup.Root
+							name="kind"
+							value={kind}
+							onValueChange={(value) => setKind(value as 'WITHDRAWAL' | 'WARRANTY')}
+							class="space-y-2"
+						>
+							<div class="flex items-start space-x-2">
+								<RadioGroup.Item value="WITHDRAWAL" id="kind-withdrawal" class="mt-1" />
+								<Label for="kind-withdrawal" class="font-normal">
+									<span class="font-medium">Rétractation (14 jours, sans motif)</span><br />
+									<span class="text-sm text-muted-foreground">
+										Vous disposez de 14 jours à compter de la réception de votre commande pour vous
+										rétracter sans avoir à justifier de motif — remboursement intégral, frais de
+										livraison standard inclus.
+									</span>
+								</Label>
+							</div>
+							<div class="flex items-start space-x-2">
+								<RadioGroup.Item value="WARRANTY" id="kind-warranty" class="mt-1" />
+								<Label for="kind-warranty" class="font-normal">
+									<span class="font-medium">Retour SAV / garantie</span><br />
+									<span class="text-sm text-muted-foreground">
+										Produit défectueux ou non conforme, au-delà du délai de rétractation.
+									</span>
+								</Label>
+							</div>
+						</RadioGroup.Root>
+						{#if kind === 'WITHDRAWAL'}
+							<p class="text-xs text-muted-foreground">
+								Commande expédiée le {formatDate(String(data.estimatedShippedAt))} (estimation) — le
+								délai légal de 14 jours court à partir de la réception réelle du colis, pas de cette
+								date. Il expire donc au plus tôt vers le {formatDate(
+									String(data.estimatedWithdrawalDeadline)
+								)}.
+							</p>
+						{/if}
+					{:else}
+						<input type="hidden" name="kind" value="WARRANTY" />
+						<p class="text-sm text-muted-foreground">
+							Cette commande a été confectionnée sur mesure (gravure, personnalisation) : elle est
+							exclue du droit de rétractation légal (article L221-28 du Code de la consommation). Un
+							retour reste possible au titre de la garantie légale de conformité.
+						</p>
+					{/if}
+					<Textarea
+						name="reason"
+						placeholder={kind === 'WITHDRAWAL'
+							? 'Motif facultatif pour une rétractation'
+							: 'Expliquez la raison du retour'}
+						required={kind === 'WARRANTY'}
+						rows={4}
+					/>
 				</Card.Content>
 				<Card.Footer>
 					<Button type="submit" class="w-full">Envoyer la demande</Button>

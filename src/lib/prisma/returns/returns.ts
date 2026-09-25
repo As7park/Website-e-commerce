@@ -18,6 +18,8 @@ export async function createReturnRequest(data: {
 	transactionId: string;
 	userId: string;
 	reason: string;
+	/** Rétractation légale (14 jours, sans motif) ou SAV — voir `ReturnKind`. */
+	kind: 'WITHDRAWAL' | 'WARRANTY';
 }) {
 	return prisma.returnRequest.create({ data });
 }

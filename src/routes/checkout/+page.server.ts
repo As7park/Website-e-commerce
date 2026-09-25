@@ -29,9 +29,9 @@ import { prisma } from '$lib/server';
 import {
 	assertOrderOwnedBy,
 	createCheckoutSession,
-	resolveTrustedShippingCost,
-	TVA_RATE
+	resolveTrustedShippingCost
 } from '$lib/commerce/checkout';
+import { getVatRate } from '$lib/server/vat';
 import { CartForbiddenError, InvalidShippingError } from '$lib/commerce/errors';
 
 export const load = (async ({ locals }) => {
@@ -59,8 +59,9 @@ export const load = (async ({ locals }) => {
 		// même requête : pas besoin d'un second `findPendingOrder`.
 		const pendingOrder = locals.pendingOrder as Awaited<ReturnType<typeof findPendingOrder>>;
 		const productIds = pendingOrder?.items.map((item) => item.productId) ?? [];
+		const vatRate = await getVatRate();
 		const productTotalTTC = (pendingOrder?.items ?? []).reduce(
-			(sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity,
+			(sum, item) => sum + item.product.price * (1 + vatRate) * item.quantity,
 			0
 		);
 		bundleDiscountEligible = (await computeBundleDiscount(productIds, productTotalTTC)) > 0;
@@ -118,6 +119,12 @@ export const actions: Actions = {
 			throw err;
 		}
 
+		// Après la vérification de propriété (autorisation), jamais avant : ce
+		// n'est qu'une règle métier/légale, pas une frontière de sécurité.
+		if (formData.get('cgvAccepted') !== 'on') {
+			error(400, 'Veuillez accepter les conditions générales de vente.');
+		}
+
 		const order = await getOrderById(orderId);
 		if (!order) {
 			error(404, 'Commande introuvable');
@@ -140,9 +147,10 @@ export const actions: Actions = {
 		}
 
 		// PROMO-PLUGIN ▼ hors périmètre commerce ; conservé pour que le tunnel compile.
+		const vatRate = await getVatRate();
 		const productTotalTTC = parseFloat(
 			order.items
-				.reduce((sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity, 0)
+				.reduce((sum, item) => sum + item.product.price * (1 + vatRate) * item.quantity, 0)
 				.toFixed(2)
 		);
 		const promoResult = await validatePromo(promoCode, productTotalTTC);

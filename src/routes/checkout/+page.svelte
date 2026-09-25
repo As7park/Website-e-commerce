@@ -15,6 +15,8 @@
 	import GiftCardInput from '$lib/components/checkout/GiftCardInput.svelte';
 	import { CreditCard } from 'lucide-svelte';
 	import Button from '$shadcn/button/button.svelte';
+	import { Checkbox } from '$shadcn/checkbox/index.js';
+	import { Label } from '$shadcn/label';
 	import { OrderSchema } from '$lib/schema/order/order.js';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -45,6 +47,8 @@
 	// adresse de facturation différente.
 	let billingSameAsShipping = $state(true);
 	let selectedBillingAddressId = $state<string | undefined>(undefined);
+	// CGV acceptées avant paiement — revalidé côté serveur dans l'action `checkout`.
+	let cgvAccepted = $state(false);
 
 	// Plus de cartValue local, on utilise $cartStore directement.
 	let shippingOptions = $state<ShippingOptionDTO[]>([]);
@@ -518,6 +522,11 @@
 			toast.error('Veuillez sélectionner un point relais.');
 			return;
 		}
+		if (!cgvAccepted) {
+			event.preventDefault();
+			toast.error('Veuillez accepter les conditions générales de vente.');
+			return;
+		}
 
 		$createPaymentData.shippingCost = shippingCost.toString();
 		$createPaymentData.shippingOption = selectedShippingOption || undefined;
@@ -724,6 +733,16 @@
 										name="servicePointExtraShopRef"
 										bind:value={$createPaymentData.servicePointExtraShopRef}
 									/>
+									<input type="hidden" name="cgvAccepted" value={cgvAccepted ? 'on' : 'off'} />
+
+									<div class="flex items-start gap-2 mb-4">
+										<Checkbox id="cgvAccepted" bind:checked={cgvAccepted} class="mt-0.5" />
+										<Label for="cgvAccepted" class="font-normal text-sm">
+											J'ai lu et j'accepte les <a href="/cgv" target="_blank" class="underline"
+												>conditions générales de vente</a
+											>.
+										</Label>
+									</div>
 
 									<Button type="submit" class="w-full" size="lg">
 										<CreditCard class="w-4 h-4 mr-2" />

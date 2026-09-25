@@ -70,7 +70,7 @@ test.describe('Administration — modules e-commerce', () => {
 		try {
 			await signUpAndVerify(page, account);
 			const origin = pageOrigin(page);
-			await page.request.post('/admin/settings', {
+			await page.request.post('/admin/settings?/updateModules', {
 				form: { wishlistEnabled: 'on' },
 				headers: { Origin: origin }
 			});

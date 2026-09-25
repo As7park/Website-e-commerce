@@ -787,7 +787,12 @@ export async function createUserAddress(
 }
 
 /** Paiement simulé : Transaction + Order PAID, sans Stripe. */
-export async function simulatePaidOrder(orderId: string, userId: string, email: string) {
+export async function simulatePaidOrder(
+	orderId: string,
+	userId: string,
+	email: string,
+	overrides?: { shippingOption?: string }
+) {
 	const stamp = `${Date.now()}`;
 	const transaction = await resilient(() =>
 		db.transaction.create({
@@ -800,7 +805,7 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 				customer_details_email: email,
 				customer_details_name: 'E2e Tester',
 				status: 'paid',
-				shippingOption: 'no_shipping',
+				shippingOption: overrides?.shippingOption ?? 'no_shipping',
 				shippingCost: 0,
 				shippingMethodId: 0,
 				shippingMethodName: 'e2e',
@@ -1028,7 +1033,11 @@ export async function getStoreFeatureFlags() {
 				referralEnabled: true,
 				stockAlertsEnabled: true,
 				frequentlyBoughtTogetherEnabled: true,
-				wishlistPriceAlertEnabled: true
+				wishlistPriceAlertEnabled: true,
+				fraudDetectionEnabled: true,
+				fraudBlockingEnabled: true,
+				recentlyViewedReminderEnabled: true,
+				vatRate: true
 			}
 		})
 	);
@@ -1049,6 +1058,10 @@ export async function setStoreFeatureFlags(patch: {
 	stockAlertsEnabled?: boolean;
 	frequentlyBoughtTogetherEnabled?: boolean;
 	wishlistPriceAlertEnabled?: boolean;
+	fraudDetectionEnabled?: boolean;
+	fraudBlockingEnabled?: boolean;
+	recentlyViewedReminderEnabled?: boolean;
+	vatRate?: number;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }
