@@ -5,6 +5,7 @@ import { getReturnRequestByTransactionId } from '$lib/prisma/returns/returns';
 import { pdfDownloadResponse } from '$lib/server/invoice/http';
 import { renderCreditNotePdf } from '$lib/server/creditNote/pdf';
 import { buildCreditNoteView } from '$lib/server/creditNote/view';
+import { getInvoiceCompany } from '$lib/server/invoice/company';
 
 /**
  * Téléchargement PDF — avoir du visiteur connecté, une fois son retour
@@ -34,6 +35,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	}
 
 	const reason = returnRequest.status === 'CREDITED' ? 'STORE_CREDIT' : 'REFUND';
-	const creditNote = buildCreditNoteView(transaction, returnRequest.creditNoteNumber, reason);
-	return pdfDownloadResponse(renderCreditNotePdf(creditNote), creditNote.filename);
+	const creditNote = buildCreditNoteView(
+		transaction,
+		returnRequest.creditNoteNumber,
+		reason,
+		await getInvoiceCompany()
+	);
+	return pdfDownloadResponse(await renderCreditNotePdf(creditNote), creditNote.filename);
 };

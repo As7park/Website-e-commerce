@@ -5,14 +5,20 @@
 	import { Label } from '$shadcn/label';
 	import { Button } from '$shadcn/button';
 	import OrderTrackingPanel from '$lib/components/invoice/OrderTrackingPanel.svelte';
+	import SEO from '$lib/components/SEO.svelte';
 
 	let { form } = $props();
 	let submitting = $state(false);
 </script>
 
-<svelte:head>
-	<title>Suivi de commande</title>
-</svelte:head>
+<!-- Formulaire de recherche par n° de commande : aucune valeur SEO, et
+     potentiellement des données de commande une fois soumis. -->
+<SEO
+	title="Suivi de commande"
+	description="Suivez votre commande MadeInDiamonds."
+	noindex
+	nofollow
+/>
 
 <div class="mx-auto max-w-[560px] px-6 pt-16 pb-12">
 	<h1 class="mb-2 text-2xl font-semibold">Suivi de commande</h1>

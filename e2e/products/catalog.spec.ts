@@ -1,6 +1,11 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
-import { createCatalogProduct, deleteCatalogProduct, getProductBySlug } from '../support/db';
+import {
+	createCatalogProduct,
+	deleteCatalogProduct,
+	getProductBySlug,
+	getStoreFeatureFlags
+} from '../support/db';
 
 /**
  * Vitrine publique Prisma : liste, fiche, 404. Pas de formulaires admin.
@@ -25,7 +30,10 @@ test.describe('Catalogue — vitrine', () => {
 				await page.goto(`/products/${product.slug}`);
 				await waitForPath(page, `/products/${product.slug}`);
 				await expect(page.getByRole('heading', { name: product.name })).toBeVisible();
-				await expect(page.getByText(`${product.price.toFixed(2)} €`)).toBeVisible();
+				// Prix affiché TTC (Arrêté du 3 déc. 1987), `Product.price` reste HT en base.
+				const { vatRate } = await getStoreFeatureFlags();
+				const priceTTC = product.price * (1 + (vatRate ?? 0.055));
+				await expect(page.getByText(`${priceTTC.toFixed(2)} €`)).toBeVisible();
 				expect(await getProductBySlug(product.slug)).not.toBeNull();
 			});
 

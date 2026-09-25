@@ -1,5 +1,7 @@
 <script lang="ts">
 	import SEO from '$lib/components/SEO.svelte';
+	import StructuredData from '$lib/components/StructuredData.svelte';
+	import { seoConfig } from '$lib/seo.config';
 	import { reveal } from '$lib/actions/reveal';
 	import { splatCard } from '$lib/actions/splatCard';
 
@@ -7,15 +9,43 @@
 	let post = $derived(data.post);
 	let tags = $derived(post.tags.map((link) => link.tag).filter((tag) => tag.name));
 	let relatedPosts = $derived(data.relatedPosts);
+
+	// Pas de champ `excerpt` en base (contenu HTML saisi via TinyMCE) : une
+	// description est dérivée du texte brut, tronquée à la longueur usuelle
+	// d'un extrait affiché par Google (~155-160 caractères).
+	let plainExcerpt = $derived(
+		post.content
+			.replace(/<[^>]+>/g, ' ')
+			.replace(/\s+/g, ' ')
+			.trim()
+			.slice(0, 160)
+	);
+
+	let breadcrumbData = $derived({
+		itemListElement: [
+			{ '@type': 'ListItem', position: 1, name: 'Accueil', item: seoConfig.site.url },
+			{ '@type': 'ListItem', position: 2, name: 'Blog', item: `${seoConfig.site.url}/blog` },
+			{
+				'@type': 'ListItem',
+				position: 3,
+				name: post.title,
+				item: `${seoConfig.site.url}/blog/${post.slug}`
+			}
+		]
+	});
 </script>
 
 <SEO
 	type="article"
 	title={post.title}
-	description={post.content.replace(/<[^>]*>/g, ' ').trim().slice(0, 160)}
-	author={post.author.name}
+	description={plainExcerpt}
 	publishedTime={new Date(post.createdAt).toISOString()}
+	modifiedTime={new Date(post.updatedAt).toISOString()}
+	author={post.author.name}
+	section={post.category?.name}
+	tags={tags.map((tag) => tag.name)}
 />
+<StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
 <nav class="shop-breadcrumb">
 	<a href="/">Accueil</a> / <a href="/blog">Blog</a> / {post.title}
@@ -65,7 +95,9 @@
 						>
 							<div class="shop-ph shop-ph-landscape">Article</div>
 							<p class="shop-card-title">{related.title}</p>
-							<p class="shop-card-meta">{new Date(related.createdAt).toLocaleDateString('fr-FR')}</p>
+							<p class="shop-card-meta">
+								{new Date(related.createdAt).toLocaleDateString('fr-FR')}
+							</p>
 						</a>
 					{/each}
 				</div>

@@ -11,6 +11,9 @@
 	import StarRating from '$lib/components/reviews/StarRating.svelte';
 	import Heart from 'lucide-svelte/icons/heart';
 	import SEO from '$lib/components/SEO.svelte';
+	import StructuredData from '$lib/components/StructuredData.svelte';
+	import { seoConfig } from '$lib/seo.config';
+	import { toTTC } from '$lib/utils/price';
 	import { readRecentlyViewed, recordProductView } from '$lib/store/recentlyViewed';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
@@ -44,6 +47,24 @@
 	let categoryNames = $derived(
 		product.categories.map((link) => link.category.name).filter(Boolean)
 	);
+
+	let breadcrumbData = $derived({
+		itemListElement: [
+			{ '@type': 'ListItem', position: 1, name: 'Accueil', item: seoConfig.site.url },
+			{
+				'@type': 'ListItem',
+				position: 2,
+				name: 'Boutique',
+				item: `${seoConfig.site.url}/products`
+			},
+			{
+				'@type': 'ListItem',
+				position: 3,
+				name: product.name,
+				item: `${seoConfig.site.url}/products/${product.slug}`
+			}
+		]
+	});
 
 	let inWishlist = $state(untrack(() => data.inWishlist));
 	let wishlistBusy = $state(false);
@@ -108,6 +129,9 @@
 	let selectedVariant = $derived(product.variants.find((v) => v.id === selectedVariantId) ?? null);
 	let displayedPrice = $derived(selectedVariant?.price ?? product.price);
 	let displayedStock = $derived(selectedVariant?.stock ?? product.stock);
+	// Affichage uniquement — le panier reçoit toujours le prix HT (voir
+	// handleAddToCart), la TVA y est calculée séparément.
+	let displayedPriceTTC = $derived(toTTC(displayedPrice, data.vatRate));
 	let quantity = $state(1);
 	let justAdded = $state(false);
 
@@ -226,12 +250,13 @@
 	title={product.name}
 	description={product.description}
 	image={product.images[0] ? optimizedImageUrl(product.images[0], 800) : undefined}
-	price={displayedPrice}
+	price={displayedPriceTTC}
 	availability={displayedStock > 0 ? 'InStock' : 'OutOfStock'}
 	sku={product.sku ?? undefined}
 	ratingValue={data.reviewSummary.average}
 	reviewCount={data.reviewSummary.count}
 />
+<StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
 <nav class="shop-breadcrumb">
 	<a href="/">Accueil</a> / <a href="/products">Boutique</a> / {product.name}
@@ -289,15 +314,19 @@
 							{data.reviewSummary.average.toFixed(1)} · {data.reviewSummary.count} avis
 						</span>
 					{:else}
-						<span style="font-size:13px; color:var(--shop-text-muted);">Aucun avis pour le moment</span>
+						<span style="font-size:13px; color:var(--shop-text-muted);"
+							>Aucun avis pour le moment</span
+						>
 					{/if}
 				</div>
 
 				<p class="shop-product-price">
 					{#if !selectedVariant && hasDiscount}
-						<span class="shop-old">{product.compareAtPrice?.toFixed(2)} €</span>
+						<span class="shop-old"
+							>{toTTC(product.compareAtPrice as number, data.vatRate).toFixed(2)} €</span
+						>
 					{/if}
-					{displayedPrice.toFixed(2)} €
+					{displayedPriceTTC.toFixed(2)} €
 				</p>
 			</div>
 
@@ -448,7 +477,13 @@
 					Vous avez déjà noté ce produit — merci !
 				</p>
 			{:else}
-				<form method="POST" action="?/review" use:reviewEnhance class="shop-form-field" style="max-width:420px;">
+				<form
+					method="POST"
+					action="?/review"
+					use:reviewEnhance
+					class="shop-form-field"
+					style="max-width:420px;"
+				>
 					<label for="rating-input">Votre note</label>
 					<input type="hidden" name="rating" value={$reviewData.rating} />
 					<StarRating bind:value={$reviewData.rating} />
@@ -462,8 +497,7 @@
 			{/if}
 		{:else}
 			<p style="color:var(--shop-text-muted); font-size:14px;">
-				<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour laisser un
-				avis.
+				<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour laisser un avis.
 			</p>
 		{/if}
 
@@ -509,7 +543,8 @@
 						bind:value={$askQuestionData.question}
 						rows={3}
 					></textarea>
-					<button type="submit" class="shop-btn" style="margin-top:8px;">Envoyer la question</button>
+					<button type="submit" class="shop-btn" style="margin-top:8px;">Envoyer la question</button
+					>
 				</form>
 			{:else}
 				<p style="color:var(--shop-text-muted); font-size:14px;">

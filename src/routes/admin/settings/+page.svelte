@@ -22,7 +22,10 @@
 		| 'stockAlertsEnabled'
 		| 'frequentlyBoughtTogetherEnabled'
 		| 'reviewReminderEnabled'
-		| 'wishlistPriceAlertEnabled';
+		| 'wishlistPriceAlertEnabled'
+		| 'fraudDetectionEnabled'
+		| 'fraudBlockingEnabled'
+		| 'recentlyViewedReminderEnabled';
 
 	type ModuleCategory =
 		| 'Produits & découverte'
@@ -99,6 +102,24 @@
 				"Le tunnel de commande affiche un champ pour saisir un code de carte cadeau à solde décroissant, cumulable avec un code promo. Les cartes s'émettent depuis /admin/gift-cards (montant initial, destinataire, date d'expiration) : le client reçoit le code par e-mail et l'utilise en une ou plusieurs fois jusqu'à épuisement du solde."
 		},
 		{
+			key: 'fraudDetectionEnabled',
+			category: 'Paiement & après-vente',
+			label: 'Détection de fraude',
+			description:
+				'Calcule un score de risque à chaque tentative de commande (vélocité, écart adresse facturation/livraison, e-mail jetable), affiché dans /admin/sales.',
+			details:
+				"Chaque tentative de checkout calcule un score sur trois facteurs : nombre de commandes payées récentes sur le compte, écart entre l'adresse de livraison et de facturation, domaine d'e-mail jetable connu. Le score (Faible/Moyen/Élevé) est visible dans la colonne « Risque » de /admin/sales. Seul le calcul et l'affichage : aucune commande n'est bloquée sans activer aussi « Blocage automatique des commandes à risque » ci-dessous."
+		},
+		{
+			key: 'fraudBlockingEnabled',
+			category: 'Paiement & après-vente',
+			label: 'Blocage automatique des commandes à risque',
+			description:
+				"N'a d'effet que si « Détection de fraude » est aussi actif : empêche la création de la session de paiement Stripe pour une commande au score élevé.",
+			details:
+				"Quand le score calculé atteint le niveau Élevé, la commande n'atteint jamais Stripe : aucune session de paiement n'est créée, le client voit un message générique et peut contacter le support. La tentative est journalisée dans /admin/fraud (compte, score, facteurs déclenchés) pour qu'un faux positif reste traçable et puisse être débloqué manuellement par un futur nouvel essai du client. Sans ce module actif, « Détection de fraude » reste purement informatif — aucune commande n'est jamais bloquée."
+		},
+		{
 			key: 'productQnaEnabled',
 			category: 'Produits & découverte',
 			label: 'Questions & réponses produit',
@@ -151,6 +172,15 @@
 				'E-mail « notez votre achat » envoyé une fois par commande, quelques jours après son passage en expédiée.',
 			details:
 				"Une commande passée au statut « Expédiée » reçoit, 7 jours plus tard, un e-mail invitant le client à noter les produits achetés, avec un lien direct vers le formulaire d'avis de chaque fiche produit. Un seul envoi par commande, jamais renvoyé même si le client ne laisse pas d'avis."
+		},
+		{
+			key: 'recentlyViewedReminderEnabled',
+			category: 'Marketing & fidélisation',
+			label: 'Relance produits consultés',
+			description:
+				'E-mail groupé listant les produits consultés par un client connecté sans être achetés, envoyé une seule fois par produit.',
+			details:
+				"Un compte connecté qui consulte une fiche produit sans l'acheter reçoit, 24h plus tard au plus tôt, un e-mail unique listant jusqu'à 5 produits récemment consultés et toujours non achetés — jamais un e-mail par produit. Un produit acheté entre-temps n'apparaît jamais dans le digest, et chaque produit n'est relancé qu'une seule fois. Ne concerne que les comptes connectés : un visiteur anonyme garde seulement l'historique « Récemment consultés » affiché sur la fiche produit (navigateur uniquement, jamais de relance possible sans e-mail connu)."
 		},
 		{
 			key: 'wishlistPriceAlertEnabled',

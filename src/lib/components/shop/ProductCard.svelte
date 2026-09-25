@@ -2,6 +2,8 @@
 	import { splatCard } from '$lib/actions/splatCard';
 	import { reveal } from '$lib/actions/reveal';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { page } from '$app/state';
+	import { toTTC } from '$lib/utils/price';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 
@@ -33,6 +35,9 @@
 		hasDiscount ? Math.round((1 - product.price / product.compareAtPrice!) * 100) : 0
 	);
 	let outOfStock = $derived(product.stock !== undefined && product.stock <= 0);
+
+	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
+	const ttc = (priceHT: number) => toTTC(priceHT, page.data.vatRate ?? 0);
 </script>
 
 <a
@@ -66,9 +71,9 @@
 	<p class="shop-card-title">{product.name}</p>
 	<p class="shop-card-price">
 		{#if hasDiscount}
-			<span class="shop-old">{formatMoney(product.compareAtPrice!)}</span>
+			<span class="shop-old">{formatMoney(ttc(product.compareAtPrice!))}</span>
 		{/if}
-		{formatMoney(product.price)}
+		{formatMoney(ttc(product.price))}
 	</p>
 </a>
 

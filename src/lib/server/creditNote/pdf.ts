@@ -7,19 +7,33 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatMoney } from '$lib/utils/formatMoney';
+import { fetchLogoForPdf } from '../invoice/logo';
 import type { CreditNoteView } from '$lib/creditNote/types';
 
 function money(amount: number, currency: string): string {
 	return formatMoney(amount, currency);
 }
 
-export function renderCreditNotePdf(creditNote: CreditNoteView): Buffer {
+export async function renderCreditNotePdf(creditNote: CreditNoteView): Promise<Buffer> {
 	const doc = new jsPDF();
 	const { company } = creditNote;
 
 	doc.setFontSize(16);
 	doc.setFont('helvetica', 'bold');
 	doc.text('AVOIR', 105, 20, { align: 'center' });
+
+	// Logo en haut à droite, ratio préservé — jamais de placeholder si aucun
+	// logo n'est fourni ou n'a pas pu être récupéré (voir fetchLogoForPdf).
+	const logo = await fetchLogoForPdf(company.logoUrl);
+	if (logo) {
+		const props = doc.getImageProperties(logo.dataUri);
+		const maxWidth = 40;
+		const maxHeight = 20;
+		const ratio = Math.min(maxWidth / props.width, maxHeight / props.height);
+		const width = props.width * ratio;
+		const height = props.height * ratio;
+		doc.addImage(logo.dataUri, logo.format, 196 - width, 12, width, height);
+	}
 
 	doc.setFontSize(10);
 	doc.setFont('helvetica', 'normal');
@@ -29,6 +43,7 @@ export function renderCreditNotePdf(creditNote: CreditNoteView): Buffer {
 	doc.text(`Tél: ${company.phone}`, 14, 58);
 	doc.text(`Email: ${company.email}`, 14, 64);
 	doc.text(`TVA: ${company.vat}`, 14, 70);
+	doc.text(`SIRET: ${company.siret}`, 14, 76);
 
 	doc.text('Émis à :', 130, 40);
 	doc.text(creditNote.customerName, 130, 46);

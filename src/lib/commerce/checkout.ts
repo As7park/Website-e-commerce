@@ -12,6 +12,7 @@ import type Stripe from 'stripe';
 import { prisma } from '$lib/server';
 import { stripe } from '$lib/server/stripe';
 import { updateOrder, type getOrderById } from '$lib/prisma/order/prendingOrder';
+import { getVatRate } from '$lib/server/vat';
 import { CartForbiddenError, InvalidShippingError } from './errors';
 
 type OrderWithItems = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
@@ -63,9 +64,6 @@ export async function markOrderPaid(orderId: string) {
 		data: { status: 'PAID' }
 	});
 }
-
-/** TVA fixe du catalogue (5,5 %) : mêmes lignes que la facture (`snapshotInvoiceTotals`). */
-export const TVA_RATE = 0.055;
 
 /**
  * Construit et crée la session Stripe Checkout d'une commande.
@@ -124,9 +122,11 @@ export async function createCheckoutSession(params: {
 		? 'no_shipping'
 		: params.shippingOption || 'no_shipping';
 
+	const vatRate = await getVatRate();
+
 	const productTotalTTC = parseFloat(
 		order.items
-			.reduce((sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity, 0)
+			.reduce((sum, item) => sum + item.product.price * (1 + vatRate) * item.quantity, 0)
 			.toFixed(2)
 	);
 	const discountFactor =
@@ -163,7 +163,7 @@ export async function createCheckoutSession(params: {
 	}
 
 	const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = order.items.map((item) => {
-		const ttcPrice = item.product.price * (1 + TVA_RATE);
+		const ttcPrice = item.product.price * (1 + vatRate);
 		const discountedUnitAmount = Math.round(ttcPrice * 100 * discountFactor);
 		return {
 			price_data: {

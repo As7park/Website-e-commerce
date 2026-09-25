@@ -5,6 +5,7 @@
 	import X from 'lucide-svelte/icons/x';
 	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
+	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -106,9 +107,7 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Boutique — MadeInDiamonds</title>
-</svelte:head>
+<SEO pageKey="products" title="Boutique" />
 
 <nav class="shop-breadcrumb"><a href="/">Accueil</a> / Boutique</nav>
 
@@ -217,7 +216,9 @@
 					class="shop-sort-select"
 					value={data.sort}
 					onchange={(e) =>
-						updateFilters({ tri: e.currentTarget.value === 'pertinence' ? null : e.currentTarget.value })}
+						updateFilters({
+							tri: e.currentTarget.value === 'pertinence' ? null : e.currentTarget.value
+						})}
 				>
 					{#each Object.entries(SORT_LABELS) as [value, label] (value)}
 						<option {value}>{label}</option>
@@ -237,7 +238,11 @@
 				<div class="shop-grid shop-grid-4">
 					{#each products as product, i (product.id)}
 						<div in:fly={{ y: 18, duration: 400, delay: i * 45, easing: quintOut }}>
-							<ProductCard {product} revealOnScroll={false} flashSaleEnabled={data.flashSaleEnabled} />
+							<ProductCard
+								{product}
+								revealOnScroll={false}
+								flashSaleEnabled={data.flashSaleEnabled}
+							/>
 						</div>
 					{/each}
 				</div>

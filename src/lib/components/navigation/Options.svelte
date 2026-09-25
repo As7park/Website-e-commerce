@@ -74,15 +74,15 @@
 <div class="rcc space-x-6 h-[100%]">
 	<!-- Mode Sombre -->
 	<div class="flex mx-4">
-		<SunIcon class="h-5 w-5 text-yellow-500" />
-		<Switch bind:checked={darkMod} onclick={toggleDarkMode} />
-		<MoonIcon class="h-5 w-5 text-gray-500" />
+		<SunIcon class="h-5 w-5 text-yellow-500" aria-hidden="true" />
+		<Switch bind:checked={darkMod} onclick={toggleDarkMode} aria-label="Mode sombre" />
+		<MoonIcon class="h-5 w-5 text-gray-500" aria-hidden="true" />
 	</div>
 
 	<!-- Plein Écran -->
 	<div class="flex mx-4" style="margin: 0;">
-		<Maximize2Icon class="h-5 w-5" />
-		<Switch bind:checked={isFullscreen} onclick={toggleFullscreen} />
-		<Minimize2Icon class="h-5 w-5" />
+		<Maximize2Icon class="h-5 w-5" aria-hidden="true" />
+		<Switch bind:checked={isFullscreen} onclick={toggleFullscreen} aria-label="Plein écran" />
+		<Minimize2Icon class="h-5 w-5" aria-hidden="true" />
 	</div>
 </div>

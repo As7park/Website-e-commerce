@@ -135,6 +135,11 @@ export async function promoteToAdmin(email: string) {
 	await resilient(() => db.user.update({ where: { email }, data: { role: 'ADMIN' } }));
 }
 
+/** Simule un compte sans mot de passe (façon Google) pour tester le repli confirmText de la suppression RGPD. */
+export async function clearUserPassword(email: string) {
+	await resilient(() => db.user.update({ where: { email }, data: { passwordHash: null } }));
+}
+
 /** Code promo jetable (admin, API de validation, checkout). */
 export async function createPromoCode(
 	code: string,
@@ -601,6 +606,35 @@ export async function getOrderReminderState(orderId: string) {
 	);
 }
 
+/**
+ * Consultation de fiche produit simulée (`ProductView`) — pas de raw SQL
+ * nécessaire ici contrairement à `backdateOrder` : `viewedAt` n'est pas un
+ * champ `@updatedAt`, un `upsert()` classique suffit à le reculer dans le
+ * temps pour simuler une consultation ancienne sans attendre réellement.
+ */
+export async function createProductView(
+	userId: string,
+	productId: string,
+	overrides?: { viewedAt?: Date }
+) {
+	return resilient(() =>
+		db.productView.upsert({
+			where: { userId_productId: { userId, productId } },
+			update: { viewedAt: overrides?.viewedAt ?? new Date() },
+			create: { userId, productId, viewedAt: overrides?.viewedAt ?? new Date() }
+		})
+	);
+}
+
+export async function getProductViewState(userId: string, productId: string) {
+	return resilient(() =>
+		db.productView.findUniqueOrThrow({
+			where: { userId_productId: { userId, productId } },
+			select: { viewedAt: true, reminderSentAt: true }
+		})
+	);
+}
+
 export async function deleteCatalogProduct(productId: string) {
 	const product = await resilient(() =>
 		db.product.findUnique({
@@ -730,7 +764,10 @@ export async function deleteLegacyCategory(id: string) {
 	await resilient(() => db.category.deleteMany({ where: { id } }));
 }
 
-export async function createUserAddress(userId: string) {
+export async function createUserAddress(
+	userId: string,
+	overrides?: { country?: string; country_code?: string; city?: string; zip?: string }
+) {
 	return resilient(() =>
 		db.address.create({
 			data: {
@@ -740,14 +777,14 @@ export async function createUserAddress(userId: string) {
 				phone: '+33600000000',
 				street_number: '1',
 				street: 'Rue des Tests',
-				city: 'Toulouse',
+				city: overrides?.city ?? 'Toulouse',
 				county: 'Haute-Garonne',
 				state: 'Occitanie',
 				stateLetter: 'FR',
 				state_code: 'OC',
-				zip: '31000',
-				country: 'France',
-				country_code: 'FR',
+				zip: overrides?.zip ?? '31000',
+				country: overrides?.country ?? 'France',
+				country_code: overrides?.country_code ?? 'FR',
 				ISO_3166_1_alpha_3: 'FRA'
 			}
 		})
@@ -755,7 +792,12 @@ export async function createUserAddress(userId: string) {
 }
 
 /** Paiement simulé : Transaction + Order PAID, sans Stripe. */
-export async function simulatePaidOrder(orderId: string, userId: string, email: string) {
+export async function simulatePaidOrder(
+	orderId: string,
+	userId: string,
+	email: string,
+	overrides?: { shippingOption?: string }
+) {
 	const stamp = `${Date.now()}`;
 	const transaction = await resilient(() =>
 		db.transaction.create({
@@ -768,7 +810,7 @@ export async function simulatePaidOrder(orderId: string, userId: string, email: 
 				customer_details_email: email,
 				customer_details_name: 'E2e Tester',
 				status: 'paid',
-				shippingOption: 'no_shipping',
+				shippingOption: overrides?.shippingOption ?? 'no_shipping',
 				shippingCost: 0,
 				shippingMethodId: 0,
 				shippingMethodName: 'e2e',
@@ -847,6 +889,23 @@ export async function setSendcloudParcelId(transactionId: string, parcelId: numb
 	await resilient(() =>
 		db.transaction.update({ where: { id: transactionId }, data: { sendcloudParcelId: parcelId } })
 	);
+}
+
+/**
+ * Simule ce que le webhook Stripe recopie normalement depuis `Order` sur
+ * `Transaction` à la création (voir `handleCheckoutSession`,
+ * `src/routes/api/webhooks/+server.ts`) — utile pour tester l'affichage
+ * admin (`/admin/sales`) sans faire aboutir un vrai paiement Stripe.
+ */
+export async function setTransactionRisk(
+	transactionId: string,
+	risk: { riskScore: number; riskLevel: string; riskFactors: string[] }
+) {
+	await resilient(() => db.transaction.update({ where: { id: transactionId }, data: risk }));
+}
+
+export async function getFraudBlockByOrderId(orderId: string) {
+	return resilient(() => db.fraudBlock.findFirst({ where: { orderId } }));
 }
 
 export async function deleteTransaction(id: string) {
@@ -979,7 +1038,24 @@ export async function getStoreFeatureFlags() {
 				referralEnabled: true,
 				stockAlertsEnabled: true,
 				frequentlyBoughtTogetherEnabled: true,
-				wishlistPriceAlertEnabled: true
+				wishlistPriceAlertEnabled: true,
+				fraudDetectionEnabled: true,
+				fraudBlockingEnabled: true,
+				recentlyViewedReminderEnabled: true,
+				vatRate: true,
+				estimatedDeliveryMinDays: true,
+				estimatedDeliveryMaxDays: true,
+				companyName: true,
+				companyLegalForm: true,
+				companyShareCapital: true,
+				companyAddress: true,
+				companyCity: true,
+				companySiret: true,
+				companyVatNumber: true,
+				companyPublicationDirector: true,
+				companyPhone: true,
+				companyEmail: true,
+				companyLogoUrl: true
 			}
 		})
 	);
@@ -1000,6 +1076,23 @@ export async function setStoreFeatureFlags(patch: {
 	stockAlertsEnabled?: boolean;
 	frequentlyBoughtTogetherEnabled?: boolean;
 	wishlistPriceAlertEnabled?: boolean;
+	fraudDetectionEnabled?: boolean;
+	fraudBlockingEnabled?: boolean;
+	recentlyViewedReminderEnabled?: boolean;
+	vatRate?: number;
+	estimatedDeliveryMinDays?: number | null;
+	estimatedDeliveryMaxDays?: number | null;
+	companyName?: string | null;
+	companyLegalForm?: string | null;
+	companyShareCapital?: string | null;
+	companyAddress?: string | null;
+	companyCity?: string | null;
+	companySiret?: string | null;
+	companyVatNumber?: string | null;
+	companyPublicationDirector?: string | null;
+	companyPhone?: string | null;
+	companyEmail?: string | null;
+	companyLogoUrl?: string | null;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

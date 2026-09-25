@@ -23,7 +23,8 @@
 		CreditCard,
 		Undo2,
 		Bell,
-		Gift
+		Gift,
+		ShieldCheck
 	} from 'lucide-svelte';
 
 	let { data } = $props();
@@ -246,6 +247,21 @@
 						</div>
 					</form>
 				</Card.Content>
+			</Card.Root>
+
+			<!-- Mes données (RGPD) -->
+			<Card.Root class="flex flex-col">
+				<Card.Header>
+					<Card.Title class="flex items-center gap-2">
+						<ShieldCheck class="w-6 h-6 text-primary" />
+						<span>Mes données</span>
+					</Card.Title>
+					<Card.Description>Exporter vos données ou supprimer votre compte.</Card.Description>
+				</Card.Header>
+				<Card.Content class="flex-grow" />
+				<Card.Footer>
+					<Button href="/auth/settings/donnees" class="w-full">Mes données</Button>
+				</Card.Footer>
 			</Card.Root>
 		{/if}
 

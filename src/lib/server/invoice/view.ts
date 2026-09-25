@@ -1,12 +1,15 @@
 /**
  * Instantané d'affichage d'une facture, partagé par l'aperçu HTML, le PDF
- * et l'e-mail. Les totaux figés au paiement priment ; à défaut on recalcule
- * comme le checkout (TVA 5,5 % sur le HT).
+ * et l'e-mail. Les totaux figés au paiement (`Transaction.taxRate`, posé par
+ * le webhook avec le taux réellement en vigueur à ce moment-là via
+ * `$lib/server/vat.ts`) priment toujours ; à défaut d'un instantané (données
+ * anciennes/incomplètes), ce module recalcule avec le taux de repli de
+ * `snapshotInvoiceTotals` — fonction pure synchrone, ne relit jamais le
+ * taux courant en base ici.
  *
  * COMMERCE-PLUGIN
  */
-import type { InvoiceLine, InvoiceView } from '$lib/invoice/types';
-import { getInvoiceCompany } from './company';
+import type { InvoiceCompany, InvoiceLine, InvoiceView } from '$lib/invoice/types';
 import { snapshotInvoiceTotals } from './totals';
 
 export type { InvoiceLine, InvoiceView };
@@ -71,7 +74,7 @@ function readLines(raw: unknown): InvoiceLine[] {
 	});
 }
 
-export function buildInvoiceView(source: InvoiceSource): InvoiceView {
+export function buildInvoiceView(source: InvoiceSource, company: InvoiceCompany): InvoiceView {
 	const lines = readLines(source.products);
 	const computed = snapshotInvoiceTotals({
 		lines: lines.map((line) => ({ price: line.unitPrice, quantity: line.quantity })),
@@ -125,6 +128,6 @@ export function buildInvoiceView(source: InvoiceSource): InvoiceView {
 		totalTtc,
 		currency: (source.currency || 'eur').toUpperCase(),
 		filename: `Facture_${number}.pdf`,
-		company: getInvoiceCompany()
+		company
 	};
 }

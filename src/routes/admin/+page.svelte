@@ -3,7 +3,6 @@
 	import ChartMonthly from '$lib/components/ChartMonthly.svelte';
 	import ChartBar from '$lib/components/ChartBar.svelte';
 	import LastInscriptions from '$lib/components/LastInscriptions.svelte';
-	import SEO from '$lib/components/SEO.svelte';
 	import * as Card from '$shadcn/card/index.js';
 
 	let { data } = $props();
@@ -106,7 +105,7 @@
 	});
 </script>
 
-<SEO pageKey="admin" />
+<!-- `noindex` posé une fois pour toutes par src/routes/admin/+layout.svelte. -->
 
 <div class="csc m-5">
 	<h1 class="mb-4 text-2xl font-bold">Accueil</h1>

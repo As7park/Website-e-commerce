@@ -3,6 +3,7 @@
 	import * as Card from '$shadcn/card';
 	import { Button } from '$shadcn/button';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import { toTTC } from '$lib/utils/price';
 	import Heart from 'lucide-svelte/icons/heart';
 
 	let { data } = $props();
@@ -58,7 +59,7 @@
 								<h2>{product.name}</h2>
 							</Card.Title>
 						</a>
-						<p class="mb-3 text-base">{product.price.toFixed(2)} €</p>
+						<p class="mb-3 text-base">{toTTC(product.price, data.vatRate).toFixed(2)} €</p>
 						<Button variant="outline" size="sm" onclick={() => remove(product.id)}>
 							<Heart class="mr-2 size-4 fill-current" />
 							Retirer

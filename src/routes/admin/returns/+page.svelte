@@ -2,6 +2,7 @@
 	import * as Card from '$shadcn/card';
 	import { buttonVariants } from '$shadcn/button';
 	import * as AlertDialog from '$shadcn/alert-dialog/index.js';
+	import { Badge } from '$shadcn/badge';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
 	import { cn } from '$lib/components/shadcn/utils.js';
@@ -16,6 +17,11 @@
 		REJECTED: 'Refusée',
 		REFUNDED: 'Remboursée',
 		CREDITED: 'Créditée'
+	};
+
+	const KIND_LABELS: Record<string, string> = {
+		WITHDRAWAL: 'Rétractation (14j)',
+		WARRANTY: 'SAV / garantie'
 	};
 </script>
 
@@ -37,14 +43,26 @@
 					class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
 				>
 					<div>
-						<p class="font-medium">
-							{item.transaction.invoiceNumber ?? item.transactionId} — {formatMoney(
-								item.transaction.amount
-							)}
-						</p>
+						<div class="flex items-center gap-2">
+							<p class="font-medium">
+								{item.transaction.invoiceNumber ?? item.transactionId} — {formatMoney(
+									item.transaction.amount
+								)}
+							</p>
+							<Badge variant={item.kind === 'WITHDRAWAL' ? 'default' : 'secondary'}>
+								{KIND_LABELS[item.kind] ?? item.kind}
+							</Badge>
+						</div>
 						<p class="text-sm text-muted-foreground">{item.user.email}</p>
 						<p class="mt-1 text-sm">Motif : {item.reason}</p>
 						<p class="text-xs text-muted-foreground">{formatDate(item.createdAt)}</p>
+						{#if item.kind === 'WITHDRAWAL' && item.status === 'REQUESTED'}
+							<p class="mt-2 max-w-md text-xs text-amber-600 dark:text-amber-400">
+								Rétractation légale : un refus n'est légitime que si le délai de 14 jours est
+								réellement dépassé (à compter de la réception, pas de l'expédition) ou si le motif
+								d'exclusion (commande sur-mesure) s'applique réellement.
+							</p>
+						{/if}
 					</div>
 					<div class="flex items-center gap-2">
 						{#if item.status === 'REQUESTED'}

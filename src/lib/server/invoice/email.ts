@@ -10,6 +10,7 @@ import { sendMail } from '$lib/server/smtp-mail';
 import { formatMoney } from '$lib/utils/formatMoney';
 import { renderInvoicePdf } from './pdf';
 import { buildInvoiceView, type InvoiceSource } from './view';
+import { getInvoiceCompany } from './company';
 
 export function shouldSendInvoiceEmail(): boolean {
 	return !isDummySecret(process.env.SMTP_HOST);
@@ -21,14 +22,14 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 		return false;
 	}
 
-	const invoice = buildInvoiceView(source);
+	const invoice = buildInvoiceView(source, await getInvoiceCompany());
 	const to = source.customer_details_email?.trim();
 	if (!to || to === 'N/A') {
 		console.warn('📧 Facture : destinataire manquant, e-mail ignoré');
 		return false;
 	}
 
-	const pdf = renderInvoicePdf(invoice);
+	const pdf = await renderInvoicePdf(invoice);
 	const total = formatMoney(invoice.totalTtc, invoice.currency);
 	// Repli localhost:2000 (port de `npm run dev`) uniquement pour ne jamais
 	// envoyer de lien cassé sans APP_URL/VERCEL_URL configurée ; en prod ces

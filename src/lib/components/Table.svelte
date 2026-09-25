@@ -66,6 +66,7 @@
 	import { Label } from '$shadcn/label';
 	import * as Tooltip from '$shadcn/tooltip/index.js';
 	import { Checkbox } from '$shadcn/checkbox/index.js';
+	import { Badge } from '$shadcn/badge';
 
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { Plus, Search, X, SearchX, LoaderCircle, ChevronLeft, ChevronRight } from 'lucide-svelte';
@@ -621,6 +622,18 @@
 													{#if image}
 														<img class="h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
+												{:else if column.key === 'riskLevel'}
+													{@const label = item.riskLabel as string | null}
+													{@const variant = item.riskBadgeVariant as
+														| 'destructive'
+														| 'outline'
+														| 'secondary'
+														| undefined}
+													{#if label}
+														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
+													{:else}
+														—
+													{/if}
 												{:else if column.formatter}
 													<!-- Si la colonne a un formatter, appliquez-le -->
 													{column.formatter(item[column.key])}
@@ -671,6 +684,18 @@
 														| undefined}
 													{#if image}
 														<img class="ml-auto h-20 w-20" src={image.src} alt={image.alt} />
+													{/if}
+												{:else if column.key === 'riskLevel'}
+													{@const label = item.riskLabel as string | null}
+													{@const variant = item.riskBadgeVariant as
+														| 'destructive'
+														| 'outline'
+														| 'secondary'
+														| undefined}
+													{#if label}
+														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
+													{:else}
+														—
 													{/if}
 												{:else if column.formatter}
 													{column.formatter(item[column.key])}

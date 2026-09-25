@@ -26,9 +26,10 @@
 			<div class="shop-footer-col">
 				<h4>Légal</h4>
 				<ul>
-					<li><a href="#">Mentions légales</a></li>
-					<li><a href="#">CGV</a></li>
-					<li><a href="#">Confidentialité</a></li>
+					<li><a href="/mentions-legales">Mentions légales</a></li>
+					<li><a href="/cgv">CGV</a></li>
+					<li><a href="/cgu">CGU</a></li>
+					<li><a href="/confidentialite">Confidentialité</a></li>
 				</ul>
 			</div>
 		</div>

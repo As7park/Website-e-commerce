@@ -21,6 +21,7 @@ import {
 	findPasswordResetSession
 } from '$lib/prisma/passwordResetSession/passwordResetSession';
 import nodemailer from 'nodemailer';
+import { getCompanyIdentity } from '$lib/server/companyIdentity';
 
 export interface PasswordResetSession {
 	id: string;
@@ -160,6 +161,12 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
 		debug: true // Active le mode debug
 	});
 
+	// `https://example.com/logo.png` n'a jamais existé — image cassée dans
+	// tous les clients mail. Logo réel (`/admin/identite`) si fourni, sinon
+	// pas d'image du tout plutôt qu'une URL inventée.
+	const { logoUrl } = await getCompanyIdentity();
+	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="MadeInDiamonds Logo" />` : '';
+
 	try {
 		const mailOptions = {
 			from: '"MadeInDiamonds" <contact@madeindiamonds.com>', // Expéditeur
@@ -220,7 +227,7 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
     <tr>
       <td align="center" style="padding: 20px;">
         <!-- Logo -->
-        <img src="https://example.com/logo.png" alt="MadeInDiamonds Logo" />
+        ${logoHtml}
 
         <!-- Contenu principal -->
         <div class="container">

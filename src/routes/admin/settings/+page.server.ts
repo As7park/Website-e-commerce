@@ -22,7 +22,10 @@ const FLAG_KEYS = [
 	'stockAlertsEnabled',
 	'frequentlyBoughtTogetherEnabled',
 	'reviewReminderEnabled',
-	'wishlistPriceAlertEnabled'
+	'wishlistPriceAlertEnabled',
+	'fraudDetectionEnabled',
+	'fraudBlockingEnabled',
+	'recentlyViewedReminderEnabled'
 ] as const satisfies readonly (keyof StoreFeatureFlags)[];
 
 /**
@@ -30,7 +33,10 @@ const FLAG_KEYS = [
  *
  * ADMIN-PLUGIN : une case cochée ici change immédiatement ce qui est visible
  * côté vitrine (`getStoreFeatureFlags`, lu par chaque route publique
- * concernée) — pas un simple réglage cosmétique.
+ * concernée) — pas un simple réglage cosmétique. Taux de TVA et délai de
+ * livraison vivent sur leurs propres pages (`/admin/tva`, `/admin/livraison`),
+ * l'identité de l'entreprise sur `/admin/identite` — cette page ne porte
+ * plus que les modules, avec une entrée de navigation dédiée pour chacune.
  */
 export const load = (async ({ locals }) => {
 	assertAdmin(locals);

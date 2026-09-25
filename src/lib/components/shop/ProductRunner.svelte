@@ -6,6 +6,8 @@
 	   ========================================================= */
 	import { goto } from '$app/navigation';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { page } from '$app/state';
+	import { toTTC } from '$lib/utils/price';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	type Product = {
@@ -32,6 +34,9 @@
 	function categoryName(product: Product) {
 		return product.categories?.[0]?.category?.name ?? 'Boutique';
 	}
+
+	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
+	const ttc = (priceHT: number) => toTTC(priceHT, page.data.vatRate ?? 0);
 
 	let runnerEl: HTMLDivElement;
 	let dragging = $state(false);
@@ -173,7 +178,9 @@
 						</div>
 						<h3 class="name">{product.name}</h3>
 						<div class="tag-wrap">
-							<div class="price-tag"><span class="price">{formatMoney(product.price)}</span></div>
+							<div class="price-tag">
+								<span class="price">{formatMoney(ttc(product.price))}</span>
+							</div>
 						</div>
 						<div class="splat-layer"></div>
 					</div>

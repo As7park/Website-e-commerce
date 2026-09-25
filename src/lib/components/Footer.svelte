@@ -1,0 +1,27 @@
+<script lang="ts">
+	// Raison sociale saisie depuis `/admin/identite` (`$lib/server/companyIdentity.ts`)
+	// — nom de marque en dur tant qu'elle n'est pas renseignée, pour ne rien
+	// changer avant que l'entreprise n'ait complété son identité.
+	let { companyName = null }: { companyName?: string | null } = $props();
+
+	const legalLinks = [
+		{ href: '/mentions-legales', label: 'Mentions légales' },
+		{ href: '/cgv', label: 'CGV' },
+		{ href: '/cgu', label: 'CGU' },
+		{ href: '/confidentialite', label: 'Confidentialité' },
+		{ href: '/contact', label: 'Contact' }
+	];
+
+	const year = new Date().getFullYear();
+</script>
+
+<footer class="border-t border-border/60 px-8 py-6 text-sm text-muted-foreground">
+	<div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 sm:flex-row">
+		<p>© {year} {companyName ?? 'MadeInDiamonds'}</p>
+		<nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+			{#each legalLinks as link (link.href)}
+				<a href={link.href} class="underline-offset-4 hover:underline">{link.label}</a>
+			{/each}
+		</nav>
+	</div>
+</footer>

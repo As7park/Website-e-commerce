@@ -419,7 +419,10 @@ Priorisation par **risque réel × effort**, pas par ordre d'apparition.
    résultats dans Security → Code scanning) + `.github/dependabot.yml`.
    Dependabot alerts déjà actif sur le dépôt (confirmé : 7 vulnérabilités
    détectées dès le premier push — 1 critique, 2 hautes, 3 modérées, 1
-   basse — à trier).
+   basse). **Triage fait** (§6) : les 2 vulnérabilités critiques trouvées
+   par un `npm audit` local (13 au total, chiffre différent de Dependabot)
+   sont corrigées ; 8 restent ouvertes, chacune nécessitant sa propre
+   vérification de compatibilité avant mise à jour.
 2. ~~Corriger la section CI du README~~ **fait** (§1.7).
 3. ~~Ajouter un `SECURITY.md`~~ **fait** (§1.8) — à enrichir si besoin.
 4. ~~Activer Dependabot~~ **fait** (§1.9, `.github/dependabot.yml`) — PRs de
@@ -507,20 +510,99 @@ any` justifiés ci-dessus) et `npx vitest run` (28 tests passés, 2
 
 ---
 
-## 5. Chiffres de référence (mesurés ce jour)
+## 5. Chiffres de référence
 
-| Métrique                                                  | Valeur                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check`                                           | 0 erreur, 0 warning                                                                                                                                                                                                                                                                |
-| `npm run test:unit`                                       | 28 tests passés, 2 skippés (9 fichiers)                                                                                                                                                                                                                                            |
-| ESLint                                                    | 0 erreur bloquante + 6 warnings justifiés (voir §3.2)                                                                                                                                                                                                                              |
-| Coverage Vitest (`npm run test:unit:coverage`)            | 6,94 % lignes / 44,71 % branches / 43,23 % fonctions — chiffre brut sur l'ensemble de `src/**`, dominé par les ~150 `+page.server.ts`/`+server.ts` non couverts en unitaire mais exercés par les 46 specs Playwright (non comptabilisées ici) ; pas de seuil configuré (voir §3.6) |
-| Specs Playwright                                          | 46 fichiers                                                                                                                                                                                                                                                                        |
-| Scripts de charge k6                                      | 4 (catalogue, login, admin, webhook)                                                                                                                                                                                                                                               |
-| Dépendances prod / dev potentiellement inutilisées (knip) | 0 / 0 — 37 supprimées, 6 faux positifs justifiés en `ignoreDependencies` (voir §3.4)                                                                                                                                                                                               |
-| Scan de vulnérabilités                                    | OSV-Scanner + Dependabot (`npm audit` retiré)                                                                                                                                                                                                                                      |
+Colonne « mesurés ce jour » : valeurs de l'audit initial, laissées telles
+quelles pour l'historique. Colonne « mise à jour » : revérifiées lors du
+triage `npm audit` d'une session ultérieure — voir §6.
+
+| Métrique                                                  | Mesurés ce jour                                                                      | Mise à jour (§6)                                                                                                                                                                                                                                |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`                                           | 0 erreur, 0 warning                                                                  | 0 erreur, 0 warning — mais avait dérivé à 2 erreurs entre-temps (`.env`/`.env.test` locaux désynchronisés des `.example`, non versionnés donc invisibles ici), corrigé                                                                          |
+| `npm run test:unit`                                       | 28 tests passés, 2 skippés (9 fichiers)                                              | 57 tests passés, 2 skippés (13 fichiers) — nouveaux tests de features ajoutées depuis                                                                                                                                                           |
+| ESLint                                                    | 0 erreur bloquante + 6 warnings justifiés (voir §3.2)                                | 0 erreur bloquante + 12 warnings — les 6 additionnels viennent de `recentlyViewedReminder.test.ts`, code ajouté après cet audit, jamais recompté depuis                                                                                         |
+| Specs Playwright                                          | 46 fichiers                                                                          | 56 fichiers                                                                                                                                                                                                                                     |
+| Dépendances prod / dev potentiellement inutilisées (knip) | 0 / 0 — 37 supprimées, 6 faux positifs justifiés en `ignoreDependencies` (voir §3.4) | idem ; fichiers potentiellement inutilisés toujours à 8 (§3.4) — 2 faux positifs supplémentaires apparus et corrigés en cours de route (scripts jamais reliés à un alias npm, voir §6)                                                          |
+| Scan de vulnérabilités                                    | OSV-Scanner + Dependabot (`npm audit` retiré)                                        | `npm audit` de nouveau fonctionnel (l'erreur 400 de l'endpoint legacy ne s'est pas reproduite) : 13 → 10 après triage, voir §6 — les deux dispositifs (OSV-Scanner/Dependabot + `npm audit` ponctuel) sont complémentaires, pas contradictoires |
 
 ---
 
-_Prochaine mise à jour suggérée : après traitement des points P0, ou après
-tout nouveau run CI significatif._
+## 6. Mise à jour — triage `npm audit`
+
+`npm install` (pour restaurer `jsdom`, absent de `node_modules` malgré sa
+présence dans `package.json` — voir cause probable ci-dessous) a fait
+apparaître un `npm audit` de nouveau exploitable : 13 vulnérabilités
+(2 critiques, 4 hautes, 5 modérées, 2 basses), contre les « 7 détectées au
+premier push » mentionnées en §4/P0.1 sans jamais avoir été triées. Les deux
+chiffres ne se recoupent pas exactement (Dependabot vs `npm audit` local
+n'utilisent pas la même base ni le même moment de mesure) — pas une
+contradiction, juste deux instantanés différents.
+
+**Corrigées** (triées une par une, jamais en bloc `--force`) :
+
+- **`maplibre-gl` 5.5.0 → 6.11.2 + `svelte-maplibre-gl` 0.1.6 → 2.2.1**
+  (🔴 critique, XSS sanitizer bypass). v6 retire l'export par défaut du
+  paquet ; les deux seuls usages dans le code (`ServicePointMap.svelte`,
+  `checkout/+page.svelte`) n'en importaient que le type `Offset`, jamais la
+  valeur runtime — converti en import de type nommé. Vérifié : les
+  `peerDependencies` de `svelte-maplibre-gl@2.2.1` déclarent officiellement
+  `maplibre-gl ^6.0.0` + Svelte 5 (la stack exacte de ce projet), chaque
+  prop/snippet utilisé existe à l'identique dans les nouveaux types, et le
+  tunnel de commande (`e2e/commerce/checkout.spec.ts`) passe toujours.
+- **`@faker-js/faker` 9.8.0 → 10.6.0** (🟠 haute, RCE via `helpers.fake`).
+  Dev-only (`prisma/seed-perf.js`, jamais en production) ; la fonction
+  vulnérable n'y est même pas appelée. Toutes les API faker utilisées
+  existent toujours en v10.
+
+**Tentée puis abandonnée** :
+
+- **`sveltekit-superforms` 2.27.1 → 2.30.2** (🟠 haute, prototype pollution
+  dans `parseFormData`, entraîne aussi `ts-deepmerge`/`valibot`/
+  `@gcornut/valibot-json-schema`). Marquée `isSemVerMajor: false` par
+  `npm audit`, mais casse le typage sur 96 fichiers (403 erreurs
+  `svelte-check`) — les types générés par `zodClient()` changent en
+  profondeur malgré une version mineure. Reste à `2.27.1` (pin exact, pas
+  de `^`, restauré après l'essai) ; vulnérabilité non corrigée, nécessite
+  une release compatible avec le typage actuel, pas un simple bump.
+
+**Non traitées, chacune nécessitant sa propre vérification** :
+`@sveltejs/adapter-vercel` (🟡 modérée, majeur), `vitest`/
+`@vitest/coverage-v8`/`@vitest/mocker` (🟡 modérée, majeur, dev-only). La
+suggestion `npm audit` pour la vulnérabilité `cookie` (🔵 basse, via
+`@sveltejs/kit`) propose un downgrade vers `@sveltejs/kit@0.0.30` —
+absurde pour une ligne 2.x actuelle, signe d'un résolveur de dépendances
+qui échoue à trouver un chemin propre plutôt qu'un vrai correctif à
+appliquer tel quel.
+
+**13 → 10 vulnérabilités, 2 critiques → 0.**
+
+**Effet de bord découvert en réinstallant** : `jsdom`, déclaré dans
+`package.json` (`dependencies`) et présent dans `package-lock.json`,
+était absent de `node_modules` — cause non identifiée avec certitude
+(installation interrompue ou `node_modules` partiellement pruné à un
+moment donné), corrigé par un `npm install` complet. `package-lock.json`
+en a profité pour corriger au passage une dépendance dev mal déclarée
+(`@eslint/js`, utilisée directement dans `eslint.config.js` mais absente
+du manifeste) et des entrées orphelines (`terser`, `@jridgewell/source-map`).
+
+**Autre dérive corrigée au passage** : `SECRET_ADDRESS_SEARCH_MODE`,
+référencée dans le code (`src/routes/api/address-search/+server.ts`) et
+déclarée dans `.env.example`/`.env.test.example`, était absente des
+`.env`/`.env.test` réels (gitignorés) — même classe de bug que celle
+déjà diagnostiquée et corrigée en §3.1.c pour d'autres variables
+`$env/static/*`, juste jamais recroisée avec celle-ci. Ajoutée localement.
+
+**Fichiers knip signalés en plus, résolus** (§3.4/§5) :
+`scripts/generate-og-image.mjs` (nouveau ce jour) et
+`scripts/register-recently-viewed-reminder-schedule.mjs` (existant, mais
+jamais relié à un alias `jobs:register-*` dans `package.json` contrairement
+à ses 4 scripts jumeaux — un vrai oubli fonctionnel, pas seulement un faux
+positif de lint) — les deux corrigés en ajoutant l'alias npm manquant,
+retour à 8 fichiers signalés (les mêmes qu'en §3.4, jamais vérifiés
+individuellement).
+
+---
+
+_Prochaine mise à jour suggérée : après traitement de
+`@sveltejs/adapter-vercel`/`vitest` (§6), ou après tout nouveau run CI
+significatif._

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	// COMMERCE-PLUGIN : UI du tunnel. SENDCLOUD = carte / options. PROMO = champ code.
-	import maplibregl from 'maplibre-gl';
+	import type { Offset } from 'maplibre-gl';
 
 	import * as Card from '$shadcn/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
@@ -15,6 +15,8 @@
 	import GiftCardInput from '$lib/components/checkout/GiftCardInput.svelte';
 	import { CreditCard } from 'lucide-svelte';
 	import Button from '$shadcn/button/button.svelte';
+	import { Checkbox } from '$shadcn/checkbox/index.js';
+	import { Label } from '$shadcn/label';
 	import { OrderSchema } from '$lib/schema/order/order.js';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -45,6 +47,8 @@
 	// adresse de facturation différente.
 	let billingSameAsShipping = $state(true);
 	let selectedBillingAddressId = $state<string | undefined>(undefined);
+	// CGV acceptées avant paiement — revalidé côté serveur dans l'action `checkout`.
+	let cgvAccepted = $state(false);
 
 	// Plus de cartValue local, on utilise $cartStore directement.
 	let shippingOptions = $state<ShippingOptionDTO[]>([]);
@@ -157,7 +161,7 @@
 
 	// Offset pour la popup (optionnel, reprenant l'exemple maplibre)
 	let offset = $state(24);
-	let offsets: maplibregl.Offset = $derived({
+	let offsets: Offset = $derived({
 		top: [0, offset],
 		bottom: [0, -offset],
 		left: [offset + 12, 0],
@@ -518,6 +522,11 @@
 			toast.error('Veuillez sélectionner un point relais.');
 			return;
 		}
+		if (!cgvAccepted) {
+			event.preventDefault();
+			toast.error('Veuillez accepter les conditions générales de vente.');
+			return;
+		}
 
 		$createPaymentData.shippingCost = shippingCost.toString();
 		$createPaymentData.shippingOption = selectedShippingOption || undefined;
@@ -541,10 +550,12 @@
 	});
 </script>
 
-<!-- SEO pour la page checkout -->
-<SEO pageKey="checkout" />
+<!-- Page transactionnelle, jamais de valeur SEO -->
+<SEO pageKey="checkout" noindex nofollow />
 
-<nav class="shop-breadcrumb"><a href="/">Accueil</a> / <a href="/products">Boutique</a> / Paiement</nav>
+<nav class="shop-breadcrumb">
+	<a href="/">Accueil</a> / <a href="/products">Boutique</a> / Paiement
+</nav>
 
 <!-- SHOP-DESIGN : reskin léger — pas de maquette source pour cette page (AS7park
 	n'a pas de tunnel de paiement). On réutilise le thème sombre déjà construit
@@ -731,6 +742,23 @@
 										name="servicePointExtraShopRef"
 										bind:value={$createPaymentData.servicePointExtraShopRef}
 									/>
+									<input type="hidden" name="cgvAccepted" value={cgvAccepted ? 'on' : 'off'} />
+
+									{#if data.deliveryEstimate}
+										<p class="text-sm text-muted-foreground mb-4">
+											Livraison estimée sous {data.deliveryEstimate.minDays}
+											à {data.deliveryEstimate.maxDays} jours ouvrés après expédition.
+										</p>
+									{/if}
+
+									<div class="flex items-start gap-2 mb-4">
+										<Checkbox id="cgvAccepted" bind:checked={cgvAccepted} class="mt-0.5" />
+										<Label for="cgvAccepted" class="font-normal text-sm">
+											J'ai lu et j'accepte les <a href="/cgv" target="_blank" class="underline"
+												>conditions générales de vente</a
+											>.
+										</Label>
+									</div>
 
 									<Button type="submit" class="w-full" size="lg">
 										<CreditCard class="w-4 h-4 mr-2" />

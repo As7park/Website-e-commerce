@@ -23,13 +23,16 @@ import {
 } from '$lib/prisma/referral/referral';
 import { computeBundleDiscount, BUNDLE_DISCOUNT_PERCENT } from '$lib/prisma/bundles/bundles';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { computeFraudScore } from '$lib/server/fraud';
+import { log } from '$lib/server/log';
 import { prisma } from '$lib/server';
 import {
 	assertOrderOwnedBy,
 	createCheckoutSession,
-	resolveTrustedShippingCost,
-	TVA_RATE
+	resolveTrustedShippingCost
 } from '$lib/commerce/checkout';
+import { getVatRate } from '$lib/server/vat';
+import { getDeliveryEstimate } from '$lib/server/delivery';
 import { CartForbiddenError, InvalidShippingError } from '$lib/commerce/errors';
 
 export const load = (async ({ locals }) => {
@@ -57,13 +60,16 @@ export const load = (async ({ locals }) => {
 		// même requête : pas besoin d'un second `findPendingOrder`.
 		const pendingOrder = locals.pendingOrder as Awaited<ReturnType<typeof findPendingOrder>>;
 		const productIds = pendingOrder?.items.map((item) => item.productId) ?? [];
+		const vatRate = await getVatRate();
 		const productTotalTTC = (pendingOrder?.items ?? []).reduce(
-			(sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity,
+			(sum, item) => sum + item.product.price * (1 + vatRate) * item.quantity,
 			0
 		);
 		bundleDiscountEligible = (await computeBundleDiscount(productIds, productTotalTTC)) > 0;
 	}
 	// BUNDLE-PLUGIN ▲
+
+	const deliveryEstimate = await getDeliveryEstimate();
 
 	return {
 		addresses,
@@ -72,7 +78,8 @@ export const load = (async ({ locals }) => {
 		referralDiscountEligible,
 		referralDiscountPercent: REFERRAL_REFEREE_DISCOUNT_PERCENT,
 		bundleDiscountEligible,
-		bundleDiscountPercent: BUNDLE_DISCOUNT_PERCENT
+		bundleDiscountPercent: BUNDLE_DISCOUNT_PERCENT,
+		deliveryEstimate
 	};
 }) satisfies PageServerLoad;
 
@@ -116,6 +123,12 @@ export const actions: Actions = {
 			throw err;
 		}
 
+		// Après la vérification de propriété (autorisation), jamais avant : ce
+		// n'est qu'une règle métier/légale, pas une frontière de sécurité.
+		if (formData.get('cgvAccepted') !== 'on') {
+			error(400, 'Veuillez accepter les conditions générales de vente.');
+		}
+
 		const order = await getOrderById(orderId);
 		if (!order) {
 			error(404, 'Commande introuvable');
@@ -138,9 +151,10 @@ export const actions: Actions = {
 		}
 
 		// PROMO-PLUGIN ▼ hors périmètre commerce ; conservé pour que le tunnel compile.
+		const vatRate = await getVatRate();
 		const productTotalTTC = parseFloat(
 			order.items
-				.reduce((sum, item) => sum + item.product.price * (1 + TVA_RATE) * item.quantity, 0)
+				.reduce((sum, item) => sum + item.product.price * (1 + vatRate) * item.quantity, 0)
 				.toFixed(2)
 		);
 		const promoResult = await validatePromo(promoCode, productTotalTTC);
@@ -151,8 +165,13 @@ export const actions: Actions = {
 		// Carte cadeau : plafonnée par ce qu'il reste à payer une fois la remise
 		// promo ci-dessus déduite. Comme pour `validatePromo`, seul ce calcul
 		// serveur fait foi — jamais un montant envoyé par le client.
-		const { giftCardsEnabled, referralEnabled, frequentlyBoughtTogetherEnabled } =
-			await getStoreFeatureFlags();
+		const {
+			giftCardsEnabled,
+			referralEnabled,
+			frequentlyBoughtTogetherEnabled,
+			fraudDetectionEnabled,
+			fraudBlockingEnabled
+		} = await getStoreFeatureFlags();
 		const remainderAfterPromo = Math.max(0, productTotalTTC - promoDiscount);
 
 		// BUNDLE-PLUGIN ▼ même garde que promo/parrainage : recalculée ici depuis
@@ -190,8 +209,51 @@ export const actions: Actions = {
 		// s'il en existe déjà un pour ce compte — n'en crée jamais un ici.
 		const currentUser = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { stripeCustomerId: true }
+			select: { stripeCustomerId: true, email: true }
 		});
+
+		// Détection de fraude (`StoreSettings.fraudDetectionEnabled`) : calculée
+		// ici, juste avant la session Stripe, jamais après — un score élevé
+		// n'ouvre jamais de session quand `fraudBlockingEnabled` est aussi actif
+		// (voir `$lib/server/fraud.ts` et docs/commerce/README.md pour le choix
+		// « avant paiement » plutôt qu'une capture Stripe différée).
+		if (fraudDetectionEnabled) {
+			const risk = await computeFraudScore({
+				userId,
+				userEmail: currentUser?.email ?? '',
+				shippingAddressId,
+				billingAddressId
+			});
+			await prisma.order.update({
+				where: { id: orderId },
+				data: { riskScore: risk.score, riskLevel: risk.level, riskFactors: risk.factors }
+			});
+
+			if (fraudBlockingEnabled && risk.level === 'high') {
+				await prisma.fraudBlock.create({
+					data: {
+						userId,
+						orderId,
+						email: currentUser?.email ?? '',
+						riskScore: risk.score,
+						riskLevel: risk.level,
+						riskFactors: risk.factors
+					}
+				});
+				log('WARN', 'fraud', 'Commande bloquée avant paiement', {
+					userId,
+					orderId,
+					score: risk.score,
+					factors: risk.factors
+				});
+				// Message générique : jamais le détail des facteurs déclenchés, même
+				// logique anti-oracle que `guestTrackingLimiter` (docs/commerce/README.md).
+				error(
+					403,
+					'Cette commande ne peut pas être finalisée pour le moment. Contactez le support si besoin.'
+				);
+			}
+		}
 
 		const session = await createCheckoutSession({
 			order,

@@ -122,7 +122,13 @@
 									}}
 								>
 									<input type="hidden" name="id" value={method.id} />
-									<Button type="submit" variant="outline" size="sm" title="Définir par défaut">
+									<Button
+										type="submit"
+										variant="outline"
+										size="sm"
+										title="Définir par défaut"
+										aria-label="Définir par défaut"
+									>
 										<Star class="size-4" />
 									</Button>
 								</form>
@@ -137,7 +143,13 @@
 								}}
 							>
 								<input type="hidden" name="id" value={method.id} />
-								<Button type="submit" variant="outline" size="sm" title="Supprimer">
+								<Button
+									type="submit"
+									variant="outline"
+									size="sm"
+									title="Supprimer"
+									aria-label="Supprimer ce moyen de paiement"
+								>
 									<Trash class="size-4" />
 								</Button>
 							</form>

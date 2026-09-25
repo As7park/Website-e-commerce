@@ -31,7 +31,12 @@
 
 	font-size: 16px;
 	font-family:
-		var(--shop-font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+		var(--shop-font-body),
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Arial,
+		sans-serif;
 	color: var(--shop-text);
 	background: var(--shop-bg);
 	line-height: 1.4;

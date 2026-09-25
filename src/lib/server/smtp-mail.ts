@@ -7,6 +7,7 @@
  */
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { getCompanyIdentity } from '$lib/server/companyIdentity';
 
 export function createSmtpTransport() {
 	return nodemailer.createTransport({
@@ -51,6 +52,11 @@ export async function sendVerificationEmail(
 	code: string
 ): Promise<SMTPTransport.SentMessageInfo> {
 	const transporter = createSmtpTransport();
+	// `https://example.com/logo.png` n'a jamais existé — image cassée dans
+	// tous les clients mail. Logo réel (`/admin/identite`) si fourni, sinon
+	// pas d'image du tout plutôt qu'une URL inventée.
+	const { logoUrl } = await getCompanyIdentity();
+	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="MadeInDiamonds Logo" />` : '';
 
 	try {
 		return await transporter.sendMail({
@@ -111,7 +117,7 @@ export async function sendVerificationEmail(
   <table width="100%" border="0" cellspacing="0" cellpadding="0">
     <tr>
       <td align="center" style="padding: 20px;">
-        <img src="https://example.com/logo.png" alt="MadeInDiamonds Logo" />
+        ${logoHtml}
         <div class="container">
           <h1 class="title">Your Verification Code</h1>
           <p>Thank you for using MadeInDiamonds! Please use the verification code below to complete your signup process:</p>

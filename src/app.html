@@ -5,41 +5,13 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-		<!-- Métadonnées SEO de base -->
-		<meta
-			name="description"
-			content="MadeInDiamonds — studio web. Sites vitrines, e-commerce, identité visuelle et applications sur-mesure."
-		/>
-		<meta
-			name="keywords"
-			content="studio web, agence web, site vitrine, e-commerce, identité visuelle, application web, MadeInDiamonds"
-		/>
-		<meta name="author" content="MadeInDiamonds" />
-		<meta name="robots" content="index, follow" />
-
-		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="website" />
-		<meta property="og:title" content="MadeInDiamonds" />
-		<meta
-			property="og:description"
-			content="Studio web. Sites vitrines, e-commerce, identité visuelle et applications sur-mesure."
-		/>
-		<meta property="og:image" content="%sveltekit.assets%/og-image.jpg" />
-		<meta property="og:url" content="https://madeindiamonds.com" />
-		<meta property="og:site_name" content="MadeInDiamonds" />
-
-		<!-- Twitter -->
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content="MadeInDiamonds" />
-		<meta
-			name="twitter:description"
-			content="Studio web. Sites vitrines, e-commerce, identité visuelle et applications sur-mesure."
-		/>
-		<meta name="twitter:image" content="%sveltekit.assets%/og-image.jpg" />
-
-		<!-- Canonical -->
-		<link rel="canonical" href="https://madeindiamonds.com" />
-
+		<!-- Pas de meta description/keywords/robots/OG/Twitter/canonical statique
+		     ici : `$lib/components/SEO.svelte` (`$lib/seo.config.ts`) les pose
+		     dynamiquement sur chaque page, injectées juste en dessous. Un
+		     doublon ici entrait en conflit avec elles (ex: `noindex` posé par
+		     une page à côté d'un `index, follow` figé ici) plutôt que de servir
+		     de repli, et resservait par-dessus le marché un texte "studio web"
+		     resté d'un ancien boilerplate — voir CONFORMITE_ECOMMERCE.md. -->
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

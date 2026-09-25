@@ -7,6 +7,7 @@
 import { prisma } from '$lib/server';
 import cloudinary from '$lib/server/cloudinary';
 import { UnknownProductError } from '$lib/commerce/errors';
+import { getVatRate } from '$lib/server/vat';
 
 export const findPendingOrder = async (userId: string) => {
 	return await prisma.order.findFirst({
@@ -208,7 +209,8 @@ export async function updateOrderItems(orderId: string, incomingItems: IncomingO
 		const allItems = await prisma.orderItem.findMany({ where: { orderId } });
 
 		const subtotal = allItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
-		const tax = parseFloat((subtotal * 0.055).toFixed(2)); // TVA de 5,5%
+		const vatRate = await getVatRate();
+		const tax = parseFloat((subtotal * vatRate).toFixed(2));
 		const total = parseFloat((subtotal + tax).toFixed(2));
 
 		// console.log(`New subtotal calculated: ${subtotal}`);

@@ -15,6 +15,7 @@ import { decrypt, encrypt } from '$lib/lucia/encryption';
 // AUTH-PLUGIN ▲
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
+import { anonymizeUser } from './anonymizeUser';
 
 const USER_SORTABLE = ['email', 'username', 'role', 'createdAt'] as const;
 import { prisma } from '$lib/server';
@@ -332,24 +333,17 @@ export const getAllUsers = async (params: ListParams = {}) => {
 	}
 };
 
+/**
+ * Anonymise le compte plutôt que de le supprimer physiquement — voir
+ * `$lib/prisma/user/anonymizeUser.ts` pour le détail et pourquoi (l'ancienne
+ * implémentation supprimait purement et simplement les commandes de
+ * l'utilisateur, perdant l'historique comptable que `Order.user`
+ * (`onDelete: Restrict`) est censé protéger). Nom de fonction et signature
+ * conservés : `/admin/users?/deleteUser` n'a rien à changer.
+ */
 export async function deleteUser(userId: string) {
 	try {
-		// Désassocier les transactions de l'utilisateur
-		await prisma.transaction.updateMany({
-			where: { userId },
-			data: { userId: null }
-		});
-
-		// Supprimer les commandes associées à l'utilisateur
-		await prisma.order.deleteMany({
-			where: { userId }
-		});
-
-		// Supprimer l'utilisateur
-		await prisma.user.delete({
-			where: { id: userId }
-		});
-
+		await anonymizeUser(userId);
 		return { success: true };
 	} catch (error: unknown) {
 		if (error instanceof Error) {

@@ -4,6 +4,7 @@ import { getTransactionById } from '$lib/prisma/transaction/getTransactionById';
 import { pdfDownloadResponse } from '$lib/server/invoice/http';
 import { renderInvoicePdf } from '$lib/server/invoice/pdf';
 import { buildInvoiceView } from '$lib/server/invoice/view';
+import { getInvoiceCompany } from '$lib/server/invoice/company';
 
 /**
  * Téléchargement PDF — facture admin.
@@ -21,6 +22,6 @@ export const GET: RequestHandler = async ({ params }) => {
 		error(404, 'Facture introuvable');
 	}
 
-	const invoice = buildInvoiceView(transaction);
-	return pdfDownloadResponse(renderInvoicePdf(invoice), invoice.filename);
+	const invoice = buildInvoiceView(transaction, await getInvoiceCompany());
+	return pdfDownloadResponse(await renderInvoicePdf(invoice), invoice.filename);
 };

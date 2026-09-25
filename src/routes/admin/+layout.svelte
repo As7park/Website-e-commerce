@@ -2,6 +2,7 @@
 	// Importation des composants principaux
 	import * as Sidebar from '$shadcn/sidebar/index.js';
 	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import SEO from '$lib/components/SEO.svelte';
 
 	let { data, children } = $props();
 
@@ -27,14 +28,24 @@
 				...(data.returnsEnabled
 					? [{ title: 'retours', url: '/admin/returns' }] // COMMERCE-PLUGIN
 					: []),
+				...(data.fraudDetectionEnabled
+					? [{ title: 'fraude', url: '/admin/fraud' }] // COMMERCE-PLUGIN
+					: []),
 				{ title: 'contacts', url: '/admin/contacts' }, // CONTACT-PLUGIN
 				{ title: 'métriques', url: '/admin/metrics' },
 				{ title: 'exports', url: '/admin/exports' },
+				{ title: 'identité de l’entreprise', url: '/admin/identite' },
+				{ title: 'taux de TVA', url: '/admin/tva' },
+				{ title: 'délai de livraison', url: '/admin/livraison' },
 				{ title: 'modules', url: '/admin/settings' }
 			]
 		}
 	]);
 </script>
+
+<!-- Back-office jamais indexable, quelle que soit la sous-page — posé une
+     seule fois ici plutôt que sur chaque route admin, actuelle ou future. -->
+<SEO noindex nofollow />
 
 <div class="w-screen h-screen">
 	<Sidebar.Provider>

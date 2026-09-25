@@ -109,6 +109,7 @@ test.describe('Live — Sendcloud', () => {
 						billingAddressId: address.id,
 						shippingOption: relayOption.id,
 						shippingCost: '0',
+						cgvAccepted: 'on',
 						servicePointId: String(point.id),
 						servicePointPostNumber: point.extra_data?.shop_ref ?? '',
 						servicePointLatitude: String(point.latitude ?? ''),

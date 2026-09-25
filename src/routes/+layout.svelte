@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Navigation from './../lib/components/Navigation.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import '@fontsource-variable/open-sans';
 	import '@fontsource-variable/raleway';
 	import '../app.css';
@@ -18,7 +20,7 @@
 	} from '$lib/store/initialLoaderStore';
 	import { page } from '$app/stores';
 
-	import { resetCart, setCart } from '$lib/store/Data/cartStore';
+	import { resetCart, setCart, setVatRate } from '$lib/store/Data/cartStore';
 	import { setCartSyncAuthenticated, startSync } from '$lib/store/Data/cartSync';
 	import {
 		clearGuestCart,
@@ -64,9 +66,15 @@
 			cart.subtotal,
 			cart.tax,
 			cart.shippingCost,
-			parseFloat((cart.shippingCost * 0.055).toFixed(2))
+			parseFloat((cart.shippingCost * data.vatRate).toFixed(2))
 		);
 	}
+
+	// Taux de TVA courant (`StoreSettings.vatRate`), propagé au store panier
+	// client dès qu'il change — plus de constante figée à 5,5 % côté client.
+	$effect(() => {
+		setVatRate(data.vatRate);
+	});
 
 	$effect(() => {
 		const unsubscribe = page.subscribe(() => {
@@ -106,7 +114,7 @@
 					const guest = readGuestCart();
 					if (guest.items.length) {
 						const items = guestToStoreItems(guest);
-						const { subtotal, tax } = totalsFromItems(items);
+						const { subtotal, tax } = totalsFromItems(items, data.vatRate);
 						applyStoreCart({
 							id: '',
 							userId: '',
@@ -208,26 +216,35 @@
 {#if isShopRoute}
 	{@render children()}
 	<Toaster />
+	<CookieNotice />
 {:else}
 	{#if !$firstLoadComplete}
 		<Loader />
 	{/if}
 	{#if $isClient}
 		<div>
+			<a
+				href="#main-content"
+				class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline focus:outline-2 focus:outline-ring"
+			>
+				Aller au contenu
+			</a>
 			<ModeWatcher />
 			<Navigation {data} />
 			<div class="ccc relative m-0 h-screen w-screen max-w-none overflow-hidden p-0">
 				<div class="absolute top-0 left-0 z-[1] h-screen w-screen overflow-hidden">
 					<SmoothScrollBar>
-						<main class="max-w-[100vw] overflow-hidden">
+						<main id="main-content" class="max-w-[100vw] overflow-hidden">
 							<div class="ccc absolute z-[1] w-full pb-15" bind:this={contentRef}>
 								{@render children()}
+								<Footer companyName={data.companyName} />
 							</div>
 						</main>
 					</SmoothScrollBar>
 				</div>
 			</div>
 			<Toaster />
+			<CookieNotice />
 		</div>
 	{/if}
 {/if}

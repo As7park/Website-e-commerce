@@ -2,13 +2,10 @@
 	import { enhance } from '$app/forms';
 	import { Card, CardHeader, CardTitle, CardContent } from '$shadcn/card';
 	import { Button } from '$shadcn/button';
-	import SEO from '$lib/components/SEO.svelte';
-
 	let { data } = $props();
 </script>
 
-<!-- SEO pour la page d'authentification -->
-<SEO pageKey="auth" />
+<!-- `noindex` posé une fois pour toutes par src/routes/auth/+layout.svelte. -->
 
 <div class="mx-auto mt-12 max-w-md p-4">
 	<Card class="shadow-lg rounded-lg">

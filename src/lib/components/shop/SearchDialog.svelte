@@ -13,6 +13,8 @@
 	import LoaderCircle from 'lucide-svelte/icons/loader-circle';
 	import * as Command from '$shadcn/command/index.js';
 	import { formatMoney } from '$lib/utils/formatMoney';
+	import { page } from '$app/state';
+	import { toTTC } from '$lib/utils/price';
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 
 	type ProductResult = {
@@ -23,6 +25,9 @@
 		image: string | null;
 	};
 	type PostResult = { id: string; slug: string; title: string };
+
+	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
+	const ttc = (priceHT: number) => toTTC(priceHT, page.data.vatRate ?? 0);
 
 	let open = $state(false);
 	let query = $state('');
@@ -107,7 +112,12 @@
 	});
 </script>
 
-<button type="button" class="shop-icon-ph" aria-label="Rechercher (Ctrl+K)" onclick={() => (open = true)}>
+<button
+	type="button"
+	class="shop-icon-ph"
+	aria-label="Rechercher (Ctrl+K)"
+	onclick={() => (open = true)}
+>
 	<Search size={13} />
 </button>
 
@@ -145,7 +155,7 @@
 							/>
 						{/if}
 						<span class="flex-1 truncate">{product.name}</span>
-						<span class="text-xs text-muted-foreground">{formatMoney(product.price)}</span>
+						<span class="text-xs text-muted-foreground">{formatMoney(ttc(product.price))}</span>
 					</Command.LinkItem>
 				{/each}
 			</Command.Group>

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { getUserIdByOrderId } from '$lib/prisma/order/prendingOrder';
 import { nextInvoiceNumber } from '$lib/server/invoice/number';
 import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
+import { getVatRate } from '$lib/server/vat';
 import { withLock } from '$lib/server/lock';
 import {
 	enqueuePostPaymentJob,
@@ -200,6 +201,10 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 	}
 
 	let createdTransaction;
+	// Lu avant la transaction courte ci-dessous : un appel `StoreSettings`
+	// de plus dans la transaction n'apporterait rien, le taux ne dépend
+	// d'aucune donnée écrite par cette même transaction.
+	const vatRate = await getVatRate();
 
 	try {
 		// (1) ENREGISTREMENT EN DB via une transaction Prisma courte — aucun
@@ -239,6 +244,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 					price: item.price,
 					quantity: item.quantity
 				})),
+				vatRatePercent: vatRate * 100,
 				shippingCost: parseFloat(order.shippingCost?.toString() ?? '0'),
 				discountAmount: order.discountAmount ?? 0,
 				paidTotal: (session.amount_total ?? 0) / 100
@@ -325,6 +331,13 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				servicePointType: order.servicePointType ?? null,
 				servicePointExtraRefCab: order.servicePointExtraRefCab ?? null,
 				servicePointExtraShopRef: order.servicePointExtraShopRef ?? null,
+
+				// Détection de fraude — recopié tel quel depuis `Order` (posé par
+				// l'action `checkout`, avant la tentative de paiement), même pattern
+				// que les adresses ci-dessus.
+				riskScore: order.riskScore ?? null,
+				riskLevel: order.riskLevel ?? null,
+				riskFactors: order.riskFactors ?? [],
 
 				// Produits (JSON)
 				invoiceNumber,

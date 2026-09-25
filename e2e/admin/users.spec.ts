@@ -1,7 +1,19 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
-import { deleteUser, getUser, occupyEmail, promoteToAdmin, requireUser } from '../support/db';
+import {
+	createCatalogProduct,
+	deleteCatalogProduct,
+	deleteUser,
+	getOrderById,
+	getTransactionById,
+	getUser,
+	linkProductToOrder,
+	occupyEmail,
+	promoteToAdmin,
+	requireUser,
+	simulatePaidOrder
+} from '../support/db';
 
 /**
  * CRUD des comptes dans l'admin : liste sans secrets, rôle, MFA, suppression.
@@ -17,6 +29,15 @@ test.describe('Administration — utilisateurs', () => {
 		await occupyEmail(victimEmail);
 		const target = await requireUser(targetEmail);
 		const victim = await requireUser(victimEmail);
+		// La suppression admin (étape 5) anonymise désormais au lieu de
+		// supprimer physiquement (voir $lib/prisma/user/anonymizeUser.ts,
+		// CONFORMITE_ECOMMERCE.md) : une commande payée doit survivre à la
+		// suppression du compte, obligation comptable.
+		const created = await createCatalogProduct();
+		const { product } = created;
+		const linked = await linkProductToOrder(victim.id, product.id);
+		const victimTransaction = await simulatePaidOrder(linked.order.id, victim.id, victimEmail);
+		const anonymizedVictimEmail = `deleted-${victim.id}@erased.local`;
 
 		try {
 			await signUpAndVerify(page, account);
@@ -98,11 +119,28 @@ test.describe('Administration — utilisateurs', () => {
 				await expect(page.getByRole('cell', { name: victimEmail })).toHaveCount(0, {
 					timeout: 15_000
 				});
+				// Ancien e-mail introuvable : le compte a bien changé d'identité —
+				// pas la preuve à elle seule qu'il a été anonymisé plutôt que
+				// supprimé, d'où les vérifications suivantes.
 				expect(await getUser(victimEmail)).toBeNull();
+
+				const anonymized = await requireUser(anonymizedVictimEmail);
+				expect(anonymized.id).toBe(victim.id);
+				expect(anonymized.passwordHash).toBeNull();
+
+				// Le point qui compte : la commande payée existe toujours,
+				// l'historique comptable n'est jamais perdu.
+				const order = await getOrderById(linked.order.id);
+				expect(order).not.toBeNull();
+				expect(order?.userId).toBe(victim.id);
+
+				const transaction = await getTransactionById(victimTransaction.id);
+				expect(transaction).not.toBeNull();
 			});
 		} finally {
 			await deleteUser(targetEmail);
-			await deleteUser(victimEmail);
+			await deleteUser(anonymizedVictimEmail);
+			await deleteCatalogProduct(product.id);
 		}
 	});
 
