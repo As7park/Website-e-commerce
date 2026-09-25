@@ -995,6 +995,12 @@ model StoreSettings {
   /// constante, pour ne rien changer silencieusement en production tant que
   /// l'admin n'a pas lui-même ajusté le taux depuis `/admin/settings`.
   vatRate Float @default(0.055)
+  /// Délai de livraison estimé (jours ouvrés) affiché au client avant
+  /// validation de commande (Code conso. art. L216-1) — `null` = rien
+  /// affiché (comportement inchangé tant que l'admin n'a pas saisi une
+  /// vraie estimation depuis `/admin/settings`, aucune date inventée).
+  estimatedDeliveryMinDays Int?
+  estimatedDeliveryMaxDays Int?
   updatedAt            DateTime @updatedAt
 
   @@map("store_settings")

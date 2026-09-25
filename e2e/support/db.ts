@@ -1042,7 +1042,9 @@ export async function getStoreFeatureFlags() {
 				fraudDetectionEnabled: true,
 				fraudBlockingEnabled: true,
 				recentlyViewedReminderEnabled: true,
-				vatRate: true
+				vatRate: true,
+				estimatedDeliveryMinDays: true,
+				estimatedDeliveryMaxDays: true
 			}
 		})
 	);
@@ -1067,6 +1069,8 @@ export async function setStoreFeatureFlags(patch: {
 	fraudBlockingEnabled?: boolean;
 	recentlyViewedReminderEnabled?: boolean;
 	vatRate?: number;
+	estimatedDeliveryMinDays?: number | null;
+	estimatedDeliveryMaxDays?: number | null;
 }) {
 	return resilient(() => db.storeSettings.update({ where: { id: 'singleton' }, data: patch }));
 }

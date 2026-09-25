@@ -32,6 +32,7 @@ import {
 	resolveTrustedShippingCost
 } from '$lib/commerce/checkout';
 import { getVatRate } from '$lib/server/vat';
+import { getDeliveryEstimate } from '$lib/server/delivery';
 import { CartForbiddenError, InvalidShippingError } from '$lib/commerce/errors';
 
 export const load = (async ({ locals }) => {
@@ -68,6 +69,8 @@ export const load = (async ({ locals }) => {
 	}
 	// BUNDLE-PLUGIN ▲
 
+	const deliveryEstimate = await getDeliveryEstimate();
+
 	return {
 		addresses,
 		IOrderSchema,
@@ -75,7 +78,8 @@ export const load = (async ({ locals }) => {
 		referralDiscountEligible,
 		referralDiscountPercent: REFERRAL_REFEREE_DISCOUNT_PERCENT,
 		bundleDiscountEligible,
-		bundleDiscountPercent: BUNDLE_DISCOUNT_PERCENT
+		bundleDiscountPercent: BUNDLE_DISCOUNT_PERCENT,
+		deliveryEstimate
 	};
 }) satisfies PageServerLoad;
 

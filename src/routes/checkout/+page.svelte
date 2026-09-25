@@ -735,6 +735,13 @@
 									/>
 									<input type="hidden" name="cgvAccepted" value={cgvAccepted ? 'on' : 'off'} />
 
+									{#if data.deliveryEstimate}
+										<p class="text-sm text-muted-foreground mb-4">
+											Livraison estimée sous {data.deliveryEstimate.minDays}
+											à {data.deliveryEstimate.maxDays} jours ouvrés après expédition.
+										</p>
+									{/if}
+
 									<div class="flex items-start gap-2 mb-4">
 										<Checkbox id="cgvAccepted" bind:checked={cgvAccepted} class="mt-0.5" />
 										<Label for="cgvAccepted" class="font-normal text-sm">

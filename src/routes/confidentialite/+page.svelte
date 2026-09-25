@@ -70,6 +70,10 @@
 					et marketing.
 				</li>
 				<li><strong>Upstash</strong> — file d'attente de tâches et cache technique.</li>
+				<li>
+					<strong>Sentry</strong> — suivi des erreurs techniques (contexte de requête, jamais utilisé
+					à des fins commerciales).
+				</li>
 			</ul>
 		</section>
 

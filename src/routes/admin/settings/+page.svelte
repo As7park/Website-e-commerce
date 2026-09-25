@@ -11,6 +11,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { vatRateSchema } from '$lib/schema/settings/vatSchema';
+	import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
 
 	let { data, form } = $props();
 
@@ -25,6 +26,23 @@
 
 	$effect(() => {
 		if ($vatMessage) toast.success($vatMessage);
+	});
+
+	const deliveryForm = superForm(
+		untrack(() => data.deliveryForm),
+		{
+			validators: zodClient(deliveryEstimateSchema),
+			id: 'deliveryEstimate'
+		}
+	);
+	const {
+		form: deliveryFormData,
+		enhance: deliveryEnhance,
+		message: deliveryMessage
+	} = deliveryForm;
+
+	$effect(() => {
+		if ($deliveryMessage) toast.success($deliveryMessage);
 	});
 
 	type FlagKey =
@@ -267,6 +285,50 @@
 						min="0"
 						max="100"
 						bind:value={$vatFormData.vatRatePercent}
+					/>
+				</Form.Control>
+				<Form.FieldErrors />
+			</Form.Field>
+			<Button type="submit">Enregistrer</Button>
+		</form>
+	</div>
+
+	<div class="border rounded-lg p-5 space-y-3 max-w-sm">
+		<div>
+			<h2 class="text-lg font-semibold">Délai de livraison annoncé</h2>
+			<p class="text-sm text-muted-foreground">
+				Affiché au client avant validation de commande (Code conso. art. L216-1). Laissez les deux
+				champs vides pour ne rien afficher — voir <code>CONFORMITE_ECOMMERCE.md</code>.
+			</p>
+		</div>
+		<form
+			method="POST"
+			action="?/updateDeliveryEstimate"
+			use:deliveryEnhance
+			class="flex items-end gap-3"
+		>
+			<Form.Field name="minDays" form={deliveryForm} class="flex-1">
+				<Form.Control>
+					<Form.Label>Min (jours)</Form.Label>
+					<Input
+						name="minDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.minDays}
+					/>
+				</Form.Control>
+				<Form.FieldErrors />
+			</Form.Field>
+			<Form.Field name="maxDays" form={deliveryForm} class="flex-1">
+				<Form.Control>
+					<Form.Label>Max (jours)</Form.Label>
+					<Input
+						name="maxDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.maxDays}
 					/>
 				</Form.Control>
 				<Form.FieldErrors />

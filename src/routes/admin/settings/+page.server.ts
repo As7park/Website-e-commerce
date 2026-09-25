@@ -10,6 +10,8 @@ import {
 } from '$lib/server/storeSettings';
 import { getVatRate, updateVatRate } from '$lib/server/vat';
 import { vatRateSchema } from '$lib/schema/settings/vatSchema';
+import { getDeliveryEstimate, updateDeliveryEstimate } from '$lib/server/delivery';
+import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
 import { log } from '$lib/server/log';
 
 const FLAG_KEYS = [
@@ -46,7 +48,13 @@ export const load = (async ({ locals }) => {
 	const vatForm = await superValidate({ vatRatePercent: vatRate * 100 }, zod(vatRateSchema), {
 		id: 'vatRate'
 	});
-	return { flags, vatForm };
+	const deliveryEstimate = await getDeliveryEstimate();
+	const deliveryForm = await superValidate(
+		{ minDays: deliveryEstimate?.minDays, maxDays: deliveryEstimate?.maxDays },
+		zod(deliveryEstimateSchema),
+		{ id: 'deliveryEstimate' }
+	);
+	return { flags, vatForm, deliveryForm };
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
@@ -96,6 +104,41 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error('Error updating VAT rate:', error);
 			return fail(500, { vatForm: form, message: "La mise à jour n'a pas pu être enregistrée." });
+		}
+	},
+
+	/**
+	 * Délai de livraison estimé (`StoreSettings.estimatedDelivery{Min,Max}Days`)
+	 * — voir CONFORMITE_ECOMMERCE.md : affiché au client avant commande
+	 * (Code conso. L216-1), jamais de date inventée par défaut.
+	 */
+	updateDeliveryEstimate: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const formData = await request.formData();
+		const form = await superValidate(formData, zod(deliveryEstimateSchema), {
+			id: 'deliveryEstimate'
+		});
+
+		if (!form.valid) {
+			return fail(400, { deliveryForm: form });
+		}
+
+		try {
+			const estimate =
+				form.data.minDays != null && form.data.maxDays != null
+					? { minDays: form.data.minDays, maxDays: form.data.maxDays }
+					: null;
+			await updateDeliveryEstimate(estimate);
+			log('INFO', 'admin-settings', `Délai de livraison mis à jour par ${locals.user.email}`, {
+				estimate
+			});
+			return message(form, 'Délai de livraison mis à jour');
+		} catch (error) {
+			console.error('Error updating delivery estimate:', error);
+			return fail(500, {
+				deliveryForm: form,
+				message: "La mise à jour n'a pas pu être enregistrée."
+			});
 		}
 	}
 };
