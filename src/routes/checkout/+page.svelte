@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	// COMMERCE-PLUGIN : UI du tunnel. SENDCLOUD = carte / options. PROMO = champ code.
-	import maplibregl from 'maplibre-gl';
+	import type { Offset } from 'maplibre-gl';
 
 	import * as Card from '$shadcn/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
@@ -161,7 +161,7 @@
 
 	// Offset pour la popup (optionnel, reprenant l'exemple maplibre)
 	let offset = $state(24);
-	let offsets: maplibregl.Offset = $derived({
+	let offsets: Offset = $derived({
 		top: [0, offset],
 		bottom: [0, -offset],
 		left: [offset + 12, 0],
