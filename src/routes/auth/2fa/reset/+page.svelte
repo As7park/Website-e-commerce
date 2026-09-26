@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -33,13 +34,16 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-4 text-center">Récupérer votre compte</h1>
-		<p class="text-center text-gray-600 mb-6">
-			Entrez votre code de récupération pour accéder à votre compte.
-		</p>
-
+<ShopPage
+	title="Récupérer votre compte"
+	lead="Entrez votre code de récupération pour accéder à votre compte."
+	crumbs={[
+		{ label: 'Double authentification', href: '/auth/2fa' },
+		{ label: 'Code de récupération' }
+	]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<form method="POST" action="?/recovery_code" use:recoveryCodeEnhance class="space-y-6">
 			<div>
 				<Form.Field name="code" form={recoveryCodeForm}>
@@ -61,7 +65,7 @@
 				<Button type="submit" class="w-full">Vérifier</Button>
 			</div>
 
-			<p class="text-center mt-4 text-sm text-red-500">{$recoveryCodeMessage ?? ''}</p>
+			<p class="text-center mt-4 text-sm text-destructive">{$recoveryCodeMessage ?? ''}</p>
 		</form>
 	</div>
-</div>
+</ShopPage>

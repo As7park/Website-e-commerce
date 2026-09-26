@@ -2,6 +2,7 @@
 	import Navigation from './../lib/components/Navigation.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import ShopShell from '$lib/components/shop/ShopShell.svelte';
 	import '@fontsource-variable/open-sans';
 	import '@fontsource-variable/raleway';
 	import '../app.css';
@@ -40,12 +41,13 @@
 
 	let { children, data } = $props();
 
-	// SHOP-DESIGN : la vitrine `(shop)` porte son propre chrome (ShopHeader/
-	// ShopFooter/WheelCursor, thème sombre shop.css) — pas de Navigation ni de
-	// SmoothScrollBar ici pour ces routes, pour éviter un double header. Les
-	// effets ci-dessous (hydratation panier, etc.) restent inconditionnels :
-	// ils sont fonctionnels, pas liés à ce chrome visuel.
-	let isShopRoute = $derived($page.route.id?.startsWith('/(shop)') ?? false);
+	// SHOP-DESIGN : tout le site public (hors `/admin`) porte le chrome de la
+	// boutique (ShopShell : ShopHeader/ShopFooter/WheelCursor, thème sombre
+	// shop.css) — y compris auth, compte client, pages légales et erreurs 404.
+	// L'admin garde Navigation + SmoothScrollBar. Les effets ci-dessous
+	// (hydratation panier, etc.) restent inconditionnels : ils sont
+	// fonctionnels, pas liés au chrome visuel.
+	let isShopRoute = $derived(!$page.url.pathname.startsWith('/admin'));
 
 	/** Dernière identité pour laquelle le panier a été hydraté (`guest` ou user id). */
 	let hydratedFor: string | null = null;
@@ -214,9 +216,10 @@
 </svelte:head>
 
 {#if isShopRoute}
-	{@render children()}
+	<ShopShell {data}>
+		{@render children()}
+	</ShopShell>
 	<Toaster />
-	<CookieNotice />
 {:else}
 	{#if !$firstLoadComplete}
 		<Loader />

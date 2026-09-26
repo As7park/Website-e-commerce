@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -30,22 +31,24 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-6 text-center">Two-factor Authentication</h1>
-		<p class="text-center mb-4 text-gray-600">Enter the code from your authenticator app.</p>
-
+<ShopPage
+	title="Double authentification"
+	lead="Saisissez le code affiché par votre application d’authentification."
+	crumbs={[{ label: 'Double authentification' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<!-- Formulaire TOTP -->
 		<form method="POST" action="?/totp" use:totpEnhance class="space-y-6">
 			<div>
 				<Form.Field name="code" form={totpForm}>
 					<Form.Control>
-						<Form.Label>Authentication Code</Form.Label>
+						<Form.Label>Code d’authentification</Form.Label>
 						<Input
 							type="text"
 							name="code"
 							bind:value={$totpData.code}
-							placeholder="Enter your code"
+							placeholder="123456"
 							autocomplete="one-time-code"
 							required
 						/>
@@ -55,14 +58,13 @@
 			</div>
 
 			<div class="mt-6">
-				<Button type="submit" class="w-full">Verify</Button>
+				<Button type="submit" class="w-full">Vérifier</Button>
 			</div>
 		</form>
 
 		<!-- Lien pour utiliser le code de récupération -->
-		<div class="mt-4 text-center">
-			<a href="/auth/2fa/reset" class="text-orange-700 hover:underline">Use recovery code instead</a
-			>
+		<div class="shop-links-row">
+			<a href="/auth/2fa/reset" class="shop-link">Utiliser un code de récupération</a>
 		</div>
 	</div>
-</div>
+</ShopPage>

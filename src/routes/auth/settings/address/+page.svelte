@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	/* ───────────────────────────── Imports ───────────────────────────── */
-	import * as Card from '$shadcn/card/index.js';
 	import { Button } from '$shadcn/button/index.js'; // Shadcn button
 	import Plus from 'lucide-svelte/icons/plus';
 	import Pencil from 'lucide-svelte/icons/pencil';
@@ -52,76 +51,51 @@
 	}
 </script>
 
-<!-- ─────────────────────────── Layout ───────────────────────────── -->
-<section class="w-[100vw] h-[100%] mx-auto px-4 py-6 space-y-6 ccc">
-	<!-- Top bar: title + add button -->
-	<div class="max-w-[300px]">
-		<h2 class="text-xl font-semibold">Addresses</h2>
-		<div class="flex items-center justify-between my-5">
-			<Button
-				variant="default"
-				size="sm"
-				class="inline-flex items-center gap-1 w-[100%]"
-				onclick={add}
-				aria-label="Ajouter une adresse"
-			>
-				<Plus size="16" /> Add
-			</Button>
-		</div>
-
-		<!-- Card grid -->
-		<div class="ccc">
-			{#each data.address ?? [] as address (address.id)}
-				<Card.Root class="flex flex-col h-full">
-					<Card.Header class="pb-2">
-						<Card.Title class="text-lg font-semibold">
-							{address.first_name}
-							{address.last_name}
-						</Card.Title>
-						<Card.Description class="text-sm text-muted-foreground">
-							{address.company || `${address.street_number} ${address.street}`}
-						</Card.Description>
-					</Card.Header>
-
-					<Card.Content class="flex-1 py-2 mb-5">
-						<ul class="space-y-1 text-sm">
-							<li><strong>Phone:</strong> {address.phone}</li>
-							<li><strong>Street:</strong> {address.street_number} {address.street}</li>
-							<li><strong>City:</strong> {address.zip} {address.city}</li>
-							<li><strong>State:</strong> {address.state}</li>
-							<li><strong>Country:</strong> {address.country}</li>
-						</ul>
-					</Card.Content>
-
-					<Card.Footer class="rca w-[100%]">
-						<button
-							type="button"
-							class="inline-flex items-center gap-1 text-primary hover:underline"
-							aria-label="Modifier l'adresse"
-							onclick={() => edit(address.id)}
-						>
-							<Pencil size="16" />
-						</button>
-
-						<form
-							method="POST"
-							action="?/deleteAddress"
-							use:deleteAddressEnhance
-							class="inline-flex"
-						>
-							<input type="hidden" name="id" value={address.id} />
-							<button
-								type="submit"
-								class="inline-flex items-center gap-1 text-destructive hover:underline"
-								aria-label="Supprimer l'adresse"
-								onclick={() => ($deleteAddressData.id = address.id)}
-							>
-								<Trash size="16" />
-							</button>
-						</form>
-					</Card.Footer>
-				</Card.Root>
-			{/each}
-		</div>
+<header class="shop-page-head flex flex-wrap items-end justify-between gap-4">
+	<div>
+		<h1 class="shop-page-title">Mes adresses</h1>
+		<p class="shop-page-lead">Vos adresses de livraison et de facturation.</p>
 	</div>
-</section>
+	<Button onclick={add} class="inline-flex items-center gap-2">
+		<Plus size="16" /> Ajouter une adresse
+	</Button>
+</header>
+
+{#if (data.address ?? []).length === 0}
+	<div class="shop-panel shop-muted">Aucune adresse enregistrée pour le moment.</div>
+{:else}
+	<div class="shop-account-grid">
+		{#each data.address ?? [] as address (address.id)}
+			<div class="shop-panel flex flex-col">
+				<h2 class="shop-panel-title">{address.first_name} {address.last_name}</h2>
+				<ul class="flex-1 space-y-1 text-sm">
+					{#if address.company}<li>{address.company}</li>{/if}
+					<li>{address.street_number} {address.street}</li>
+					<li>{address.zip} {address.city}</li>
+					{#if address.state}<li>{address.state}</li>{/if}
+					<li>{address.country}</li>
+					{#if address.phone}<li class="shop-muted">{address.phone}</li>{/if}
+				</ul>
+				<div class="mt-5 flex items-center gap-4 border-t border-border pt-4 text-sm">
+					<button
+						type="button"
+						class="inline-flex items-center gap-1 shop-link"
+						onclick={() => edit(address.id)}
+					>
+						<Pencil size="14" /> Modifier
+					</button>
+					<form method="POST" action="?/deleteAddress" use:deleteAddressEnhance class="inline-flex">
+						<input type="hidden" name="id" value={address.id} />
+						<button
+							type="submit"
+							class="inline-flex items-center gap-1 text-destructive hover:underline"
+							onclick={() => ($deleteAddressData.id = address.id)}
+						>
+							<Trash size="14" /> Supprimer
+						</button>
+					</form>
+				</div>
+			</div>
+		{/each}
+	</div>
+{/if}

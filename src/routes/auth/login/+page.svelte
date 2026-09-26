@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -30,10 +31,8 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="loginContainer w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-6 text-center">Connexion</h1>
-
+<ShopPage title="Connexion" crumbs={[{ label: 'Connexion' }]} width="narrow">
+	<div class="shop-panel">
 		<form method="POST" action="?/login" use:loginEnhance class="space-y-6">
 			<div>
 				<Form.Field name="email" form={loginForm}>
@@ -69,17 +68,15 @@
 			<div class="mt-6">
 				<Button type="submit" class="w-full">Continuer</Button>
 			</div>
-
-			<a href="/auth/login/google">
-				<Button class="w-full mt-10">Sign in with Google</Button>
-			</a>
 		</form>
 
-		<div class="mt-4 flex justify-between text-sm">
-			<a href="/auth/signup" class="text-orange-700 hover:underline">Créer un compte</a>
-			<a href="/auth/forgot-password" class="text-orange-700 hover:underline"
-				>Mot de passe oublié ?</a
-			>
+		<p class="shop-divider">ou</p>
+		<Button href="/auth/login/google" variant="outline" class="w-full">Continuer avec Google</Button
+		>
+
+		<div class="shop-links-row">
+			<a href="/auth/signup" class="shop-link">Créer un compte</a>
+			<a href="/auth/forgot-password" class="shop-link">Mot de passe oublié ?</a>
 		</div>
 	</div>
-</div>
+</ShopPage>

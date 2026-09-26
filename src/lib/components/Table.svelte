@@ -379,7 +379,9 @@
 						<Popover.Trigger class={cn(buttonVariants({ variant: 'outline' }))}>
 							{itemsPerPage} / page
 						</Popover.Trigger>
-						<Popover.Content class="p-4 border rounded w-48 bg-white shadow-lg">
+						<Popover.Content
+							class="p-4 border rounded w-48 bg-popover text-popover-foreground shadow-lg"
+						>
 							<div class="mb-2 font-medium">nombre d'items :</div>
 							<RadioGroup.Root bind:value={itemsPerPageString} class="space-y-2">
 								{#each optionPage as option (option.value)}
@@ -605,7 +607,7 @@
 								{#each paginatedItems as item (item.id)}
 									<TableRow>
 										{#if selectable}
-											<td class="border border-gray-300 p-2">
+											<td class="border border-border p-2">
 												<Checkbox
 													checked={selectedIds.has(item.id)}
 													onCheckedChange={(value) => toggleSelectItem(item.id, Boolean(value))}
@@ -614,7 +616,7 @@
 											</td>
 										{/if}
 										{#each visibleColumns as column (column.key)}
-											<td class="border border-gray-300 p-2">
+											<td class="border border-border p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
 														| { src: string; alt: string }

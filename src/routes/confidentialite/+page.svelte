@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SEO from '$lib/components/SEO.svelte';
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 </script>
 
 <SEO
@@ -7,25 +8,28 @@
 	description="Traitement des données personnelles : finalités, bases légales, durées de conservation et droits RGPD."
 />
 
-<div class="relative box-border min-h-screen w-full px-8 pt-24 pb-16">
-	<div class="mx-auto w-full max-w-[760px] space-y-8">
-		<h1 class="text-2xl font-bold">Politique de confidentialité</h1>
+<ShopPage
+	title="Politique de confidentialité"
+	crumbs={[{ label: 'Politique de confidentialité' }]}
+	width="text"
+>
+	<div class="shop-prose">
 		<p class="text-sm text-muted-foreground">
 			⚠️ Document à compléter avec les coordonnées réelles de l'éditeur avant mise en production —
 			voir <code>CONFORMITE_ECOMMERCE.md</code> à la racine du projet.
 		</p>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">1. Qui traite vos données ?</h2>
-			<p class="text-sm">
+		<section>
+			<h2>1. Qui traite vos données ?</h2>
+			<p>
 				Le responsable du traitement est l'éditeur du site — voir les
-				<a href="/mentions-legales" class="underline">mentions légales</a>.
+				<a href="/mentions-legales">mentions légales</a>.
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">2. Quelles données et pourquoi</h2>
-			<ul class="list-disc space-y-2 pl-5 text-sm">
+		<section>
+			<h2>2. Quelles données et pourquoi</h2>
+			<ul>
 				<li>
 					<strong>Compte et commandes</strong> (nom, e-mail, adresses, historique d'achat) — exécution
 					du contrat de vente (RGPD art. 6.1.b).
@@ -47,19 +51,19 @@
 			</ul>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">3. Durées de conservation</h2>
-			<p class="text-sm">
+		<section>
+			<h2>3. Durées de conservation</h2>
+			<p>
 				Les données de compte, sessions expirées et paniers abandonnés font l'objet d'une purge
 				automatique périodique. Les données de facturation sont conservées 10 ans conformément aux
 				obligations comptables et fiscales (Code de commerce, art. L123-22).
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">4. Sous-traitants</h2>
-			<p class="text-sm">Les données sont partagées, dans la stricte limite nécessaire, avec :</p>
-			<ul class="list-disc space-y-1 pl-5 text-sm">
+		<section>
+			<h2>4. Sous-traitants</h2>
+			<p>Les données sont partagées, dans la stricte limite nécessaire, avec :</p>
+			<ul>
 				<li><strong>Stripe</strong> — traitement des paiements.</li>
 				<li><strong>Sendcloud</strong> — création d'étiquettes et suivi de livraison.</li>
 				<li><strong>Cloudinary</strong> — hébergement des images.</li>
@@ -77,24 +81,22 @@
 			</ul>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">5. Vos droits</h2>
-			<p class="text-sm">
+		<section>
+			<h2>5. Vos droits</h2>
+			<p>
 				Conformément au Règlement général sur la protection des données (RGPD), vous disposez d'un
 				droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité
 				de vos données. La rectification de vos informations de compte et de vos adresses est
-				disponible directement depuis votre espace <a href="/auth/settings" class="underline"
-					>Mon compte</a
-				>.
+				disponible directement depuis votre espace <a href="/auth/settings">Mon compte</a>.
 			</p>
-			<p class="text-sm">
+			<p>
 				L'export complet de vos données (portabilité) et la suppression de votre compte (effacement)
 				sont disponibles en libre-service depuis
-				<a href="/auth/settings/donnees" class="underline">Mon compte → Mes données</a> — aucune
-				demande par e-mail n'est nécessaire pour ces deux droits. Pour toute autre demande, utilisez
-				le <a href="/contact" class="underline">formulaire de contact</a> en précisant l'objet de
-				votre demande RGPD. Vous disposez également du droit d'introduire une réclamation auprès de
-				la CNIL (<a
+				<a href="/auth/settings/donnees">Mon compte → Mes données</a> — aucune demande par e-mail
+				n'est nécessaire pour ces deux droits. Pour toute autre demande, utilisez le
+				<a href="/contact">formulaire de contact</a>
+				en précisant l'objet de votre demande RGPD. Vous disposez également du droit d'introduire
+				une réclamation auprès de la CNIL (<a
 					href="https://www.cnil.fr"
 					target="_blank"
 					rel="noopener noreferrer"
@@ -103,22 +105,22 @@
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">6. Sécurité</h2>
-			<p class="text-sm">
+		<section>
+			<h2>6. Sécurité</h2>
+			<p>
 				Les mots de passe sont chiffrés (Argon2id) et ne sont jamais stockés en clair. Les codes de
 				double authentification sont chiffrés au repos. Aucune donnée de carte bancaire ne transite
 				par nos serveurs.
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">7. Cookies</h2>
-			<p class="text-sm">
+		<section>
+			<h2>7. Cookies</h2>
+			<p>
 				Ce site utilise uniquement des cookies de session strictement nécessaires à son
 				fonctionnement (maintien de votre connexion, panier). Aucun cookie publicitaire ou traceur
 				de mesure d'audience n'est déposé à ce jour.
 			</p>
 		</section>
 	</div>
-</div>
+</ShopPage>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SEO from '$lib/components/SEO.svelte';
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 
 	let { data } = $props();
 
@@ -27,8 +28,8 @@
 	description="Identification de l'éditeur, de l'hébergeur et du médiateur de la consommation."
 />
 
-<div class="relative box-border min-h-screen w-full px-8 pt-24 pb-16">
-	<div class="mx-auto w-full max-w-[760px] space-y-8">
+<ShopPage title="Mentions légales" crumbs={[{ label: 'Mentions légales' }]} width="text">
+	<div class="shop-prose">
 		{#if data.company.logoUrl}
 			<img
 				src={data.company.logoUrl}
@@ -36,17 +37,16 @@
 				class="h-16 w-auto object-contain"
 			/>
 		{/if}
-		<h1 class="text-2xl font-bold">Mentions légales</h1>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">Éditeur du site</h2>
+		<section>
+			<h2>Éditeur du site</h2>
 			{#if identityIncomplete}
 				<p class="text-sm text-muted-foreground">
 					⚠️ Informations à compléter avant mise en production — saisissables depuis
 					<code>/admin/settings</code>.
 				</p>
 			{/if}
-			<ul class="space-y-1 text-sm">
+			<ul>
 				<li><strong>Raison sociale :</strong> {orPlaceholder(data.company.name)}</li>
 				<li><strong>Forme juridique :</strong> {orPlaceholder(data.company.legalForm)}</li>
 				<li><strong>Capital social :</strong> {orPlaceholder(data.company.shareCapital)}</li>
@@ -67,21 +67,19 @@
 			</ul>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">Hébergement</h2>
-			<p class="text-sm">
+		<section>
+			<h2>Hébergement</h2>
+			<p>
 				Ce site est hébergé par :<br />
 				<strong>Vercel Inc.</strong><br />
 				440 N Barranca Ave #4133, Covina, CA 91723, États-Unis<br />
-				<a href="https://vercel.com" target="_blank" rel="noopener noreferrer" class="underline"
-					>vercel.com</a
-				>
+				<a href="https://vercel.com" target="_blank" rel="noopener noreferrer">vercel.com</a>
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">Médiation de la consommation</h2>
-			<p class="text-sm">
+		<section>
+			<h2>Médiation de la consommation</h2>
+			<p>
 				Conformément aux articles L616-1 et R616-1 du Code de la consommation, tout consommateur a
 				le droit de recourir gratuitement à un médiateur de la consommation en vue de la résolution
 				amiable d'un litige. Le médiateur retenu pour ce site est :
@@ -90,7 +88,7 @@
 				⚠️ Médiateur à désigner et à contractualiser — deux médiateurs généralistes agréés,
 				fréquemment utilisés par les e-commerçants français, pour référence :
 			</p>
-			<ul class="list-disc space-y-1 pl-5 text-sm">
+			<ul>
 				<li>
 					CNPM – Médiation de la consommation — <a
 						href="https://cnpm-mediation-consommation.eu"
@@ -108,7 +106,7 @@
 					>
 				</li>
 			</ul>
-			<p class="text-sm">
+			<p>
 				La plateforme européenne de règlement en ligne des litiges (RLL) est également accessible à
 				l'adresse
 				<a
@@ -120,9 +118,9 @@
 			</p>
 		</section>
 
-		<section class="space-y-2">
-			<h2 class="text-lg font-semibold">Propriété intellectuelle</h2>
-			<p class="text-sm">
+		<section>
+			<h2>Propriété intellectuelle</h2>
+			<p>
 				L'ensemble des contenus de ce site (textes, images, logos, mise en page) est protégé par le
 				droit d'auteur. Toute reproduction, même partielle, sans autorisation préalable est
 				interdite.
@@ -130,8 +128,8 @@
 		</section>
 
 		<p class="text-xs text-muted-foreground">
-			Voir aussi les <a href="/cgv" class="underline">conditions générales de vente</a> et la
-			<a href="/confidentialite" class="underline">politique de confidentialité</a>.
+			Voir aussi les <a href="/cgv">conditions générales de vente</a> et la
+			<a href="/confidentialite">politique de confidentialité</a>.
 		</p>
 	</div>
-</div>
+</ShopPage>

@@ -1,34 +1,24 @@
 <script lang="ts">
 	import { Button } from '$shadcn/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$shadcn/card';
-	import { AlertCircle } from 'lucide-svelte'; // Icône pour un effet visuel
+	import { AlertCircle } from 'lucide-svelte';
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 
 	let { data } = $props();
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<Card>
-			<CardHeader>
-				<div class="flex items-center space-x-2">
-					<AlertCircle class="text-yellow-500" />
-					<CardTitle>Recovery Code</CardTitle>
-				</div>
-			</CardHeader>
-			<CardContent>
-				<p class="mb-4 text-sm text-gray-600">
-					Utilisez ce code de récupération si vous perdez l'accès à vos méthodes d'authentification
-					à deux facteurs.
-				</p>
-				<div class="mb-4 p-4 bg-gray-100 rounded-lg border border-gray-300">
-					<p class="text-lg font-mono text-center text-gray-600">{data.recoveryCode}</p>
-				</div>
-				<div class="flex justify-end">
-					<a href="/auth/">
-						<Button class="w-full" variant="outline">Continuer</Button>
-					</a>
-				</div>
-			</CardContent>
-		</Card>
+<ShopPage
+	title="Code de récupération"
+	lead="Conservez ce code en lieu sûr : il vous permettra d'accéder à votre compte si vous perdez votre application d'authentification."
+	crumbs={[{ label: 'Mon compte', href: '/auth/settings' }, { label: 'Code de récupération' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
+		<p class="shop-alert mb-4 flex items-center gap-2">
+			<AlertCircle size={16} /> Ce code ne sera plus affiché.
+		</p>
+		<div class="mb-6 border border-border p-4">
+			<p class="font-mono text-center text-lg tracking-widest">{data.recoveryCode}</p>
+		</div>
+		<Button href="/auth" class="w-full">Continuer</Button>
 	</div>
-</div>
+</ShopPage>

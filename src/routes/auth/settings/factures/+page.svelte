@@ -43,7 +43,12 @@
 	];
 </script>
 
-<div class="ccc w-[100%]">
+<header class="shop-page-head">
+	<h1 class="shop-page-title">Commandes & factures</h1>
+	<p class="shop-page-lead">Retrouvez vos commandes, leur suivi et vos factures.</p>
+</header>
+
+<div class="w-full">
 	<Table
 		name="Factures"
 		columns={userColumns}

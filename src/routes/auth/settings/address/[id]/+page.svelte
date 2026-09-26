@@ -59,14 +59,21 @@
 	});
 </script>
 
-<div class="w-[100vw] h-[100%] mx-auto px-4 py-6 space-y-6 ccc my-10">
-	<h1 class="text-4xl font-s text-[#fe3d00]">Update the address</h1>
+<header class="shop-page-head">
+	<h1 class="shop-page-title">Modifier l’adresse</h1>
+</header>
 
+<div class="shop-panel">
 	<div class="mb-6">
 		<AddressAutocomplete onSelect={handleAddressSelect} />
 	</div>
 
-	<form method="POST" action="?/updateAddress" use:updateAddressEnhance>
+	<form
+		method="POST"
+		action="?/updateAddress"
+		use:updateAddressEnhance
+		class="grid gap-4 sm:grid-cols-2"
+	>
 		<!-- Prénom -->
 		<Form.Field name="first_name" form={updateAddress}>
 			<Form.Control>
@@ -156,8 +163,9 @@
 				value={$updateAddressData[key as keyof typeof $updateAddressData] ?? ''}
 			/>
 		{/each}
-		<div class="mt-6">
-			<Button type="submit">update address</Button>
+		<div class="mt-2 flex gap-3 sm:col-span-2">
+			<Button type="submit">Enregistrer</Button>
+			<Button href="/auth/settings/address" variant="outline">Annuler</Button>
 		</div>
 	</form>
 </div>

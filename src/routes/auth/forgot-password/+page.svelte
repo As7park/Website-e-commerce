@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -29,10 +30,12 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-6 text-center">Mot de passe oublié</h1>
-
+<ShopPage
+	title="Mot de passe oublié"
+	crumbs={[{ label: 'Connexion', href: '/auth/login' }, { label: 'Mot de passe oublié' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<form method="POST" action="?/forgotPassword" use:forgotEnhance class="space-y-6">
 			<div>
 				<Form.Field name="email" form={forgotForm}>
@@ -54,11 +57,11 @@
 				<Button type="submit" class="w-full">Envoyer</Button>
 			</div>
 
-			<p class="text-center mt-4 text-sm text-red-500">{$forgotMessage ?? ''}</p>
+			<p class="text-center mt-4 text-sm text-destructive">{$forgotMessage ?? ''}</p>
 		</form>
 
-		<div class="mt-4 flex justify-center text-sm">
-			<a href="/auth/login" class="text-orange-700 hover:underline">Se connecter</a>
+		<div class="shop-links-row">
+			<a href="/auth/login" class="shop-link">← Retour à la connexion</a>
 		</div>
 	</div>
-</div>
+</ShopPage>

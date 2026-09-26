@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -33,11 +34,13 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-4 text-center">Réinitialiser votre mot de passe</h1>
-
-		<p class="text-center text-gray-600 mb-6">Entrez votre nouveau mot de passe ci-dessous.</p>
+<ShopPage
+	title="Nouveau mot de passe"
+	crumbs={[{ label: 'Connexion', href: '/auth/login' }, { label: 'Nouveau mot de passe' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
+		<p class="text-center shop-muted mb-6">Entrez votre nouveau mot de passe ci-dessous.</p>
 
 		<!-- Formulaire de réinitialisation du mot de passe -->
 		<form method="POST" action="?/resetPassword" use:resetPasswordEnhance class="space-y-6">
@@ -61,4 +64,4 @@
 			</div>
 		</form>
 	</div>
-</div>
+</ShopPage>

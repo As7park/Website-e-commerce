@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import * as Card from '$shadcn/card';
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { Input } from '$shadcn/input';
 	import { Label } from '$shadcn/label';
 	import { Button } from '$shadcn/button';
@@ -20,15 +20,14 @@
 	nofollow
 />
 
-<div class="mx-auto max-w-[560px] px-6 pt-16 pb-12">
-	<h1 class="mb-2 text-2xl font-semibold">Suivi de commande</h1>
-	<p class="mb-8 text-muted-foreground">
-		Retrouvez le statut de votre commande sans vous connecter, avec votre numéro de facture et
-		l'email utilisé lors de l'achat.
-	</p>
-
-	<Card.Root>
-		<Card.Content class="pt-6">
+<ShopPage
+	title="Suivi de commande"
+	lead="Retrouvez le statut de votre commande sans vous connecter, avec votre numéro de facture et l'e-mail utilisé lors de l'achat."
+	crumbs={[{ label: 'Suivi de commande' }]}
+	width="text"
+>
+	<div class="shop-panel">
+		<div>
 			<form
 				method="POST"
 				use:enhance={() => {
@@ -56,8 +55,8 @@
 			{#if form?.message}
 				<p class="mt-4 text-sm text-destructive">{form.message}</p>
 			{/if}
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</div>
 
 	{#if form?.success && form.tracking}
 		<div class="mt-6">
@@ -74,4 +73,4 @@
 			/>
 		</div>
 	{/if}
-</div>
+</ShopPage>

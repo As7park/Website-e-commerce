@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -34,11 +35,13 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-4 text-center">Vérifiez votre adresse e-mail</h1>
-		<p class="text-center text-gray-600 mb-6">Un code à 8 chiffres a été envoyé à {data.email}.</p>
-
+<ShopPage
+	title="Vérifiez votre e-mail"
+	lead={`Un code à 8 chiffres a été envoyé à ${data.email}.`}
+	crumbs={[{ label: 'Connexion', href: '/auth/login' }, { label: 'Vérification de l’e-mail' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<form method="POST" action="?/verify" use:verifyEmailEnhance class="space-y-6">
 			<div>
 				<Form.Field name="code" form={verifyEmailForm}>
@@ -60,7 +63,7 @@
 				<Button type="submit" class="w-full">Vérifier</Button>
 			</div>
 
-			<p class="text-center mt-4 text-sm text-red-500">{$verifyEmailMessage ?? ''}</p>
+			<p class="text-center mt-4 text-sm text-destructive">{$verifyEmailMessage ?? ''}</p>
 		</form>
 	</div>
-</div>
+</ShopPage>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import { Input } from '$shadcn/input';
@@ -29,13 +30,11 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="mb-4 text-2xl font-bold">Créer un compte</h1>
-
+<ShopPage title="Créer un compte" crumbs={[{ label: 'Créer un compte' }]} width="narrow">
+	<div class="shop-panel">
 		{#if data.referralCode}
 			<p class="mb-4 text-sm text-muted-foreground">
-				Vous avez été invité·e par un ami ·e 🎉 votre première commande bénéficiera d'une remise.
+				Vous avez été invité·e par un·e ami·e 🎉 votre première commande bénéficiera d'une remise.
 			</p>
 		{/if}
 
@@ -72,12 +71,17 @@
 			</div>
 
 			<div class="mt-6">
-				<Button type="submit">S'inscrire</Button>
+				<Button type="submit" class="w-full">S'inscrire</Button>
 			</div>
 		</form>
 
-		<a href="/auth/login/google">
-			<Button class="w-full mt-10">Sign in with Google</Button>
-		</a>
+		<p class="shop-divider">ou</p>
+		<Button href="/auth/login/google" variant="outline" class="w-full">Continuer avec Google</Button
+		>
+
+		<div class="shop-links-row">
+			<span class="shop-muted">Déjà un compte ?</span>
+			<a href="/auth/login" class="shop-link">Se connecter</a>
+		</div>
 	</div>
-</div>
+</ShopPage>

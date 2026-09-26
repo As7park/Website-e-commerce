@@ -59,10 +59,13 @@
 	}
 </script>
 
-<div class="w-[100vw] h-[100%] mx-auto px-4 py-6 space-y-6 ccc my-10">
-	<div class="max-w-xl border mx-auto rounded-md p-6">
-		<h2 class="text-2xl font-semibold mb-4">Créer une adresse</h2>
+<header class="shop-page-head">
+	<h1 class="shop-page-title">Nouvelle adresse</h1>
+	<p class="shop-page-lead">Commencez à taper votre adresse pour la compléter automatiquement.</p>
+</header>
 
+<div class="shop-panel">
+	<div>
 		<div class="mb-6">
 			<AddressAutocomplete onSelect={handleAddressSelect} />
 		</div>
@@ -71,7 +74,7 @@
 			method="POST"
 			action={`?/createAddress${data.redirectTarget ? `&redirect=${data.redirectTarget}` : ''}${data.addressTarget ? `&target=${data.addressTarget}` : ''}`}
 			use:createAddressEnhance
-			class="space-y-4"
+			class="grid gap-4 sm:grid-cols-2"
 		>
 			<!-- Prénom -->
 			<Form.Field name="first_name" form={createAddress}>
@@ -166,7 +169,9 @@
 				bind:value={$createAddressData.ISO_3166_1_alpha_3}
 			/>
 
-			<Button type="submit" class="w-full">Enregistrer</Button>
+			<div class="mt-2 sm:col-span-2">
+				<Button type="submit">Enregistrer l’adresse</Button>
+			</div>
 		</form>
 	</div>
 </div>

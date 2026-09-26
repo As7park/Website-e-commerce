@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import * as Form from '$shadcn/form';
@@ -28,11 +29,13 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-4">Vérifiez votre adresse email</h1>
-		<p class="mb-4 text-gray-700">Nous avons envoyé un code de 8 chiffres à {data.email}.</p>
-
+<ShopPage
+	title="Vérifiez votre e-mail"
+	lead={`Nous avons envoyé un code de 8 chiffres à ${data.email}.`}
+	crumbs={[{ label: 'Vérification de l’e-mail' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<form method="post" use:verifyEnhance action="?/verifyCode" class="space-y-4">
 			<div>
 				<Form.Field name="code" form={verifyCodeForm}>
@@ -60,4 +63,4 @@
 			<Button type="submit" class="w-full" variant="ghost">Renvoyer le code</Button>
 		</form>
 	</div>
-</div>
+</ShopPage>

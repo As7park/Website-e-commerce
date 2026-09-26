@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShopPage from '$lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
 	import * as Form from '$shadcn/form';
 	import Input from '$shadcn/input/input.svelte';
@@ -29,13 +30,15 @@
 	});
 </script>
 
-<div class="w-screen h-screen ccc">
-	<div class="w-[300px] mx-auto p-6 border shadow-lg rounded-lg backdrop-blur-3xl">
-		<h1 class="text-2xl font-semibold mb-4">Configurer l'authentification à deux facteurs</h1>
-
+<ShopPage
+	title="Activer la double authentification"
+	crumbs={[{ label: 'Mon compte', href: '/auth/settings' }, { label: 'Double authentification' }]}
+	width="narrow"
+>
+	<div class="shop-panel">
 		<div class="flex flex-col items-center">
 			<!-- QR Code -->
-			<div class="w-64 h-64 mb-4">
+			<div class="w-64 h-64 mb-4 bg-white p-2">
 				{@html data.qrcode}
 			</div>
 
@@ -67,9 +70,9 @@
 
 				<!-- Bouton de soumission -->
 				<div class="mt-6">
-					<Button type="submit" class="w-full" variant="outline">Valider</Button>
+					<Button type="submit" class="w-full">Valider</Button>
 				</div>
 			</form>
 		</div>
 	</div>
-</div>
+</ShopPage>

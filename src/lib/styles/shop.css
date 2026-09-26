@@ -1303,3 +1303,283 @@ html.shop-is-loading * {
 	border-radius: 3px;
 	font-size: 0.9em;
 }
+
+/* =========================================================
+   SITE PUBLIC UNIFIÉ — tout sauf /admin passe par ShopShell.
+   ========================================================= */
+
+/* Tokens shadcn remappés sur la palette boutique : Card, Input, Button,
+   Table, Select, Dialog... prennent le même look que le reste du shop.
+   Posé sur `:root:has(.shop-scope)` (et pas sur `.shop-scope`) pour
+   couvrir aussi les éléments portés dans <body> (menus, dialogues,
+   toasts) ; l'admin, sans `.shop-scope`, garde son thème. */
+:root:has(.shop-scope) {
+	--background: #14120f;
+	--foreground: #f2efe4;
+	--card: #1d1a15;
+	--card-foreground: #f2efe4;
+	--popover: #1d1a15;
+	--popover-foreground: #f2efe4;
+	--primary: #f2efe4;
+	--primary-foreground: #14120f;
+	--secondary: #2a251d;
+	--secondary-foreground: #f2efe4;
+	--muted: #2a251d;
+	--muted-foreground: #a8906f;
+	--accent: #2a251d;
+	--accent-foreground: #f2efe4;
+	--destructive: #ff5a1f;
+	--border: rgba(242, 239, 228, 0.22);
+	--input: rgba(242, 239, 228, 0.4);
+	--ring: #ff5a1f;
+	--radius: 0px;
+	color-scheme: dark;
+}
+:root:has(.shop-scope) body {
+	background: #14120f;
+	color: #f2efe4;
+}
+
+.shop-scope {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+.shop-page-body {
+	flex: 1;
+}
+
+.shop-skip-link {
+	position: absolute;
+	left: -9999px;
+	top: 8px;
+	z-index: 100;
+	padding: 8px 16px;
+	background: var(--shop-paper);
+	color: var(--shop-ink);
+}
+.shop-skip-link:focus {
+	left: 8px;
+}
+
+/* ---------- Gabarit de page (ShopPage) ---------- */
+.shop-page {
+	padding-bottom: 72px;
+}
+.shop-page-inner {
+	margin: 0 auto;
+}
+.shop-page-inner.is-narrow {
+	max-width: 440px;
+}
+.shop-page-inner.is-text {
+	max-width: 760px;
+}
+.shop-page-head {
+	margin: 8px 0 32px;
+}
+.shop-page-inner.is-narrow .shop-page-head {
+	text-align: center;
+}
+.shop-page-title {
+	font-family: var(--shop-font-display);
+	font-weight: 400;
+	font-size: clamp(30px, 5vw, 44px);
+	letter-spacing: 0.5px;
+	line-height: 1.05;
+	margin: 0;
+}
+.shop-page-lead {
+	margin: 12px 0 0;
+	color: var(--shop-text-muted);
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+/* Carte « panneau » pour les formulaires et blocs (auth, compte). */
+.shop-panel {
+	background: var(--shop-panel);
+	border: 1px solid var(--shop-border);
+	padding: 28px;
+}
+.shop-panel + .shop-panel {
+	margin-top: 20px;
+}
+.shop-panel-title {
+	font-family: var(--shop-font-display);
+	font-weight: 400;
+	font-size: 20px;
+	margin: 0 0 16px;
+}
+.shop-stack > * + * {
+	margin-top: 18px;
+}
+.shop-muted {
+	color: var(--shop-text-muted);
+}
+.shop-scope .shop-link {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.shop-scope .shop-link:hover {
+	color: var(--shop-orange);
+}
+/* `.shop-scope a { color: inherit }` est plus spécifique que `.shop-btn` :
+   sans ceci, un <a class="shop-btn"> garde la couleur du texte courant et
+   devient illisible sur son propre fond clair. */
+.shop-scope a.shop-btn {
+	color: var(--shop-bg);
+}
+.shop-scope a.shop-btn-outline {
+	color: var(--shop-text);
+}
+.shop-scope a.shop-btn-outline:hover {
+	color: var(--shop-bg);
+}
+.shop-links-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 20px;
+	font-size: 13px;
+}
+.shop-divider {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 20px 0;
+	font-size: 12px;
+	color: var(--shop-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+.shop-divider::before,
+.shop-divider::after {
+	content: '';
+	flex: 1;
+	border-top: 1px solid var(--shop-border);
+}
+.shop-alert {
+	border: 1px solid var(--shop-orange);
+	color: var(--shop-orange);
+	padding: 10px 14px;
+	font-size: 14px;
+}
+
+/* ---------- Espace client ---------- */
+.shop-account-layout {
+	display: grid;
+	grid-template-columns: 220px minmax(0, 1fr);
+	gap: 40px;
+	align-items: start;
+}
+.shop-account-nav {
+	position: sticky;
+	top: 24px;
+	border: 1px solid var(--shop-border);
+}
+.shop-account-nav a {
+	display: block;
+	padding: 12px 16px;
+	font-size: 14px;
+	border-top: 1px solid var(--shop-border);
+	transition:
+		background 0.2s ease,
+		color 0.2s ease;
+}
+.shop-account-nav li:first-child a {
+	border-top: none;
+}
+.shop-account-nav a:hover {
+	background: var(--shop-panel);
+}
+.shop-account-nav a.shop-active {
+	background: var(--shop-paper);
+	color: var(--shop-ink);
+}
+.shop-account-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+	gap: 20px;
+	align-items: start;
+}
+.shop-account-grid .shop-panel + .shop-panel {
+	margin-top: 0;
+}
+@media (max-width: 800px) {
+	.shop-panel {
+		padding: 20px;
+	}
+	.shop-account-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 24px;
+	}
+	.shop-account-nav {
+		position: static;
+	}
+	.shop-account-nav ul {
+		display: flex;
+		overflow-x: auto;
+	}
+	.shop-account-nav li {
+		flex: 0 0 auto;
+	}
+	.shop-account-nav a {
+		border-top: none;
+		border-left: 1px solid var(--shop-border);
+		white-space: nowrap;
+	}
+	.shop-account-nav li:first-child a {
+		border-left: none;
+	}
+}
+.shop-account-signout {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 12px 16px;
+	font: inherit;
+	font-size: 14px;
+	color: var(--shop-text-muted);
+	background: none;
+	border: none;
+	border-top: 1px solid var(--shop-border);
+	cursor: pointer;
+}
+.shop-account-signout:hover {
+	color: var(--shop-orange);
+}
+@media (max-width: 800px) {
+	.shop-account-signout {
+		border-top: none;
+		border-left: 1px solid var(--shop-border);
+		white-space: nowrap;
+	}
+}
+
+/* ---------- Page d'erreur ---------- */
+.shop-error {
+	text-align: center;
+	padding-top: 72px;
+	padding-bottom: 96px;
+}
+.shop-error-code {
+	font-family: var(--shop-font-display);
+	font-size: clamp(96px, 18vw, 180px);
+	line-height: 1;
+	color: var(--shop-orange);
+	margin: 0 0 8px;
+}
+.shop-error .shop-page-lead {
+	max-width: 46ch;
+	margin-left: auto;
+	margin-right: auto;
+}
+.shop-error-actions {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 32px;
+}

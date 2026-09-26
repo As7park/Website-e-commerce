@@ -5,7 +5,7 @@
 	let { data } = $props();
 </script>
 
-<div class="mx-auto w-full max-w-4xl px-6 pt-6">
+<div class="w-full px-6">
 	<OrderTrackingPanel
 		status={data.tracking.status}
 		shippingMethodName={data.tracking.shippingMethodName}
