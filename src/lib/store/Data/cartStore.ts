@@ -4,8 +4,6 @@
 import { toast } from 'svelte-sonner';
 import { writable } from 'svelte/store';
 
-// Plafond de quantité cumulée pour les commandes non-personnalisées.
-const NATIVE_ORDER_MAX_QUANTITY = 72;
 // Taux de TVA courant — valeur de repli avant la première hydratation
 // depuis `+layout.server.ts` (`StoreSettings.vatRate`, `$lib/server/vat.ts`).
 // Ce store n'a pas d'accès Prisma direct (code client) : `setVatRate` est
@@ -184,7 +182,7 @@ export function setShippingTaxRate(rate: number) {
 }
 
 /**
- * Adds a product to the cart, respecting stock, 72-limit, etc.
+ * Adds a product to the cart, respecting stock.
  */
 export const addToCart = (product: OrderItem) => {
 	cart.update((currentCart) => {
@@ -203,19 +201,6 @@ export const addToCart = (product: OrderItem) => {
 			console.error('Cannot mix custom and non-custom items in the same order');
 			toast.error('Impossible de mélanger produits custom et non-custom dans cette commande.');
 			return currentCart;
-		}
-
-		// 72-limit check
-		if (!isProductCustom) {
-			const totalNativeQuantity = currentCart.items
-				.filter((item) => !Array.isArray(item.custom) || item.custom.length === 0)
-				.reduce((sum, item) => sum + item.quantity, 0);
-
-			if (totalNativeQuantity + product.quantity > NATIVE_ORDER_MAX_QUANTITY) {
-				console.error('Cannot add product: limit is 72 units for native orders.');
-				toast.error('Limite de 72 unités pour les commandes non personnalisées.');
-				return currentCart;
-			}
 		}
 
 		// Deux variantes du même produit sont des lignes distinctes : leur stock
@@ -321,20 +306,7 @@ export const updateCartItemQuantity = (
 
 		const stockLimit = currentItem.variant?.stock ?? currentItem.product.stock;
 		const maxAvailable = stockLimit - otherItemsQuantity;
-		let newQuantity = Math.min(quantity, maxAvailable);
-
-		// 72-limit logic if not custom
-		if (!currentItem.custom) {
-			const nativeItemsTotal = currentCart.items
-				.filter((i, idx) => !i.custom && idx !== itemIndex)
-				.reduce((sum, i) => sum + i.quantity, 0);
-
-			const allowedForThisItem = NATIVE_ORDER_MAX_QUANTITY - nativeItemsTotal;
-
-			newQuantity = Math.min(newQuantity, allowedForThisItem);
-		}
-
-		currentItem.quantity = newQuantity;
+		currentItem.quantity = Math.min(quantity, maxAvailable);
 
 		recalcSubtotalAndTax(currentCart);
 		recalcFinalTotal(currentCart);

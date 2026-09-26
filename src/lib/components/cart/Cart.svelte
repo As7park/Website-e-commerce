@@ -51,26 +51,9 @@
 	/*  Valeur dérivée et réactive du store mode  */
 	let currentMode = $derived(modeStore); // ✅ pas de $
 
-	/*  true si aucune personnalisation dans le panier  */
-	let isNativeOrder = $derived(
-		$cart.items.every((i) => !i.custom || (Array.isArray(i.custom) && i.custom.length === 0))
-	);
-
-	// Calculer le total des quantités pour les commandes non-personnalisées
-	let totalNonCustomQuantity = $derived(
-		$cart.items
-			.filter((item) => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
-			.reduce((acc, item) => acc + item.quantity, 0)
-	);
-
-	// Borne haute du champ libre : stock dispo, et pour le non-custom, le
-	// reliquat sous le plafond global de 72 unités (pas de plafond en custom).
-	function maxQuantityFor(item: OrderItem, isCustom: boolean): number {
-		const stockLimit = item.variant?.stock ?? item.product.stock;
-		if (isCustom) return stockLimit;
-
-		const otherItemsQuantity = totalNonCustomQuantity - item.quantity;
-		return Math.max(0, Math.min(stockLimit, 72 - otherItemsQuantity));
+	// Borne haute du champ libre : le stock disponible (de la variante si besoin).
+	function maxQuantityFor(item: OrderItem): number {
+		return item.variant?.stock ?? item.product.stock;
 	}
 
 	/* ------------------------------------------------------------------
@@ -205,18 +188,9 @@
 				<div class="p-4">
 					<h2 class="text-2xl font-bold mb-4">Votre panier</h2>
 
-					{#if isNativeOrder}
-						<p class="mb-4">
-							Pour les commandes non-personnalisées, la quantité totale est limitée à 72 unités.
-						</p>
-					{/if}
-
 					{#if $cart && $cart.items && $cart.items.length > 0}
 						<div class="max-h-[500px] overflow-y-auto">
 							{#each $cart.items as item (item.id)}
-								{@const isCustomItem = Boolean(
-									item.custom && Array.isArray(item.custom) && item.custom.length > 0
-								)}
 								<div class="p-4 border rounded-lg shadow-sm flex justify-between items-center mb-2">
 									<img
 										src={optimizedImageUrl(
@@ -254,16 +228,11 @@
 
 										<QuantityInput
 											value={item.quantity}
-											max={maxQuantityFor(item, isCustomItem)}
+											max={maxQuantityFor(item)}
 											onCommit={(v) =>
 												changeQuantity(item.product.id, v, item.custom?.[0]?.id, item.variant?.id)}
 											ariaLabel="Quantité de {item.product.name}"
 										/>
-										{#if !isCustomItem && totalNonCustomQuantity > 72}
-											<p class="text-xs text-red-500 mt-1">
-												Limite de 72 unités atteinte pour les commandes non-personnalisées
-											</p>
-										{/if}
 									</div>
 									<div class="flex flex-col items-end">
 										<p class="text-lg font-semibold">
@@ -414,18 +383,9 @@
 						<div class="p-4">
 							<h2 class="text-2xl font-bold mb-4">Votre panier</h2>
 
-							{#if isNativeOrder}
-								<p class="mb-4">
-									Pour les commandes non-personnalisées, la quantité totale est limitée à 72 unités.
-								</p>
-							{/if}
-
 							{#if $cart && $cart.items && $cart.items.length > 0}
 								<div class="max-h-[500px] overflow-y-auto">
 									{#each $cart.items as item (item.id)}
-										{@const isCustomItem = Boolean(
-											item.custom && Array.isArray(item.custom) && item.custom.length > 0
-										)}
 										<div
 											class="p-4 border rounded-lg shadow-sm flex justify-between items-center mb-2"
 										>
@@ -467,7 +427,7 @@
 
 												<QuantityInput
 													value={item.quantity}
-													max={maxQuantityFor(item, isCustomItem)}
+													max={maxQuantityFor(item)}
 													onCommit={(v) =>
 														changeQuantity(
 															item.product.id,
@@ -477,11 +437,6 @@
 														)}
 													ariaLabel="Quantité de {item.product.name}"
 												/>
-												{#if !isCustomItem && totalNonCustomQuantity > 72}
-													<p class="text-xs text-red-500 mt-1">
-														Limite de 72 unités atteinte pour les commandes non-personnalisées
-													</p>
-												{/if}
 											</div>
 											<div class="flex flex-col items-end">
 												<p class="text-lg font-semibold">

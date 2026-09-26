@@ -13,7 +13,6 @@
 		hasCustomItems: boolean;
 		shippingCost: number;
 		selectedShippingOption: string | null;
-		totalNonCustomQuantity: number;
 		onRemoveFromCart: (productId: string, customId?: string, variantId?: string) => void;
 		onChangeQuantity: (
 			productId: string,
@@ -33,7 +32,6 @@
 		hasCustomItems,
 		shippingCost,
 		selectedShippingOption,
-		totalNonCustomQuantity,
 		onRemoveFromCart,
 		onChangeQuantity,
 		discountAmount = 0,
@@ -45,14 +43,9 @@
 	// (`tax`) mais restait figé au texte "5,5%".
 	let vatRatePercent = $derived(vatRate * 100);
 
-	// Borne haute du champ libre : stock dispo, et pour le non-custom, le
-	// reliquat sous le plafond global de 72 unités (pas de plafond en custom).
-	function maxQuantityFor(item: OrderItem, isCustom: boolean): number {
-		const stockLimit = item.variant?.stock ?? item.product.stock;
-		if (isCustom) return stockLimit;
-
-		const otherItemsQuantity = totalNonCustomQuantity - item.quantity;
-		return Math.max(0, Math.min(stockLimit, 72 - otherItemsQuantity));
+	// Borne haute du champ libre : le stock disponible (de la variante si besoin).
+	function maxQuantityFor(item: OrderItem): number {
+		return item.variant?.stock ?? item.product.stock;
 	}
 
 	// État local pour forcer le re-rendu
@@ -101,7 +94,6 @@
 		{#if localItems.length > 0}
 			<div class="space-y-4">
 				{#each localItems as item (item.id + '-' + item.quantity)}
-					{@const isCustomItem = Boolean((item.custom?.length ?? 0) > 0)}
 					<div class="flex gap-4 p-4 rounded-lg border bg-background">
 						<img
 							src={optimizedImageUrl(
@@ -144,16 +136,11 @@
 
 							<QuantityInput
 								value={item.quantity}
-								max={maxQuantityFor(item, isCustomItem)}
+								max={maxQuantityFor(item)}
 								onCommit={(v) =>
 									onChangeQuantity(item.product.id, v, item.custom?.[0]?.id, item.variant?.id)}
 								ariaLabel="Quantité de {item.product.name}"
 							/>
-							{#if !isCustomItem && totalNonCustomQuantity > 72}
-								<p class="text-xs text-red-500 mt-1">
-									Limite de 72 unités atteinte pour les commandes non-personnalisées
-								</p>
-							{/if}
 
 							<p class="text-right font-medium">
 								{#if (item.custom?.length ?? 0) > 0}

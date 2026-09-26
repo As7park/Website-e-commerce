@@ -12,15 +12,14 @@ import {
  * Quantité libre (QuantityInput partagé) : fiche produit, tiroir panier et
  * récapitulatif checkout utilisent le même composant. On vérifie que :
  * - la valeur saisie est clampée au stock disponible ;
- * - un ajout qui dépasserait 72 unités cumulées (commandes non-personnalisées)
- *   est intégralement refusé, sans toucher au panier existant ;
- * - modifier la quantité depuis le tiroir panier la clampe à 72 et persiste ;
+ * - des ajouts successifs du même produit se cumulent sur la même ligne ;
+ * - modifier la quantité depuis le tiroir panier la clampe au stock et persiste ;
  * - modifier la quantité depuis le récapitulatif checkout persiste également.
  */
 test.describe('Commerce — quantité libre', () => {
 	test.setTimeout(6 * 60_000);
 
-	test('stock, plafond 72 unités et propagation panier/checkout', async ({ page, account }) => {
+	test('stock et propagation panier/checkout', async ({ page, account }) => {
 		const created = await createCatalogProduct({ stock: 100 });
 		const { product } = created;
 
@@ -38,7 +37,7 @@ test.describe('Commerce — quantité libre', () => {
 				await expect(quantityInput).toHaveValue('100');
 			});
 
-			await test.step('2. Ajout initial (50) puis refus au-delà de 72 unités cumulées', async () => {
+			await test.step('2. Ajout initial (50) puis second ajout (30) cumulé sur la même ligne', async () => {
 				const quantityInput = page.locator('#quantity-input');
 
 				await quantityInput.fill('50');
@@ -56,42 +55,47 @@ test.describe('Commerce — quantité libre', () => {
 					50
 				);
 
-				// 50 (déjà dans le panier) + 30 = 80 > 72 : l'ajout complet est refusé.
+				// 50 (déjà dans le panier) + 30 = 80, sous le stock de 100 : accepté.
 				await quantityInput.fill('30');
 				await quantityInput.press('Tab');
+				const secondAdd = page.waitForResponse(
+					(response) =>
+						response.url().includes('/api/save-cart') && response.request().method() === 'POST'
+				);
 				await page.getByRole('button', { name: 'Ajouter au panier' }).click();
-				await expect(
-					page.getByText('Limite de 72 unités pour les commandes non personnalisées.')
-				).toBeVisible();
+				await secondAdd;
 
-				const pendingAfterRejectedAdd = await getPendingOrder(user.id);
-				expect(
-					pendingAfterRejectedAdd?.items.find((i) => i.productId === product.id)?.quantity
-				).toBe(50);
+				const pendingAfterSecondAdd = await getPendingOrder(user.id);
+				expect(pendingAfterSecondAdd?.items.find((i) => i.productId === product.id)?.quantity).toBe(
+					80
+				);
 			});
 
-			await test.step('3. Tiroir panier : la quantité libre se clampe elle-même à 72', async () => {
-				await page.locator('.cartButton button').first().click();
+			await test.step('3. Tiroir panier : la quantité libre se clampe au stock', async () => {
+				await page
+					.getByRole('button', { name: /Voir le panier/ })
+					.first()
+					.click();
 				await expect(page.getByRole('heading', { name: 'Votre panier' })).toBeVisible();
 
 				const cartPanel = page.locator('div.p-4', {
 					has: page.getByRole('heading', { name: 'Votre panier' })
 				});
 				const cartQuantityInput = cartPanel.locator('input[type="number"]');
-				await expect(cartQuantityInput).toHaveValue('50');
+				await expect(cartQuantityInput).toHaveValue('80');
 
-				await cartQuantityInput.fill('100');
+				await cartQuantityInput.fill('150');
 				const cartSave = page.waitForResponse(
 					(response) =>
 						response.url().includes('/api/save-cart') && response.request().method() === 'POST'
 				);
 				await cartQuantityInput.press('Tab');
 				await cartSave;
-				await expect(cartQuantityInput).toHaveValue('72');
+				await expect(cartQuantityInput).toHaveValue('100');
 
 				const pendingAfterCartClamp = await getPendingOrder(user.id);
 				expect(pendingAfterCartClamp?.items.find((i) => i.productId === product.id)?.quantity).toBe(
-					72
+					100
 				);
 			});
 
@@ -100,7 +104,7 @@ test.describe('Commerce — quantité libre', () => {
 				await waitForPath(page, '/checkout');
 
 				const checkoutQuantityInput = page.locator('input[type="number"]').first();
-				await expect(checkoutQuantityInput).toHaveValue('72');
+				await expect(checkoutQuantityInput).toHaveValue('100');
 
 				await checkoutQuantityInput.fill('60');
 				const checkoutSave = page.waitForResponse(

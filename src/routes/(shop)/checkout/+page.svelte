@@ -37,13 +37,6 @@
 	// Bandeau : nombre total d'articles dans le panier.
 	let cartQuantity = $derived($cartStore.items.reduce((acc, item) => acc + item.quantity, 0));
 
-	// Calculer le total des quantités pour les commandes non-personnalisées
-	let totalNonCustomQuantity = $derived(
-		$cartStore.items
-			.filter((item) => !item.custom || (Array.isArray(item.custom) && item.custom.length === 0))
-			.reduce((acc, item) => acc + item.quantity, 0)
-	);
-
 	// Runes Svelte 5
 	let selectedAddressId = $state<string | undefined>(undefined);
 	// Facturation : par défaut identique à la livraison (cas le plus courant,
@@ -636,7 +629,6 @@
 					{hasCustomItems}
 					{shippingCost}
 					{selectedShippingOption}
-					{totalNonCustomQuantity}
 					{discountAmount}
 					{promoCode}
 					vatRate={data.vatRate}
