@@ -18,7 +18,7 @@ import {
 import { fail, redirect } from '@sveltejs/kit';
 import { checkEmailAvailability } from '$lib/prisma/email/email';
 import { verifyPasswordHash, verifyPasswordStrength } from '$lib/lucia/password';
-import { getUserPasswordHash, getUserRecoverCode, updateUserPassword } from '$lib/lucia/user';
+import { getUserPasswordHash, updateUserPassword } from '$lib/lucia/user';
 import {
 	createSession,
 	generateSessionToken,
@@ -44,8 +44,6 @@ import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
 
 export const load = async (event: RequestEvent) => {
-	let recoveryCode: string | null = null;
-
 	if (event.locals.session === null || event.locals.user === null) {
 		return redirect(302, '/auth/login');
 	}
@@ -60,12 +58,11 @@ export const load = async (event: RequestEvent) => {
 				return redirect(302, '/auth/2fa');
 			}
 		}
-
-		// Récupérer le code de récupération si l'utilisateur utilise l'authentification à deux facteurs
-		if (event.locals.user.registered2FA) {
-			recoveryCode = await getUserRecoverCode(event.locals.user.id);
-		}
 	}
+	// Le code de récupération 2FA n'est pas chargé ici : la page ne l'affiche
+	// pas (il est montré une seule fois, sur /auth/recovery-code), et le
+	// déchiffrer à chaque visite l'enverrait au navigateur pour rien.
+
 	// Initialiser les formulaires Superform
 	const passwordForm = await superValidate(event, zod(passwordSchema));
 	const emailForm = await superValidate(event, zod(emailSchema));
@@ -79,7 +76,6 @@ export const load = async (event: RequestEvent) => {
 	const marketingEmailsOptIn = await getMarketingEmailsOptIn(event.locals.user.id);
 
 	return {
-		recoveryCode,
 		user: event.locals.user,
 		passwordForm,
 		emailForm,
