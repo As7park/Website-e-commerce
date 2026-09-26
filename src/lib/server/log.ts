@@ -50,7 +50,11 @@ export function log(level: LogLevel, context: string, ...args: unknown[]) {
 	const [first, ...rest] = args;
 	const hasMessage = typeof first === 'string';
 	const message = hasMessage ? first : context;
-	const data = hasMessage ? rest : args;
+	// Pino ne sérialise une `Error` que sous la clé `err` : rangée dans
+	// `data`, elle sortirait en `{}` (ses propriétés ne sont pas énumérables).
+	const data = (hasMessage ? rest : args).map((item) =>
+		item instanceof Error ? pino.stdSerializers.err(item) : item
+	);
 
 	const requestId = currentRequestId();
 	base[PINO_LEVEL[level]](
