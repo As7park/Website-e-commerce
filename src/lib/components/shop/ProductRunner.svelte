@@ -222,7 +222,7 @@
 		position: relative;
 		padding: 6.5rem 0 5rem;
 		background:
-			radial-gradient(ellipse 900px 500px at 12% -10%, rgba(255, 90, 31, 0.14), transparent 60%),
+			radial-gradient(ellipse 900px 500px at 12% -10%, rgba(255, 178, 0, 0.14), transparent 60%),
 			var(--ink);
 		overflow: hidden;
 		color: var(--paper);
@@ -359,6 +359,17 @@
 		}
 		&.grabbing {
 			cursor: grabbing;
+		}
+
+		// Centre les cartes quand elles tiennent sans défiler. Des marges
+		// `auto` (plutôt que `justify-content: center`) ne deviennent jamais
+		// négatives : quand la liste déborde, la première carte reste
+		// atteignable au lieu d'être coupée à gauche.
+		> .card:first-child {
+			margin-left: auto;
+		}
+		> .card:last-child {
+			margin-right: auto;
 		}
 
 		@media (max-width: 640px) {
