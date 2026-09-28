@@ -13,12 +13,7 @@
 
 <!-- Formulaire de recherche par n° de commande : aucune valeur SEO, et
      potentiellement des données de commande une fois soumis. -->
-<SEO
-	title="Suivi de commande"
-	description="Suivez votre commande MadeInDiamonds."
-	noindex
-	nofollow
-/>
+<SEO title="Suivi de commande" description="Suivez votre commande AS7 Park." noindex nofollow />
 
 <ShopPage
 	title="Suivi de commande"

@@ -202,7 +202,7 @@
 	$ink: #14120f;
 	$panel: #1d1a15;
 	$paper: #f2efe4;
-	$orange: #ff5a1f;
+	$orange: #ffb200;
 	$acid: #c9f04d;
 	$dust: #8a6f52;
 	$rust: #7a2e12;

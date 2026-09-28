@@ -38,7 +38,7 @@ export async function sendMail(options: {
 }): Promise<SMTPTransport.SentMessageInfo> {
 	const transporter = createSmtpTransport();
 	return transporter.sendMail({
-		from: process.env.SMTP_FROM || '"MadeInDiamonds" <contact@madeindiamonds.com>',
+		from: process.env.SMTP_FROM || '"AS7 Park" <contact@as7park.com>',
 		to: options.to,
 		subject: options.subject,
 		text: options.text,
@@ -56,11 +56,11 @@ export async function sendVerificationEmail(
 	// tous les clients mail. Logo réel (`/admin/identite`) si fourni, sinon
 	// pas d'image du tout plutôt qu'une URL inventée.
 	const { logoUrl } = await getCompanyIdentity();
-	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="MadeInDiamonds Logo" />` : '';
+	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="AS7 Park Logo" />` : '';
 
 	try {
 		return await transporter.sendMail({
-			from: '"MadeInDiamonds" <contact@madeindiamonds.com>',
+			from: '"AS7 Park" <contact@as7park.com>',
 			to: email,
 			subject: 'Your Verification Code',
 			text: `Your verification code is: ${code}`,
@@ -68,7 +68,7 @@ export async function sendVerificationEmail(
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>MadeInDiamonds - Verification Code</title>
+  <title>AS7 Park - Verification Code</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -120,12 +120,12 @@ export async function sendVerificationEmail(
         ${logoHtml}
         <div class="container">
           <h1 class="title">Your Verification Code</h1>
-          <p>Thank you for using MadeInDiamonds! Please use the verification code below to complete your signup process:</p>
+          <p>Thank you for using AS7 Park! Please use the verification code below to complete your signup process:</p>
           <p class="code">${code}</p>
           <p>This code will expire in 10 minutes.</p>
           <div class="footer">
             <p>If you did not request this code, please ignore this email.</p>
-            <p>— The MadeInDiamonds Team</p>
+            <p>— The AS7 Park Team</p>
           </div>
         </div>
       </td>

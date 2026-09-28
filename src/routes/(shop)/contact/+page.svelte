@@ -105,16 +105,24 @@
 		<div class="shop-contact-info" use:reveal={{ delay: 100 }}>
 			<div>
 				<h4>Adresse</h4>
-				<p>MadeInDiamonds</p>
+				<p>AS7 Park</p>
 			</div>
 			<div>
 				<h4>E-mail</h4>
-				<p>contact@madeindiamonds.com</p>
+				<p><a href="mailto:contact@as7park.com">contact@as7park.com</a></p>
 			</div>
 			<div>
 				<h4>Réseaux</h4>
-				<p><a href="#">Instagram</a></p>
-				<p><a href="#">Facebook</a></p>
+				<p>
+					<a href="https://www.instagram.com/as7park/" target="_blank" rel="noopener noreferrer"
+						>Instagram</a
+					>
+				</p>
+				<p>
+					<a href="https://www.facebook.com/as7park/" target="_blank" rel="noopener noreferrer"
+						>Facebook</a
+					>
+				</p>
 			</div>
 		</div>
 	</div>

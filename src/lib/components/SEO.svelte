@@ -90,11 +90,7 @@
 			? { logo: { '@type': 'ImageObject', url: $page.data.companyLogoUrl } }
 			: {}),
 		description: seoConfig.site.description,
-		sameAs: [
-			'https://www.instagram.com/madeindiamonds/',
-			'https://www.facebook.com/madeindiamonds/',
-			'https://www.linkedin.com/company/madeindiamonds/'
-		]
+		sameAs: ['https://www.instagram.com/as7park/', 'https://www.facebook.com/as7park/']
 	});
 
 	// Données structurées pour le site web

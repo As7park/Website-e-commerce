@@ -43,7 +43,7 @@ docker run --rm -i --network host grafana/k6 run - < k6/catalog.js
 ## Préparer les données
 
 ```bash
-npm run seed         # compte admin@madeindiamonds.com (démo)
+npm run seed         # compte admin@as7park.com (démo)
 npm run seed:perf     # 5000 produits, 3000 comptes perf-user-N@perf.test
 npm run seed:webhook-fixtures   # Order PENDING dédiées à webhook.js (voir plus bas)
 ```

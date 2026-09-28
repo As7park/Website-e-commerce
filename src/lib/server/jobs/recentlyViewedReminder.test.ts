@@ -41,8 +41,8 @@ function view(
 		viewedAt: overrides.viewedAt ?? new Date(Date.now() - 48 * 60 * 60 * 1000),
 		user: { id: overrides.userId ?? 'user_1', email: overrides.email ?? 'client@example.com' },
 		product: {
-			name: overrides.productName ?? 'Bague Solitaire',
-			slug: overrides.productSlug ?? 'bague-solitaire'
+			name: overrides.productName ?? 'Casque cross Carbon',
+			slug: overrides.productSlug ?? 'casque-cross-carbon'
 		}
 	};
 }
@@ -95,7 +95,7 @@ describe('runRecentlyViewedReminderJob', () => {
 		expect(sendMail).toHaveBeenCalledTimes(1);
 		const call = sendMail.mock.calls[0][0];
 		expect(call.to).toBe('client@example.com');
-		expect(call.html).toContain('bague-solitaire');
+		expect(call.html).toContain('casque-cross-carbon');
 		expect(productViewUpdateMany).toHaveBeenCalledWith({
 			where: { id: { in: ['view_1'] } },
 			data: { reminderSentAt: expect.any(Date) }

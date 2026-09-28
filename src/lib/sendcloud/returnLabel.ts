@@ -40,13 +40,13 @@ export async function createSendcloudReturnLabel(
 		parcels: [
 			{
 				// Destination du colis retour : l'atelier, jamais le client.
-				name: envOr('INVOICE_COMPANY_NAME', 'MadeInDiamonds'),
+				name: envOr('INVOICE_COMPANY_NAME', 'AS7 Park'),
 				address: envOr('INVOICE_COMPANY_ADDRESS', '123 Rue des Affaires'),
 				house_number: envOr('SENDCLOUD_RETURN_HOUSE_NUMBER', ''),
 				city: envOr('SENDCLOUD_RETURN_CITY', 'Paris'),
 				postal_code: envOr('SENDCLOUD_RETURN_POSTAL_CODE', '75000'),
 				country: envOr('SENDCLOUD_RETURN_COUNTRY', 'FR'),
-				email: envOr('INVOICE_COMPANY_EMAIL', 'contact@madeindiamonds.com'),
+				email: envOr('INVOICE_COMPANY_EMAIL', 'contact@as7park.com'),
 				telephone: envOr('INVOICE_COMPANY_PHONE', '+33123456789'),
 				shipment: { id: transaction.shippingMethodId || 413 },
 				weight: (transaction.package_weight || 1).toString(),

@@ -1,119 +1,113 @@
 // BLOG-PLUGIN : articles injectés par prisma/seed.js
 export const blog = [
 	{
-		link: `Decouvrez-MadeInDiamonds-Studio-Web`,
-		author: `Studio — MadeInDiamonds`,
-		title: `Découvrez MadeInDiamonds`,
-		date: `24.12.23`,
-		subTitle: `Un studio web qui sculpte des identités digitales`,
+		link: `Bienvenue-chez-AS7-Park`,
+		author: `L'équipe AS7 Park`,
+		title: `Bienvenue chez AS7 Park`,
+		date: `02.06.2026`,
+		subTitle: `Une boutique moto pensée par des pilotes, pour des pilotes`,
 		content: `
 		<p>
-			Bienvenue dans l'univers de MadeInDiamonds, studio web dédié aux marques qui veulent une
-			présence en ligne aussi précise qu'un diamant taillé. Nous concevons des sites vitrines,
-			des boutiques et des applications sur-mesure, avec la même exigence du détail.
+			Bienvenue chez AS7 Park, la boutique en ligne des passionnés de moto. Cross, enduro ou
+			route : nous sélectionnons l'équipement pilote, les pièces et les accessoires que nous
+			utilisons nous-mêmes, sur le terrain comme à l'atelier.
 		</p>
 		<p>
-			Chaque projet commence par un brief clair : vos objectifs, votre audience, votre ton.
-			Ensuite, nous dessinons l'expérience, l'identité et l'architecture technique. Le résultat
-			n'est pas un template générique, mais une pièce unique, pensée pour durer.
+			Notre ambition est simple : vous proposer du matériel fiable, bien décrit et expédié
+			rapidement. Chaque fiche produit précise les tailles, les compatibilités et les conseils
+			d'utilisation, pour commander sans hésiter.
 		</p>
 		<p>
-			Que vous lanciez une activité, modernisiez un site existant ou construisiez un outil
-			métier, MadeInDiamonds vous accompagne de la maquette à la mise en ligne — et au-delà,
-			avec la maintenance et l'évolution produit.
-		</p>
-		<p>
-			Rejoignez les marques qui choisissent un studio à taille humaine, capable de relier
-			design, développement et stratégie. Découvrez comment MadeInDiamonds donne forme à votre
-			prochaine présence digitale.
+			Une question sur une taille de casque, une référence de pièce ou un montage ? Notre équipe
+			vous répond directement depuis la page contact. Bon roulage, et à bientôt sur la piste !
 		</p>
 		`,
-		resume: `Découvrez MadeInDiamonds, studio web spécialisé dans les sites, e-commerce et identités digitales sur-mesure.`,
-		hiddenWord: `MadeInDiamonds, studio web, site vitrine, e-commerce, identité visuelle, application web, design, développement.`
+		resume: `Découvrez AS7 Park, boutique moto en ligne : équipement pilote, pièces et accessoires sélectionnés par des passionnés.`,
+		hiddenWord: `AS7 Park, boutique moto, équipement pilote, pièces moto, accessoires, cross, enduro, route.`
 	},
 	{
-		link: `Refonte-digitale-pour-une-marque-sportive`,
-		author: `Studio — MadeInDiamonds`,
-		title: `MadeInDiamonds & une marque sportive : une refonte qui accélère`,
-		date: `24.12.23`,
-		subTitle: `Une collaboration digitale sur et hors des pistes`,
+		link: `Bien-choisir-son-casque-cross`,
+		author: `L'équipe AS7 Park`,
+		title: `Bien choisir son casque cross`,
+		date: `18.06.2026`,
+		subTitle: `Taille, homologation et matériaux : les trois critères qui comptent`,
 		content: `
 		<p>
-			Les événements sportifs vivent aujourd'hui autant sur le web que sur le terrain. Inscriptions,
-			replay, merchandising, communauté : le site devient le camp de base de la saison.
+			Le casque est l'équipement le plus important du pilote. Un bon casque doit d'abord être
+			à la bonne taille : mesurez votre tour de tête au-dessus des sourcils et reportez-vous au
+			guide des tailles de la marque. Il doit être serré sans créer de point de pression.
 		</p>
 		<p>
-			MadeInDiamonds a accompagné une marque sportive dans la refonte de son écosystème digital :
-			identité visuelle, site événementiel, parcours d'inscription et boutique. L'objectif : une
-			expérience aussi nette qu'une ligne de descente, lisible sur mobile comme en back-office.
+			Vérifiez ensuite l'homologation : en Europe, la norme en vigueur est l'ECE 22.06. Elle
+			garantit des tests de choc plus exigeants que l'ancienne norme 22.05.
 		</p>
 		<p>
-			Le livrable relie design et performance. Pages rapides, contenus éditoriaux, et une
-			boutique capable d'absorber les pics de trafic pendant les compétitions. Une collaboration
-			où le studio devient partenaire, pas seulement prestataire.
+			Enfin, le matériau de la calotte influe sur le poids et le prix : polycarbonate pour
+			débuter, fibre de verre ou carbone pour gagner en légèreté et réduire la fatigue sur une
+			journée de roulage.
 		</p>
 		`,
-		resume: `MadeInDiamonds signe la refonte digitale d'une marque sportive : identité, site événementiel et boutique.`,
-		hiddenWord: `MadeInDiamonds, refonte, site événementiel, e-commerce, identité visuelle, marque sportive, studio web.`
+		resume: `Taille, homologation ECE 22.06 et matériaux : nos conseils pour choisir un casque cross adapté.`,
+		hiddenWord: `casque cross, taille casque, ECE 22.06, carbone, fibre de verre, équipement pilote, AS7 Park.`
 	},
 	{
-		link: `Comment-MadeInDiamonds-concoit-un-projet-web`,
-		author: `Studio — MadeInDiamonds`,
-		title: `Comment MadeInDiamonds conçoit un projet web`,
-		date: `11.01.2024`,
-		subTitle: `De la maquette à la mise en ligne`,
+		link: `Les-equipements-indispensables-pour-debuter-en-motocross`,
+		author: `Lucas — atelier mécanique`,
+		title: `Les équipements indispensables pour débuter en motocross`,
+		date: `03.07.2026`,
+		subTitle: `De la tête aux pieds, la liste pour rouler protégé`,
 		content: `
-        <p>Chez MadeInDiamonds, un projet web n'est pas une succession de livrables isolés. C'est un dialogue : cadrage, prototypes, itérations, puis une mise en production soignée.</p>
-        <p>Nous commençons par comprendre votre métier. Ensuite viennent l'architecture de l'information, le design system et le choix technique (SvelteKit, commerce, CMS, authentification). Chaque brique est justifiée par un usage réel.</p>
-        <p>Le studio livre des interfaces durables : accessibles, performantes, maintenables. Vous repartez avec un produit, pas seulement une maquette figée.</p>
-        <p>Envie de lancer ou de reprendre un site ? Parlons de votre brief — MadeInDiamonds est là pour le transformer en expérience en ligne.</p>
-    `,
-		resume: `Cadrage, design system, développement et mise en ligne : la méthode du studio MadeInDiamonds.`,
-		hiddenWord: `MadeInDiamonds, méthode, cadrage, design system, SvelteKit, mise en ligne, studio web.`
+        <p>Débuter en motocross demande un équipement complet : on tombe souvent au début, et chaque protection compte.</p>
+        <p><b>La base :</b> casque homologué, masque, gants, maillot et pantalon, bottes de cross. Les bottes protègent chevilles et tibias, elles ne sont pas négociables.</p>
+        <p><b>Les protections :</b> pare-pierres ou gilet de protection, genouillères et, idéalement, une minerve.</p>
+        <p>Besoin d'aide pour composer votre tenue ? Contactez-nous, nous vous aidons à choisir selon votre pratique et votre budget.</p>
+        `,
+		resume: `Casque, masque, gants, bottes et protections : la liste complète pour débuter le motocross en sécurité.`,
+		hiddenWord: `débuter motocross, équipement cross, bottes cross, protections, gants, masque, AS7 Park.`
 	},
 	{
-		link: `Identite-digitale-et-site-vitrine-sur-mesure`,
-		author: `Studio — MadeInDiamonds`,
-		title: `Identité digitale et site vitrine sur-mesure`,
-		date: `11.01.2024`,
-		subTitle: `Quand la marque et le site se parlent`,
+		link: `Rouler-sous-la-pluie-nos-conseils`,
+		author: `L'équipe AS7 Park`,
+		title: `Rouler sous la pluie : nos conseils`,
+		date: `22.07.2026`,
+		subTitle: `Visibilité, adhérence et équipement adapté`,
 		content: `
-        <p>Un logo sans site, ou un site sans identité, laisse une impression inachevée. MadeInDiamonds relie les deux : direction artistique, typographies, couleurs, et une vitrine qui les porte au quotidien.</p>
-        <p>Nous concevons des sites vitrines sobres et mémorables, pensés pour convertir sans crier. Navigation claire, contenus structurés, performances soignées.</p>
-        <p>Cette approche convient aux indépendants, aux maisons de création et aux PME qui veulent une présence à la hauteur de leur savoir-faire.</p>
-    `,
-		resume: `MadeInDiamonds relie identité visuelle et site vitrine pour une présence digitale cohérente.`,
-		hiddenWord: `MadeInDiamonds, identité visuelle, site vitrine, direction artistique, branding, studio web.`
+        <p>Sur route mouillée, l'adhérence peut être divisée par deux. Anticipez vos freinages, évitez les bandes blanches et les plaques d'égout, et augmentez les distances de sécurité.</p>
+        <p>Côté équipement, une tenue imperméable, des gants adaptés et un écran traité anti-buée font toute la différence en confort comme en sécurité.</p>
+        <p>Pensez aussi à vérifier la pression et l'usure de vos pneus : ce sont eux qui évacuent l'eau.</p>
+        `,
+		resume: `Freinage, trajectoires et équipement : nos conseils pour rouler à moto sous la pluie en sécurité.`,
+		hiddenWord: `moto pluie, adhérence, équipement pluie, anti-buée, pneus moto, sécurité, AS7 Park.`
 	},
 	{
-		link: `MadeInDiamonds-et-le-commerce-en-ligne`,
-		author: `Studio — MadeInDiamonds`,
-		title: `MadeInDiamonds et le commerce en ligne`,
-		date: `11.01.2024`,
-		subTitle: `Des boutiques conçues pour vendre, pas seulement pour paraître`,
+		link: `Entretenir-sa-chaine-de-moto`,
+		author: `Lucas — atelier mécanique`,
+		title: `Entretenir sa chaîne de moto`,
+		date: `12.08.2026`,
+		subTitle: `Nettoyer, graisser, tendre : la routine qui prolonge votre transmission`,
 		content: `
-        <p>Une boutique en ligne réussie allie catalogue lisible, tunnel de commande fluide et back-office fiable. C'est exactement le terrain de MadeInDiamonds.</p>
-        <p>Nous concevons des parcours d'achat clairs : fiches produit, panier, paiement, suivi. L'administration reste simple pour vos équipes : stocks, commandes, contenus.</p>
-        <p>Que vous vendiez des objets, des prestations ou des licences, le studio adapte le socle e-commerce à votre métier plutôt que l'inverse.</p>
-    `,
-		resume: `Boutiques en ligne, tunnels de commande et back-office : l'approche e-commerce de MadeInDiamonds.`,
-		hiddenWord: `MadeInDiamonds, e-commerce, boutique en ligne, tunnel de commande, back-office, studio web.`
+        <p>Une chaîne bien entretenue dure plus longtemps et protège pignon et couronne. Nettoyez-la avec un dégraissant adapté aux joints toriques, puis graissez-la moteur tiède, roue arrière levée.</p>
+        <p>Contrôlez la tension régulièrement : la flèche recommandée figure dans le manuel de votre moto, souvent autour de 3 à 5 cm en tout-terrain.</p>
+        <p>Si la chaîne présente des points durs ou si les dents de la couronne sont en crochet, remplacez l'ensemble du kit transmission en une seule fois.</p>
+        `,
+		resume: `Nettoyage, graissage et tension : la routine d'entretien pour prolonger la durée de vie de votre chaîne.`,
+		hiddenWord: `entretien chaîne moto, graissage, tension chaîne, kit transmission, pignon, couronne, AS7 Park.`
 	},
 	{
-		link: `Cinq-leviers-pour-un-site-qui-dure`,
-		author: `Studio — MadeInDiamonds`,
-		title: `Cinq leviers pour un site qui dure`,
-		date: `16.01.2024`,
-		subTitle: `Performance, contenu, accessibilité, SEO et maintenance : les bases d'un site vivant.`,
+		link: `Preparer-sa-moto-pour-la-saison`,
+		author: `L'équipe AS7 Park`,
+		title: `Préparer sa moto pour la saison`,
+		date: `02.09.2026`,
+		subTitle: `Les points de contrôle essentiels avant de reprendre la route ou la piste`,
 		content: `
-			<p> <b>1. Une architecture claire : </b>Un site durable commence par une arborescence lisible. MadeInDiamonds structure les pages autour de vos priorités métier, pas autour d'un template fourre-tout.</p>
-			<p> <b>2. Un design system : </b>Couleurs, typographies, composants : un langage visuel partagé évite que le site se délite à chaque nouvelle page.</p>
-			<p> <b>3. La performance : </b>Temps de chargement, images, cache. Un site lent coûte des visiteurs — et de la confiance.</p>
-			<p> <b>4. L'accessibilité et le SEO : </b>Un contenu structuré sert autant les lecteurs d'écran que les moteurs de recherche. Ce n'est pas un extra, c'est le socle.</p>
-			<p> <b>5. La maintenance : </b>Mises à jour, sauvegardes, évolutions. Un site n'est pas livré une fois pour toutes : il se cultive.</p>
-			<p> <b>Conclusion : </b>Ces cinq leviers font la différence entre une vitrine figée et un outil de croissance. C'est le quotidien du studio MadeInDiamonds.</p>
-    `,
-		resume: `Architecture, design system, performance, SEO et maintenance : cinq leviers pour un site durable, selon MadeInDiamonds.`,
-		hiddenWord: `MadeInDiamonds, performance, SEO, accessibilité, design system, maintenance, studio web.`
+			<p> <b>1. Les fluides : </b>vidange de l'huile moteur et remplacement du filtre, contrôle du liquide de frein et du liquide de refroidissement.</p>
+			<p> <b>2. Les pneus : </b>vérifiez la pression, l'usure et l'absence de craquelures.</p>
+			<p> <b>3. Les freins : </b>contrôlez l'épaisseur des plaquettes et l'état des disques.</p>
+			<p> <b>4. La transmission : </b>nettoyez, graissez et réglez la tension de la chaîne.</p>
+			<p> <b>5. La batterie : </b>rechargez-la si la moto est restée immobilisée.</p>
+			<p> <b>Conclusion : </b>une heure de préparation évite bien des mauvaises surprises. Retrouvez tout le nécessaire d'entretien dans la boutique AS7 Park.</p>
+        `,
+		resume: `Fluides, pneus, freins, transmission et batterie : cinq points de contrôle pour bien démarrer la saison.`,
+		hiddenWord: `préparer moto, révision moto, vidange, pneus, freins, batterie, entretien, AS7 Park.`
 	}
 ];

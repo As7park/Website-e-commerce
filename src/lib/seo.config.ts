@@ -1,25 +1,25 @@
-// Configuration SEO pour MadeInDiamonds — boutique de bijoux et joaillerie
-// en ligne (bagues, colliers, créations en métaux précieux et diamants).
+// Configuration SEO pour AS7 Park — boutique en ligne d'articles moto
+// (équipement pilote, pièces, accessoires et entretien).
 export const seoConfig = {
 	// Informations de base du site
 	site: {
-		name: 'MadeInDiamonds',
-		url: 'https://madeindiamonds.com',
+		name: 'AS7 Park',
+		url: 'https://as7park.com',
 		description:
-			'MadeInDiamonds — joaillerie en ligne. Bagues, colliers et bijoux en métaux précieux et diamants, livrés en France et en Europe.',
+			'AS7 Park — boutique moto en ligne. Équipement pilote, pièces, accessoires et produits d’entretien, livrés en France et en Europe.',
 		keywords:
-			'bijouterie en ligne, joaillerie, bagues, colliers, diamants, métaux précieux, bijoux sur-mesure, MadeInDiamonds',
-		author: 'MadeInDiamonds',
+			'boutique moto, équipement moto, casque moto, gants moto, pièces moto, accessoires moto, motocross, entretien moto, AS7 Park',
+		author: 'AS7 Park',
 		locale: 'fr_FR'
 	},
 
 	// Métadonnées par défaut
 	defaults: {
-		title: 'MadeInDiamonds — Joaillerie en ligne',
+		title: 'AS7 Park — Boutique moto en ligne',
 		description:
-			'Découvrez MadeInDiamonds, joaillerie en ligne spécialisée dans les bagues, colliers et créations en métaux précieux et diamants.',
+			'Découvrez AS7 Park, boutique moto en ligne : équipement pilote, pièces, accessoires et entretien pour rouler en toute confiance.',
 		keywords:
-			'bijouterie en ligne, joaillerie, bagues, colliers, diamants, métaux précieux, MadeInDiamonds',
+			'boutique moto, équipement moto, pièces moto, accessoires moto, motocross, entretien moto, AS7 Park',
 		image: '/og-default.jpg',
 		type: 'website'
 	},
@@ -28,51 +28,50 @@ export const seoConfig = {
 	// (`/og-default.jpg`) tant qu'aucun visuel distinct par page n'existe.
 	pages: {
 		home: {
-			title: 'MadeInDiamonds — Bijoux et joaillerie en ligne',
+			title: 'AS7 Park — Équipement, pièces et accessoires moto',
 			description:
-				'Découvrez la collection MadeInDiamonds : bagues, colliers et créations en métaux précieux et diamants, livrées en France et en Europe.',
-			keywords: 'bijouterie en ligne, joaillerie, bagues, colliers, diamants, MadeInDiamonds',
+				'Découvrez la sélection AS7 Park : casques, gants, équipement pilote, pièces et accessoires moto, livrés en France et en Europe.',
+			keywords: 'boutique moto, équipement moto, casque, gants, pièces moto, AS7 Park',
 			image: '/og-default.jpg'
 		},
 		blog: {
-			title: 'Blog — Conseils bijoux et joaillerie',
-			description:
-				"Guides d'entretien, tendances et actualités de la joaillerie par MadeInDiamonds.",
-			keywords: 'blog joaillerie, entretien bijoux, tendances bijoux, MadeInDiamonds',
+			title: 'Blog — Conseils moto, entretien et pilotage',
+			description: 'Guides d’entretien, conseils d’équipement et actualités moto par AS7 Park.',
+			keywords: 'blog moto, entretien moto, équipement pilote, conseils moto, AS7 Park',
 			image: '/og-default.jpg'
 		},
 		products: {
-			title: 'Nos bijoux — Bagues, colliers et créations en diamants',
+			title: 'La boutique — Équipement, pièces et accessoires moto',
 			description:
-				'Parcourez la collection MadeInDiamonds : bagues, colliers et boucles d’oreilles en métaux précieux et diamants.',
-			keywords: 'bagues, colliers, boucles d’oreilles, diamants, métaux précieux, bijoux',
+				'Parcourez la boutique AS7 Park : casques, gants, bottes, pièces, accessoires et produits d’entretien moto.',
+			keywords: 'casque moto, gants moto, bottes moto, pièces moto, accessoires moto, entretien',
 			image: '/og-default.jpg'
 		},
 		contact: {
-			title: 'Contact — Une question sur une commande ou un bijou',
+			title: 'Contact — Une question sur une commande ou un article',
 			description:
-				'Contactez MadeInDiamonds pour toute question sur nos bijoux, une commande ou un rendez-vous.',
-			keywords: 'contact bijouterie, service client, commande, MadeInDiamonds',
+				'Contactez AS7 Park pour toute question sur nos articles moto, une commande ou un conseil d’équipement.',
+			keywords: 'contact boutique moto, service client, commande, AS7 Park',
 			image: '/og-default.jpg'
 		},
 		checkout: {
 			title: 'Commande — Finalisez votre achat',
 			description:
-				'Finalisez votre commande de bijoux MadeInDiamonds. Paiement sécurisé et confirmation par e-mail.',
-			keywords: 'commande bijoux, paiement sécurisé, joaillerie en ligne',
+				'Finalisez votre commande AS7 Park. Paiement sécurisé et confirmation par e-mail.',
+			keywords: 'commande moto, paiement sécurisé, boutique moto en ligne',
 			image: '/og-default.jpg'
 		},
 		checkoutSuccess: {
-			title: 'Commande confirmée — MadeInDiamonds',
-			description: 'Votre commande de bijoux a été confirmée. Merci pour votre confiance.',
-			keywords: 'commande confirmée, succès, MadeInDiamonds',
+			title: 'Commande confirmée — AS7 Park',
+			description: 'Votre commande a été confirmée. Merci pour votre confiance.',
+			keywords: 'commande confirmée, succès, AS7 Park',
 			image: '/og-default.jpg'
 		},
 		error: {
-			title: 'Page non trouvée — MadeInDiamonds',
+			title: 'Page non trouvée — AS7 Park',
 			description:
-				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir nos bijoux.',
-			keywords: 'page non trouvée, erreur 404, MadeInDiamonds',
+				'La page que vous recherchez n’existe pas. Retournez à l’accueil pour découvrir nos articles moto.',
+			keywords: 'page non trouvée, erreur 404, AS7 Park',
 			image: '/og-default.jpg'
 		}
 		// `auth` et `admin` retirés : tout /auth/* et /admin/* est en `noindex`
@@ -83,8 +82,8 @@ export const seoConfig = {
 	// Configuration des réseaux sociaux
 	social: {
 		twitter: {
-			site: '@madeindiamonds',
-			creator: '@madeindiamonds'
+			site: '@as7park',
+			creator: '@as7park'
 		},
 		facebook: {
 			appId: 'votre-app-id-facebook'

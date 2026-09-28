@@ -2,24 +2,21 @@
 /**
  * Génère l'image Open Graph/Twitter par défaut (`static/og-default.jpg`,
  * 1200×630 — taille standard) via Playwright (déjà une dépendance e2e,
- * pas de package supplémentaire). Simple carte typographique tant
- * qu'aucun visuel de marque réel (photo produit, logo) n'est fourni par
- * l'entreprise — voir CONFORMITE_ECOMMERCE.md, section SEO.
+ * pas de package supplémentaire). Carte de marque AS7 Park : logo
+ * (`static/logo.svg`), nom et accroche aux couleurs de la boutique.
  *
  * Relancer après tout changement d'identité de marque :
  *   node scripts/generate-og-image.mjs
  */
 import { chromium } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUTPUT = path.join(
-	path.dirname(fileURLToPath(import.meta.url)),
-	'..',
-	'static',
-	'og-default.jpg'
-);
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const OUTPUT = path.join(ROOT, 'static', 'og-default.jpg');
+
+const LOGO_SVG = await readFile(path.join(ROOT, 'static', 'logo.svg'), 'utf8');
 
 const html = `<!doctype html>
 <html lang="fr">
@@ -28,49 +25,49 @@ const html = `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
-	href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;1,800&family=Raleway:wght@300;400&display=swap"
+	href="https://fonts.googleapis.com/css2?family=Staatliches&family=Space+Grotesk:wght@500&display=swap"
 	rel="stylesheet"
 />
 <style>
 	* { margin: 0; padding: 0; box-sizing: border-box; }
 	html, body { width: 1200px; height: 630px; }
 	body {
-		background: radial-gradient(circle at 30% 20%, #1c1c1c 0%, #0a0a0a 65%);
+		background: radial-gradient(circle at 30% 20%, #1d1a15 0%, #14120f 65%);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		font-family: 'Open Sans', sans-serif;
+		font-family: 'Space Grotesk', sans-serif;
 	}
+	.logo { width: 150px; height: 150px; margin-bottom: 32px; }
+	.logo svg { width: 100%; height: 100%; display: block; }
 	.wordmark {
-		font-family: 'Open Sans', sans-serif;
-		font-weight: 800;
-		font-style: italic;
-		text-transform: uppercase;
-		font-size: 84px;
-		letter-spacing: 0.02em;
-		color: #f5f0e6;
+		font-family: 'Staatliches', sans-serif;
+		font-size: 104px;
+		line-height: 1;
+		letter-spacing: 0.04em;
+		color: #f2efe4;
 	}
 	.rule {
 		width: 90px;
-		height: 2px;
-		background: #c9a86a;
-		margin: 28px 0;
+		height: 3px;
+		background: #ffb200;
+		margin: 24px 0;
 	}
 	.tagline {
-		font-family: 'Raleway', sans-serif;
-		font-weight: 300;
-		font-size: 30px;
+		font-weight: 500;
+		font-size: 28px;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #c9a86a;
+		color: #ffb200;
 	}
 </style>
 </head>
 <body>
-	<div class="wordmark">MadeInDiamonds</div>
+	<div class="logo">${LOGO_SVG}</div>
+	<div class="wordmark">AS7 Park</div>
 	<div class="rule"></div>
-	<div class="tagline">Joaillerie en ligne</div>
+	<div class="tagline">Équipement &amp; pièces moto</div>
 </body>
 </html>`;
 

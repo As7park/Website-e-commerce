@@ -21,11 +21,11 @@ function envOr(name: string, fallback: string): string {
 export async function getInvoiceCompany(): Promise<InvoiceCompany> {
 	const identity = await getCompanyIdentity();
 	return {
-		name: identity.name || envOr('INVOICE_COMPANY_NAME', 'MadeInDiamonds'),
+		name: identity.name || envOr('INVOICE_COMPANY_NAME', 'AS7 Park'),
 		address: identity.address || envOr('INVOICE_COMPANY_ADDRESS', '123 Rue des Affaires'),
 		city: identity.city || envOr('INVOICE_COMPANY_CITY', '75000 Paris, France'),
 		phone: identity.phone || envOr('INVOICE_COMPANY_PHONE', '+33 1 23 45 67 89'),
-		email: identity.email || envOr('INVOICE_COMPANY_EMAIL', 'contact@madeindiamonds.com'),
+		email: identity.email || envOr('INVOICE_COMPANY_EMAIL', 'contact@as7park.com'),
 		vat: identity.vatNumber || envOr('INVOICE_COMPANY_VAT', 'FR123456789'),
 		siret: identity.siret || envOr('INVOICE_COMPANY_SIRET', '000 000 000 00000'),
 		logoUrl: identity.logoUrl

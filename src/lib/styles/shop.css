@@ -9,7 +9,10 @@
 	--shop-ink: #14120f;
 	--shop-panel: #1d1a15;
 	--shop-paper: #f2efe4;
-	--shop-orange: #ff5a1f;
+	/* Accent de marque : ambre du logo AS7 (#ffb200). Le rouge-orangé reste
+	   réservé aux erreurs (--shop-danger) pour ne pas se confondre avec lui. */
+	--shop-orange: #ffb200;
+	--shop-danger: #ff5a1f;
 	--shop-acid: #c9f04d;
 	--shop-dust: #8a6f52;
 	--shop-rust: #7a2e12;
@@ -194,6 +197,15 @@
 }
 .shop-logo {
 	transition: transform 0.2s ease;
+}
+.shop-logo-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+}
+.shop-scope .shop-logo-brand img {
+	width: 28px;
+	height: 28px;
 }
 a.shop-logo:hover {
 	transform: scale(1.04);
@@ -1331,7 +1343,7 @@ html.shop-is-loading * {
 	--destructive: #ff5a1f;
 	--border: rgba(242, 239, 228, 0.22);
 	--input: rgba(242, 239, 228, 0.4);
-	--ring: #ff5a1f;
+	--ring: #ffb200;
 	--radius: 0px;
 	color-scheme: dark;
 }
@@ -1461,8 +1473,8 @@ html.shop-is-loading * {
 	border-top: 1px solid var(--shop-border);
 }
 .shop-alert {
-	border: 1px solid var(--shop-orange);
-	color: var(--shop-orange);
+	border: 1px solid var(--shop-danger);
+	color: var(--shop-danger);
 	padding: 10px 14px;
 	font-size: 14px;
 }

@@ -165,11 +165,11 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
 	// tous les clients mail. Logo réel (`/admin/identite`) si fourni, sinon
 	// pas d'image du tout plutôt qu'une URL inventée.
 	const { logoUrl } = await getCompanyIdentity();
-	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="MadeInDiamonds Logo" />` : '';
+	const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="AS7 Park Logo" />` : '';
 
 	try {
 		const mailOptions = {
-			from: '"MadeInDiamonds" <contact@madeindiamonds.com>', // Expéditeur
+			from: '"AS7 Park" <contact@as7park.com>', // Expéditeur
 			to: email, // Destinataire
 			subject: 'Password Reset Request', // Objet de l'email
 			text: `Your password reset code is: ${code}`, // Corps texte brut (fallback)
@@ -177,7 +177,7 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>MadeInDiamonds - Password Reset</title>
+  <title>AS7 Park - Password Reset</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -238,7 +238,7 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
           
           <div class="footer">
             <p>If you did not request this, please ignore this email.</p>
-            <p>— The MadeInDiamonds Team</p>
+            <p>— The AS7 Park Team</p>
           </div>
         </div>
       </td>

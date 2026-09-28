@@ -42,13 +42,13 @@ function authHeader(): string {
 /** Adresse boutique de retour — mêmes variables d'environnement que `returnLabel.ts`. */
 function shopToAddress() {
 	return {
-		name: envOr('INVOICE_COMPANY_NAME', 'MadeInDiamonds'),
+		name: envOr('INVOICE_COMPANY_NAME', 'AS7 Park'),
 		address_line_1: envOr('INVOICE_COMPANY_ADDRESS', '123 Rue des Affaires'),
 		house_number: envOr('SENDCLOUD_RETURN_HOUSE_NUMBER', '') || undefined,
 		postal_code: envOr('SENDCLOUD_RETURN_POSTAL_CODE', '75000'),
 		city: envOr('SENDCLOUD_RETURN_CITY', 'Paris'),
 		country_code: envOr('SENDCLOUD_RETURN_COUNTRY', 'FR'),
-		email: envOr('INVOICE_COMPANY_EMAIL', 'contact@madeindiamonds.com'),
+		email: envOr('INVOICE_COMPANY_EMAIL', 'contact@as7park.com'),
 		phone_number: envOr('INVOICE_COMPANY_PHONE', '+33123456789')
 	};
 }

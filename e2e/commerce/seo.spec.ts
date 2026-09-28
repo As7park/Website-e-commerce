@@ -61,11 +61,11 @@ test.describe('SEO', () => {
 	});
 
 	test('un article de blog a son propre titre et sa propre description', async ({ page }) => {
-		const { post } = await createBlogPost({ title: 'Comment choisir sa bague de fiançailles' });
+		const { post } = await createBlogPost({ title: 'Comment choisir son casque cross' });
 
 		try {
 			await page.goto(`/blog/${post.slug}`);
-			await expect(page).toHaveTitle(/Comment choisir sa bague de fiançailles/);
+			await expect(page).toHaveTitle(/Comment choisir son casque cross/);
 			await expect(page.locator('meta[property="article:author"]')).toHaveAttribute(
 				'content',
 				/.+/

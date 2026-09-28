@@ -414,7 +414,7 @@ model Product {
   taxonomyValues  ProductTaxonomyValue[]
   /// Poids réel de l'unité en kg. `null` = pas encore renseigné par l'admin,
   /// `$lib/commerce/packageEstimate.ts` retombe alors sur une estimation par
-  /// défaut (bijou standard) pour ne pas casser le calcul de colis Sendcloud
+  /// défaut (accessoire moto standard) pour ne pas casser le calcul de colis Sendcloud
   /// tant que le catalogue n'est pas rempli.
   weight          Float?
   /// Dimensions unitaires en cm, mêmes règles de repli que `weight` ci-dessus.
@@ -990,7 +990,7 @@ model StoreSettings {
   recentlyViewedReminderEnabled Boolean @default(false)
   /// Taux de TVA appliqué au catalogue (fraction, ex. 0.20 = 20 %), lu par
   /// `$lib/server/vat.ts` — remplace l'ancienne constante `TVA_RATE` figée
-  /// à 5,5 % dans le code (taux réduit, incorrect pour de la bijouterie qui
+  /// à 5,5 % dans le code (taux réduit, incorrect pour des articles moto qui
   /// relève du taux normal en France). Valeur de défaut = l'ancienne
   /// constante, pour ne rien changer silencieusement en production tant que
   /// l'admin n'a pas lui-même ajusté le taux depuis `/admin/settings`.

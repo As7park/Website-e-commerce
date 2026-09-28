@@ -12,7 +12,10 @@
 <header class="shop-site-header">
 	<div class="shop-announcement-bar">Livraison offerte dès 50€ d'achat</div>
 	<div class="shop-header-main">
-		<a href="/" class="shop-logo">MadeInDiamonds</a>
+		<a href="/" class="shop-logo shop-logo-brand">
+			<img src="/logo.svg" alt="" width="28" height="28" />
+			AS7 PARK
+		</a>
 		<nav class="shop-main-nav">
 			<ul>
 				<li>

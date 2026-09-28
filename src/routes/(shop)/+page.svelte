@@ -20,10 +20,11 @@
 
 <main>
 	<HeroDark>
-		<p class="shop-eyebrow shop-eyebrow-light">Nouvelle collection</p>
-		<h1 class="shop-hero-title-light">Trouvez la pièce qui vous ressemble.</h1>
+		<p class="shop-eyebrow shop-eyebrow-light">Cross · Enduro · Route</p>
+		<h1 class="shop-hero-title-light">Équipez-vous pour rouler.</h1>
 		<p class="shop-hero-text-light">
-			Découvrez notre sélection, pensée pour durer et pour vous accompagner au quotidien.
+			Équipement pilote, pièces et accessoires moto sélectionnés par des passionnés, pour la piste
+			comme pour la route.
 		</p>
 		<div class="shop-hero-ctas">
 			<a href="/products" class="shop-btn shop-btn-light">Découvrir la boutique</a>
@@ -82,7 +83,7 @@
 	<section class="shop-newsletter" use:reveal>
 		<h2 class="shop-section-title" style="margin:0;">Restez informés</h2>
 		<p style="color:var(--shop-text-muted); margin:8px 0 0;">
-			Recevez nos nouveautés et offres en avant-première.
+			Recevez nos nouveautés, conseils d’entretien et offres en avant-première.
 		</p>
 		<form class="shop-newsletter-form" onsubmit={(e) => e.preventDefault()}>
 			<input type="email" placeholder="Adresse e-mail" aria-label="Adresse e-mail" required />

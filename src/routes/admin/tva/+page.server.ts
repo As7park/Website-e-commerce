@@ -9,8 +9,8 @@ import { log } from '$lib/server/log';
 
 /**
  * Taux de TVA (`StoreSettings.vatRate`) — voir `CONFORMITE_ECOMMERCE.md` :
- * remplace l'ancienne constante figée à 5,5 %, incorrecte pour de la
- * bijouterie (taux normal attendu). Saisi en pourcentage, converti en
+ * remplace l'ancienne constante figée à 5,5 %, incorrecte pour des
+ * articles moto (taux normal attendu). Saisi en pourcentage, converti en
  * fraction avant écriture.
  *
  * ADMIN-PLUGIN : page dédiée (déplacée depuis `/admin/settings`) — une

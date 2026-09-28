@@ -58,113 +58,130 @@ const vatFromTtc = (ttc) => {
 const atUtc = (year, monthIndex, day, hour = 10) =>
 	new Date(Date.UTC(year, monthIndex, day, hour, 15, 0));
 
-const ADMIN_EMAIL = 'admin@madeindiamonds.com'; // ADMIN-PLUGIN : compte de démonstration
+const ADMIN_EMAIL = 'admin@as7park.com'; // ADMIN-PLUGIN : compte de démonstration
 
 // PRODUCT-PLUGIN : taxonomies de démonstration (système générique, remplace Material/Category).
-// « Matière » reste mono-valeur (multiple: false), « Catégorie » multi-valeur (multiple: true) —
+// « Discipline » reste mono-valeur (multiple: false), « Catégorie » multi-valeur (multiple: true) —
 // mêmes règles métier qu'avant la généralisation.
 const TAXONOMIES = [
 	{
-		name: 'Matière',
-		slug: 'matiere',
+		name: 'Discipline',
+		slug: 'discipline',
 		type: 'TEXT',
 		multiple: false,
-		values: ['Numérique', 'Papier']
+		values: ['Cross / Enduro', 'Route']
 	},
 	{
 		name: 'Catégorie',
 		slug: 'categorie',
 		type: 'TEXT',
 		multiple: true,
-		values: ['Sites web', 'Identité', 'Applications']
+		values: ['Équipement pilote', 'Pièces', 'Accessoires', 'Entretien']
 	}
 ];
 
 const PRODUCTS = [
 	{
-		name: 'Site vitrine',
-		slug: 'site-vitrine',
-		colorProduct: '#844c6d',
-		category: 'Sites web',
-		material: 'Numérique',
-		price: 2900,
-		stock: 24,
-		weight: 0.3,
-		length: 32,
-		width: 24,
-		height: 3,
+		name: 'Casque cross AS7 Carbon',
+		slug: 'casque-cross-carbon',
+		colorProduct: '#ffb200',
+		category: 'Équipement pilote',
+		discipline: 'Cross / Enduro',
+		price: 389,
+		stock: 14,
+		weight: 1.6,
+		length: 40,
+		width: 32,
+		height: 30,
 		image:
-			'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=800&q=80',
+			'https://images.unsplash.com/photo-1558980664-10e7170b5df9?auto=format&fit=crop&w=800&q=80',
 		description:
-			'Site vitrine sur-mesure : cadrage, design, développement SvelteKit et mise en ligne. Idéal pour poser une marque en ligne.'
+			'Casque cross en fibre de carbone, homologué ECE 22.06. Ventilation optimisée, mousses amovibles et lavables, visière réglable.'
 	},
 	{
-		name: 'E-commerce',
-		slug: 'e-commerce',
-		colorProduct: '#ec008c',
-		category: 'Sites web',
-		material: 'Numérique',
-		price: 5900,
-		stock: 12,
-		weight: 0.3,
-		length: 32,
-		width: 24,
-		height: 3,
-		image:
-			'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
-		description:
-			'Boutique en ligne : catalogue, panier, paiement et back-office. Pensée pour vendre sans friction, y compris sur mobile.'
-	},
-	{
-		name: 'Identité visuelle',
-		slug: 'identite-visuelle',
-		colorProduct: '#74c92b',
-		category: 'Identité',
-		material: 'Papier',
-		price: 1800,
-		stock: 30,
-		weight: 0.5,
-		length: 32,
-		width: 24,
-		height: 5,
-		image:
-			'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80',
-		description:
-			'Direction artistique, logotype, typographies et charte. Un langage visuel que le site et les supports peuvent porter au quotidien.'
-	},
-	{
-		name: 'Application web',
-		slug: 'application-web',
-		colorProduct: '#f68712',
-		category: 'Applications',
-		material: 'Numérique',
-		price: 12000,
-		stock: 6,
-		weight: 0.3,
-		length: 32,
-		width: 24,
-		height: 3,
-		image:
-			'https://images.unsplash.com/photo-1551650975-87deedd944c8?auto=format&fit=crop&w=800&q=80',
-		description:
-			'Outil métier sur-mesure : authentification, données, parcours. Un produit, pas un assemblage de templates.'
-	},
-	{
-		name: 'Maintenance',
-		slug: 'maintenance',
-		colorProduct: '#00adef',
-		category: 'Applications',
-		material: null,
-		price: 960,
-		stock: 40,
+		name: 'Gants cross Grip',
+		slug: 'gants-cross-grip',
+		colorProduct: '#14120f',
+		category: 'Équipement pilote',
+		discipline: 'Cross / Enduro',
+		price: 34.9,
+		stock: 60,
 		weight: 0.2,
-		length: 30,
-		width: 22,
-		height: 2,
+		length: 25,
+		width: 15,
+		height: 4,
 		image:
-			'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=800&q=80',
+			'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80',
 		description:
-			'Suivi annuel : mises à jour, sauvegardes, petites évolutions et astreinte. Pour un site qui reste vivant après la mise en ligne.'
+			'Gants légers et respirants, paume renforcée anti-ampoules et bouts de doigts compatibles écran tactile.'
+	},
+	{
+		name: 'Kit transmission 520',
+		slug: 'kit-transmission-520',
+		colorProduct: '#8a6f52',
+		category: 'Pièces',
+		discipline: 'Cross / Enduro',
+		price: 149,
+		stock: 18,
+		weight: 3.2,
+		length: 40,
+		width: 30,
+		height: 10,
+		image:
+			'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?auto=format&fit=crop&w=800&q=80',
+		description:
+			'Kit chaîne à joints toriques, pignon acier et couronne aluminium au pas de 520. Vérifiez la compatibilité avec votre modèle avant commande.'
+	},
+	{
+		name: 'Lunettes cross Vision',
+		slug: 'lunettes-cross-vision',
+		colorProduct: '#c9f04d',
+		category: 'Équipement pilote',
+		discipline: 'Cross / Enduro',
+		price: 59.9,
+		stock: 35,
+		weight: 0.3,
+		length: 25,
+		width: 15,
+		height: 10,
+		image:
+			'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=800&q=80',
+		description:
+			'Masque cross à écran anti-buée et anti-rayures, mousse triple densité et sangle siliconée pour un maintien parfait sur le casque.'
+	},
+	{
+		name: 'Huile moteur 4T 10W40 — 4 L',
+		slug: 'huile-moteur-4t-10w40',
+		colorProduct: '#7a2e12',
+		category: 'Entretien',
+		discipline: null,
+		price: 44.9,
+		stock: 80,
+		weight: 3.8,
+		length: 25,
+		width: 15,
+		height: 30,
+		image:
+			'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80',
+		description:
+			'Huile semi-synthèse pour moteurs 4 temps, norme JASO MA2 compatible embrayage à bain d’huile. Bidon de 4 litres.'
+	},
+	{
+		name: 'Lève-moto d’atelier',
+		slug: 'leve-moto-atelier',
+		colorProduct: '#f2efe4',
+		category: 'Accessoires',
+		discipline: 'Route',
+		price: 89,
+		stock: 10,
+		weight: 5.5,
+		length: 45,
+		width: 35,
+		height: 15,
+		image:
+			'https://images.unsplash.com/photo-1622185135505-2d795003994a?auto=format&fit=crop&w=800&q=80',
+		description:
+			'Béquille d’atelier en acier avec supports caoutchouc, pour lever la roue arrière en toute sécurité lors de l’entretien.'
 	}
 ];
 
@@ -190,13 +207,6 @@ const LYON = {
 	country: 'France',
 	country_code: 'FR',
 	ISO_3166_1_alpha_3: 'FRA'
-};
-
-const NO_SHIPPING = {
-	shippingOption: 'no_shipping',
-	shippingCost: 0,
-	shippingMethodId: 0,
-	shippingMethodName: 'Livraison numérique'
 };
 
 const RELAY = {
@@ -325,7 +335,7 @@ async function createPaidFlow({
 	createdAt,
 	history,
 	lines,
-	shipping = NO_SHIPPING,
+	shipping = RELAY,
 	promoCode = null,
 	discountAmount = 0,
 	stripePaymentId,
@@ -473,7 +483,7 @@ async function main() {
 	const adminUser = await createDemoUser({
 		email: ADMIN_EMAIL,
 		username: 'Admin',
-		name: 'Admin Studio',
+		name: 'Admin AS7',
 		role: 'ADMIN',
 		emailVerified: true,
 		isMfaEnabled: false,
@@ -626,7 +636,9 @@ async function main() {
 	for (const product of PRODUCTS) {
 		const taxonomyValueIds = [
 			taxonomyValueIdsBySlug.get('categorie').get(product.category),
-			...(product.material ? [taxonomyValueIdsBySlug.get('matiere').get(product.material)] : [])
+			...(product.discipline
+				? [taxonomyValueIdsBySlug.get('discipline').get(product.discipline)]
+				: [])
 		];
 		const created = await prisma.product.create({
 			data: {
@@ -652,11 +664,12 @@ async function main() {
 		`${PRODUCTS.length} produits, ${TAXONOMIES.length} taxonomies et ${taxonomyValueCount} valeurs créés.`
 	);
 
-	const vitrine = productsBySlug.get('site-vitrine');
-	const ecommerce = productsBySlug.get('e-commerce');
-	const identite = productsBySlug.get('identite-visuelle');
-	const app = productsBySlug.get('application-web');
-	const maintenance = productsBySlug.get('maintenance');
+	const casque = productsBySlug.get('casque-cross-carbon');
+	const gants = productsBySlug.get('gants-cross-grip');
+	const transmission = productsBySlug.get('kit-transmission-520');
+	const lunettes = productsBySlug.get('lunettes-cross-vision');
+	const huile = productsBySlug.get('huile-moteur-4t-10w40');
+	const leveMoto = productsBySlug.get('leve-moto-atelier');
 
 	await prisma.promoCode.createMany({
 		data: [
@@ -681,12 +694,12 @@ async function main() {
 				code: 'SUMMER25',
 				type: 'PERCENTAGE',
 				value: 25,
-				minAmount: 1000,
+				minAmount: 200,
 				expiresAt: atUtc(2026, 6, 31),
 				active: true
 			},
 			{
-				code: 'STUDIO50',
+				code: 'PARK50',
 				type: 'FIXED',
 				value: 50,
 				minAmount: 500,
@@ -713,8 +726,11 @@ async function main() {
 			{ status: 'PENDING', changedAt: atUtc(2026, 6, 21, 16) },
 			{ status: 'PAID', changedAt: atUtc(2026, 6, 22, 9) }
 		],
-		lines: [{ product: vitrine, quantity: 1 }],
-		stripePaymentId: 'cs_seed_july_vitrine'
+		lines: [
+			{ product: gants, quantity: 2 },
+			{ product: lunettes, quantity: 1 }
+		],
+		stripePaymentId: 'cs_seed_july_gants'
 	});
 
 	await createPaidFlow({
@@ -726,16 +742,16 @@ async function main() {
 			{ status: 'PENDING', changedAt: atUtc(2026, 7, 2, 18) },
 			{ status: 'PAID', changedAt: atUtc(2026, 7, 3, 11) }
 		],
-		lines: [{ product: identite, quantity: 1 }],
-		stripePaymentId: 'cs_seed_aug_identite',
+		lines: [{ product: casque, quantity: 1 }],
+		stripePaymentId: 'cs_seed_aug_casque',
 		custom: {
 			image:
-				'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-			userMessage: 'Reprendre le monogramme AN, or et ivoire, pour la papeterie et le site.'
+				'https://images.unsplash.com/photo-1609630875171-b1321377ee65?auto=format&fit=crop&w=800&q=80',
+			userMessage: 'Numéro de course 77 et nom « LÉA » sur l’arrière du casque, lettrage noir.'
 		}
 	});
 
-	const welcomeDiscount = money(ecommerce.price * 0.1);
+	const welcomeDiscount = money(transmission.price * 0.1);
 	await createPaidFlow({
 		user: lea,
 		address: leaShipping,
@@ -746,11 +762,11 @@ async function main() {
 			{ status: 'PAID', changedAt: atUtc(2026, 7, 12, 14) },
 			{ status: 'SHIPPED', changedAt: atUtc(2026, 7, 14, 8) }
 		],
-		lines: [{ product: ecommerce, quantity: 1 }],
+		lines: [{ product: transmission, quantity: 1 }],
 		shipping: RELAY,
 		promoCode: 'WELCOME10',
 		discountAmount: welcomeDiscount,
-		stripePaymentId: 'cs_seed_aug_ecommerce',
+		stripePaymentId: 'cs_seed_aug_transmission',
 		tracking: {
 			sendcloudParcelId: 884512,
 			trackingNumber: 'MR123456789FR',
@@ -767,8 +783,8 @@ async function main() {
 			{ status: 'PENDING', changedAt: atUtc(2026, 7, 17, 9) },
 			{ status: 'PAID', changedAt: atUtc(2026, 7, 18, 16) }
 		],
-		lines: [{ product: app, quantity: 1 }],
-		stripePaymentId: 'cs_seed_aug_app'
+		lines: [{ product: leveMoto, quantity: 1 }],
+		stripePaymentId: 'cs_seed_aug_leve_moto'
 	});
 
 	await createPaidFlow({
@@ -780,8 +796,8 @@ async function main() {
 			{ status: 'PENDING', changedAt: atUtc(2026, 7, 20, 19) },
 			{ status: 'PAID', changedAt: atUtc(2026, 7, 21, 10) }
 		],
-		lines: [{ product: maintenance, quantity: 1 }],
-		stripePaymentId: 'cs_seed_aug_maintenance'
+		lines: [{ product: huile, quantity: 2 }],
+		stripePaymentId: 'cs_seed_aug_huile'
 	});
 
 	await createPaidFlow({
@@ -793,7 +809,7 @@ async function main() {
 			{ status: 'PENDING', changedAt: atUtc(2026, 7, 8, 13) },
 			{ status: 'CANCELLED', changedAt: atUtc(2026, 7, 9, 9) }
 		],
-		lines: [{ product: vitrine, quantity: 1 }]
+		lines: [{ product: casque, quantity: 1 }]
 	});
 
 	await prisma.order.create({
@@ -802,15 +818,15 @@ async function main() {
 			shippingAddressId: leaShipping.id,
 			billingAddressId: leaShipping.id,
 			status: 'PENDING',
-			...vatFromTtc(maintenance.price),
+			...vatFromTtc(huile.price),
 			shippingOption: 'no_shipping',
 			shippingCost: 0,
 			createdAt: atUtc(2026, 7, 22, 15),
 			items: {
 				create: {
-					productId: maintenance.id,
+					productId: huile.id,
 					quantity: 1,
-					price: maintenance.price
+					price: huile.price
 				}
 			},
 			statusHistory: {
@@ -824,24 +840,25 @@ async function main() {
 	await prisma.review.createMany({
 		data: [
 			{
-				productId: vitrine.id,
+				productId: gants.id,
 				userId: lea.id,
 				rating: 5,
-				comment: 'Livré dans les temps, exactement le rendu qu’on voulait.',
+				comment: 'Bonne tenue en main, même après une journée de roulage. Taille normalement.',
 				createdAt: atUtc(2026, 6, 25)
 			},
 			{
-				productId: ecommerce.id,
+				productId: transmission.id,
 				userId: lea.id,
 				rating: 4,
-				comment: 'Très bon accompagnement, quelques retouches mineures après la mise en ligne.',
+				comment:
+					'Kit complet et de qualité, bien vérifier la référence de sa moto avant de commander.',
 				createdAt: atUtc(2026, 7, 16)
 			},
 			{
-				productId: app.id,
+				productId: leveMoto.id,
 				userId: marc.id,
 				rating: 5,
-				comment: 'Application robuste, l’équipe a bien cadré le besoin métier.',
+				comment: 'Solide et stable, indispensable pour graisser la chaîne à la maison.',
 				createdAt: atUtc(2026, 7, 20)
 			}
 		]
@@ -850,22 +867,23 @@ async function main() {
 
 	await prisma.wishlistItem.createMany({
 		data: [
-			{ userId: claire.id, productId: maintenance.id, createdAt: atUtc(2026, 7, 9) },
-			{ userId: nina.id, productId: ecommerce.id, createdAt: atUtc(2026, 7, 19, 12) }
+			{ userId: claire.id, productId: casque.id, createdAt: atUtc(2026, 7, 9) },
+			{ userId: nina.id, productId: lunettes.id, createdAt: atUtc(2026, 7, 19, 12) }
 		]
 	});
 	console.log('2 lignes de liste d’envies créées.');
 
 	await prisma.storeSettings.create({
-		data: { wishlistEnabled: true, crossSellEnabled: true }
+		// TVA au taux normal (20 %), cohérente avec `vatFromTtc` ci-dessus.
+		data: { wishlistEnabled: true, crossSellEnabled: true, vatRate: 0.2 }
 	});
-	console.log('Réglages boutique créés (liste d’envies et ventes croisées activées).');
+	console.log('Réglages boutique créés (liste d’envies, ventes croisées, TVA 20 %).');
 
-	const studioAuthor = await prisma.blogAuthor.create({
-		data: { name: adminUser.name ?? 'Admin Studio' }
+	const teamAuthor = await prisma.blogAuthor.create({
+		data: { name: adminUser.name ?? 'Admin AS7' }
 	});
-	const camilleAuthor = await prisma.blogAuthor.create({
-		data: { name: 'Camille — direction artistique' }
+	const mechanicAuthor = await prisma.blogAuthor.create({
+		data: { name: 'Lucas — atelier mécanique' }
 	});
 
 	// BLOG-PLUGIN : taxonomies génériques (voir docs/blog/README.md).
@@ -876,21 +894,21 @@ async function main() {
 		data: { name: 'Tag', slug: 'tag', multiple: true }
 	});
 
-	const studioCategory = await prisma.blogTaxonomyValue.create({
-		data: { taxonomyId: categoryTaxonomy.id, value: 'Studio' }
+	const adviceCategory = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: categoryTaxonomy.id, value: 'Conseils' }
 	});
-	const methodCategory = await prisma.blogTaxonomyValue.create({
-		data: { taxonomyId: categoryTaxonomy.id, value: 'Méthode' }
+	const maintenanceCategory = await prisma.blogTaxonomyValue.create({
+		data: { taxonomyId: categoryTaxonomy.id, value: 'Entretien' }
 	});
 
 	const tagDesign = await prisma.blogTaxonomyValue.create({
-		data: { taxonomyId: tagTaxonomy.id, value: 'Design' }
+		data: { taxonomyId: tagTaxonomy.id, value: 'Équipement' }
 	});
 	const tagTech = await prisma.blogTaxonomyValue.create({
-		data: { taxonomyId: tagTaxonomy.id, value: 'Technique' }
+		data: { taxonomyId: tagTaxonomy.id, value: 'Mécanique' }
 	});
 	const tagCulture = await prisma.blogTaxonomyValue.create({
-		data: { taxonomyId: tagTaxonomy.id, value: 'Culture' }
+		data: { taxonomyId: tagTaxonomy.id, value: 'Pilotage' }
 	});
 
 	const parseBlogDate = (value) => {
@@ -908,12 +926,12 @@ async function main() {
 				content: article.content,
 				slug: article.link,
 				published: true,
-				authorId: index % 3 === 1 ? camilleAuthor.id : studioAuthor.id,
+				authorId: index % 3 === 1 ? mechanicAuthor.id : teamAuthor.id,
 				createdAt,
 				updatedAt: createdAt,
 				taxonomyValues: {
 					create: [
-						{ taxonomyValueId: index >= 4 ? methodCategory.id : studioCategory.id },
+						{ taxonomyValueId: index >= 4 ? maintenanceCategory.id : adviceCategory.id },
 						{ taxonomyValueId: tagCulture.id },
 						...(index % 2 === 0
 							? [{ taxonomyValueId: tagDesign.id }]
@@ -927,14 +945,14 @@ async function main() {
 
 	await prisma.blogPost.create({
 		data: {
-			title: 'Brouillon : refonte de madeindiamonds.com',
-			slug: 'brouillon-refonte-studio',
+			title: 'Brouillon : guide des tailles de casques',
+			slug: 'brouillon-guide-tailles-casques',
 			published: false,
-			authorId: studioAuthor.id,
-			taxonomyValues: { create: { taxonomyValueId: methodCategory.id } },
+			authorId: teamAuthor.id,
+			taxonomyValues: { create: { taxonomyValueId: maintenanceCategory.id } },
 			createdAt: atUtc(2026, 7, 20),
 			content: `
-				<p>Notes internes : revoir la homepage, le parcours Offres et le cas client sportif.</p>
+				<p>Notes internes : tableau des tailles par marque, méthode de mesure du tour de tête, photos à prévoir.</p>
 				<p>Ce brouillon n’est pas publié — il n’apparaît que dans l’admin.</p>
 			`
 		}
@@ -945,14 +963,13 @@ async function main() {
 			{
 				postId: createdPosts[0].id,
 				author: 'Léa Martin',
-				content:
-					'Clair et précis, exactement le niveau d’exigence qu’on cherchait pour notre vitrine.',
+				content: 'Super guide, j’ai enfin compris quand changer ma chaîne. Merci !',
 				createdAt: atUtc(2026, 0, 8)
 			},
 			{
 				postId: createdPosts[0].id,
 				author: 'Marc Durand',
-				content: 'Est-ce que vous accompagnez aussi la rédaction des pages métier ?',
+				content: 'Vous proposez aussi le montage en atelier ou seulement la vente des pièces ?',
 				createdAt: atUtc(2026, 0, 9)
 			}
 		]
@@ -964,26 +981,26 @@ async function main() {
 		data: [
 			{
 				name: 'Sophie Bernard',
-				email: 'sophie.bernard@maison-claire.fr',
-				subject: 'Devis site vitrine',
+				email: 'sophie.bernard@example.com',
+				subject: 'Taille de casque',
 				message:
-					'Bonjour, nous ouvrons une maison de création à Nantes et cherchons un site vitrine à l’image de nos pièces. Pouvez-vous proposer un cadrage et un calendrier ?',
+					'Bonjour, j’ai un tour de tête de 57 cm : quelle taille me conseillez-vous pour le casque cross AS7 Carbon ?',
 				createdAt: atUtc(2026, 7, 5, 9)
 			},
 			{
 				name: 'Julien Lefèvre',
-				email: 'julien@nord-retail.com',
-				subject: 'Refonte e-commerce',
+				email: 'julien.lefevre@example.com',
+				subject: 'Compatibilité kit transmission',
 				message:
-					'Notre boutique actuelle est trop lente sur mobile. On voudrait un tunnel plus simple et un back-office utilisable par l’équipe magasin.',
+					'Le kit transmission 520 est-il compatible avec une KTM 250 EXC de 2021 ? Merci d’avance.',
 				createdAt: atUtc(2026, 7, 14, 15)
 			},
 			{
-				name: 'Agence Volt',
-				email: 'hello@agencevolt.co',
-				subject: 'Partenariat',
+				name: 'MX Club Vendée',
+				email: 'contact@mxclub-vendee.fr',
+				subject: 'Partenariat club',
 				message:
-					'On cherche un studio technique pour les projets qui dépassent notre pôle interne. Intéressés pour en discuter ?',
+					'Notre club cherche un partenaire équipement pour la saison prochaine (tarifs licenciés, dotation pilotes). Intéressés pour en discuter ?',
 				createdAt: atUtc(2026, 7, 21, 11)
 			}
 		]

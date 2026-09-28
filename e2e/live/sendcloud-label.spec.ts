@@ -64,7 +64,7 @@ test.describe('Live — étiquette Sendcloud + webhook', () => {
 					},
 					body: JSON.stringify({
 						from_address: {
-							name: 'MadeInDiamonds',
+							name: 'AS7 Park',
 							address_line_1: '123 Rue des Affaires',
 							postal_code: '75000',
 							city: 'Paris',

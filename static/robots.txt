@@ -10,4 +10,4 @@ User-agent: *
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://madeindiamonds.com/sitemap.xml
+Sitemap: https://as7park.com/sitemap.xml

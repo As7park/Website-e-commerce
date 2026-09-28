@@ -7,7 +7,8 @@
 // affiché au client corresponde exactement au colis réellement expédié.
 //
 // `Product.weight/length/width/height` sont nullable : tant que le catalogue
-// n'est pas rempli, on retombe sur `DEFAULT_ITEM` (gabarit bijou standard).
+// n'est pas rempli, on retombe sur `DEFAULT_ITEM` (gabarit d'accessoire moto standard :
+// gants, masque, petite pièce).
 // -----------------------------------------------------------------------------
 
 export interface PackageItemInput {
@@ -29,7 +30,7 @@ export interface PackageEstimate {
 	heightCm: number;
 }
 
-const DEFAULT_ITEM = { weightKg: 0.124, lengthCm: 10, widthCm: 8, heightCm: 4 };
+const DEFAULT_ITEM = { weightKg: 1, lengthCm: 30, widthCm: 20, heightCm: 10 };
 const CUSTOM_EXTRA_WEIGHT_KG = 0.666;
 
 interface BoxSize {
@@ -54,8 +55,8 @@ function volumeCm3(box: BoxSize): number {
  * Choisit le plus petit carton standard dont le volume contient le volume
  * total des articles et dont la plus grande arête est au moins aussi grande
  * que la plus grande dimension d'un seul article (pas de bin-packing 3D réel :
- * approximation volontairement simple, suffisante pour des objets de petite
- * taille comme des bijoux).
+ * approximation volontairement simple, suffisante pour des colis d'équipement
+ * et de pièces moto de taille courante).
  */
 function pickBox(totalVolumeCm3: number, maxItemDimCm: number): BoxSize {
 	const fitting = STANDARD_BOXES.find(

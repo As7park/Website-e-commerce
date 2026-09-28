@@ -53,13 +53,11 @@ test.describe('Questions produit', () => {
 				await signUpAndVerify(page, account);
 				await page.goto(`/products/${created.product.slug}`);
 
-				await page
-					.locator('textarea[name="question"]')
-					.fill('Cette bague existe-t-elle en taille 54 ?');
+				await page.locator('textarea[name="question"]').fill('Ce casque existe-t-il en taille M ?');
 				await page.getByRole('button', { name: 'Envoyer la question' }).click();
 
 				await expectMessage(page, 'Question envoyée');
-				await expect(page.getByText('Cette bague existe-t-elle en taille 54 ?')).toHaveCount(0);
+				await expect(page.getByText('Ce casque existe-t-il en taille M ?')).toHaveCount(0);
 				await expect(page.getByText('Aucune question répondue pour ce produit.')).toBeVisible();
 			});
 
@@ -72,9 +70,7 @@ test.describe('Questions produit', () => {
 
 				const row = page.locator('tbody tr', { hasText: created.product.name }).first();
 				await row.getByRole('link', { name: 'répondre' }).click();
-				await expect(
-					page.getByText('Cette bague existe-t-elle en taille 54 ?').first()
-				).toBeVisible();
+				await expect(page.getByText('Ce casque existe-t-il en taille M ?').first()).toBeVisible();
 
 				await page
 					.locator('textarea[name="answer"]')
@@ -85,7 +81,7 @@ test.describe('Questions produit', () => {
 
 			await test.step('5. La réponse est maintenant publique', async () => {
 				await page.goto(`/products/${created.product.slug}`);
-				await expect(page.getByText('Q : Cette bague existe-t-elle en taille 54 ?')).toBeVisible();
+				await expect(page.getByText('Q : Ce casque existe-t-il en taille M ?')).toBeVisible();
 				await expect(
 					page.getByText('R : Oui, la taille 54 est disponible sur commande.')
 				).toBeVisible();

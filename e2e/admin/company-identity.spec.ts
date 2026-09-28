@@ -40,7 +40,7 @@ test.describe('Admin — identité de l’entreprise', () => {
 
 				const response = await page.request.post('/admin/identite', {
 					form: {
-						name: 'Bijoux Test SASU',
+						name: 'Moto Test SASU',
 						legalForm: 'SASU',
 						shareCapital: '10 000 €',
 						address: '5 Rue de la Paix',
@@ -49,14 +49,14 @@ test.describe('Admin — identité de l’entreprise', () => {
 						vatNumber: 'FR12345678900',
 						publicationDirector: 'Jean Test',
 						phone: '+33 1 23 45 67 89',
-						email: 'contact@bijoux-test.fr'
+						email: 'contact@moto-test.fr'
 					},
 					headers: sveltekitActionHeaders(origin)
 				});
 				expect(response.status()).toBe(200);
 
 				const flags = await getStoreFeatureFlags();
-				expect(flags.companyName).toBe('Bijoux Test SASU');
+				expect(flags.companyName).toBe('Moto Test SASU');
 				expect(flags.companySiret).toBe('123 456 789 00012');
 			});
 
@@ -64,13 +64,13 @@ test.describe('Admin — identité de l’entreprise', () => {
 				await page.goto('/mentions-legales');
 				// Le nom apparaît aussi dans le pied de page (`Footer.svelte`),
 				// d'où `.first()` pour viser la section « Éditeur du site ».
-				await expect(page.getByText('Bijoux Test SASU').first()).toBeVisible();
+				await expect(page.getByText('Moto Test SASU').first()).toBeVisible();
 				await expect(page.getByText('123 456 789 00012')).toBeVisible();
 				await expect(page.getByText('[À COMPLÉTER]')).toHaveCount(0);
 			});
 
 			await test.step('4. Affichée dans le pied de page', async () => {
-				await expect(page.locator('footer').getByText('Bijoux Test SASU')).toBeVisible();
+				await expect(page.locator('footer').getByText('Moto Test SASU')).toBeVisible();
 			});
 		} finally {
 			await setStoreFeatureFlags(originalFlags);

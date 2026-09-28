@@ -13,7 +13,7 @@ export const PERF_PASSWORD = __ENV.PERF_PASSWORD || 'PerfSeed!2026';
 
 // Compte admin de démonstration (`prisma/seed.js`), à ne jamais utiliser
 // contre un environnement autre que local/staging jetable.
-export const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || 'admin@madeindiamonds.com';
+export const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || 'admin@as7park.com';
 export const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || 'DemoPass!2026';
 
 // Requis uniquement par `webhook.js` : doit être le MÊME secret que

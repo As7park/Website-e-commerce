@@ -1,7 +1,7 @@
 // Configuration du sitemap
 export const sitemapConfig = {
 	// URL de base du site
-	site: 'https://madeindiamonds.com', // Domaine MadeInDiamonds
+	site: 'https://as7park.com', // Domaine AS7 Park
 
 	// Routes à exclure du sitemap (routes privées, admin, auth)
 	excludedRoutes: [
