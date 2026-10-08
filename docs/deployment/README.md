@@ -30,37 +30,39 @@ environnements **Production** et **Preview** (voir la nuance `APP_URL` /
 `VERCEL_URL` plus bas — ne pas se contenter de Production seul si des
 Preview Deployments doivent aussi fonctionner).
 
-| Variable                                                 | Obligatoire             | Fournisseur | Rôle                                                             |
-| -------------------------------------------------------- | ----------------------- | ----------- | ---------------------------------------------------------------- |
-| `DATABASE_URL`                                           | oui                     | Neon        | connexion runtime, via le pooler (`-pooler`)                     |
-| `DIRECT_URL`                                             | oui                     | Neon        | connexion directe, requise par `prisma migrate`                  |
-| `ENCRYPTION_KEY`                                         | oui                     | —           | AES-256-GCM, secrets 2FA (32 octets, base64)                     |
-| `ENCRYPTION_KEY_LEGACY`                                  | non (tant que utile)    | —           | AES-128-GCM, déchiffrement des secrets 2FA `encryptionVersion=1` |
-| `PUBLIC_ENV`                                             | oui                     | —           | `production` en prod                                             |
-| `SECRET_NAME_DATA_COOKIE`                                | oui                     | —           | nom du cookie de session                                         |
-| `VITE_GOOGLE_REDIRECT_URI`                               | oui (si Google actif)   | Google      | doit pointer vers le domaine de prod                             |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`              | oui (si Google actif)   | Google      | OAuth                                                            |
-| `STRIPE_SECRET_KEY`                                      | oui                     | Stripe      | paiements                                                        |
-| `STRIPE_WEBHOOK_SECRET`                                  | oui                     | Stripe      | signature `POST /api/webhooks`                                   |
-| `VITE_STRIPE_PUBLISHABLE_KEY`                            | oui                     | Stripe      | Stripe Elements / Checkout côté client                           |
-| `SENDCLOUD_BASE_URL`                                     | oui                     | Sendcloud   | fixe (`https://panel.sendcloud.sc`)                              |
-| `SENDCLOUD_PUBLIC_KEY` / `SENDCLOUD_SECRET_KEY`          | oui                     | Sendcloud   | API                                                              |
-| `SENDCLOUD_INTEGRATION_ID`                               | oui                     | Sendcloud   | intégration liée aux étiquettes                                  |
-| `SENDCLOUD_SENDER_ADDRESS_ID`                            | oui                     | Sendcloud   | adresse d'expédition                                             |
-| `SENDCLOUD_WEBHOOK_SECRET`                               | oui                     | Sendcloud   | signature `POST /api/webhooks/sendcloud`                         |
-| `VITE_SHOP_FROM_COUNTRY` / `VITE_SHOP_FROM_POSTAL`       | oui                     | —           | calcul des frais de port                                         |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS`    | oui                     | Brevo       | e-mails transactionnels                                          |
-| `SMTP_FROM`                                              | non (valeur par défaut) | —           | adresse d'expéditeur affichée                                    |
-| `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET`     | oui                     | Cloudinary  | upload/CDN images produits                                       |
-| `PUBLIC_TINYMCE_API_KEY`                                 | oui (si blog actif)     | TinyMCE     | éditeur riche `/admin/blog`                                      |
-| `SECRET_ADDRESS_SEARCH_MODE`                             | oui (`live` en prod)    | —           | `e2e` uniquement pour les tests, jamais en prod                  |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN`                      | recommandé              | Upstash     | rate-limit/cache/verrous partagés entre instances                |
-| `QSTASH_TOKEN`                                           | recommandé              | Upstash     | file de jobs asynchrones                                         |
-| `QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY` | avec QStash             | Upstash     | vérification des callbacks QStash                                |
-| `APP_URL`                                                | voir note ci-dessous    | —           | URL publique explicite (jobs, e-mails, callbacks QStash)         |
-| `CRON_SECRET`                                            | si pas de QStash        | —           | authentifie les requêtes Vercel Cron                             |
-| `SENTRY_DSN` / `PUBLIC_SENTRY_DSN`                       | recommandé              | Sentry      | erreurs + traces serveur/navigateur                              |
-| `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT`    | non (CI uniquement)     | Sentry      | upload des source maps, désactivé par défaut                     |
+| Variable                                                 | Obligatoire             | Fournisseur | Rôle                                                                                                                |
+| -------------------------------------------------------- | ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                           | oui                     | Neon        | connexion runtime, via le pooler (`-pooler`)                                                                        |
+| `DIRECT_URL`                                             | oui                     | Neon        | connexion directe, requise par `prisma migrate`                                                                     |
+| `ENCRYPTION_KEY`                                         | oui                     | —           | AES-256-GCM, secrets 2FA (32 octets, base64)                                                                        |
+| `ENCRYPTION_KEY_LEGACY`                                  | non (tant que utile)    | —           | AES-128-GCM, déchiffrement des secrets 2FA `encryptionVersion=1`                                                    |
+| `PUBLIC_ENV`                                             | oui                     | —           | `production` en prod                                                                                                |
+| `SECRET_NAME_DATA_COOKIE`                                | oui                     | —           | nom du cookie de session                                                                                            |
+| `VITE_GOOGLE_REDIRECT_URI`                               | oui (si Google actif)   | Google      | doit pointer vers le domaine de prod                                                                                |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`              | oui (si Google actif)   | Google      | OAuth                                                                                                               |
+| `STRIPE_SECRET_KEY`                                      | oui                     | Stripe      | paiements                                                                                                           |
+| `STRIPE_WEBHOOK_SECRET`                                  | oui                     | Stripe      | signature `POST /api/webhooks`                                                                                      |
+| `VITE_STRIPE_PUBLISHABLE_KEY`                            | oui                     | Stripe      | Stripe Elements / Checkout côté client                                                                              |
+| `SENDCLOUD_BASE_URL`                                     | oui                     | Sendcloud   | fixe (`https://panel.sendcloud.sc`)                                                                                 |
+| `SENDCLOUD_PUBLIC_KEY` / `SENDCLOUD_SECRET_KEY`          | oui                     | Sendcloud   | API                                                                                                                 |
+| `SENDCLOUD_INTEGRATION_ID`                               | oui                     | Sendcloud   | intégration liée aux étiquettes                                                                                     |
+| `SENDCLOUD_SENDER_ADDRESS_ID`                            | oui                     | Sendcloud   | adresse d'expédition                                                                                                |
+| `SENDCLOUD_WEBHOOK_SECRET`                               | oui                     | Sendcloud   | signature `POST /api/webhooks/sendcloud`                                                                            |
+| `VITE_SHOP_FROM_COUNTRY` / `VITE_SHOP_FROM_POSTAL`       | oui                     | —           | calcul des frais de port                                                                                            |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS`    | oui                     | Brevo       | e-mails transactionnels                                                                                             |
+| `SMTP_FROM`                                              | non (valeur par défaut) | —           | adresse d'expéditeur affichée                                                                                       |
+| `ACCOUNTING_EXPORT_EMAIL`                                | non (sinon job muet)    | —           | destinataire de l'export comptable mensuel (voir [docs/admin](../admin/README.md#export-comptable-automatis%C3%A9)) |
+| `DISPUTE_ALERT_EMAIL`                                    | non (sinon log seul)    | —           | destinataire de l'alerte litige Stripe (voir [docs/commerce](../commerce/README.md#litiges-stripe-chargebacks))     |
+| `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET`     | oui                     | Cloudinary  | upload/CDN images produits                                                                                          |
+| `PUBLIC_TINYMCE_API_KEY`                                 | oui (si blog actif)     | TinyMCE     | éditeur riche `/admin/blog`                                                                                         |
+| `SECRET_ADDRESS_SEARCH_MODE`                             | oui (`live` en prod)    | —           | `e2e` uniquement pour les tests, jamais en prod                                                                     |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN`                      | recommandé              | Upstash     | rate-limit/cache/verrous partagés entre instances                                                                   |
+| `QSTASH_TOKEN`                                           | recommandé              | Upstash     | file de jobs asynchrones                                                                                            |
+| `QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY` | avec QStash             | Upstash     | vérification des callbacks QStash                                                                                   |
+| `APP_URL`                                                | voir note ci-dessous    | —           | URL publique explicite (jobs, e-mails, callbacks QStash)                                                            |
+| `CRON_SECRET`                                            | si pas de QStash        | —           | authentifie les requêtes Vercel Cron                                                                                |
+| `SENTRY_DSN` / `PUBLIC_SENTRY_DSN`                       | recommandé              | Sentry      | erreurs + traces serveur/navigateur                                                                                 |
+| `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT`    | non (CI uniquement)     | Sentry      | upload des source maps, désactivé par défaut                                                                        |
 
 ### `APP_URL` vs `VERCEL_URL` — piège spécifique à Vercel
 
@@ -73,6 +75,18 @@ schedule enregistré depuis un Preview ne pointera jamais le domaine de
 Production. **Toujours définir** `APP_URL` explicitement sur l'environnement
 Production, avec le domaine stable (custom domain ou `*.vercel.app` de
 production) — ne pas compter sur `VERCEL_URL` en dehors des Previews.
+
+Dépendent aussi de cette résolution (`resolveAppUrlOrDefault()`, repli
+`http://localhost:2000` si ni l'une ni l'autre n'est définie) les liens
+inclus dans les e-mails de sécurité du compte : alerte « nouvelle
+connexion détectée », confirmation de changement de mot de passe, alerte
+« tentatives de connexion échouées », et le lien de révocation à distance
+« Ce n'était pas moi » (`$lib/server/newDeviceAlert.ts`,
+`passwordChangedAlert.ts`, `failedLoginAlert.ts`). Un `APP_URL` absent en
+Preview n'empêche rien de fonctionner (repli sur `VERCEL_URL`, toujours
+fourni par Vercel), mais vérifier au moins une fois qu'un de ces e-mails
+contient bien un lien cliquable vers le bon domaine avant la mise en
+production réelle.
 
 ## Base de données — Neon
 
@@ -100,7 +114,15 @@ production) — ne pas compter sur `VERCEL_URL` en dehors des Previews.
      sciemment, pas fait par défaut dans ce dépôt.
 
 4. `npm run seed` (compte admin de démo + données) ne doit être lancé qu'en
-   développement/démo, jamais contre la base de production.
+   développement/démo, jamais contre la base de production — désormais
+   **refusé par le script lui-même** si `VERCEL_ENV=production` (posé
+   automatiquement par Vercel), sauf `FORCE_SEED=1` explicite. Ne couvre que
+   le cas où le script serait, par erreur, câblé dans un déploiement — un
+   lancement manuel local avec des identifiants de prod dans `.env` reste
+   possible, à la seule vigilance de qui l'exécute. Le mot de passe partagé
+   des comptes de démo (`DemoPass!2026` par défaut) est surchargeable via
+   `SEED_DEMO_PASSWORD` si ce jeu de données doit exister ailleurs qu'un
+   poste de dev local.
 
 ## Stripe
 
@@ -287,3 +309,9 @@ Avant de la rendre bloquante (`reportOnly` → `directives` dans
 7. Smoke test manuel : inscription + vérification e-mail, connexion Google,
    ajout panier → checkout → paiement test Stripe → réception facture,
    upload d'image produit (Cloudinary), création d'étiquette Sendcloud.
+8. Sécurité du compte (aucune config supplémentaire, dépend seulement de
+   SMTP + `APP_URL` déjà vérifiés ci-dessus) : se connecter depuis un
+   second navigateur/appareil → e-mail « nouvelle connexion détectée » reçu
+   avec un lien « Ce n'était pas moi » cliquable ; changer son mot de passe
+   depuis `/auth/settings` → e-mail de confirmation reçu ; vérifier que
+   `/auth/settings/sessions` liste bien la session et son historique.

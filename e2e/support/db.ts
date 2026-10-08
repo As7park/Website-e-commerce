@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { createDecipheriv } from 'node:crypto';
+import { createDecipheriv, randomBytes } from 'node:crypto';
 
 /**
  * Client Prisma dédié aux tests, branché explicitement sur l'URL de `.env.test`
@@ -329,12 +329,23 @@ async function ensureCatalogTaxonomy() {
 	);
 }
 
+/**
+ * Image des produits de test — servie par l'application elle-même.
+ *
+ * Une URL externe (`https://example.test/...`) forçait le navigateur à tenter
+ * une résolution DNS vouée à l'échec sur CHAQUE page produit, avec un délai
+ * variable selon le résolveur : source d'échecs intermittents sur l'ajout au
+ * panier, et violation de la CSP (`img-src 'self' data:`) à chaque rendu.
+ */
+const E2E_PRODUCT_IMAGE = '/pwa/NoticeModele.png';
+
 /** Catalogue : produit de test isolé (image factice, pas d'upload Cloudinary). */
 export async function createCatalogProduct(overrides?: {
 	name?: string;
 	slug?: string;
 	stock?: number;
 	price?: number;
+	compareAtPrice?: number | null;
 }) {
 	const stamp = `${Date.now()}`;
 	const category = await createCatalogCategory();
@@ -345,8 +356,9 @@ export async function createCatalogProduct(overrides?: {
 				slug: overrides?.slug ?? `e2e-prod-${stamp}`,
 				description: 'Produit de test e2e pour le catalogue.',
 				price: overrides?.price ?? 12.5,
+				compareAtPrice: overrides?.compareAtPrice ?? null,
 				stock: overrides?.stock ?? 10,
-				images: ['https://example.test/e2e-product.jpg'],
+				images: [E2E_PRODUCT_IMAGE],
 				colorProduct: '#112233',
 				taxonomyValues: { create: { taxonomyValueId: category.id } }
 			}
@@ -371,7 +383,7 @@ export async function createOldCatalogProduct(daysAgo: number, overrides?: { nam
 				description: 'Produit de test e2e pour la purge.',
 				price: 12.5,
 				stock: 10,
-				images: ['https://example.test/e2e-product.jpg'],
+				images: [E2E_PRODUCT_IMAGE],
 				colorProduct: '#112233',
 				createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
 				taxonomyValues: { create: { taxonomyValueId: category.id } }
@@ -669,6 +681,81 @@ export async function countSessions(email: string): Promise<number> {
 }
 
 /**
+ * Insère directement une session valide pour un utilisateur, sans passer par
+ * un vrai login navigateur — sert à prouver qu'une action admin (reset mot de
+ * passe, bascule MFA) révoque bien les sessions existantes de la CIBLE, sans
+ * avoir à simuler un parcours de connexion complet dans le test.
+ */
+export async function createRawSession(userId: string) {
+	return resilient(() =>
+		db.session.create({
+			data: {
+				id: randomBytes(20).toString('hex'),
+				userId,
+				expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+			}
+		})
+	);
+}
+
+/**
+ * Insère directement une session déjà expirée — sert à prouver que le job de
+ * purge (`/api/jobs/cleanup`, `runCleanupJob`) la supprime bien, sans avoir à
+ * attendre 30 jours ou à trafiquer `expiresAt` après coup (contrairement à
+ * `updatedAt`, ce champ n'est pas géré par `@updatedAt`, un `create` avec une
+ * date passée suffit).
+ */
+export async function createExpiredSession(userId: string) {
+	return resilient(() =>
+		db.session.create({
+			data: {
+				id: randomBytes(20).toString('hex'),
+				userId,
+				expiresAt: new Date(Date.now() - 60 * 60 * 1000)
+			}
+		})
+	);
+}
+
+/**
+ * Insère une session « autre appareil » directement en base, sans passer par
+ * un vrai navigateur — suffisant pour tester la liste/révocation
+ * (`/auth/settings/sessions`), qui ne lit que les colonnes de `Session`,
+ * jamais un cookie réellement valide pour cette session-là.
+ */
+export async function createExtraSessionForUser(
+	userId: string,
+	overrides?: { userAgent?: string; city?: string; country?: string; lastActiveAt?: Date }
+) {
+	return resilient(() =>
+		db.session.create({
+			data: {
+				id: `e2e-session-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				userId,
+				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+				userAgent:
+					overrides?.userAgent ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/128.0',
+				city: overrides?.city ?? 'Lyon',
+				country: overrides?.country ?? 'FR',
+				lastActiveAt: overrides?.lastActiveAt ?? new Date()
+			}
+		})
+	);
+}
+
+/**
+ * Historique des connexions (`LoginEvent`), le plus récent d'abord — pour
+ * vérifier la détection « nouvel appareil » (`recordLoginEvent`) sans
+ * dépendre du timing d'envoi de l'e-mail d'alerte, qui est fire-and-forget.
+ */
+export async function getLoginEvents(email: string) {
+	const user = await requireUser(email);
+	return resilient(() =>
+		db.loginEvent.findMany({ where: { userId: user.id }, orderBy: { createdAt: 'desc' } })
+	);
+}
+
+/**
  * Nettoyage en fin de test.
  *
  * Les commandes doivent partir en premier : l'application crée un panier
@@ -703,6 +790,28 @@ export async function attachOrderAddress(orderId: string, addressId: string) {
 				billingAddressId: addressId,
 				shippingOption: 'no_shipping',
 				shippingCost: 0
+			}
+		})
+	);
+}
+
+/**
+ * Pose directement `promoCode`/`giftCardCode`/`giftCardAmount` sur une
+ * commande — simule ce que `createCheckoutSession` écrit avant la session
+ * Stripe, pour tester la consommation réelle (webhook) sans repasser par le
+ * formulaire `/checkout?/checkout`.
+ */
+export async function attachOrderDiscount(
+	orderId: string,
+	discount: { promoCode?: string; giftCardCode?: string; giftCardAmount?: number }
+) {
+	return resilient(() =>
+		db.order.update({
+			where: { id: orderId },
+			data: {
+				promoCode: discount.promoCode,
+				giftCardCode: discount.giftCardCode,
+				giftCardAmount: discount.giftCardAmount
 			}
 		})
 	);

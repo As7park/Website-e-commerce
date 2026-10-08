@@ -10,6 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import type { RequestEvent } from '@sveltejs/kit';
+import { createHash } from 'node:crypto';
 import { generateSecureToken, isValidId } from './ids';
 import type { User } from './user';
 import { findUserByGoogleId, createUserWithGoogleOAuth } from '$lib/prisma/user/user';
@@ -19,11 +20,13 @@ import {
 	deleteSessionById,
 	deleteSessionsByUserId,
 	findSessionById,
+	findSessionsForUser,
 	updateSessionExpiry,
 	verifyTwoFactorForSession
 } from '$lib/prisma/session/sessions';
 import { auth } from '.';
 import { invalidateCache } from '$lib/server/cache';
+import type { SessionDeviceContext } from './deviceContext';
 
 export interface SessionFlags {
 	twoFactorVerified: boolean;
@@ -49,11 +52,26 @@ export function generateSessionToken(): string {
 	return generateSecureToken();
 }
 
+/**
+ * Empreinte publique d'une session, à exposer à la place de `Session.id`.
+ *
+ * `Session.id` EST le token du cookie (voir `createSession` ci-dessous) : le
+ * renvoyer au navigateur, même dans un champ caché, permettrait à la moindre
+ * XSS d'usurper toutes les sessions du compte. Ce condensé est stable, non
+ * réversible, et suffit à désigner une session dans un formulaire — le serveur
+ * retrouve la session en recalculant l'empreinte sur les sessions du seul
+ * utilisateur authentifié.
+ */
+export function sessionPublicId(sessionId: string): string {
+	return createHash('sha256').update(sessionId).digest('hex');
+}
+
 export async function createSession(
 	token: string,
 	userId: string,
 	flags: SessionFlags,
-	oauthProvider?: string | null
+	oauthProvider?: string | null,
+	device?: SessionDeviceContext
 ): Promise<Session> {
 	if (!isValidId(userId)) {
 		throw new Error('Invalid user ID format');
@@ -67,7 +85,11 @@ export async function createSession(
 			userId,
 			expiresAt,
 			twoFactorVerified: flags.twoFactorVerified,
-			oauthProvider: oauthProvider ?? null
+			oauthProvider: oauthProvider ?? null,
+			userAgent: device?.userAgent ?? null,
+			ipAddress: device?.ipAddress ?? null,
+			city: device?.city ?? null,
+			country: device?.country ?? null
 		});
 
 		return {
@@ -159,6 +181,12 @@ export async function invalidateUserSessions(userId: string): Promise<void> {
 		throw new Error('Invalid user ID format');
 	}
 
+	// Lues avant suppression : sans leurs ids, le cache d'identité
+	// (`resolveIdentity`, `$lib/lucia/hooks.ts`) laisserait les sessions tout
+	// juste révoquées valides jusqu'à 8s de plus — précisément la fenêtre qu'un
+	// reset de mot de passe ou une bascule MFA cherche à fermer.
+	const sessions = await findSessionsForUser(userId).catch(() => []);
+
 	try {
 		await deleteSessionsByUserId(userId);
 	} catch (error: unknown) {
@@ -171,6 +199,8 @@ export async function invalidateUserSessions(userId: string): Promise<void> {
 			);
 		}
 	}
+
+	await Promise.all(sessions.map((s) => invalidateCache(sessionIdentityCacheKey(s.id))));
 }
 
 // Définit le cookie du token de session

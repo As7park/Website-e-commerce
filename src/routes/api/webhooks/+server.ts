@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { prisma } from '$lib/server/index';
 import dotenv from 'dotenv';
 import { getUserIdByOrderId } from '$lib/prisma/order/prendingOrder';
+import { incrementUsage } from '$lib/prisma/promo/promo';
+import { decrementGiftCardBalance } from '$lib/prisma/giftCards/giftCards';
 import { nextInvoiceNumber } from '$lib/server/invoice/number';
 import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
 import { getVatRate } from '$lib/server/vat';
@@ -17,6 +19,7 @@ import { derivePackageEstimate, fallbackShippingMethod } from '$lib/server/jobs/
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { log } from '$lib/server/log';
 import { notifyDispute } from '$lib/server/disputeAlert';
+import { bumpCacheVersion } from '$lib/server/cache';
 
 /**
  * Webhook Stripe.
@@ -231,6 +234,47 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 				throw new Error(`⚠️ Order ${orderId} has no associated billing address`);
 			}
 
+			// Décrémente le stock vendu — variante si sélectionnée, sinon produit
+			// (jamais les deux, `Cart.svelte` ne borne la quantité que sur
+			// `variant.stock` une fois une variante choisie). `decrement` est
+			// atomique (protège contre une double livraison webhook malgré le
+			// `withLock` au-dessus). Pas de vérification de stock disponible ici
+			// (pas de réservation posée au checkout) : une vente concurrente sur
+			// le dernier exemplaire peut donc faire passer le stock sous 0, à
+			// traiter comme une rupture le temps du réassort, pas bloqué ici.
+			for (const item of order.items) {
+				if (item.variantId) {
+					await prismaTx.productVariant.update({
+						where: { id: item.variantId },
+						data: { stock: { decrement: item.quantity } }
+					});
+				} else {
+					await prismaTx.product.update({
+						where: { id: item.productId },
+						data: { stock: { decrement: item.quantity } }
+					});
+				}
+			}
+
+			// Consomme le code promo / la carte cadeau ici, pas au clic « Payer »
+			// (`checkout/+page.server.ts`) : un panier abandonné ou un paiement
+			// refusé sur Stripe ne coûte plus rien au client — même correction
+			// que le stock ci-dessus.
+			if (order.promoCode) {
+				const promo = await prismaTx.promoCode.findUnique({ where: { code: order.promoCode } });
+				if (promo) {
+					await incrementUsage(prismaTx, promo.id);
+				}
+			}
+			if (order.giftCardCode && order.giftCardAmount > 0) {
+				const giftCard = await prismaTx.giftCard.findUnique({
+					where: { code: order.giftCardCode }
+				});
+				if (giftCard) {
+					await decrementGiftCardBalance(prismaTx, giftCard.id, order.giftCardAmount);
+				}
+			}
+
 			const packageEstimate = derivePackageEstimate(order);
 			// Dimensions de secours uniquement : aucun fetch Sendcloud ici.
 			const shippingMethodData = fallbackShippingMethod(
@@ -396,6 +440,12 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		orderId,
 		amount: createdTransaction?.amount
 	});
+
+	// Le stock vendu vient de changer (décrément ci-dessus) : invalide le
+	// cache catalogue public, même appel que `updateProductById`.
+	if (createdTransaction) {
+		await bumpCacheVersion('catalog');
+	}
 
 	// Facture et Sendcloud partent en deux jobs asynchrones indépendants
 	// (QStash si configuré, sinon exécution directe équivalente en dev) : un

@@ -8,6 +8,7 @@
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
 
 	let { data } = $props();
@@ -16,7 +17,8 @@
 		untrack(() => data.verifyCode),
 		{
 			validators: zodClient(verifyCodeSchema),
-			id: 'verifyCodeForm'
+			id: 'verifyCodeForm',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 

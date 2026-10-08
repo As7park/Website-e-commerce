@@ -5,6 +5,7 @@
 	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { toast } from 'svelte-sonner';
 	import { reviewSchema } from '$lib/schema/products/reviewSchema';
 	import { askQuestionSchema } from '$lib/schema/products/questionSchema';
@@ -195,7 +196,8 @@
 		{
 			validators: zodClient(reviewSchema),
 			id: 'reviewForm',
-			resetForm: true
+			resetForm: true,
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const { form: reviewData, enhance: reviewEnhance, message: reviewMessage } = reviewFormCtx;
@@ -214,7 +216,8 @@
 		{
 			validators: zodClient(askQuestionSchema),
 			id: 'askQuestionForm',
-			resetForm: true
+			resetForm: true,
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const {
@@ -321,7 +324,7 @@
 				</div>
 
 				<p class="shop-product-price">
-					{#if !selectedVariant && hasDiscount}
+					{#if hasDiscount && !selectedVariant?.price}
 						<span class="shop-old"
 							>{toTTC(product.compareAtPrice as number, data.vatRate).toFixed(2)} €</span
 						>

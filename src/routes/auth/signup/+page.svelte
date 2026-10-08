@@ -9,6 +9,7 @@
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 
 	let { data } = $props();
 
@@ -16,7 +17,8 @@
 		untrack(() => data.form),
 		{
 			validators: zodClient(signupSchema),
-			id: 'signupForm'
+			id: 'signupForm',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 

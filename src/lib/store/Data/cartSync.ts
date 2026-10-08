@@ -42,7 +42,13 @@ function applyRemoteCart(remote: CartState) {
 }
 
 const persistCart = async () => {
-	const currentCart = get(cart);
+	// Copie figée : `cart.update()` mute son objet en place (mêmes `items`
+	// poussés par référence) au lieu d'en recréer un. Sans cette copie, une
+	// mutation survenue pendant l'attente du fetch (ex : ajout d'une autre
+	// ligne) serait lue par erreur ci-dessous après l'await et marquerait à
+	// tort ce nouvel état comme déjà synchronisé, sans jamais l'envoyer.
+	const live = get(cart);
+	const currentCart = { ...live, items: [...live.items] };
 
 	if (isSyncing) {
 		retryPending = true;

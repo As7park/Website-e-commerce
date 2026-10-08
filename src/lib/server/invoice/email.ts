@@ -5,8 +5,9 @@
  * répondre 200 — la facture existe déjà en base.
  */
 import { isDummySecret } from '$lib/server/dummy-secrets';
-import { resolveAppUrl } from '$lib/server/app-url';
+import { resolveAppUrlOrDefault } from '$lib/server/app-url';
 import { sendMail } from '$lib/server/smtp-mail';
+import { log } from '$lib/server/log';
 import { formatMoney } from '$lib/utils/formatMoney';
 import { renderInvoicePdf } from './pdf';
 import { buildInvoiceView, type InvoiceSource } from './view';
@@ -34,7 +35,7 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 	// Repli localhost:2000 (port de `npm run dev`) uniquement pour ne jamais
 	// envoyer de lien cassé sans APP_URL/VERCEL_URL configurée ; en prod ces
 	// variables sont attendues (voir aussi $lib/server/qstash.ts).
-	const invoiceUrl = `${resolveAppUrl() ?? 'http://localhost:2000'}/auth/settings/factures/${source.id}`;
+	const invoiceUrl = `${resolveAppUrlOrDefault()}/auth/settings/factures/${source.id}`;
 
 	await sendMail({
 		to,
@@ -62,6 +63,8 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 		]
 	});
 
-	console.log('📧 Facture envoyée à', to);
+	// Le numéro de facture suffit au support pour retrouver l'envoi : journaliser
+	// l'adresse du destinataire recopierait une donnée personnelle dans les logs.
+	log('INFO', 'invoice:email', 'Facture envoyée', { invoiceNumber: invoice.number });
 	return true;
 }

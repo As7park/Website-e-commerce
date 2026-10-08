@@ -10,6 +10,8 @@
 		key: string;
 		label: string;
 		formatter?: (value: unknown) => unknown;
+		/** §3.3 audit fonctionnel : `false` masque le bouton de tri (colonne absente du `*_SORTABLE` serveur). Défaut `true`. */
+		sortable?: boolean;
 	};
 
 	// `icon` reste en `any` : les icônes viennent soit de `lucide-svelte`
@@ -518,6 +520,7 @@
 					>
 						<AlertDialog.Trigger
 							class={cn(buttonVariants({ variant: 'outline' }), 'm-1 p-1 text-xs')}
+							aria-label={action.name}
 						>
 							{#if action.icon}
 								<action.icon class="h-4 w-4 inline" />
@@ -526,19 +529,20 @@
 
 						<AlertDialog.Content>
 							<AlertDialog.Header>
-								<AlertDialog.Title>Are you absolutely sure?</AlertDialog.Title>
+								<AlertDialog.Title>Confirmer la suppression</AlertDialog.Title>
 								<AlertDialog.Description>
-									This action cannot be undone. This will permanently delete the item.
+									Cette action est définitive : l'élément sera supprimé sans possibilité de retour.
 								</AlertDialog.Description>
 							</AlertDialog.Header>
 							<AlertDialog.Footer>
-								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}>Cancel</AlertDialog.Cancel
+								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}
+									>Annuler</AlertDialog.Cancel
 								>
 
 								<form method="POST" action={action.url} use:action.enhanceAction>
 									<input type="hidden" name="id" value={item.id} />
 									<AlertDialog.Action type="submit" onclick={() => deleteItem(item.id)}>
-										Continue
+										Supprimer
 									</AlertDialog.Action>
 								</form>
 							</AlertDialog.Footer>
@@ -595,9 +599,11 @@
 										<Table.Head class="border-r border-r-gray-800 pr-2">
 											<div class="rcb">
 												{column.label}
-												<button onclick={() => sortItems(column.key)}>
-													<ChevronDown class="cursor-pointer" />
-												</button>
+												{#if column.sortable !== false}
+													<button onclick={() => sortItems(column.key)}>
+														<ChevronDown class="cursor-pointer" />
+													</button>
+												{/if}
 											</div>
 										</Table.Head>
 									{/each}

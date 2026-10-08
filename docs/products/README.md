@@ -18,6 +18,16 @@ s'affiche sur la vitrine (`/products` et la fiche produit) que si le module
 est actif ET que la date est dans le futur — indépendant de `compareAtPrice`
 mais généralement combiné avec lui pour le prix barré.
 
+`Product.price`/`ProductVariant.price`/`compareAtPrice` sont stockés **HT**
+en base (le panier calcule la TVA séparément, voir
+[docs/commerce](../commerce/README.md#contrat-serveur)). La vitrine
+(catalogue, fiche produit, ventes croisées, récemment consultés, liste
+d'envies) affiche systématiquement le prix **TTC**
+(`toTTC(price, vatRate)`, `$lib/utils/price.ts`, taux configurable depuis
+`/admin/tva`) — conversion à l'affichage uniquement, jamais réécrite en
+base ni transmise telle quelle au panier (Arrêté du 3 déc. 1987 : le prix
+annoncé au consommateur doit être TTC).
+
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
@@ -182,9 +192,9 @@ plafonnés par variante, pas par produit. Le prix d'une ligne est toujours
 revalidé serveur (`updateOrderItems`, `src/lib/prisma/order/prendingOrder.ts`)
 contre `ProductVariant.price`, jamais celui envoyé par le client — même
 garde que pour `Product.price`. Comme pour un produit sans variante, le
-panier ne décrémente jamais le stock en base à la vente (voir
-[docs/commerce](../commerce/README.md) : le stock reste un nombre géré par
-l'admin, pas un compteur temps réel).
+stock de la ligne est décrémenté à la vente (webhook Stripe, voir
+[docs/commerce](../commerce/README.md)), jamais réservé avant paiement : une
+vente concurrente sur le dernier exemplaire peut faire passer le stock sous 0.
 
 ### Récemment consultés
 
@@ -266,6 +276,15 @@ si la date de fin de vente flash a changé — un ré-enregistrement identique
 (retry QStash, ou sauvegarde admin sans changement réel) ne renvoie jamais
 rien, mais une nouvelle baisse ou une nouvelle vente flash redéclenche
 normalement une alerte.
+
+L'e-mail part avant le marquage : un échec de `sendMail` ne marque rien (un
+futur passage retentera normalement), mais un échec du marquage APRÈS un
+envoi réussi (timeout DB) est traité différemment — `persistWishlistNotification`
+retente l'écriture 3 fois (backoff `200ms*tentative`, même patron que le
+marqueur Sendcloud du job post-paiement), puis abandonne en dead-letter (log
+`ERROR` + `Sentry.captureException`) sans faire échouer le reste de la
+boucle, plutôt que de laisser silencieusement l'item se refaire notifier au
+prochain passage.
 
 ### Souvent achetés ensemble
 

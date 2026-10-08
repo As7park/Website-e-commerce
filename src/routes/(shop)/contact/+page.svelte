@@ -3,6 +3,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { contactSchema } from '$lib/schema/contact/contactSchema';
 	import { reveal } from '$lib/actions/reveal';
 	import SEO from '$lib/components/SEO.svelte';
@@ -14,7 +15,8 @@
 		{
 			validators: zodClient(contactSchema),
 			id: 'contactForm',
-			resetForm: true
+			resetForm: true,
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const {
