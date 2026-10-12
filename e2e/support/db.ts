@@ -230,7 +230,11 @@ export async function createPromoCode(
 			}
 		})
 	);
-	return { ...promoCode, value: toNumber(promoCode.value), minAmount: toNumber(promoCode.minAmount) };
+	return {
+		...promoCode,
+		value: toNumber(promoCode.value),
+		minAmount: toNumber(promoCode.minAmount)
+	};
 }
 
 export async function deletePromoCode(id: string) {
@@ -278,14 +282,22 @@ export async function createGiftCard(
 export async function getGiftCardById(id: string) {
 	const giftCard = await resilient(() => db.giftCard.findUnique({ where: { id } }));
 	return giftCard
-		? { ...giftCard, initialValue: toNumber(giftCard.initialValue), balance: toNumber(giftCard.balance) }
+		? {
+				...giftCard,
+				initialValue: toNumber(giftCard.initialValue),
+				balance: toNumber(giftCard.balance)
+			}
 		: null;
 }
 
 export async function getGiftCardByCode(code: string) {
 	const giftCard = await resilient(() => db.giftCard.findUnique({ where: { code } }));
 	return giftCard
-		? { ...giftCard, initialValue: toNumber(giftCard.initialValue), balance: toNumber(giftCard.balance) }
+		? {
+				...giftCard,
+				initialValue: toNumber(giftCard.initialValue),
+				balance: toNumber(giftCard.balance)
+			}
 		: null;
 }
 
@@ -495,7 +507,11 @@ export async function createOldCatalogProduct(daysAgo: number, overrides?: { nam
 export async function getProductBySlug(slug: string) {
 	const product = await resilient(() => db.product.findUnique({ where: { slug } }));
 	return product
-		? { ...product, price: toNumber(product.price), compareAtPrice: toNumber(product.compareAtPrice) }
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
 		: null;
 }
 
@@ -507,14 +523,22 @@ export async function getProductById(id: string) {
 		})
 	);
 	return product
-		? { ...product, price: toNumber(product.price), compareAtPrice: toNumber(product.compareAtPrice) }
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
 		: null;
 }
 
 export async function getProductByName(name: string) {
 	const product = await resilient(() => db.product.findFirst({ where: { name } }));
 	return product
-		? { ...product, price: toNumber(product.price), compareAtPrice: toNumber(product.compareAtPrice) }
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
 		: null;
 }
 
@@ -890,9 +914,9 @@ export async function getLoginEvents(email: string) {
  * page, et la relation `Order → User` est en `Restrict`. Le reste (sessions,
  * demandes de vérification, sessions de réinitialisation) part en cascade.
  */
-function mapOrderWithItems<T extends Parameters<typeof mapOrderDecimals>[0] & { items: Array<{ price: Prisma.Decimal }> }>(
-	order: T
-) {
+function mapOrderWithItems<
+	T extends Parameters<typeof mapOrderDecimals>[0] & { items: Array<{ price: Prisma.Decimal }> }
+>(order: T) {
 	return {
 		...mapOrderDecimals(order),
 		items: order.items.map((item) => ({ ...item, price: toNumber(item.price) }))
