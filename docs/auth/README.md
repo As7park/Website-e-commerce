@@ -140,8 +140,14 @@ Chaque connexion réussie (mot de passe, Google, réinitialisation — jamais un
 simple réémission de session comme la validation 2FA) enregistre un
 `LoginEvent` (`src/lib/prisma/loginEvent/loginEvent.ts`), avec appareil et
 localisation approximative (en-têtes de géolocalisation Vercel, jamais un
-service tiers séparé). Si l'appareil ne correspond à aucune connexion des 90
-derniers jours, un email « nouvel appareil » part
+service tiers séparé). L'appareil est comparé via une empreinte normalisée
+(`normalizeDeviceFingerprint()`, `src/lib/lucia/deviceLabel.ts`) — OS +
+navigateur + **version majeure uniquement**, pas le User-Agent exact :
+Chrome se met à jour toutes les ~4 semaines avec un User-Agent différent à
+chaque fois, une comparaison exacte aurait déclenché une alerte « nouvel
+appareil » quasi mensuelle pour la propre machine de l'utilisateur (fatigue
+d'alerte). Si l'appareil ne correspond à aucune connexion des 90 derniers
+jours, un email « nouvel appareil » part
 (`src/lib/server/newDeviceAlert.ts`) avec un lien de révocation sans connexion
 (`/auth/not-me/[token]`, jeton à usage unique `SessionRevokeToken`, 7 jours).
 
@@ -261,14 +267,17 @@ sont ceux des `test.step`. Pour changer la procédure : cette liste → le step
 du spec → le code sous `/auth`. Détail (limiteurs, `fillStable`, hors
 périmètre) : [../../e2e/README.md](../../e2e/README.md).
 
-Sept autres specs couvrent chacune un flux distinct de la sous-section
-« Sécurité du compte et RGPD self-service » ci-dessus, non repris dans le
+Neuf autres specs couvrent chacune un flux distinct, non repris dans le
 tableau (un scénario dédié par flux plutôt que des étapes supplémentaires
 dans `journey.spec.ts`) : `google.spec.ts` (connexion Google), `address.spec.ts`
 (carnet d'adresses), `new-device-alert.spec.ts` (alerte nouvel appareil +
 « Ce n'était pas moi »), `sessions.spec.ts` (sessions actives self-service),
 `password-changed-alert.spec.ts`, `gdpr-data.spec.ts` (export + anonymisation),
-`failed-login-alert.spec.ts`.
+`failed-login-alert.spec.ts` — ces sept couvrent la sous-section « Sécurité
+du compte et RGPD self-service » ci-dessus — plus `settings.spec.ts`
+(`marketingEmailsOptIn` : anonyme redirigé, défaut `false`, bascule et
+retour) et `reset-password-2fa.spec.ts` (réinitialisation de mot de passe
+sur un compte 2FA active, code TOTP et code de récupération).
 
 | #   | Étape                                        | Refusé                                 | Accepté                             |
 | --- | -------------------------------------------- | -------------------------------------- | ----------------------------------- |

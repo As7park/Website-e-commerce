@@ -67,6 +67,15 @@ Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
 - Prix des lignes = `Product.price` (ou `ProductVariant.price` si une
   variante est sélectionnée — voir [docs/products](../products/README.md#variantes-produit)),
   jamais le JSON client ni le panier invité.
+- Tous les montants (`Order`, `OrderItem.price`, `Transaction`, `GiftCard`,
+  `PromoCode.value`/`minAmount`) sont des `Prisma.Decimal` côté schéma
+  (`@db.Decimal(10,2)`), pas des `number` natifs. Convertis en `number` via
+  `toNumber()` (`src/lib/server/decimal.ts`) par des mappers dédiés
+  (`mapOrder.ts`, `mapTransaction.ts`, `mapGiftCard`/`mapPromoCode` internes
+  à leurs DAO) **au point de lecture Prisma**, jamais plus loin — convention
+  à respecter pour toute nouvelle requête sur ces champs, y compris dans les
+  helpers de test (`e2e/support/db.ts` ne l'a pas respectée après la
+  migration du 08/10, cassant plusieurs specs jusqu'au 12/10).
 - Taux de TVA = `StoreSettings.vatRate` (`getVatRate()`, configurable depuis
   `/admin/tva`), propagé côté client via `data.vatRate` (chargé par
   `+layout.server.ts`). Le libellé « TVA (x %) » du tiroir panier

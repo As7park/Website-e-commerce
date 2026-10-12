@@ -28,6 +28,15 @@ d'envies) affiche systématiquement le prix **TTC**
 base ni transmise telle quelle au panier (Arrêté du 3 déc. 1987 : le prix
 annoncé au consommateur doit être TTC).
 
+Ces champs sont des `Prisma.Decimal` côté schéma (`@db.Decimal(10,2)`), pas
+des `number` natifs — le client Prisma les renvoie comme tels à toute
+lecture directe. Toute nouvelle requête Prisma sur `price`/`compareAtPrice`
+doit passer par `mapProductPrice`/`mapVariantPrice`
+(`src/lib/prisma/products/mapProduct.ts`, conversion via `toNumber()`,
+`src/lib/server/decimal.ts`) **au point de lecture**, jamais plus loin — un
+`Decimal` non converti casse la sérialisation SvelteKit et les comparaisons
+natives (`===`, `toBe()`).
+
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
@@ -406,6 +415,11 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 | 5   | Renommage de la valeur                | Save changes                  | valeur mise à jour                                      |
 | 6   | Suppression de la taxonomie : cascade | dialogue Continue             | taxonomie et valeur absentes, produit sans cette valeur |
 
+Test à part, même fichier : « suppression explicite d'une valeur
+(`?/deleteTaxonomyValue`) » — isole la suppression d'une seule valeur de la
+suppression en cascade (#6 ci-dessus) : la taxonomie et ses autres valeurs
+survivent (commit `ee3a2bc`).
+
 À part : CLIENT POST `?/createTaxonomy` — aucune taxonomie créée.
 
 ### Avis produit — `e2e/products/reviews.spec.ts`
@@ -467,6 +481,7 @@ prix admin ne déclenche aucun e-mail, `lastNotifiedPrice` reste inchangé.
 | 4   | Le panier affiche la variante distinctement              | GET `/checkout`              | étiquette de variante + prix dans le récapitulatif |
 
 Administration (même spec) : liste des variantes, édition du stock,
+**création via le formulaire admin (`?/createVariant`, commit `6a5c25c`)**,
 suppression d'une variante libre acceptée, suppression d'une variante déjà
 commandée refusée (`VariantInUseError`). À part : CLIENT POST
 `?/deleteVariant` — la variante reste.

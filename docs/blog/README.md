@@ -118,8 +118,11 @@ puis le code (`src/lib/blog`, `/blog`, `/admin/blog`). Index :
 
 ### Admin — `e2e/blog/admin.spec.ts`
 
-La création et l'édition du titre passent par Prisma : TinyMCE n'est pas joué
-en e2e.
+L'édition du titre passe par Prisma (`updateBlogPostTitle`) : TinyMCE n'est
+pas joué en e2e. La création, elle, exerce réellement l'action serveur
+`?/createPost` via un POST direct (commit `2f95349`) — contourne seulement
+l'éditeur riche, pas la logique métier (slug, désambiguïsation, taxonomies,
+statut publié).
 
 | #   | Étape                                  | Geste                        | Preuve                           |
 | --- | -------------------------------------- | ---------------------------- | -------------------------------- |
@@ -128,6 +131,10 @@ en e2e.
 | 3   | Édition Prisma du titre                | `updateBlogPostTitle`        | DB + titre sur la fiche publique |
 | 4   | Suppression                            | dialogue Continue            | article absent en base           |
 | 5   | Dépublier : disparaît de la vitrine    | `published=false` en Prisma  | GET slug → 404                   |
+
+Test à part, même fichier : « création (`?/createPost`) » — slug dérivé du
+titre, désambiguïsation sur titre dupliqué (suffixe numérique), taxonomie
+liée, brouillon par défaut sauf statut publié explicite.
 
 À part : CLIENT POST `?/deleteBlogPost` — l'article reste.
 
