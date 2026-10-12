@@ -69,82 +69,108 @@ beforeEach(() => {
 	getTaxonomyValuesByIdsMock.mockResolvedValue([{ id: 'tax-1' }]);
 });
 
+// Timeout par défaut (5000ms) trop court pour le premier `await import('./+page.server')`
+// de chaque test : ~10s de cold-import observés sur cet environnement (Zod,
+// superforms, Cloudinary... compilés à froid par Vite), sans rapport avec un
+// comportement lent du code testé lui-même.
+const COLD_IMPORT_TIMEOUT = 20_000;
+
 describe('admin/products create — ?/createProduct', () => {
-	it('refuse un visiteur non-admin (403), sans toucher Cloudinary ni Prisma', async () => {
-		const { actions } = await import('./+page.server');
-		const formData = validFormData();
+	it(
+		'refuse un visiteur non-admin (403), sans toucher Cloudinary ni Prisma',
+		async () => {
+			const { actions } = await import('./+page.server');
+			const formData = validFormData();
 
-		await expect(
+			await expect(
+				// @ts-expect-error minimal fake RequestEvent
+				actions.createProduct(fakeEvent(formData, { user: null, role: null }))
+			).rejects.toMatchObject({ status: 403 });
+
+			expect(cloudinaryUpload).not.toHaveBeenCalled();
+			expect(createProductMock).not.toHaveBeenCalled();
+		},
+		COLD_IMPORT_TIMEOUT
+	);
+
+	it(
+		'crée le produit : slug dérivé du nom, image uploadée, taxonomies liées',
+		async () => {
+			const { actions } = await import('./+page.server');
+			const formData = validFormData({ taxonomyValueIds: 'tax-1' });
+
 			// @ts-expect-error minimal fake RequestEvent
-			actions.createProduct(fakeEvent(formData, { user: null, role: null }))
-		).rejects.toMatchObject({ status: 403 });
+			const result = await actions.createProduct(fakeEvent(formData));
 
-		expect(cloudinaryUpload).not.toHaveBeenCalled();
-		expect(createProductMock).not.toHaveBeenCalled();
-	});
+			expect(isActionFailure(result)).toBe(false);
+			expect(cloudinaryUpload).toHaveBeenCalledTimes(1);
+			expect(cloudinaryUpload.mock.calls[0][0]).toMatch(/^data:image\/png;base64,/);
 
-	it('crée le produit : slug dérivé du nom, image uploadée, taxonomies liées', async () => {
-		const { actions } = await import('./+page.server');
-		const formData = validFormData({ taxonomyValueIds: 'tax-1' });
+			expect(createProductMock).toHaveBeenCalledTimes(1);
+			const productData = createProductMock.mock.calls[0][0];
+			expect(productData.slug).toBe('bague-e2e-test');
+			expect(productData.images).toEqual(['https://cloudinary.test/fake.png']);
 
-		// @ts-expect-error minimal fake RequestEvent
-		const result = await actions.createProduct(fakeEvent(formData));
+			expect(connectProductToTaxonomyValuesMock).toHaveBeenCalledWith('product-1', ['tax-1']);
+		},
+		COLD_IMPORT_TIMEOUT
+	);
 
-		expect(isActionFailure(result)).toBe(false);
-		expect(cloudinaryUpload).toHaveBeenCalledTimes(1);
-		expect(cloudinaryUpload.mock.calls[0][0]).toMatch(/^data:image\/png;base64,/);
+	it(
+		"refuse si une valeur de taxonomie sélectionnée n'existe pas (400)",
+		async () => {
+			getTaxonomyValuesByIdsMock.mockResolvedValue([]);
+			const { actions } = await import('./+page.server');
+			const formData = validFormData({ taxonomyValueIds: 'tax-inconnue' });
 
-		expect(createProductMock).toHaveBeenCalledTimes(1);
-		const productData = createProductMock.mock.calls[0][0];
-		expect(productData.slug).toBe('bague-e2e-test');
-		expect(productData.images).toEqual(['https://cloudinary.test/fake.png']);
+			// @ts-expect-error minimal fake RequestEvent
+			const result = await actions.createProduct(fakeEvent(formData));
 
-		expect(connectProductToTaxonomyValuesMock).toHaveBeenCalledWith('product-1', ['tax-1']);
-	});
+			expect(isActionFailure(result)).toBe(true);
+			if (isActionFailure(result)) {
+				expect(result.status).toBe(400);
+			}
+			expect(createProductMock).not.toHaveBeenCalled();
+		},
+		COLD_IMPORT_TIMEOUT
+	);
 
-	it("refuse si une valeur de taxonomie sélectionnée n'existe pas (400)", async () => {
-		getTaxonomyValuesByIdsMock.mockResolvedValue([]);
-		const { actions } = await import('./+page.server');
-		const formData = validFormData({ taxonomyValueIds: 'tax-inconnue' });
+	it(
+		'refuse un prix barré inférieur ou égal au prix de vente (400)',
+		async () => {
+			const formData = validFormData();
+			formData.set('price', '50');
+			formData.set('compareAtPrice', '50');
+			const { actions } = await import('./+page.server');
 
-		// @ts-expect-error minimal fake RequestEvent
-		const result = await actions.createProduct(fakeEvent(formData));
+			// @ts-expect-error minimal fake RequestEvent
+			const result = await actions.createProduct(fakeEvent(formData));
 
-		expect(isActionFailure(result)).toBe(true);
-		if (isActionFailure(result)) {
-			expect(result.status).toBe(400);
-		}
-		expect(createProductMock).not.toHaveBeenCalled();
-	});
+			expect(isActionFailure(result)).toBe(true);
+			if (isActionFailure(result)) {
+				expect(result.status).toBe(400);
+			}
+			expect(createProductMock).not.toHaveBeenCalled();
+		},
+		COLD_IMPORT_TIMEOUT
+	);
 
-	it('refuse un prix barré inférieur ou égal au prix de vente (400)', async () => {
-		const formData = validFormData();
-		formData.set('price', '50');
-		formData.set('compareAtPrice', '50');
-		const { actions } = await import('./+page.server');
+	it(
+		"échec d'upload Cloudinary : 500, aucune écriture en base",
+		async () => {
+			cloudinaryUpload.mockRejectedValue(new Error('Cloudinary indisponible'));
+			const { actions } = await import('./+page.server');
+			const formData = validFormData();
 
-		// @ts-expect-error minimal fake RequestEvent
-		const result = await actions.createProduct(fakeEvent(formData));
+			// @ts-expect-error minimal fake RequestEvent
+			const result = await actions.createProduct(fakeEvent(formData));
 
-		expect(isActionFailure(result)).toBe(true);
-		if (isActionFailure(result)) {
-			expect(result.status).toBe(400);
-		}
-		expect(createProductMock).not.toHaveBeenCalled();
-	});
-
-	it("échec d'upload Cloudinary : 500, aucune écriture en base", async () => {
-		cloudinaryUpload.mockRejectedValue(new Error('Cloudinary indisponible'));
-		const { actions } = await import('./+page.server');
-		const formData = validFormData();
-
-		// @ts-expect-error minimal fake RequestEvent
-		const result = await actions.createProduct(fakeEvent(formData));
-
-		expect(isActionFailure(result)).toBe(true);
-		if (isActionFailure(result)) {
-			expect(result.status).toBe(500);
-		}
-		expect(createProductMock).not.toHaveBeenCalled();
-	});
+			expect(isActionFailure(result)).toBe(true);
+			if (isActionFailure(result)) {
+				expect(result.status).toBe(500);
+			}
+			expect(createProductMock).not.toHaveBeenCalled();
+		},
+		COLD_IMPORT_TIMEOUT
+	);
 });
