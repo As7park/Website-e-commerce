@@ -417,6 +417,11 @@ fichiers sources `AUDIT_TECHNIQUE.md`, `AUDIT_FONCTIONNEL.md` et
   \~4900→12 avertissements (après exclusion du vendor `tinymce`), prettier
   383→0 fichiers non formatés, CI bloquante sur type-check + 3 règles
   ESLint de réactivité, `knip` en CI, couverture Vitest mesurée.
+- **Step e2e rendu bloquant en CI (12/10/2026)** : `continue-on-error: true`
+  retiré du job `e2e` (`.github/workflows/ci.yml`) — stabilité confirmée
+  sur plusieurs mesures propres ([A.3.1](#a31-instabilit%C3%A9-e2e-r%C3%A9siduelle--surveillance-pas-de-chantier)).
+  Avant ce changement, une régression fonctionnelle pouvait être mergée
+  sans bloquer la CI malgré 119 tests e2e en place.
 - **Scan de vulnérabilités remplacé** : `npm audit` cassé silencieusement
   en CI → OSV-Scanner + Dependabot, complémentaires à `npm audit` ponctuel
   (voir [A.1](#a1-s%C3%A9curit%C3%A9-des-d%C3%A9pendances)).

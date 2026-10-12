@@ -57,6 +57,7 @@
 		"reset": "prisma migrate reset --force && node prisma/seed.js"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@eslint/js": "^9.34.0",
 		"@internationalized/date": "^3.8.1",
 		"@lucide/svelte": "^0.482.0",

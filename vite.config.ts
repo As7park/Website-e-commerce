@@ -26,11 +26,19 @@ export default defineConfig({
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		coverage: {
 			provider: 'v8',
-			reporter: ['text', 'html'],
+			reporter: ['text', 'html', 'json-summary'],
 			include: ['src/**/*.{ts,js}'],
-			exclude: ['src/**/*.{test,spec}.{js,ts}']
-			// Pas de `thresholds` pour l'instant : premier chiffre de référence à
-			// établir avant de faire échouer la CI dessus (voir RESTE_A_FAIRE.md).
+			exclude: ['src/**/*.{test,spec}.{js,ts}'],
+			// Seuil uniquement sur `src/lib/**` (logique métier) : les
+			// `+page.server.ts`/`+server.ts` de `src/routes/**` sont fins et
+			// couverts par Playwright, pas par Vitest — un seuil global aurait
+			// mélangé les deux et serait resté décoratif. Valeurs = mesure
+			// réelle du 12/10/2026 (14.31/60.75/59.02%) avec ~1 pt de marge
+			// pour éviter un échec sur simple bruit de mesure ; à remonter
+			// progressivement, jamais à baisser sans le documenter ici.
+			thresholds: {
+				'src/lib/**': { statements: 13, branches: 58, functions: 57, lines: 13 }
+			}
 		}
 	},
 

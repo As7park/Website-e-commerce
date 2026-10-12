@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
+import { expectNoA11yViolations } from '../support/a11y';
 import {
 	createCatalogProduct,
 	deleteCatalogProduct,
@@ -24,6 +25,7 @@ test.describe('Catalogue — vitrine', () => {
 				// La sidebar de filtres est dupliquée (desktop + tiroir mobile) : deux libellés
 				// portent le même texte, d'où `.first()`.
 				await expect(page.getByText(category.name, { exact: true }).first()).toBeVisible();
+				await expectNoA11yViolations(page);
 			});
 
 			await test.step('2. La fiche s’ouvre par slug', async () => {
@@ -35,6 +37,7 @@ test.describe('Catalogue — vitrine', () => {
 				const priceTTC = product.price * (1 + (vatRate ?? 0.055));
 				await expect(page.getByText(`${priceTTC.toFixed(2)} €`)).toBeVisible();
 				expect(await getProductBySlug(product.slug)).not.toBeNull();
+				await expectNoA11yViolations(page);
 			});
 
 			await test.step('3. Un slug inconnu renvoie 404', async () => {

@@ -135,13 +135,14 @@ jobs:
       - name: E2E tests (hors specs live)
         # `e2e/live/**` appelle de vrais services externes (Brevo, Cloudinary,
         # Sendcloud) et exige de vrais identifiants — hors périmètre CI.
-        # Non-bloquant : première exécution en CI, à rendre bloquant une fois
-        # la stabilité confirmée sur quelques runs.
+        # Bloquant depuis le 12/10/2026 : stabilité confirmée sur plusieurs
+        # mesures propres (suite commerce/ 33/33 sans retry, voir
+        # RESTE_A_FAIRE.md §A.3.1) — seule une vraie régression doit faire
+        # échouer ce step désormais.
         run: >-
           npx playwright test
           e2e/admin e2e/auth e2e/blog e2e/commerce e2e/contact
           e2e/gift-cards e2e/products e2e/promo
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
