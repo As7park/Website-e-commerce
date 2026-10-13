@@ -55,10 +55,14 @@ test.describe('Administration — suppression groupée des produits', () => {
 				await page.getByRole('button', { name: 'Supprimer la sélection' }).click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
 				await Promise.all([
+					// Ce spec est le premier à toucher /admin/products dans la suite CI :
+					// délai élargi pour absorber la compilation à froid de la route par
+					// Vite (même classe de problème que `accounting-export`, cf. notes e2e).
 					page.waitForResponse(
 						(response) =>
 							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST'
+							response.request().method() === 'POST',
+						{ timeout: 45_000 }
 					),
 					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
@@ -81,7 +85,8 @@ test.describe('Administration — suppression groupée des produits', () => {
 					page.waitForResponse(
 						(response) =>
 							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST'
+							response.request().method() === 'POST',
+						{ timeout: 45_000 }
 					),
 					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
