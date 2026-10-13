@@ -7,6 +7,7 @@
 		onCommit: (value: number) => void;
 		id?: string;
 		class?: string;
+		ariaLabel?: string;
 	}
 
 	let {
@@ -16,7 +17,8 @@
 		disabled = false,
 		onCommit,
 		id,
-		class: className = ''
+		class: className = '',
+		ariaLabel
 	}: Props = $props();
 
 	// Copie éditable locale, resynchronisée si la valeur externe change
@@ -42,5 +44,6 @@
 	bind:value={draft}
 	onchange={commit}
 	{disabled}
+	aria-label={ariaLabel}
 	class="w-20 rounded-md border px-2 py-1 text-sm {className}"
 />

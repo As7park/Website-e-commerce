@@ -71,6 +71,7 @@
 								role="combobox"
 								aria-expanded={addressOpen}
 								aria-controls="address-combobox"
+								aria-label={addressLabel}
 							>
 								{addressLabel}
 								<ChevronsUpDown class="opacity-50" />
@@ -118,15 +119,14 @@
 			<!-- AUTH-PLUGIN ▼ la gestion des adresses vit dans l'espace compte
 			     (`/auth/settings/address`). Sans authentification, proposer un
 			     formulaire d'adresse directement dans le tunnel de commande. -->
-			<Button variant="outline" class="w-full">
-				<a
-					data-sveltekit-preload-data
-					href={`/auth/settings/address/create?redirect=checkout&target=${target}`}
-					class="flex items-center gap-2"
-				>
-					<MapPin class="w-4 h-4" />
-					Créer une adresse
-				</a>
+			<Button
+				variant="outline"
+				class="w-full flex items-center gap-2"
+				data-sveltekit-preload-data
+				href={`/auth/settings/address/create?redirect=checkout&target=${target}`}
+			>
+				<MapPin class="w-4 h-4" />
+				Créer une adresse
 			</Button>
 			<!-- AUTH-PLUGIN ▲ -->
 		</div>

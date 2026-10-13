@@ -130,6 +130,7 @@
 						min={sliderMin}
 						max={sliderMax}
 						step={1}
+						thumbLabels={['Prix minimum', 'Prix maximum']}
 					/>
 					<div class="flex items-center justify-between text-sm text-muted-foreground">
 						<span>{priceRange[0]} €</span>

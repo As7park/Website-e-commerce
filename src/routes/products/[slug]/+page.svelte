@@ -443,7 +443,12 @@
 					<Form.Field name="comment" form={reviewFormCtx}>
 						<Form.Control>
 							<Form.Label>Commentaire (facultatif)</Form.Label>
-							<Textarea name="comment" bind:value={$reviewData.comment} rows={3} />
+							<Textarea
+								name="comment"
+								bind:value={$reviewData.comment}
+								rows={3}
+								aria-label="Commentaire (facultatif)"
+							/>
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

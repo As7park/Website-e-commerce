@@ -251,6 +251,7 @@
 														item.custom?.[0]?.id,
 														item.variant?.id
 													)}
+												ariaLabel="Quantité de {item.product.name}"
 											/>
 											{#if !isCustomItem && totalNonCustomQuantity > 72}
 												<p class="text-xs text-red-500 mt-1">

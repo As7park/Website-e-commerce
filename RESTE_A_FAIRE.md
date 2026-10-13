@@ -42,11 +42,11 @@ Plus aucun item ouvert dans cette catégorie.
 du 08/10 (`774574a`) avait cassé en silence le client Prisma généré (289
 erreurs `svelte-check`, corrigées par `npx prisma generate`, aucun code
 applicatif en cause) et les helpers `e2e/support/db.ts` (lectures directes
-sans passer par les mappers applicatifs, cassant ~8 specs — dont deux,
+sans passer par les mappers applicatifs, cassant \~8 specs — dont deux,
 `admin/promo/create` et `createProduct`, comptés comme fermés ci-dessous
 sans l'être réellement entre le 08 et le 12/10). Voir [A.2.1](#a21-montants-mon%C3%A9taires-en-float).
 
-📌 _Décision_ — `admin/returns` → `approve`, chemin de **succès** (remboursement Stripe réel) : reste **volontairement non testé en e2e** (limitation technique de Stripe Checkout, pas un oubli) — voir [A.3 #2](#a3-couverture-e2e--trous-identifi%C3%A9s) et la justification détaillée en [A.3.2](#a32-admin-returns--succès-remboursement-stripe--limitation-acceptée-pas-un-chantier).
+📌 _Décision_ — `admin/returns` → `approve`, chemin de **succès** (remboursement Stripe réel) : reste **volontairement non testé en e2e** (limitation technique de Stripe Checkout, pas un oubli) — voir [A.3 #2](#a3-couverture-e2e--trous-identifi%C3%A9s) et la justification détaillée en [A.3.2](#a32-admin-returns--succ%C3%A8s-remboursement-stripe--limitation-accept%C3%A9e-pas-un-chantier).
 
 ✅ _Fermé_ — `admin/promo/create` testé par e2e, bug « actif par défaut » corrigé au passage (commit `7662986`), voir [A.3 #7](#a3-couverture-e2e--trous-identifi%C3%A9s).
 
@@ -154,8 +154,8 @@ fragilité qui se paie en écarts comptables difficiles à reconstituer.
 Inventaire des champs concernés ci-dessous, conservé comme référence (la
 liste n'a pas changé) :
 
-**Inventaire exhaustif des champs migrés (`prisma/schema.prisma`, 35
-occurrences au 08/10/2026)** :
+**Inventaire exhaustif des champs migrés (**`prisma/schema.prisma`, 35
+occurrences au 08/10/2026) :
 
 Champs monétaires (candidats réels à la migration) :
 
@@ -183,7 +183,7 @@ d'arrondi y est sans impact comptable :
 | `StoreSettings` | `vatRate`                                                                               | taux TVA courant (fraction)          |
 
 **Ampleur mesurée** : recherche des usages directs (`.price`, `.total`,
-`.amount`, `.balance`, `.discountAmount`, `.initialValue`…) → **~320
+`.amount`, `.balance`, `.discountAmount`, `.initialValue`…) → **\~320
 occurrences dans 108 fichiers** de `src/` (composants Svelte, actions de
 formulaire, jobs planifiés, webhooks Stripe/Sendcloud, PDF facture/avoir,
 export comptable, store panier côté client). Confirme le constat déjà
@@ -217,7 +217,7 @@ la migration, jamais détectés entre-temps** :
    corrects. **Corrigé par une seule commande** : `npx prisma generate`.
    Invisible en CI (`npm ci` déclenche le `postinstall`), uniquement un
    problème d'environnement local non synchronisé.
-2. **`e2e/support/db.ts` ne passait par aucun mapper** — ses helpers
+2. `e2e/support/db.ts` ne passait par aucun mapper — ses helpers
    (`getGiftCardById`, `getProductById`, `getOrderById`,
    `getTransactionById`…) lisaient ces champs directement via Prisma, donc
    renvoyaient de vrais `Decimal` aux specs dès le client régénéré — cassant
@@ -232,8 +232,7 @@ la migration, jamais détectés entre-temps** :
    `getGiftCardByCode` manquant (une spec contournait `db.ts` et lisait
    `db.giftCard` en direct).
 
-**Leçon process, à ne pas répéter** : toujours relancer `npx prisma
-generate` après tout edit de `prisma/schema.prisma` non suivi d'un
+**Leçon process, à ne pas répéter** : toujours relancer `npx prisma generate` après tout edit de `prisma/schema.prisma` non suivi d'un
 `npm install` complet, et toujours revérifier `e2e/support/db.ts` pour tout
 nouveau champ `Decimal` — les deux manquaient de garde-fou automatisé (pas
 de test qui aurait détecté l'un ou l'autre avant un run e2e complet).
@@ -253,7 +252,7 @@ dans `src/app.d.ts` utilise désormais `Awaited<ReturnType<typeof findPendingOrd
 voir piège documenté dans `/memories/repo/`), les deux casts `as` dans
 `checkout/+page.server.ts` et `+layout.server.ts` sont supprimés. Validé
 par `npm run check` (0 erreur) et 4/4 e2e commerce (`cart`, `checkout`,
-`quantity`, `fraud-detection`). Une **reprise de l'allègement du `select`**
+`quantity`, `fraud-detection`). Une **reprise de l'allègement du** `select`
 reste à faire séparément, mais peut maintenant s'appuyer sur un
 compilateur qui vérifiera réellement la frontière.
 
@@ -310,10 +309,10 @@ jour le 08/10/2026 (plusieurs items fermés depuis) :
 | #   | Trou                                                                                                                                         | Risque    | Statut                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | `auth/reset-password/2fa` (reset de mdp sur compte 2FA actif) jamais testé bout en bout                                                      | 🔴 élevé  | ✅ **Fermé** — `e2e/auth/reset-password-2fa.spec.ts` (commit `d58788f`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 2   | `admin/returns` → `approve`, chemin de **succès** (remboursement Stripe réel) jamais vérifié                                                 | 🔴 élevé  | 📌 Accepté — limitation technique, voir [A.3.2](#a32-admin-returns--succès-remboursement-stripe--limitation-acceptée-pas-un-chantier)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 2   | `admin/returns` → `approve`, chemin de **succès** (remboursement Stripe réel) jamais vérifié                                                 | 🔴 élevé  | 📌 Accepté — limitation technique, voir [A.3.2](#a32-admin-returns--succ%C3%A8s-remboursement-stripe--limitation-accept%C3%A9e-pas-un-chantier)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 3   | `auth/settings/saved-payments` → `attach`/`setup-intent` (enregistrement carte) jamais exercé                                                | 🟡 moyen  | ✅ **Fermé** — `e2e/commerce/saved-payments.spec.ts`, test « ajout d'une carte (?/attach) via un PaymentMethod Stripe réel » (commit `4277350`) : `pm_card_visa` (jeton de test Stripe réutilisable) se résout en un vrai `PaymentMethod`, sans Stripe Elements ni navigateur Stripe.js (`?/attach` ne fait jamais `confirmCardSetup` côté serveur)                                                                                                                                                                                                                                                                                                                  |
 | 4   | Module blog admin (création/édition d'article, taxonomies blog) — zéro couverture                                                            | 🟡 moyen  | ✅ **Fermé** — `e2e/blog/admin.spec.ts`, test « création (?/createPost) : slug unique, taxonomies et statut publié » (commit `2f95349`) : POST direct vers l'action, sans piloter TinyMCE — l'édition reste testée via Prisma direct, non couverte par cette fermeture                                                                                                                                                                                                                                                                                                                                                                                               |
-| 5   | `admin/products/(edit)/create` → `createProduct` — testé seulement par un spec `skip` (Cloudinary réel requis), jamais exécuté en CI         | 🟡 moyen  | ✅ **Fermé** — test unitaire Vitest (`src/routes/admin/products/(edit)/create/create-product.test.ts`, commit `17cf87d`) : Cloudinary et Prisma stubés, couvre la garde admin (403), le slug, la liaison des taxonomies, le rejet prix barré ≤ prix et l'échec d'upload (500) — pas un e2e, mais exécuté en CI contrairement au spec `skip`. ⚠️ Cassé sans rapport le 08-12/10 (timeout Vitest 5s trop court pour le cold-import, ~10s sur cet environnement) — corrigé par un timeout explicite de 20s par test, revérifié 5/5                                                                                                                                      |
+| 5   | `admin/products/(edit)/create` → `createProduct` — testé seulement par un spec `skip` (Cloudinary réel requis), jamais exécuté en CI         | 🟡 moyen  | ✅ **Fermé** — test unitaire Vitest (`src/routes/admin/products/(edit)/create/create-product.test.ts`, commit `17cf87d`) : Cloudinary et Prisma stubés, couvre la garde admin (403), le slug, la liaison des taxonomies, le rejet prix barré ≤ prix et l'échec d'upload (500) — pas un e2e, mais exécuté en CI contrairement au spec `skip`. ⚠️ Cassé sans rapport le 08-12/10 (timeout Vitest 5s trop court pour le cold-import, \~10s sur cet environnement) — corrigé par un timeout explicite de 20s par test, revérifié 5/5                                                                                                                                     |
 | 6   | 4 routes cron (`cleanup`, `loyalty-check`, `stock-alerts`, `invoice-email`) — authentification HTTP directe (secret/signature) jamais testée | 🟡 moyen  | ✅ **Fermé** — `cleanup` (`e2e/commerce/cleanup.spec.ts`, commit `b7cbbbb`) ; `loyalty-check`/`stock-alerts`/`invoice-email` (`e2e/commerce/cron-auth.spec.ts`, commit `df7c32e`, garde 401 uniquement — pas de repli `CRON_SECRET` sur ces 3 routes, QStash non configuré en test)                                                                                                                                                                                                                                                                                                                                                                                  |
 | 7   | `admin/promo/create` → `createPromo` (argent) jamais testée par e2e                                                                          | 🟡 moyen  | ✅ **Fermé** — `e2e/promo/admin.spec.ts` (commit `7662986`). A révélé un vrai bug : `active` restait toujours `false` à la création malgré le commentaire « actif par défaut » (`superValidate()` initialise un booléen requis non fourni à `false`, pas `undefined` — le test de garde du composant ne se déclenchait jamais), corrigé via `active: z.boolean().default(true)` dans le schéma. ⚠️ Cassé sans rapport le 08-12/10 (régression Decimal, `e2e/support/db.ts` non convertissait pas `PromoCode.value`/`minAmount`) — corrigé, voir [A.2.1](#a21-montants-mon%C3%A9taires--migration-float--decimal-faite-le-0810-r%C3%A9gression-corrig%C3%A9e-le-1210) |
 | 8   | `auth/settings` → `marketingEmailsOptIn` (RGPD opt-in) — une inversion de ce champ ne serait détectée par rien                               | 🟡 moyen  | ✅ **Fermé** — `e2e/auth/settings.spec.ts` (commit `9bffbcd`) : anonyme redirigé, valeur par défaut `false`, bascule puis retour, vérifiés en base                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
