@@ -10,6 +10,7 @@
 //     garde que `validatePromo`/le parrainage, voir `checkout/+page.server.ts`).
 // -----------------------------------------------------------------------------
 import { prisma } from '$lib/server';
+import { toNumber } from '$lib/server/decimal';
 
 /** Remise appliquée une seule fois (pas cumulée par paire) au checkout. */
 export const BUNDLE_DISCOUNT_PERCENT = 0.1;
@@ -67,7 +68,9 @@ export async function getFrequentlyBoughtTogether(
 
 	// `findMany({ where: { id: { in } } })` ne garantit pas l'ordre : reclasser
 	// selon le rang de co-occurrence calculé ci-dessus.
-	const byId = new Map(products.map((product) => [product.id, product]));
+	const byId = new Map(
+		products.map((product) => [product.id, { ...product, price: toNumber(product.price) }])
+	);
 	return rankedIds
 		.map((id) => byId.get(id))
 		.filter((product): product is NonNullable<typeof product> => Boolean(product));
