@@ -72,7 +72,7 @@ Plus aucun item ouvert dans cette catégorie.
 
 | #   | Sujet                                                               | Détail                                                                                                     |
 | --- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 1   | 14 vulnérabilités npm restantes (dev-only/non exploitables en prod) | À resurveiller périodiquement, pas d'action immédiate — [A.1](#a1-s%C3%A9curit%C3%A9-des-d%C3%A9pendances) |
+| 1   | 10 vulnérabilités npm restantes (dev-only/non exploitables en prod) | À resurveiller périodiquement, pas d'action immédiate — [A.1](#a1-s%C3%A9curit%C3%A9-des-d%C3%A9pendances) |
 
 ✅ _Fermé_ — migration des montants `Float` → `Decimal` faite le 08/10
 (`774574a`), régression associée corrigée le 12/10 (voir ci-dessus et
@@ -115,23 +115,25 @@ Plus aucun item ouvert dans cette catégorie.
 
 ## A.1 Sécurité des dépendances
 
-**Preuve** : `npm audit` réexécuté et trié le 08/10/2026.
+**Preuve** : `npm audit` réexécuté et trié le 08/10/2026, revérifié le
+13/10/2026 après le bump `vitest`/`@vitest/coverage-v8` 3.2.7→5.0.4.
 
-Avant triage : 27 vulnérabilités (6 low, 3 moderate, 14 high, 4 critical) —
-dérive depuis la dernière mesure (6, toutes low/moderate), due à des CVE
-publiées depuis sur des paquets déjà présents (aucune dépendance ajoutée).
-`npm audit fix` (non-breaking, pas de `--force`) appliqué : **27 → 14**,
-toutes les vulnérabilités **production** corrigées sauf 3 _low_ déjà
-connues et non exploitables ici (voir ci-dessous).
+Avant triage (08/10) : 27 vulnérabilités (6 low, 3 moderate, 14 high, 4
+critical) — dérive depuis la dernière mesure (6, toutes low/moderate), due
+à des CVE publiées depuis sur des paquets déjà présents (aucune dépendance
+ajoutée). `npm audit fix` (non-breaking, pas de `--force`) appliqué :
+**27 → 14**, toutes les vulnérabilités **production** corrigées sauf 3
+_low_ déjà connues et non exploitables ici (voir ci-dessous). Le bump
+`vitest@5` du 13/10 a réglé en chemin `tinypool`/`@vitest/mocker`
+(critical/moderate, dev uniquement) : **14 → 10**.
 
-**Restent après triage (14), aucune n'affecte le build de production** :
+**Restent après triage (10), aucune n'affecte le build de production** :
 
-| Paquet                             | Sévérité          | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                                                                                                           |
-| ---------------------------------- | ----------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cookie` (via `@sveltejs/kit`)     | low (×3)          | prod, mais non exploitable               | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease.                                                                                                                          |
-| `tinypool`/`@vitest/mocker`        | critical/moderate | **dev uniquement** (Vitest)              | Corrigé seulement par `vitest@5` (breaking, non tenté — même classe de risque que la dérive superforms/zod déjà documentée dans `/memories/repo/boilerplate-ecommerce-notes.md`).                                                                                                              |
-| `braces` (via `chokidar-cli`)      | high              | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (breaking).                                                                                                                                                                                                                                         |
-| `shell-quote` (via `concurrently`) | critical          | **dev uniquement** (`npm run dev`)       | `npm audit` annonce un correctif « non-breaking » mais aucune version de `concurrently`, y compris la 10.x, ne référence un `shell-quote` patché (vérifié : `shell-quote@1.9.0` figé en dépendance directe de `concurrently@latest`) — le paquet amont n'a pas encore livré de correctif réel. |
+| Paquet                             | Sévérité | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                                                                                                           |
+| ----------------------------------- | -------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cookie` (via `@sveltejs/kit`)     | low (×3) | prod, mais non exploitable                | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease.                                                                                                                          |
+| `braces` (via `chokidar-cli`)      | high     | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (breaking).                                                                                                                                                                                                                                         |
+| `shell-quote` (via `concurrently`) | critical | **dev uniquement** (`npm run dev`)       | `npm audit` annonce un correctif « non-breaking » mais aucune version de `concurrently`, y compris la 10.x, ne référence un `shell-quote` patché (reconfirmé le 13/10 : `shell-quote@1.9.0` toujours figé en dépendance directe de `concurrently@9.2.4`) — le paquet amont n'a pas encore livré de correctif réel. |
 
 ⚠️ Ne jamais lancer `npm audit fix --force` à l'aveugle : il a proposé par
 le passé de redescendre `@sveltejs/kit` vers une version `0.0.x`.
