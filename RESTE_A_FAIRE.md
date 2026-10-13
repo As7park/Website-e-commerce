@@ -837,6 +837,29 @@ porte plus que les interrupteurs de modules.
 | ---------- | --------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | RGAA       | Loi n°2005-102, décret n°2019-768 | 🟡 Audit léger fait | Pas un audit de certification (nécessite un expert RGAA si le seuil de CA applicable est atteint), mais un passage ciblé sur les pages clientes (catalogue, fiche produit, checkout, compte, pages légales) : `lang="fr"` déjà présent, alt text déjà correct partout, aucun `<div onclick>` au clavier-inaccessible détecté. Corrigé : champ de recherche catalogue sans nom accessible, boutons icône seule sans `aria-label` (panier, retirer un article du panier x2, moyens de paiement enregistrés, interrupteurs mode sombre/plein écran), `aria-label` en anglais sur la page adresses (incohérent avec le reste du site en français), lien « Aller au contenu » ajouté (absent auparavant). **Reste à vérifier manuellement** : contraste des couleurs (`text-muted-foreground` très utilisé pour le texte secondaire, à mesurer dans un navigateur en clair et sombre) — pas calculable sans rendu réel. |
 
+**Scan automatisé axe-core ajouté le 12-13/10/2026** (`e2e/support/a11y.ts`,
+`expectNoA11yViolations`, règles WCAG 2.0/2.1 A+AA), branché sur 3 specs
+e2e (`products/catalog`, `commerce/cart`, `commerce/checkout`) — pas
+l'ensemble du site. A trouvé et corrigé 4 violations réelles : slider de
+prix sans nom accessible par curseur, bouton combobox d'adresse sans
+`aria-label`, bouton « Créer une adresse » imbriquant un `<a>` (double
+cible interactive), champ commentaire d'avis produit + inputs de quantité
+panier sans label lié. Détail technique dans
+`/memories/repo/boilerplate-ecommerce-notes.md`.
+
+⚠️ **Trouvaille non résolue, périmètre plus large que ce qui a été corrigé** :
+le pattern `Form.Control`/`Form.Label` (lib `formsnap`) est utilisé de
+travers dans ~38 fichiers du repo entier (`grep -rn "Form.Control" src/`) —
+le snippet `{#snippet children({ props })}` requis par la lib pour relier
+réellement le `<label>` au champ n'est jamais utilisé, donc l'`id` généré
+par `Form.Label` (`for=...`) ne correspond à aucun élément réel. Tous les
+champs de la quasi-totalité des formulaires du site (login, signup,
+adresses, produits admin, promo, blog, etc.) ont donc un label visuellement
+présent mais non lié programmatiquement pour un lecteur d'écran — seule
+l'instance concrètement scannée par les 3 specs ci-dessus a été corrigée
+ponctuellement. Corriger les 38 fichiers (ou le pattern lui-même une bonne
+fois) reste un chantier à part, pas fait.
+
 Pas encore priorisé collectivement : à faire confirmer point par point avec
 un avocat/expert-comptable avant d'attaquer l'implémentation, en commençant
 par le résumé exécutif ci-dessus.
