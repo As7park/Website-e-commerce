@@ -173,13 +173,17 @@
 	// Recherche : debounce avant de recharger depuis le serveur. Le garde
 	// `query === server.search` évite de redéclencher une navigation quand ce
 	// même effet vient de resynchroniser `searchQuery` depuis un `server` frais.
+	// `q`, pas `search` : c'est la clé lue par tous les `load()` admin en mode
+	// serveur (products/blog/users/promo/...) — un mismatch ici rendait la
+	// recherche inopérante (toujours réinitialisée par l'effet de sync
+	// ci-dessus) et déclenchait des `invalidateAll()` parasites en boucle.
 	let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const query = searchQuery;
 		if (!server) return;
 		if (query === server.search) return;
 		clearTimeout(searchDebounce);
-		searchDebounce = setTimeout(() => updateServerUrl({ search: query || null, page: 1 }), 400);
+		searchDebounce = setTimeout(() => updateServerUrl({ q: query || null, page: 1 }), 400);
 		return () => clearTimeout(searchDebounce);
 	});
 
@@ -625,18 +629,14 @@
 											<td class="border border-border p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}
@@ -688,18 +688,14 @@
 											<dd class="text-sm text-right break-words">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="ml-auto h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}

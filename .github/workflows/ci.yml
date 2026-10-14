@@ -25,9 +25,9 @@ jobs:
       PUBLIC_TINYMCE_API_KEY: ci
       STRIPE_SECRET_KEY: sk_test_ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -51,13 +51,13 @@ jobs:
 
       - name: Lint (knip)
         # Non-bloquant : les dépendances inutilisées ont été triées (voir
-        # AUDIT_TECHNIQUE.md §3.4), reste 8 fichiers candidats à vérifier
+        # RESTE_A_FAIRE.md §2.4), reste 2 fichiers candidats à vérifier
         # individuellement avant suppression — pas de quoi bloquer le build.
         run: npm run lint:knip
         continue-on-error: true
 
       - name: Unit tests
-        # `--coverage` : chiffre de référence (voir AUDIT_TECHNIQUE.md), pas
+        # `--coverage` : chiffre de référence (voir RESTE_A_FAIRE.md), pas
         # de seuil configuré (`vite.config.ts`) donc ce step reste bloquant
         # uniquement sur des tests rouges, jamais sur la couverture elle-même.
         run: npm run test:unit:coverage
@@ -95,14 +95,20 @@ jobs:
       SMTP_HTTP_PORT: 2526
       SMTP_USER: e2e
       SMTP_PASS: e2e
-      # Valeurs factices : les intégrations externes (Google, Stripe, Sendcloud,
+      # Valeurs factices : les intégrations externes (Google, Sendcloud,
       # Cloudinary...) détectent ces placeholders et s'exécutent en mode mock
       # (voir `.env.test.example`). Les specs réellement live vivent sous
       # `e2e/live/` et sont exclues ci-dessous.
       VITE_GOOGLE_REDIRECT_URI: http://localhost:2001/auth/login/google/callback
       GOOGLE_CLIENT_ID: e2e-google-client-id
       GOOGLE_CLIENT_SECRET: e2e-google-client-secret
-      STRIPE_SECRET_KEY: sk_test_e2e
+      # Stripe n'a pas de mode mock (contrairement aux autres intégrations
+      # ci-dessus) : `fraud-detection.spec.ts`/`saved-payments.spec.ts` font
+      # de vrais appels API. Secret optionnel : tant qu'il n'est pas configuré
+      # (Settings → Secrets and variables → Actions → STRIPE_TEST_SECRET_KEY),
+      # ces deux specs échouent avec un placeholder invalide, le reste du job
+      # n'est pas affecté.
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY || 'sk_test_e2e' }}
       STRIPE_WEBHOOK_SECRET: whsec_e2e
       VITE_STRIPE_PUBLISHABLE_KEY: pk_test_e2e
       SENDCLOUD_BASE_URL: https://panel.sendcloud.sc
@@ -119,9 +125,9 @@ jobs:
       PUBLIC_TINYMCE_API_KEY: e2e
       SECRET_ADDRESS_SEARCH_MODE: e2e
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -135,17 +141,18 @@ jobs:
       - name: E2E tests (hors specs live)
         # `e2e/live/**` appelle de vrais services externes (Brevo, Cloudinary,
         # Sendcloud) et exige de vrais identifiants — hors périmètre CI.
-        # Non-bloquant : première exécution en CI, à rendre bloquant une fois
-        # la stabilité confirmée sur quelques runs.
+        # Bloquant depuis le 12/10/2026 : stabilité confirmée sur plusieurs
+        # mesures propres (suite commerce/ 33/33 sans retry, voir
+        # RESTE_A_FAIRE.md §A.3.1) — seule une vraie régression doit faire
+        # échouer ce step désormais.
         run: >-
           npx playwright test
           e2e/admin e2e/auth e2e/blog e2e/commerce e2e/contact
           e2e/gift-cards e2e/products e2e/promo
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report/

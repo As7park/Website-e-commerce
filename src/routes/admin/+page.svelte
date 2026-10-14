@@ -220,8 +220,10 @@
 				</Card.Header>
 				<Card.Content class="space-y-1 text-sm">
 					<p>
-						{kpis.neverSoldProductsCount} produit{kpis.neverSoldProductsCount > 1 ? 's' : ''} jamais
-						vendu{kpis.neverSoldProductsCount > 1 ? 's' : ''}
+						{kpis.neverSoldProductsCount} produit{kpis.neverSoldProductsCount > 1 ? 's' : ''} jamais vendu{kpis.neverSoldProductsCount >
+						1
+							? 's'
+							: ''}
 					</p>
 					{#if kpis.reviewsCount > 0}
 						<p>

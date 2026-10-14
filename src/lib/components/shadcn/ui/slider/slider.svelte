@@ -7,8 +7,9 @@
 		value = $bindable(),
 		orientation = 'horizontal',
 		class: className,
+		thumbLabels,
 		...restProps
-	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> = $props();
+	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> & { thumbLabels?: string[] } = $props();
 </script>
 
 <!--
@@ -45,6 +46,7 @@ get along, so we shut typescript up by casting `value` to `never`.
 			<SliderPrimitive.Thumb
 				data-slot="slider-thumb"
 				index={thumb}
+				aria-label={thumbLabels?.[thumb]}
 				class="border-primary bg-background ring-ring/50 focus-visible:outline-hidden block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 disabled:pointer-events-none disabled:opacity-50"
 			/>
 		{/each}

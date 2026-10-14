@@ -11,6 +11,67 @@ export const db = new PrismaClient({
 });
 
 /**
+ * Conversion `Prisma.Decimal` → `number`, même sémantique que `toNumber()`
+ * côté app (`src/lib/server/decimal.ts`) — dupliquée ici volontairement :
+ * `e2e/support/**` n'importe jamais `$lib`. Les champs `@db.Decimal(10,2)`
+ * (voir RESTE_A_FAIRE.md §A.2.1) remontent en `Prisma.Decimal` depuis une
+ * lecture Prisma directe comme celles de ce fichier, qui ne passent jamais
+ * par les mappers applicatifs (`mapOrder`/`mapProduct`/`mapTransaction`,
+ * internes à `src/`) — sans cette conversion, une assertion e2e
+ * `.toBe(42.5)`/`.toBeCloseTo(42.5)` échoue toujours face à l'objet.
+ */
+function toNumber(value: Prisma.Decimal | number): number;
+function toNumber(value: Prisma.Decimal | number | null): number | null;
+function toNumber(value: Prisma.Decimal | number | null | undefined): number | null {
+	if (value === null || value === undefined) return null;
+	return typeof value === 'number' ? value : value.toNumber();
+}
+
+/** `Order` a six champs `Decimal` — helper dédié pour ne pas répéter l'objet à chaque site. */
+function mapOrderDecimals<
+	T extends {
+		subtotal: Prisma.Decimal;
+		tax: Prisma.Decimal;
+		total: Prisma.Decimal;
+		discountAmount: Prisma.Decimal;
+		giftCardAmount: Prisma.Decimal;
+		shippingCost: Prisma.Decimal | null;
+	}
+>(order: T) {
+	return {
+		...order,
+		subtotal: toNumber(order.subtotal),
+		tax: toNumber(order.tax),
+		total: toNumber(order.total),
+		discountAmount: toNumber(order.discountAmount),
+		giftCardAmount: toNumber(order.giftCardAmount),
+		shippingCost: toNumber(order.shippingCost)
+	};
+}
+
+/** `Transaction` a six champs `Decimal` — helper dédié, même logique que `mapOrderDecimals`. */
+function mapTransactionDecimals<
+	T extends {
+		amount: Prisma.Decimal;
+		disputeAmount: Prisma.Decimal | null;
+		shippingCost: Prisma.Decimal;
+		subtotalHt: Prisma.Decimal;
+		taxAmount: Prisma.Decimal;
+		discountAmount: Prisma.Decimal;
+	}
+>(transaction: T) {
+	return {
+		...transaction,
+		amount: toNumber(transaction.amount),
+		disputeAmount: toNumber(transaction.disputeAmount),
+		shippingCost: toNumber(transaction.shippingCost),
+		subtotalHt: toNumber(transaction.subtotalHt),
+		taxAmount: toNumber(transaction.taxAmount),
+		discountAmount: toNumber(transaction.discountAmount)
+	};
+}
+
+/**
  * Schéma réellement utilisé par `DATABASE_URL` (`?schema=e2e` sur Neon,
  * absent → `public` sur la base éphémère de CI). Nécessaire pour qualifier
  * les tables dans le SQL brut (voir `backdateOrder`) : repli `public` requis
@@ -154,7 +215,7 @@ export async function createPromoCode(
 		loyaltyThreshold?: number | null;
 	}
 ) {
-	return resilient(() =>
+	const promoCode = await resilient(() =>
 		db.promoCode.create({
 			data: {
 				code,
@@ -169,6 +230,11 @@ export async function createPromoCode(
 			}
 		})
 	);
+	return {
+		...promoCode,
+		value: toNumber(promoCode.value),
+		minAmount: toNumber(promoCode.minAmount)
+	};
 }
 
 export async function deletePromoCode(id: string) {
@@ -194,7 +260,7 @@ export async function createGiftCard(
 	}
 ) {
 	const initialValue = overrides?.initialValue ?? 50;
-	return resilient(() =>
+	const giftCard = await resilient(() =>
 		db.giftCard.create({
 			data: {
 				code,
@@ -206,10 +272,33 @@ export async function createGiftCard(
 			}
 		})
 	);
+	return {
+		...giftCard,
+		initialValue: toNumber(giftCard.initialValue),
+		balance: toNumber(giftCard.balance)
+	};
 }
 
 export async function getGiftCardById(id: string) {
-	return resilient(() => db.giftCard.findUnique({ where: { id } }));
+	const giftCard = await resilient(() => db.giftCard.findUnique({ where: { id } }));
+	return giftCard
+		? {
+				...giftCard,
+				initialValue: toNumber(giftCard.initialValue),
+				balance: toNumber(giftCard.balance)
+			}
+		: null;
+}
+
+export async function getGiftCardByCode(code: string) {
+	const giftCard = await resilient(() => db.giftCard.findUnique({ where: { code } }));
+	return giftCard
+		? {
+				...giftCard,
+				initialValue: toNumber(giftCard.initialValue),
+				balance: toNumber(giftCard.balance)
+			}
+		: null;
 }
 
 export async function deleteGiftCard(id: string) {
@@ -250,7 +339,7 @@ export async function createProductVariant(
 	productId: string,
 	overrides?: { label?: string; sku?: string | null; price?: number | null; stock?: number }
 ) {
-	return resilient(() =>
+	const variant = await resilient(() =>
 		db.productVariant.create({
 			data: {
 				productId,
@@ -261,10 +350,12 @@ export async function createProductVariant(
 			}
 		})
 	);
+	return { ...variant, price: toNumber(variant.price) };
 }
 
 export async function getProductVariantById(id: string) {
-	return resilient(() => db.productVariant.findUnique({ where: { id } }));
+	const variant = await resilient(() => db.productVariant.findUnique({ where: { id } }));
+	return variant ? { ...variant, price: toNumber(variant.price) } : null;
 }
 
 export async function deleteProductVariant(id: string) {
@@ -311,7 +402,17 @@ export async function countContactMessagesByEmail(email: string) {
 }
 
 export async function findPromoCode(id: string) {
-	return resilient(() => db.promoCode.findUnique({ where: { id } }));
+	const promoCode = await resilient(() => db.promoCode.findUnique({ where: { id } }));
+	return promoCode
+		? { ...promoCode, value: toNumber(promoCode.value), minAmount: toNumber(promoCode.minAmount) }
+		: null;
+}
+
+export async function findPromoCodeByCode(code: string) {
+	const promoCode = await resilient(() => db.promoCode.findUnique({ where: { code } }));
+	return promoCode
+		? { ...promoCode, value: toNumber(promoCode.value), minAmount: toNumber(promoCode.minAmount) }
+		: null;
 }
 
 /**
@@ -349,7 +450,7 @@ export async function createCatalogProduct(overrides?: {
 }) {
 	const stamp = `${Date.now()}`;
 	const category = await createCatalogCategory();
-	const product = await resilient(() =>
+	const created = await resilient(() =>
 		db.product.create({
 			data: {
 				name: overrides?.name ?? `e2e-prod-${stamp}`,
@@ -364,6 +465,11 @@ export async function createCatalogProduct(overrides?: {
 			}
 		})
 	);
+	const product = {
+		...created,
+		price: toNumber(created.price),
+		compareAtPrice: toNumber(created.compareAtPrice)
+	};
 	return { product, category };
 }
 
@@ -375,7 +481,7 @@ export async function createCatalogProduct(overrides?: {
 export async function createOldCatalogProduct(daysAgo: number, overrides?: { name?: string }) {
 	const stamp = `${Date.now()}`;
 	const category = await createCatalogCategory();
-	const product = await resilient(() =>
+	const created = await resilient(() =>
 		db.product.create({
 			data: {
 				name: overrides?.name ?? `e2e-prod-old-${stamp}`,
@@ -390,24 +496,69 @@ export async function createOldCatalogProduct(daysAgo: number, overrides?: { nam
 			}
 		})
 	);
+	const product = {
+		...created,
+		price: toNumber(created.price),
+		compareAtPrice: toNumber(created.compareAtPrice)
+	};
 	return { product, category };
 }
 
 export async function getProductBySlug(slug: string) {
-	return resilient(() => db.product.findUnique({ where: { slug } }));
+	const product = await resilient(() => db.product.findUnique({ where: { slug } }));
+	return product
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
+		: null;
 }
 
 export async function getProductById(id: string) {
-	return resilient(() =>
+	const product = await resilient(() =>
 		db.product.findUnique({
 			where: { id },
 			include: { taxonomyValues: { include: { taxonomyValue: true } } }
 		})
 	);
+	return product
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
+		: null;
 }
 
 export async function getProductByName(name: string) {
-	return resilient(() => db.product.findFirst({ where: { name } }));
+	const product = await resilient(() => db.product.findFirst({ where: { name } }));
+	return product
+		? {
+				...product,
+				price: toNumber(product.price),
+				compareAtPrice: toNumber(product.compareAtPrice)
+			}
+		: null;
+}
+
+/** Blog : auteur isolé, pour poster directement vers `?/createPost` sans passer par `createBlogPost()`. */
+export async function createBlogAuthor() {
+	const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	return resilient(() => db.blogAuthor.create({ data: { name: `e2e-blog-author-${stamp}` } }));
+}
+
+/** Blog : valeur de taxonomie « Catégorie » isolée. */
+export async function createBlogCategoryValue(value?: string) {
+	const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const categoryTaxonomy = await resilient(() =>
+		db.blogTaxonomy.findUniqueOrThrow({ where: { slug: 'categorie' } })
+	);
+	return resilient(() =>
+		db.blogTaxonomyValue.create({
+			data: { taxonomyId: categoryTaxonomy.id, value: value ?? `e2e-blog-cat-${stamp}` }
+		})
+	);
 }
 
 /** Blog : article de test isolé (auteur + valeur de taxonomie « Catégorie » dédiés). */
@@ -565,7 +716,7 @@ export async function linkProductToOrder(
 			data: { orderId: order.id, productId, variantId: overrides?.variantId, quantity: 1, price: 1 }
 		})
 	);
-	return { order, item };
+	return { order: mapOrderDecimals(order), item: { ...item, price: toNumber(item.price) } };
 }
 
 /**
@@ -582,7 +733,7 @@ export async function createPaidOrderWithProducts(userId: string, productIds: st
 			db.orderItem.create({ data: { orderId: order.id, productId, quantity: 1, price: 1 } })
 		);
 	}
-	return order;
+	return mapOrderDecimals(order);
 }
 
 /**
@@ -763,26 +914,37 @@ export async function getLoginEvents(email: string) {
  * page, et la relation `Order → User` est en `Restrict`. Le reste (sessions,
  * demandes de vérification, sessions de réinitialisation) part en cascade.
  */
+function mapOrderWithItems<
+	T extends Parameters<typeof mapOrderDecimals>[0] & { items: Array<{ price: Prisma.Decimal }> }
+>(order: T) {
+	return {
+		...mapOrderDecimals(order),
+		items: order.items.map((item) => ({ ...item, price: toNumber(item.price) }))
+	};
+}
+
 export async function getPendingOrder(userId: string) {
-	return resilient(() =>
+	const order = await resilient(() =>
 		db.order.findFirst({
 			where: { userId, status: 'PENDING' },
 			include: { items: true }
 		})
 	);
+	return order ? mapOrderWithItems(order) : null;
 }
 
 export async function getOrderById(orderId: string) {
-	return resilient(() =>
+	const order = await resilient(() =>
 		db.order.findUnique({
 			where: { id: orderId },
 			include: { items: true }
 		})
 	);
+	return order ? mapOrderWithItems(order) : null;
 }
 
 export async function attachOrderAddress(orderId: string, addressId: string) {
-	return resilient(() =>
+	const order = await resilient(() =>
 		db.order.update({
 			where: { id: orderId },
 			data: {
@@ -793,6 +955,7 @@ export async function attachOrderAddress(orderId: string, addressId: string) {
 			}
 		})
 	);
+	return mapOrderDecimals(order);
 }
 
 /**
@@ -805,7 +968,7 @@ export async function attachOrderDiscount(
 	orderId: string,
 	discount: { promoCode?: string; giftCardCode?: string; giftCardAmount?: number }
 ) {
-	return resilient(() =>
+	const order = await resilient(() =>
 		db.order.update({
 			where: { id: orderId },
 			data: {
@@ -815,14 +978,16 @@ export async function attachOrderDiscount(
 			}
 		})
 	);
+	return mapOrderDecimals(order);
 }
 
 export async function getTransactionByStripePaymentId(stripePaymentId: string) {
-	return resilient(() =>
+	const transaction = await resilient(() =>
 		db.transaction.findUnique({
 			where: { stripePaymentId }
 		})
 	);
+	return transaction ? mapTransactionDecimals(transaction) : null;
 }
 
 export async function findAddressesByUserId(userId: string) {
@@ -964,11 +1129,12 @@ export async function simulatePaidOrder(
 		})
 	);
 	await resilient(() => db.order.update({ where: { id: orderId }, data: { status: 'PAID' } }));
-	return transaction;
+	return mapTransactionDecimals(transaction);
 }
 
 export async function getTransactionById(id: string) {
-	return resilient(() => db.transaction.findUnique({ where: { id } }));
+	const transaction = await resilient(() => db.transaction.findUnique({ where: { id } }));
+	return transaction ? mapTransactionDecimals(transaction) : null;
 }
 
 /**
@@ -1117,9 +1283,10 @@ export async function isInWishlistDb(userId: string, productId: string): Promise
 
 /** Liste d'envies : lecture complète (baseline `lastNotifiedPrice`/`lastNotifiedFlashSaleEndsAt`). */
 export async function getWishlistItem(userId: string, productId: string) {
-	return resilient(() =>
+	const item = await resilient(() =>
 		db.wishlistItem.findUnique({ where: { userId_productId: { userId, productId } } })
 	);
+	return item ? { ...item, lastNotifiedPrice: toNumber(item.lastNotifiedPrice) } : null;
 }
 
 /**

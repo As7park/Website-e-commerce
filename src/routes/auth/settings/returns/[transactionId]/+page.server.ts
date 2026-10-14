@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
 import { createReturnRequest, getReturnRequestByTransactionId } from '$lib/prisma/returns/returns';
+import { toNumber } from '$lib/server/decimal';
 
 /**
  * Demande de retour sur une transaction payée.
@@ -51,7 +52,7 @@ export const load = (async ({ locals, params }) => {
 	const withdrawalEligible = transaction.shippingOption !== 'no_shipping';
 
 	// Estimation informative seulement (aucune date de livraison réelle
-	// tracée aujourd'hui, voir CONFORMITE_ECOMMERCE.md) : dernier statut
+	// tracée aujourd'hui, voir RESTE_A_FAIRE.md) : dernier statut
 	// transporteur connu si disponible, sinon date de paiement — jamais
 	// utilisée pour bloquer une demande. Le délai légal court à partir de la
 	// réception réelle, systématiquement postérieure à cette estimation.
@@ -61,7 +62,7 @@ export const load = (async ({ locals, params }) => {
 	);
 
 	return {
-		transaction,
+		transaction: { ...transaction, amount: toNumber(transaction.amount) },
 		returnRequest,
 		withdrawalEligible,
 		estimatedShippedAt,

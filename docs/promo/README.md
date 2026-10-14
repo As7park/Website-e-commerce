@@ -113,15 +113,20 @@ par l'API et l'UI, pas par `incrementUsage`.
 
 ### Admin — `e2e/promo/admin.spec.ts`
 
-La création passe par Prisma (les champs numériques du formulaire Superforms
-sont fragiles en e2e). L'édition de la valeur et la suppression passent par
-l'UI.
+Liste, édition et suppression passent par l'UI ; la création aussi, via le
+formulaire admin (`?/createPromo`, commit `7662986` — a révélé que `active`
+restait toujours `false` à la création malgré le défaut annoncé, corrigé au
+passage).
 
 | #   | Étape                            | Geste                         | Preuve              |
 | --- | -------------------------------- | ----------------------------- | ------------------- |
 | 1   | La liste admin affiche les codes | GET `/admin/promo`, recherche | ligne du tableau    |
 | 2   | Édition de la valeur             | fiche → 15 → Enregistrer      | `value` en base     |
 | 3   | Suppression                      | dialogue Continue             | code absent en base |
+
+Test à part, même fichier : « création via le formulaire admin » — remplit
+le formulaire `/admin/promo/create`, vérifie le code créé en base avec
+`active: true` par défaut.
 
 À part : un CLIENT POST `?/deletePromo` — le code reste.
 

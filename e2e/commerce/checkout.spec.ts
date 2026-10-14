@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
+import { expectNoA11yViolations } from '../support/a11y';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import {
 	createCatalogProduct,
@@ -51,6 +52,7 @@ test.describe('Commerce — checkout', () => {
 				await page.goto('/checkout');
 				await waitForPath(page, '/checkout');
 				await expect(page.getByText('Sélectionnez une adresse…')).toBeVisible();
+				await expectNoA11yViolations(page);
 			});
 
 			await test.step('3. POST sans adresse / sans être proprio', async () => {

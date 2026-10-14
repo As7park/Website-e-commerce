@@ -172,6 +172,24 @@ export async function signOutFromCart(page: Page) {
 }
 
 /**
+ * Attend que la fenêtre TOTP courante (30s, `@oslojs/otp`) vienne de
+ * démarrer avant de calculer/soumettre un code.
+ *
+ * Sans cette garde, un code calculé à moins de ~5s de la bascule peut devenir
+ * invalide entre son calcul et sa validation serveur (saisie `fillStable` +
+ * clic prennent un temps variable) — le formulaire échoue alors silencieusement
+ * et toute navigation attendue derrière (ex. redirect vers la page suivante)
+ * expire sans jamais se produire. Observé en CI sur `setUpTotp` (échec,
+ * succès au retry immédiat suivant — signature typique de cette race).
+ */
+export async function waitForFreshTotpWindow(page: Page) {
+	const msIntoWindow = Date.now() % 30_000;
+	if (msIntoWindow > 24_000) {
+		await page.waitForTimeout(30_000 - msIntoWindow + 500);
+	}
+}
+
+/**
  * Configure la 2FA sur la page `/auth/2fa/setup`.
  *
  * @returns le code de récupération affiché à l'étape suivante.
@@ -181,6 +199,7 @@ export async function setUpTotp(page: Page): Promise<string> {
 		page.getByRole('heading', { name: "Configurer l'authentification à deux facteurs" })
 	).toBeVisible();
 
+	await waitForFreshTotpWindow(page);
 	await submitCode(page, await validSetupCode(page), 'Valider');
 
 	await page.waitForURL('**/auth/recovery-code');
