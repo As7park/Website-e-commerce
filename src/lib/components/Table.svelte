@@ -627,18 +627,14 @@
 											<td class="border border-gray-300 p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}
@@ -690,18 +686,14 @@
 											<dd class="text-sm text-right break-words">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="ml-auto h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}

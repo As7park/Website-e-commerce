@@ -37,8 +37,8 @@
 				<li>
 					<strong>E-mails marketing</strong> (relances, nouveautés) — uniquement avec votre consentement
 					explicite (case à cocher dans votre espace compte), jamais par défaut. Les e-mails transactionnels
-					(confirmation de commande, facture, réinitialisation de mot de passe) ne sont pas soumis à
-					ce consentement.
+					(confirmation de commande, facture, réinitialisation de mot de passe) ne sont pas soumis à ce
+					consentement.
 				</li>
 				<li>
 					<strong>Sécurité du compte</strong> (mot de passe, double authentification) — intérêt légitime

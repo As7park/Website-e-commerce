@@ -61,10 +61,10 @@
 			<h2 class="text-lg font-semibold">5. Droit de rétractation</h2>
 			<p class="text-sm">
 				Conformément aux articles L221-18 et suivants du Code de la consommation, le client
-				consommateur dispose d'un délai de <strong>14 jours</strong> à compter de la réception de sa
-				commande pour exercer son droit de rétractation, sans avoir à justifier de motif ni à supporter
-				d'autres frais que ceux de retour du produit. Le remboursement, incluant les frais de livraison
-				standard, est effectué dans un délai de 14 jours suivant la réception du produit retourné.
+				consommateur dispose d'un délai de <strong>14 jours</strong> à compter de la réception de sa commande
+				pour exercer son droit de rétractation, sans avoir à justifier de motif ni à supporter d'autres
+				frais que ceux de retour du produit. Le remboursement, incluant les frais de livraison standard,
+				est effectué dans un délai de 14 jours suivant la réception du produit retourné.
 			</p>
 			<p class="text-sm">
 				Conformément à l'article L221-28, 3° du Code de la consommation, le droit de rétractation

@@ -116,7 +116,9 @@ Plus aucun item ouvert dans cette catégorie.
 ## A.1 Sécurité des dépendances
 
 **Preuve** : `npm audit` réexécuté et trié le 08/10/2026, revérifié le
-13/10/2026 après le bump `vitest`/`@vitest/coverage-v8` 3.2.7→5.0.4.
+13/10/2026 après le bump `vitest`/`@vitest/coverage-v8` 3.2.7→5.0.4, et le
+14/10/2026 après le bump groupé des devDependencies (ex-PR Dependabot #31,
+appliqué directement — voir plus bas).
 
 Avant triage (08/10) : 27 vulnérabilités (6 low, 3 moderate, 14 high, 4
 critical) — dérive depuis la dernière mesure (6, toutes low/moderate), due
@@ -125,18 +127,51 @@ ajoutée). `npm audit fix` (non-breaking, pas de `--force`) appliqué :
 **27 → 14**, toutes les vulnérabilités **production** corrigées sauf 3
 _low_ déjà connues et non exploitables ici (voir ci-dessous). Le bump
 `vitest@5` du 13/10 a réglé en chemin `tinypool`/`@vitest/mocker`
-(critical/moderate, dev uniquement) : **14 → 10**.
+(critical/moderate, dev uniquement) : **14 → 10**. Le bump `concurrently`
+9.1.2→9.2.5 du 14/10 (dans le lot devDependencies ci-dessous) a enfin
+réglé `shell-quote` en transitif (le correctif upstream manquant le
+13/10 est arrivé) : **10 → 11** (le total remonte car d'autres paquets
+dev bumpés le même jour font apparaître 4 nouvelles _low_ sur la même
+chaîne `cookie`/`@sveltejs/kit`, voir ci-dessous — **0 critical
+désormais, contre 2 avant ce bump**).
 
-**Restent après triage (10), aucune n'affecte le build de production** :
+**Restent après triage (11 au 14/10), aucune n'affecte le build de
+production** :
 
-| Paquet                             | Sévérité | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                                                                                                                               |
-| ---------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cookie` (via `@sveltejs/kit`)     | low (×3) | prod, mais non exploitable               | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease.                                                                                                                                              |
-| `braces` (via `chokidar-cli`)      | high     | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (breaking).                                                                                                                                                                                                                                                             |
-| `shell-quote` (via `concurrently`) | critical | **dev uniquement** (`npm run dev`)       | `npm audit` annonce un correctif « non-breaking » mais aucune version de `concurrently`, y compris la 10.x, ne référence un `shell-quote` patché (reconfirmé le 13/10 : `shell-quote@1.9.0` toujours figé en dépendance directe de `concurrently@9.2.4`) — le paquet amont n'a pas encore livré de correctif réel. |
+| Paquet                                                            | Sévérité | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                   |
+| ------------------------------------------------------------------ | -------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cookie` (via `@sveltejs/kit`, + `bits-ui`/`layerchart`/`runed`/`svelte-toolbelt` qui en dépendent transitivement) | low (×5) | prod, mais non exploitable               | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease. Les 4 nouvelles entrées du 14/10 sont la MÊME faille, juste visible via davantage de chemins transitifs après le bump devDependencies — pas une nouvelle vulnérabilité distincte. |
+| `braces`/`chokidar`/`chokidar-cli`                                  | high (×3) | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (downgrade majeur, régression fonctionnelle probable) — jamais tenté.                                                                                                                                                                                                      |
+| `@sveltejs/adapter-vercel`                                          | low      | prod, build uniquement                   | Fix = bump majeur `@sveltejs/adapter-vercel@7` — pas tenté, pas d'exploitabilité connue au runtime (adapter = outil de build Vercel, pas de code exécuté côté requête utilisateur).                                                                                                                                  |
 
 ⚠️ Ne jamais lancer `npm audit fix --force` à l'aveugle : il a proposé par
 le passé de redescendre `@sveltejs/kit` vers une version `0.0.x`.
+
+**14/10/2026 — bump groupé devDependencies appliqué manuellement**
+(équivalent de la PR Dependabot #31 « 30 updates », republiée directement
+sur `main` faute d'accès `gh`/API GitHub dans cet environnement) : 29 des
+30 paquets proposés bumpés tels quels. **2 exceptions délibérées,
+revert immédiat après échec de validation** :
+- `layerchart` 2.0.0-next.10→2.6.1 cassait `svelte-check` (export
+  `getTooltipContext` supprimé, type `payload` du children Tooltip
+  changé) — re-pinné à la version exacte précédente `2.0.0-next.37`
+  (celle réellement résolue par l'ancien lockfile, PAS `^2.0.0-next.10`
+  qui laisse npm remonter librement vers `2.8.0` malgré le caret
+  prerelease).
+- `eslint-plugin-svelte` 3.9.0→3.23.1 activait une nouvelle règle
+  `svelte/no-navigation-without-resolve` (88 erreurs bloquantes sur des
+  `href`/`goto()` existants dans tout le repo, migration SvelteKit
+  `resolve()` hors scope) — re-pinné en exact `3.11.0` (version
+  réellement verrouillée avant ce bump) pour éviter une dérive future
+  dans la même plage caret.
+Après ces 2 reverts : `npm run check` 0/0, `npx eslint .` 0 erreur/12
+warnings (baseline), `npx prettier --write .` a reformaté 10 fichiers
+(diffs vérifiés manuellement = pur style, aucun changement sémantique —
+nouvelle heuristique de wrap des tables markdown/unions TS dans
+prettier 3.9.10), `npm run build` OK, `npx vitest run` 94 passed/2
+skipped, `npx playwright test e2e/auth/journey.spec.ts` 1 passed + 1
+flaky (retry) — flakiness déjà connue sur ce spec, pas une régression de
+ce bump.
 
 **Piège connu** : certaines dépendances sont épinglées **volontairement**
 sans `^` (`sveltekit-superforms`, `prisma`, `@prisma/client`) — ne pas les

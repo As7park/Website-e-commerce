@@ -10,28 +10,28 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 
 ## Frontière du module
 
-| Emplacement                                                                                      | Contenu                                                                                           |
+| Emplacement | Contenu |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | --- | ------------------------- | -------------------------------------------- |
-| `src/lib/commerce/`                                                                              | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
-| `src/lib/prisma/order/` et `src/lib/prisma/transaction/`                                         | DAO Prisma                                                                                        |
-| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`                                                | panier client                                                                                     |
-| `src/routes/api/save-cart/`                                                                      | persistance panier                                                                                |
-| `src/routes/checkout/`                                                                           | tunnel + succès                                                                                   |
-| `src/routes/api/webhooks/`                                                                       | Stripe `checkout.session.completed`                                                               |
-| `src/lib/server/jobs/post-payment.ts`                                                            | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
-| `src/routes/api/jobs/post-payment/`                                                              | endpoint appelé par la queue (QStash)                                                             |
-| `src/routes/admin/sales/`                                                                        | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
-| `src/routes/auth/settings/returns/`                                                              | demande de retour côté compte                                                                     |
-| `src/routes/admin/returns/`                                                                      | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN)                 |
-| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts`                              | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
-| `src/routes/auth/settings/saved-payments/`                                                       | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
-| `src/lib/prisma/giftCards/`                                                                      | DAO cartes cadeaux (solde décroissant)                                                            |
-| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/`                            | émission/gestion admin, validation côté checkout                                                  |
-| `src/lib/sendcloud/returnLabel.ts`                                                               | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                |
-| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/`    | suivi de commande sans compte (n° facture + email)                                                |
-| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/`                      | relance panier abandonné (scan périodique, voir plus bas)                                         |
-| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/`                  | relance avis produit post-livraison (scan périodique, voir plus bas)                              |
-| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas)                |
+| `src/lib/commerce/` | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
+| `src/lib/prisma/order/` et `src/lib/prisma/transaction/` | DAO Prisma |
+| `src/lib/store/Data/cartStore.ts` + `cartSync.ts` | panier client |
+| `src/routes/api/save-cart/` | persistance panier |
+| `src/routes/checkout/` | tunnel + succès |
+| `src/routes/api/webhooks/` | Stripe `checkout.session.completed` |
+| `src/lib/server/jobs/post-payment.ts` | facture + Sendcloud, hors du webhook (voir plus bas) |
+| `src/routes/api/jobs/post-payment/` | endpoint appelé par la queue (QStash) |
+| `src/routes/admin/sales/` | liste, facture, bordereau (double marqueur ADMIN) | | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
+| `src/routes/auth/settings/returns/` | demande de retour côté compte |
+| `src/routes/admin/returns/` | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN) |
+| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts` | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe) |
+| `src/routes/auth/settings/saved-payments/` | ajout/suppression/défaut côté compte (Stripe Elements) |
+| `src/lib/prisma/giftCards/` | DAO cartes cadeaux (solde décroissant) |
+| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/` | émission/gestion admin, validation côté checkout |
+| `src/lib/sendcloud/returnLabel.ts` | étiquette de retour Sendcloud (best-effort, posée à l'approbation) |
+| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/` | suivi de commande sans compte (n° facture + email) |
+| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/` | relance panier abandonné (scan périodique, voir plus bas) |
+| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/` | relance avis produit post-livraison (scan périodique, voir plus bas) |
+| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas) |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par

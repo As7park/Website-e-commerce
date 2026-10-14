@@ -177,9 +177,9 @@
 						</RadioGroup.Root>
 						{#if kind === 'WITHDRAWAL'}
 							<p class="text-xs text-muted-foreground">
-								Commande expédiée le {formatDate(String(data.estimatedShippedAt))} (estimation) — le
-								délai légal de 14 jours court à partir de la réception réelle du colis, pas de cette
-								date. Il expire donc au plus tôt vers le {formatDate(
+								Commande expédiée le {formatDate(String(data.estimatedShippedAt))} (estimation) — le délai
+								légal de 14 jours court à partir de la réception réelle du colis, pas de cette date. Il
+								expire donc au plus tôt vers le {formatDate(
 									String(data.estimatedWithdrawalDeadline)
 								)}.
 							</p>

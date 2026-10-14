@@ -99,8 +99,7 @@
 
 		if (result.type === 'success' || result.type === 'failure') {
 			const resultData = result.data as
-				| { deleted?: number; skipped?: number; message?: string }
-				| undefined;
+				{ deleted?: number; skipped?: number; message?: string } | undefined;
 			if (result.type === 'failure') {
 				toast.error(resultData?.message ?? 'Échec de la suppression groupée');
 			} else if (resultData?.skipped) {
