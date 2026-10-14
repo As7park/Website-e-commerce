@@ -21,12 +21,18 @@ import {
  */
 test.describe('Administration — suppression groupée des produits', () => {
 	test.setTimeout(6 * 60_000);
-	// Premier spec à toucher /admin/products dans l'ordre CI : paie seul le
-	// coût de compilation à froid de la route par Vite (même classe de
-	// problème que `accounting-export`, cf. e2e-testing-notes). 20s par défaut
-	// a suffi pour le waitForResponse(bulkDeleteProducts) mais pas pour le
-	// clic « Confirmer » lui-même (run CI #142) — on élargit toutes les
-	// actions de ce spec plutôt que de rustiner un appel à la fois.
+	// Premier spec à toucher /admin/products dans l'ordre CI : paie seul un
+	// coût (compilation Vite à froid et/ou charge du runner, cause exacte
+	// jamais confirmée faute d'accès aux logs serveur CI) qui a fait échouer
+	// successivement un waitForResponse(bulkDeleteProducts) à 20s (run #141),
+	// puis à 45s (run #143), PUIS le .click() « Confirmer » lui-même à 20s
+	// (run #142) — la lenteur touche des actions différentes d'un run à
+	// l'autre, pas un seul appel réseau précis. `actionTimeout` élargi pour
+	// absorber ça sur toutes les actions du spec, ET les assertions qui
+	// suivent le clic « Confirmer » n'attendent plus un événement réseau
+	// ciblé mais le signal UI observable (disparition du badge de sélection,
+	// qui ne survient qu'une fois le fetch + invalidateAll() terminés) —
+	// robuste quelle que soit la cause exacte de la lenteur.
 	test.use({ actionTimeout: 45_000 });
 
 	test('sélection, suppression en lot, et produit commandé ignoré', async ({ page, account }) => {
@@ -61,14 +67,15 @@ test.describe('Administration — suppression groupée des produits', () => {
 
 				await page.getByRole('button', { name: 'Supprimer la sélection' }).click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
-				await Promise.all([
-					page.waitForResponse(
-						(response) =>
-							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST'
-					),
-					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
-				]);
+				await page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click();
+
+				// Le badge de sélection ne disparaît qu'une fois le fetch +
+				// invalidateAll() terminés (cf. Table.svelte::runBulkAction) : signal
+				// plus robuste qu'un waitForResponse ciblé, insensible à la cause
+				// exacte d'une lenteur CI (compilation à froid, charge du runner...).
+				await expect(page.getByText(/éléments? sélectionnés?/)).toHaveCount(0, {
+					timeout: 60_000
+				});
 
 				expect(await getProductById(removableA.product.id)).toBeNull();
 				expect(await getProductById(removableB.product.id)).toBeNull();
@@ -84,14 +91,11 @@ test.describe('Administration — suppression groupée des produits', () => {
 
 				await page.getByRole('button', { name: 'Supprimer la sélection' }).click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
-				await Promise.all([
-					page.waitForResponse(
-						(response) =>
-							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST'
-					),
-					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
-				]);
+				await page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click();
+
+				await expect(page.getByText(/éléments? sélectionnés?/)).toHaveCount(0, {
+					timeout: 60_000
+				});
 
 				expect(await getProductById(locked.product.id)).not.toBeNull();
 			});
