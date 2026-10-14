@@ -173,13 +173,17 @@
 	// Recherche : debounce avant de recharger depuis le serveur. Le garde
 	// `query === server.search` évite de redéclencher une navigation quand ce
 	// même effet vient de resynchroniser `searchQuery` depuis un `server` frais.
+	// `q`, pas `search` : c'est la clé lue par tous les `load()` admin en mode
+	// serveur (products/blog/users/promo/...) — un mismatch ici rendait la
+	// recherche inopérante (toujours réinitialisée par l'effet de sync
+	// ci-dessus) et déclenchait des `invalidateAll()` parasites en boucle.
 	let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const query = searchQuery;
 		if (!server) return;
 		if (query === server.search) return;
 		clearTimeout(searchDebounce);
-		searchDebounce = setTimeout(() => updateServerUrl({ search: query || null, page: 1 }), 400);
+		searchDebounce = setTimeout(() => updateServerUrl({ q: query || null, page: 1 }), 400);
 		return () => clearTimeout(searchDebounce);
 	});
 

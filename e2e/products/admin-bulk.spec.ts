@@ -55,6 +55,12 @@ test.describe('Administration — suppression groupée des produits', () => {
 				await waitForPath(page, '/admin/products');
 				await page.getByPlaceholder('Cherchez dans le tableau').first().fill(`e2e-bulk-`);
 
+				// Attend que la navigation déclenchée par la recherche (debounce 400ms +
+				// invalidateAll) soit bien terminée avant de sélectionner des lignes :
+				// sinon son arrivée tardive réinitialiserait `selectedIds` (cf.
+				// Table.svelte) pendant/juste après la sélection.
+				await page.waitForURL((url) => url.searchParams.get('q') === 'e2e-bulk-');
+
 				const rowA = productAdminRow(page, removableA.product.name);
 				const rowB = productAdminRow(page, removableB.product.name);
 				await expect(rowA).toBeVisible();
@@ -84,6 +90,10 @@ test.describe('Administration — suppression groupée des produits', () => {
 			await test.step('2. Un produit commandé sélectionné est ignoré, pas d’erreur bloquante', async () => {
 				await page.goto('/admin/products');
 				await page.getByPlaceholder('Cherchez dans le tableau').first().fill(locked.product.name);
+
+				// Même raison que ci-dessus : laisser la navigation de recherche se
+				// terminer avant de sélectionner la ligne.
+				await page.waitForURL((url) => url.searchParams.get('q') === locked.product.name);
 
 				const rowLocked = productAdminRow(page, locked.product.name);
 				await expect(rowLocked).toBeVisible();
