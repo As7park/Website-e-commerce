@@ -21,6 +21,13 @@ import {
  */
 test.describe('Administration — suppression groupée des produits', () => {
 	test.setTimeout(6 * 60_000);
+	// Premier spec à toucher /admin/products dans l'ordre CI : paie seul le
+	// coût de compilation à froid de la route par Vite (même classe de
+	// problème que `accounting-export`, cf. e2e-testing-notes). 20s par défaut
+	// a suffi pour le waitForResponse(bulkDeleteProducts) mais pas pour le
+	// clic « Confirmer » lui-même (run CI #142) — on élargit toutes les
+	// actions de ce spec plutôt que de rustiner un appel à la fois.
+	test.use({ actionTimeout: 45_000 });
 
 	test('sélection, suppression en lot, et produit commandé ignoré', async ({ page, account }) => {
 		const stamp = Date.now();
@@ -55,14 +62,10 @@ test.describe('Administration — suppression groupée des produits', () => {
 				await page.getByRole('button', { name: 'Supprimer la sélection' }).click();
 				await expect(page.getByRole('alertdialog')).toBeVisible();
 				await Promise.all([
-					// Ce spec est le premier à toucher /admin/products dans la suite CI :
-					// délai élargi pour absorber la compilation à froid de la route par
-					// Vite (même classe de problème que `accounting-export`, cf. notes e2e).
 					page.waitForResponse(
 						(response) =>
 							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST',
-						{ timeout: 45_000 }
+							response.request().method() === 'POST'
 					),
 					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
@@ -85,8 +88,7 @@ test.describe('Administration — suppression groupée des produits', () => {
 					page.waitForResponse(
 						(response) =>
 							response.url().includes('bulkDeleteProducts') &&
-							response.request().method() === 'POST',
-						{ timeout: 45_000 }
+							response.request().method() === 'POST'
 					),
 					page.getByRole('alertdialog').getByRole('button', { name: 'Confirmer' }).click()
 				]);
