@@ -128,7 +128,7 @@ ajoutée). `npm audit fix` (non-breaking, pas de `--force`) appliqué :
 _low_ déjà connues et non exploitables ici (voir ci-dessous). Le bump
 `vitest@5` du 13/10 a réglé en chemin `tinypool`/`@vitest/mocker`
 (critical/moderate, dev uniquement) : **14 → 10**. Le bump `concurrently`
-9.1.2→9.2.5 du 14/10 (dans le lot devDependencies ci-dessous) a enfin
+9\.1.2→9.2.5 du 14/10 (dans le lot devDependencies ci-dessous) a enfin
 réglé `shell-quote` en transitif (le correctif upstream manquant le
 13/10 est arrivé) : **10 → 11** (le total remonte car d'autres paquets
 dev bumpés le même jour font apparaître 4 nouvelles _low_ sur la même
@@ -138,11 +138,11 @@ désormais, contre 2 avant ce bump**).
 **Restent après triage (11 au 14/10), aucune n'affecte le build de
 production** :
 
-| Paquet                                                            | Sévérité | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                   |
-| ------------------------------------------------------------------ | -------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cookie` (via `@sveltejs/kit`, + `bits-ui`/`layerchart`/`runed`/`svelte-toolbelt` qui en dépendent transitivement) | low (×5) | prod, mais non exploitable               | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease. Les 4 nouvelles entrées du 14/10 sont la MÊME faille, juste visible via davantage de chemins transitifs après le bump devDependencies — pas une nouvelle vulnérabilité distincte. |
-| `braces`/`chokidar`/`chokidar-cli`                                  | high (×3) | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (downgrade majeur, régression fonctionnelle probable) — jamais tenté.                                                                                                                                                                                                      |
-| `@sveltejs/adapter-vercel`                                          | low      | prod, build uniquement                   | Fix = bump majeur `@sveltejs/adapter-vercel@7` — pas tenté, pas d'exploitabilité connue au runtime (adapter = outil de build Vercel, pas de code exécuté côté requête utilisateur).                                                                                                                                  |
+| Paquet                                                                                                             | Sévérité  | Portée                                   | Pourquoi non corrigé                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------ | --------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cookie` (via `@sveltejs/kit`, + `bits-ui`/`layerchart`/`runed`/`svelte-toolbelt` qui en dépendent transitivement) | low (×5)  | prod, mais non exploitable               | Faille exige un nom/chemin/domaine de cookie issu d'une entrée utilisateur — ici toutes constantes. Corrigée seulement par `@sveltejs/kit` 3.x, encore en prerelease. Les 4 nouvelles entrées du 14/10 sont la MÊME faille, juste visible via davantage de chemins transitifs après le bump devDependencies — pas une nouvelle vulnérabilité distincte. |
+| `braces`/`chokidar`/`chokidar-cli`                                                                                 | high (×3) | **dev uniquement** (script `jobs:watch`) | Corrigé seulement par `chokidar-cli@1.2.0` (downgrade majeur, régression fonctionnelle probable) — jamais tenté.                                                                                                                                                                                                                                        |
+| `@sveltejs/adapter-vercel`                                                                                         | low       | prod, build uniquement                   | Fix = bump majeur `@sveltejs/adapter-vercel@7` — pas tenté, pas d'exploitabilité connue au runtime (adapter = outil de build Vercel, pas de code exécuté côté requête utilisateur).                                                                                                                                                                     |
 
 ⚠️ Ne jamais lancer `npm audit fix --force` à l'aveugle : il a proposé par
 le passé de redescendre `@sveltejs/kit` vers une version `0.0.x`.
@@ -152,6 +152,7 @@ le passé de redescendre `@sveltejs/kit` vers une version `0.0.x`.
 sur `main` faute d'accès `gh`/API GitHub dans cet environnement) : 29 des
 30 paquets proposés bumpés tels quels. **2 exceptions délibérées,
 revert immédiat après échec de validation** :
+
 - `layerchart` 2.0.0-next.10→2.6.1 cassait `svelte-check` (export
   `getTooltipContext` supprimé, type `payload` du children Tooltip
   changé) — re-pinné à la version exacte précédente `2.0.0-next.37`
@@ -164,14 +165,14 @@ revert immédiat après échec de validation** :
   `resolve()` hors scope) — re-pinné en exact `3.11.0` (version
   réellement verrouillée avant ce bump) pour éviter une dérive future
   dans la même plage caret.
-Après ces 2 reverts : `npm run check` 0/0, `npx eslint .` 0 erreur/12
-warnings (baseline), `npx prettier --write .` a reformaté 10 fichiers
-(diffs vérifiés manuellement = pur style, aucun changement sémantique —
-nouvelle heuristique de wrap des tables markdown/unions TS dans
-prettier 3.9.10), `npm run build` OK, `npx vitest run` 94 passed/2
-skipped, `npx playwright test e2e/auth/journey.spec.ts` 1 passed + 1
-flaky (retry) — flakiness déjà connue sur ce spec, pas une régression de
-ce bump.
+  Après ces 2 reverts : `npm run check` 0/0, `npx eslint .` 0 erreur/12
+  warnings (baseline), `npx prettier --write .` a reformaté 10 fichiers
+  (diffs vérifiés manuellement = pur style, aucun changement sémantique —
+  nouvelle heuristique de wrap des tables markdown/unions TS dans
+  prettier 3.9.10), `npm run build` OK, `npx vitest run` 94 passed/2
+  skipped, `npx playwright test e2e/auth/journey.spec.ts` 1 passed + 1
+  flaky (retry) — flakiness déjà connue sur ce spec, pas une régression de
+  ce bump.
 
 **Piège connu** : certaines dépendances sont épinglées **volontairement**
 sans `^` (`sveltekit-superforms`, `prisma`, `@prisma/client`) — ne pas les
@@ -887,7 +888,7 @@ panier sans label lié. Détail technique dans
 
 ⚠️ **Trouvaille non résolue, périmètre plus large que ce qui a été corrigé** :
 le pattern `Form.Control`/`Form.Label` (lib `formsnap`) est utilisé de
-travers dans ~38 fichiers du repo entier (`grep -rn "Form.Control" src/`) —
+travers dans \~38 fichiers du repo entier (`grep -rn "Form.Control" src/`) —
 le snippet `{#snippet children({ props })}` requis par la lib pour relier
 réellement le `<label>` au champ n'est jamais utilisé, donc l'`id` généré
 par `Form.Label` (`for=...`) ne correspond à aucun élément réel. Tous les
