@@ -8,7 +8,8 @@ import {
 	submitCode,
 	waitForPath,
 	currentTotpCode,
-	expectMessage
+	expectMessage,
+	waitForFreshTotpWindow
 } from '../support/flows';
 import { clearMailbox, waitForEmailCode } from '../support/mailbox';
 import { deleteUser, enableMfa, requireUser } from '../support/db';
@@ -37,16 +38,11 @@ async function submitScopedCode(page: Page, action: '?/totp' | '?/recovery_code'
 }
 
 /**
- * Calcule et soumet un code TOTP juste avant qu'il n'expire (fenêtre de 30s,
- * `@oslojs/otp`) — sans cette garde, un code calculé à moins de ~5s de la
- * bascule peut devenir invalide entre son calcul et sa validation serveur
- * (observé une fois sur ce spec : échec, succès au retry immédiat suivant).
+ * Calcule et soumet un code TOTP juste avant qu'il n'expire (voir
+ * `waitForFreshTotpWindow` dans `support/flows.ts`).
  */
 async function submitFreshTotpCode(page: Page, email: string) {
-	const msIntoWindow = Date.now() % 30_000;
-	if (msIntoWindow > 24_000) {
-		await page.waitForTimeout(30_000 - msIntoWindow + 500);
-	}
+	await waitForFreshTotpWindow(page);
 	await submitScopedCode(page, '?/totp', await currentTotpCode(email));
 }
 
