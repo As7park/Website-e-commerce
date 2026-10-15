@@ -46,27 +46,33 @@
 	<form method="POST" use:deliveryEnhance class="flex items-end gap-3">
 		<Form.Field name="minDays" form={deliveryForm} class="flex-1">
 			<Form.Control>
-				<Form.Label>Min (jours)</Form.Label>
-				<Input
-					name="minDays"
-					type="number"
-					min="1"
-					max="60"
-					bind:value={$deliveryFormData.minDays}
-				/>
+				{#snippet children({ props })}
+					<Form.Label>Min (jours)</Form.Label>
+					<Input
+						{...props}
+						name="minDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.minDays}
+					/>
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<Form.Field name="maxDays" form={deliveryForm} class="flex-1">
 			<Form.Control>
-				<Form.Label>Max (jours)</Form.Label>
-				<Input
-					name="maxDays"
-					type="number"
-					min="1"
-					max="60"
-					bind:value={$deliveryFormData.maxDays}
-				/>
+				{#snippet children({ props })}
+					<Form.Label>Max (jours)</Form.Label>
+					<Input
+						{...props}
+						name="maxDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.maxDays}
+					/>
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

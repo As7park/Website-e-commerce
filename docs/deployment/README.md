@@ -18,9 +18,11 @@ Le projet est déjà câblé pour Vercel :
 - `postinstall` (`package.json`) exécute `prisma generate` et copie les
   assets TinyMCE : aucune étape manuelle nécessaire pour ces deux points au
   build.
-- La CSP (`svelte.config.js` → `kit.csp`) est en `reportOnly` : elle ne
-  bloque rien en production tant qu'elle n'a pas été validée (voir section
-  dédiée en bas de page).
+- La CSP (`svelte.config.js` → `kit.csp`) est **bloquante** (`directives`,
+  plus `reportOnly`) depuis l'audit statique du code (domaines externes
+  réellement appelés côté navigateur). `/api/csp-report` reste actif comme
+  canari — voir section dédiée en bas de page pour le détail des directives
+  et le smoke-test à refaire après chaque ajout de service tiers côté client.
 
 ## Checklist de provisioning initial (un e-mail, tous les comptes, dans l'ordre)
 
@@ -474,25 +476,48 @@ si le module blog est actif (`docs/blog/README.md`). Le script
 `postinstall` copie déjà les assets TinyMCE self-hébergés
 (`scripts/copy-tinymce.mjs`), aucune étape manuelle supplémentaire.
 
-## CSP — passer de `reportOnly` à bloquant
+## CSP — bloquante (`directives`)
 
-La CSP (`svelte.config.js` → `kit.csp`) est actuellement en `reportOnly` :
-elle journalise les violations sur `POST /api/csp-report` sans rien bloquer.
-**Ne pas la basculer en bloquante à l'aveugle** : une politique mal calibrée
-casse silencieusement Stripe Checkout ou l'éditeur TinyMCE, sans erreur
-serveur visible.
+La CSP (`svelte.config.js` → `kit.csp`) est en mode **bloquant**
+(`directives`, plus `reportOnly`). Les directives ont été établies par audit
+statique du code (`grep` de tous les domaines externes appelés côté
+navigateur dans `src/`), pas par observation DevTools en conditions réelles :
 
-Avant de la rendre bloquante (`reportOnly` → `directives` dans
-`svelte.config.js`) :
+- `script-src`/`frame-src` : `js.stripe.com` + `hooks.stripe.com` (Stripe
+  Elements/Checkout).
+- `img-src` : `res.cloudinary.com` (images produits/blog) +
+  `tiles.basemaps.cartocdn.com` (sprite de la carte MapLibre des points
+  relais — chargé via une requête `Image`, donc `img-src` et pas
+  `connect-src`) + `blob:` (aperçu local d'image avant upload via
+  `URL.createObjectURL`, formulaires produit admin).
+- `connect-src` : `api.stripe.com` + `tiles.basemaps.cartocdn.com` (tuiles
+  vectorielles/glyphes MapLibre, via `fetch`) + `*.ingest.sentry.io` (remontée
+  d'erreurs client, no-op sans `PUBLIC_SENTRY_DSN`).
+- `worker-src` : `'self' blob:` — MapLibre GL instancie son propre Web
+  Worker depuis un `blob:`, bloqué sinon.
+- TinyMCE : self-hébergé (`/tinymce/tinymce.min.js`, même origine), plugins
+  core uniquement (pas de plugin connu nécessitant `unsafe-eval`).
+- Google OAuth : redirection serveur classique (`createAuthorizationURL` +
+  `redirect`), pas de SDK JS côté client — aucune directive CSP requise.
 
-1. Déployer en `reportOnly` (déjà le cas), observer `/api/csp-report`
-   (logs applicatifs) sur un cycle complet : navigation catalogue, checkout
-   jusqu'au paiement Stripe, éditeur TinyMCE (`/admin/blog`), setup 2FA (QR
-   code `data:`, déjà couvert par `img-src`).
-2. Ajouter toute directive manquante détectée par les rapports (nouveau
-   fournisseur = nouveau domaine à whitelister, ex. si Cloudinary est
-   remplacé par un autre CDN).
-3. Basculer, redéployer, revérifier le même cycle sans blocage réel.
+**Résidu de risque à couvrir par un smoke-test réel** après le premier
+déploiement avec cette politique (DevTools ouvertes, onglet Console/Network
+filtré sur les erreurs CSP) : checkout jusqu'au paiement Stripe, éditeur
+TinyMCE (`/admin/blog`), setup 2FA (QR code `data:`, couvert par `img-src`),
+et la carte des points relais Sendcloud (`ServicePointMap.svelte`). `/api/csp-report`
+reste actif en bloquant (il journalise _et_ bloque) : surveiller ses logs
+juste après un déploiement reste le moyen le plus rapide de repérer une
+directive manquante avant qu'un client ne le signale.
+
+Si un nouveau service tiers appelé depuis le navigateur est ajouté plus tard
+(nouveau CDN d'images, nouvelle carte, nouveau SDK de paiement...), ajouter
+son domaine à la directive concernée **avant** la mise en prod — ne pas
+compter sur `/api/csp-report` pour le découvrir après coup.
+
+En cas de blocage inattendu en prod, le rollback le plus rapide est de
+repasser `directives` en `reportOnly` dans `svelte.config.js` (revert ou
+correctif ponctuel) et redéployer — ou **Promote to Production** d'un
+déploiement antérieur sain (voir section Rollback ci-dessous).
 
 ## Rollback (revenir en arrière après un déploiement défaillant)
 

@@ -4,7 +4,6 @@
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
 	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Label } from '$shadcn/label/index.js';
 	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
 
 	import { superForm } from 'sveltekit-superforms';
@@ -80,8 +79,10 @@
 			<div class="w-[100%]">
 				<Form.Field name="title" form={createPost}>
 					<Form.Control>
-						<Form.Label>Title</Form.Label>
-						<Input name="title" type="text" bind:value={$createPostData.title} />
+						{#snippet children({ props })}
+							<Form.Label>Title</Form.Label>
+							<Input {...props} name="title" type="text" bind:value={$createPostData.title} />
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -92,20 +93,20 @@
 				<div class="flex items-center space-x-2">
 					<Form.Field name="published" form={createPost} class="rcc">
 						<Form.Control>
-							<div class="rcc">
-								<Checkbox
-									name="published"
-									aria-labelledby="published"
-									bind:checked={$createPostData.published as boolean | undefined}
-								/>
-								<Label
-									id="published"
-									for="terms"
-									class="text-sm ml-2 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									Publié
-								</Label>
-							</div>
+							{#snippet children({ props })}
+								<div class="rcc">
+									<Checkbox
+										{...props}
+										name="published"
+										bind:checked={$createPostData.published as boolean | undefined}
+									/>
+									<Form.Label
+										class="text-sm ml-2 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+									>
+										Publié
+									</Form.Label>
+								</div>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -123,13 +124,16 @@
 				<div class="w-[100%]">
 					<Form.Field name="content" form={createPost}>
 						<Form.Control>
-							<Form.Label>Content</Form.Label>
-							<Editor
-								conf={editorConfig}
-								scriptSrc="/tinymce/tinymce.min.js"
-								apiKey={PUBLIC_TINYMCE_API_KEY}
-								bind:value={$createPostData.content}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Content</Form.Label>
+								<Editor
+									id={props.id}
+									conf={editorConfig}
+									scriptSrc="/tinymce/tinymce.min.js"
+									apiKey={PUBLIC_TINYMCE_API_KEY}
+									bind:value={$createPostData.content}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

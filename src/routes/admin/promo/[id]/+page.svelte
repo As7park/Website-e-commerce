@@ -4,7 +4,6 @@
 	import { Input } from '$shadcn/input';
 	import { Button } from '$shadcn/button';
 	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Label } from '$shadcn/label/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -48,75 +47,96 @@
 
 			<Form.Field name="code" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>Code</Form.Label>
-					<Input name="code" type="text" bind:value={$updatePromoData.code} />
+					{#snippet children({ props })}
+						<Form.Label>Code</Form.Label>
+						<Input {...props} name="code" type="text" bind:value={$updatePromoData.code} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="type" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>Type de remise</Form.Label>
-					<select
-						name="type"
-						bind:value={$updatePromoData.type}
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-					>
-						<option value="PERCENTAGE">Pourcentage (%)</option>
-						<option value="FIXED">Montant fixe (€)</option>
-					</select>
+					{#snippet children({ props })}
+						<Form.Label>Type de remise</Form.Label>
+						<select
+							{...props}
+							name="type"
+							bind:value={$updatePromoData.type}
+							class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+						>
+							<option value="PERCENTAGE">Pourcentage (%)</option>
+							<option value="FIXED">Montant fixe (€)</option>
+						</select>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="value" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>
-						Valeur {$updatePromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
-					</Form.Label>
-					<Input
-						name="value"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$updatePromoData.value}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>
+							Valeur {$updatePromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
+						</Form.Label>
+						<Input
+							{...props}
+							name="value"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$updatePromoData.value}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="minAmount" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>Montant minimum de commande (€, optionnel)</Form.Label>
-					<Input
-						name="minAmount"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$updatePromoData.minAmount}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Montant minimum de commande (€, optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="minAmount"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$updatePromoData.minAmount}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="usageLimit" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>Limite d'utilisation (optionnel, vide = illimité)</Form.Label>
-					<Input
-						name="usageLimit"
-						type="number"
-						step="1"
-						min="0"
-						bind:value={$updatePromoData.usageLimit}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Limite d'utilisation (optionnel, vide = illimité)</Form.Label>
+						<Input
+							{...props}
+							name="usageLimit"
+							type="number"
+							step="1"
+							min="0"
+							bind:value={$updatePromoData.usageLimit}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="expiresAt" form={updatePromo}>
 				<Form.Control>
-					<Form.Label>Date d'expiration (optionnel)</Form.Label>
-					<Input name="expiresAt" type="date" bind:value={$updatePromoData.expiresAt} />
+					{#snippet children({ props })}
+						<Form.Label>Date d'expiration (optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="expiresAt"
+							type="date"
+							bind:value={$updatePromoData.expiresAt}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -124,19 +144,22 @@
 			{#if data.loyaltyEnabled}
 				<Form.Field name="loyaltyThreshold" form={updatePromo}>
 					<Form.Control>
-						<Form.Label>Seuil fidélité (optionnel)</Form.Label>
-						<Input
-							name="loyaltyThreshold"
-							type="number"
-							step="1"
-							min="1"
-							placeholder="ex: 5"
-							bind:value={$updatePromoData.loyaltyThreshold}
-						/>
-						<p class="text-sm text-muted-foreground">
-							Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
-							commandes payées.
-						</p>
+						{#snippet children({ props })}
+							<Form.Label>Seuil fidélité (optionnel)</Form.Label>
+							<Input
+								{...props}
+								name="loyaltyThreshold"
+								type="number"
+								step="1"
+								min="1"
+								placeholder="ex: 5"
+								bind:value={$updatePromoData.loyaltyThreshold}
+							/>
+							<p class="text-sm text-muted-foreground">
+								Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
+								commandes payées.
+							</p>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -150,10 +173,16 @@
 
 			<Form.Field name="active" form={updatePromo} class="rcc">
 				<Form.Control>
-					<div class="flex items-center space-x-2">
-						<Checkbox name="active" bind:checked={$updatePromoData.active as boolean | undefined} />
-						<Label for="active" class="text-sm font-medium leading-none">Code actif</Label>
-					</div>
+					{#snippet children({ props })}
+						<div class="flex items-center space-x-2">
+							<Checkbox
+								{...props}
+								name="active"
+								bind:checked={$updatePromoData.active as boolean | undefined}
+							/>
+							<Form.Label class="text-sm font-medium leading-none">Code actif</Form.Label>
+						</div>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

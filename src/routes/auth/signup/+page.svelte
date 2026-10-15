@@ -46,8 +46,16 @@
 			<div class="mb-4">
 				<Form.Field name="username" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Nom d'utilisateur</Form.Label>
-						<Input name="username" type="text" bind:value={$signupData.username} required />
+						{#snippet children({ props })}
+							<Form.Label>Nom d'utilisateur</Form.Label>
+							<Input
+								{...props}
+								name="username"
+								type="text"
+								bind:value={$signupData.username}
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -56,8 +64,10 @@
 			<div class="mb-4">
 				<Form.Field name="email" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input name="email" type="email" bind:value={$signupData.email} required />
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input {...props} name="email" type="email" bind:value={$signupData.email} required />
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -66,8 +76,16 @@
 			<div class="mb-4">
 				<Form.Field name="password" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Mot de passe</Form.Label>
-						<Input name="password" type="password" bind:value={$signupData.password} required />
+						{#snippet children({ props })}
+							<Form.Label>Mot de passe</Form.Label>
+							<Input
+								{...props}
+								name="password"
+								type="password"
+								bind:value={$signupData.password}
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

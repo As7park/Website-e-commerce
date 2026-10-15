@@ -60,15 +60,18 @@
 			<form method="POST" action="?/totp" use:totpEnhance class="space-y-6">
 				<Form.Field name="code" form={totpForm}>
 					<Form.Control>
-						<Form.Label>Code</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$totpData.code}
-							placeholder="Entrez votre code TOTP"
-							autocomplete="one-time-code"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$totpData.code}
+								placeholder="Entrez votre code TOTP"
+								autocomplete="one-time-code"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -86,14 +89,17 @@
 			<form method="POST" action="?/recovery_code" use:recoveryCodeEnhance class="space-y-6">
 				<Form.Field name="code" form={recoveryCodeForm}>
 					<Form.Control>
-						<Form.Label>Code de récupération</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$recoveryCodeData.code}
-							placeholder="Entrez votre code de récupération"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de récupération</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$recoveryCodeData.code}
+								placeholder="Entrez votre code de récupération"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

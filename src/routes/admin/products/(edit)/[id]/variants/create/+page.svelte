@@ -43,49 +43,60 @@
 		<form method="POST" action="?/createVariant" use:createVariantEnhance class="space-y-4">
 			<Form.Field name="label" form={createVariantForm}>
 				<Form.Control>
-					<Form.Label>Étiquette</Form.Label>
-					<Input
-						name="label"
-						type="text"
-						placeholder="ex : Taille 54"
-						bind:value={$createVariantData.label}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Étiquette</Form.Label>
+						<Input
+							{...props}
+							name="label"
+							type="text"
+							placeholder="ex : Taille 54"
+							bind:value={$createVariantData.label}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="sku" form={createVariantForm}>
 				<Form.Control>
-					<Form.Label>SKU (optionnel)</Form.Label>
-					<Input name="sku" type="text" bind:value={$createVariantData.sku} />
+					{#snippet children({ props })}
+						<Form.Label>SKU (optionnel)</Form.Label>
+						<Input {...props} name="sku" type="text" bind:value={$createVariantData.sku} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="price" form={createVariantForm}>
 				<Form.Control>
-					<Form.Label>Prix (€, laisser 0 pour utiliser le prix du produit)</Form.Label>
-					<Input
-						name="price"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$createVariantData.price}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Prix (€, laisser 0 pour utiliser le prix du produit)</Form.Label>
+						<Input
+							{...props}
+							name="price"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$createVariantData.price}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="stock" form={createVariantForm}>
 				<Form.Control>
-					<Form.Label>Stock</Form.Label>
-					<Input
-						name="stock"
-						type="number"
-						step="1"
-						min="0"
-						bind:value={$createVariantData.stock}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Stock</Form.Label>
+						<Input
+							{...props}
+							name="stock"
+							type="number"
+							step="1"
+							min="0"
+							bind:value={$createVariantData.stock}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

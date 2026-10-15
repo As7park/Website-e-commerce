@@ -42,15 +42,18 @@
 	<form method="POST" use:vatEnhance class="flex items-end gap-3">
 		<Form.Field name="vatRatePercent" form={vatForm} class="flex-1">
 			<Form.Control>
-				<Form.Label>Taux (%)</Form.Label>
-				<Input
-					name="vatRatePercent"
-					type="number"
-					step="0.1"
-					min="0"
-					max="100"
-					bind:value={$vatFormData.vatRatePercent}
-				/>
+				{#snippet children({ props })}
+					<Form.Label>Taux (%)</Form.Label>
+					<Input
+						{...props}
+						name="vatRatePercent"
+						type="number"
+						step="0.1"
+						min="0"
+						max="100"
+						bind:value={$vatFormData.vatRatePercent}
+					/>
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

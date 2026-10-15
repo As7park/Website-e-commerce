@@ -100,8 +100,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="name" form={updateBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Nom</Form.Label>
-							<Input name="name" type="text" bind:value={$updateBlogTaxonomyData.name} />
+							{#snippet children({ props })}
+								<Form.Label>Nom</Form.Label>
+								<Input
+									{...props}
+									name="name"
+									type="text"
+									bind:value={$updateBlogTaxonomyData.name}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -109,8 +116,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="slug" form={updateBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Slug</Form.Label>
-							<Input name="slug" type="text" bind:value={$updateBlogTaxonomyData.slug} />
+							{#snippet children({ props })}
+								<Form.Label>Slug</Form.Label>
+								<Input
+									{...props}
+									name="slug"
+									type="text"
+									bind:value={$updateBlogTaxonomyData.slug}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

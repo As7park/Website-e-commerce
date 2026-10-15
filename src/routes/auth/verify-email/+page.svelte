@@ -39,15 +39,17 @@
 			<div>
 				<Form.Field name="code" form={verifyCodeForm}>
 					<Form.Control>
-						<Form.Label>Code de vérification</Form.Label>
-						<Input
-							id="form-verify-code"
-							name="code"
-							type="text"
-							placeholder="Entrez le code"
-							bind:value={$verifyData.code}
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de vérification</Form.Label>
+							<Input
+								{...props}
+								name="code"
+								type="text"
+								placeholder="Entrez le code"
+								bind:value={$verifyData.code}
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

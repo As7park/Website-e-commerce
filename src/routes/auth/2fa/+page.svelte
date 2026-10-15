@@ -42,15 +42,18 @@
 			<div>
 				<Form.Field name="code" form={totpForm}>
 					<Form.Control>
-						<Form.Label>Code d'authentification</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$totpData.code}
-							placeholder="Entrez votre code"
-							autocomplete="one-time-code"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code d'authentification</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$totpData.code}
+								placeholder="Entrez votre code"
+								autocomplete="one-time-code"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

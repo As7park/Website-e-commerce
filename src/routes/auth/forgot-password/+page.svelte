@@ -39,14 +39,17 @@
 			<div>
 				<Form.Field name="email" form={forgotForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input
-							type="email"
-							name="email"
-							bind:value={$forgotData.email}
-							placeholder="Entrez votre adresse email"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input
+								{...props}
+								type="email"
+								name="email"
+								bind:value={$forgotData.email}
+								placeholder="Entrez votre adresse email"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

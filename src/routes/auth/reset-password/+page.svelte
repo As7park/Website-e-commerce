@@ -45,15 +45,18 @@
 		<form method="POST" action="?/resetPassword" use:resetPasswordEnhance class="space-y-6">
 			<Form.Field name="password" form={resetPasswordForm}>
 				<Form.Control>
-					<Form.Label>Nouveau mot de passe</Form.Label>
-					<Input
-						type="password"
-						name="password"
-						bind:value={$resetPasswordData.password}
-						placeholder="Entrez votre nouveau mot de passe"
-						autocomplete="new-password"
-						required
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Nouveau mot de passe</Form.Label>
+						<Input
+							{...props}
+							type="password"
+							name="password"
+							bind:value={$resetPasswordData.password}
+							placeholder="Entrez votre nouveau mot de passe"
+							autocomplete="new-password"
+							required
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

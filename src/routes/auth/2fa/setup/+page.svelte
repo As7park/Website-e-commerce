@@ -55,16 +55,18 @@
 				<!-- Champ de code TOTP -->
 				<Form.Field name="code" form={twoFactorForm}>
 					<Form.Control>
-						<Form.Label>Code de vérification</Form.Label>
-						<Input
-							id="form-totp-code"
-							name="code"
-							type="text"
-							placeholder="Entrez le code"
-							bind:value={$twoFactorData.code}
-							required
-							class="mt-1 block w-full"
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de vérification</Form.Label>
+							<Input
+								{...props}
+								name="code"
+								type="text"
+								placeholder="Entrez le code"
+								bind:value={$twoFactorData.code}
+								required
+								class="mt-1 block w-full"
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

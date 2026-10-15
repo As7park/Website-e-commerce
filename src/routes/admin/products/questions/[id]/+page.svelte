@@ -52,8 +52,10 @@
 
 			<Form.Field name="answer" form={answerForm}>
 				<Form.Control>
-					<Form.Label>Réponse (visible publiquement une fois publiée)</Form.Label>
-					<Textarea name="answer" rows={5} bind:value={$answerData.answer} />
+					{#snippet children({ props })}
+						<Form.Label>Réponse (visible publiquement une fois publiée)</Form.Label>
+						<Textarea {...props} name="answer" rows={5} bind:value={$answerData.answer} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

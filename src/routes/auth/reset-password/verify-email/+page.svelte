@@ -45,14 +45,17 @@
 			<div>
 				<Form.Field name="code" form={verifyEmailForm}>
 					<Form.Control>
-						<Form.Label>Code</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$verifyEmailData.code}
-							placeholder="Entrez votre code de vérification"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$verifyEmailData.code}
+								placeholder="Entrez votre code de vérification"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

@@ -42,32 +42,40 @@
 		<form method="POST" action="?/send" use:contactEnhance class="space-y-4">
 			<Form.Field name="name" form={contactForm}>
 				<Form.Control>
-					<Form.Label>Nom</Form.Label>
-					<Input name="name" type="text" bind:value={$contactData.name} />
+					{#snippet children({ props })}
+						<Form.Label>Nom</Form.Label>
+						<Input {...props} name="name" type="text" bind:value={$contactData.name} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="email" form={contactForm}>
 				<Form.Control>
-					<Form.Label>Email</Form.Label>
-					<Input name="email" type="email" bind:value={$contactData.email} />
+					{#snippet children({ props })}
+						<Form.Label>Email</Form.Label>
+						<Input {...props} name="email" type="email" bind:value={$contactData.email} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="subject" form={contactForm}>
 				<Form.Control>
-					<Form.Label>Sujet</Form.Label>
-					<Input name="subject" type="text" bind:value={$contactData.subject} />
+					{#snippet children({ props })}
+						<Form.Label>Sujet</Form.Label>
+						<Input {...props} name="subject" type="text" bind:value={$contactData.subject} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="message" form={contactForm}>
 				<Form.Control>
-					<Form.Label>Message</Form.Label>
-					<Textarea name="message" bind:value={$contactData.message} rows={6} />
+					{#snippet children({ props })}
+						<Form.Label>Message</Form.Label>
+						<Textarea {...props} name="message" bind:value={$contactData.message} rows={6} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

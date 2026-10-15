@@ -62,47 +62,63 @@
 			<form method="POST" action="?/createGiftCard" use:createGiftCardEnhance class="space-y-4">
 				<Form.Field name="initialValue" form={createGiftCardForm}>
 					<Form.Control>
-						<Form.Label>Valeur (€)</Form.Label>
-						<Input
-							name="initialValue"
-							type="number"
-							step="0.01"
-							min="0.01"
-							bind:value={$createGiftCardData.initialValue}
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Valeur (€)</Form.Label>
+							<Input
+								{...props}
+								name="initialValue"
+								type="number"
+								step="0.01"
+								min="0.01"
+								bind:value={$createGiftCardData.initialValue}
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
 
 				<Form.Field name="recipientEmail" form={createGiftCardForm}>
 					<Form.Control>
-						<Form.Label>Email du destinataire (optionnel)</Form.Label>
-						<Input
-							name="recipientEmail"
-							type="email"
-							placeholder="client@example.com"
-							bind:value={$createGiftCardData.recipientEmail}
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Email du destinataire (optionnel)</Form.Label>
+							<Input
+								{...props}
+								name="recipientEmail"
+								type="email"
+								placeholder="client@example.com"
+								bind:value={$createGiftCardData.recipientEmail}
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
 
 				<Form.Field name="note" form={createGiftCardForm}>
 					<Form.Control>
-						<Form.Label>Note interne (optionnel)</Form.Label>
-						<Textarea
-							name="note"
-							placeholder="ex : geste commercial suite à la commande #1234"
-							bind:value={$createGiftCardData.note}
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Note interne (optionnel)</Form.Label>
+							<Textarea
+								{...props}
+								name="note"
+								placeholder="ex : geste commercial suite à la commande #1234"
+								bind:value={$createGiftCardData.note}
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
 
 				<Form.Field name="expiresAt" form={createGiftCardForm}>
 					<Form.Control>
-						<Form.Label>Date d'expiration (optionnel)</Form.Label>
-						<Input name="expiresAt" type="date" bind:value={$createGiftCardData.expiresAt} />
+						{#snippet children({ props })}
+							<Form.Label>Date d'expiration (optionnel)</Form.Label>
+							<Input
+								{...props}
+								name="expiresAt"
+								type="date"
+								bind:value={$createGiftCardData.expiresAt}
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

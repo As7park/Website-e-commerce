@@ -64,13 +64,16 @@
 				<div class="w-[100%]">
 					<Form.Field name="name" form={createBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Nom</Form.Label>
-							<Input
-								name="name"
-								type="text"
-								bind:value={$createBlogTaxonomyData.name}
-								oninput={onNameInput}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Nom</Form.Label>
+								<Input
+									{...props}
+									name="name"
+									type="text"
+									bind:value={$createBlogTaxonomyData.name}
+									oninput={onNameInput}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -78,13 +81,16 @@
 				<div class="w-[100%]">
 					<Form.Field name="slug" form={createBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Slug</Form.Label>
-							<Input
-								name="slug"
-								type="text"
-								bind:value={$createBlogTaxonomyData.slug}
-								oninput={() => (slugTouched = true)}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Slug</Form.Label>
+								<Input
+									{...props}
+									name="slug"
+									type="text"
+									bind:value={$createBlogTaxonomyData.slug}
+									oninput={() => (slugTouched = true)}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

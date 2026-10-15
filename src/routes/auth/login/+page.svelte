@@ -40,14 +40,17 @@
 			<div>
 				<Form.Field name="email" form={loginForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input
-							type="email"
-							name="email"
-							bind:value={$loginData.email}
-							placeholder="Entrez votre email"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input
+								{...props}
+								type="email"
+								name="email"
+								bind:value={$loginData.email}
+								placeholder="Entrez votre email"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -56,14 +59,17 @@
 			<div>
 				<Form.Field name="password" form={loginForm}>
 					<Form.Control>
-						<Form.Label>Mot de passe</Form.Label>
-						<Input
-							type="password"
-							name="password"
-							bind:value={$loginData.password}
-							placeholder="Entrez votre mot de passe"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Mot de passe</Form.Label>
+							<Input
+								{...props}
+								type="password"
+								name="password"
+								bind:value={$loginData.password}
+								placeholder="Entrez votre mot de passe"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

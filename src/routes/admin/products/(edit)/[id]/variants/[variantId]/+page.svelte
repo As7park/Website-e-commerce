@@ -45,44 +45,54 @@
 
 			<Form.Field name="label" form={updateVariantForm}>
 				<Form.Control>
-					<Form.Label>Étiquette</Form.Label>
-					<Input name="label" type="text" bind:value={$updateVariantData.label} />
+					{#snippet children({ props })}
+						<Form.Label>Étiquette</Form.Label>
+						<Input {...props} name="label" type="text" bind:value={$updateVariantData.label} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="sku" form={updateVariantForm}>
 				<Form.Control>
-					<Form.Label>SKU (optionnel)</Form.Label>
-					<Input name="sku" type="text" bind:value={$updateVariantData.sku} />
+					{#snippet children({ props })}
+						<Form.Label>SKU (optionnel)</Form.Label>
+						<Input {...props} name="sku" type="text" bind:value={$updateVariantData.sku} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="price" form={updateVariantForm}>
 				<Form.Control>
-					<Form.Label>Prix (€, laisser 0 pour utiliser le prix du produit)</Form.Label>
-					<Input
-						name="price"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$updateVariantData.price}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Prix (€, laisser 0 pour utiliser le prix du produit)</Form.Label>
+						<Input
+							{...props}
+							name="price"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$updateVariantData.price}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="stock" form={updateVariantForm}>
 				<Form.Control>
-					<Form.Label>Stock</Form.Label>
-					<Input
-						name="stock"
-						type="number"
-						step="1"
-						min="0"
-						bind:value={$updateVariantData.stock}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Stock</Form.Label>
+						<Input
+							{...props}
+							name="stock"
+							type="number"
+							step="1"
+							min="0"
+							bind:value={$updateVariantData.stock}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

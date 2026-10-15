@@ -297,14 +297,17 @@
 					<Card.Content>
 						<Form.Field name="email" form={emailForm}>
 							<Form.Control>
-								<Form.Label>Nouvel email</Form.Label>
-								<Input
-									type="email"
-									name="email"
-									bind:value={$emailData.email}
-									placeholder="nouveau@email.com"
-									required
-								/>
+								{#snippet children({ props })}
+									<Form.Label>Nouvel email</Form.Label>
+									<Input
+										{...props}
+										type="email"
+										name="email"
+										bind:value={$emailData.email}
+										placeholder="nouveau@email.com"
+										required
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -327,28 +330,34 @@
 					<Card.Content class="space-y-4">
 						<Form.Field name="password" form={passwordForm}>
 							<Form.Control>
-								<Form.Label>Mot de passe actuel</Form.Label>
-								<Input
-									type="password"
-									name="password"
-									bind:value={$passwordData.password}
-									autocomplete="current-password"
-									required
-								/>
+								{#snippet children({ props })}
+									<Form.Label>Mot de passe actuel</Form.Label>
+									<Input
+										{...props}
+										type="password"
+										name="password"
+										bind:value={$passwordData.password}
+										autocomplete="current-password"
+										required
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
 
 						<Form.Field name="new_password" form={passwordForm}>
 							<Form.Control>
-								<Form.Label>Nouveau mot de passe</Form.Label>
-								<Input
-									type="password"
-									name="new_password"
-									bind:value={$passwordData.new_password}
-									autocomplete="new-password"
-									required
-								/>
+								{#snippet children({ props })}
+									<Form.Label>Nouveau mot de passe</Form.Label>
+									<Input
+										{...props}
+										type="password"
+										name="new_password"
+										bind:value={$passwordData.new_password}
+										autocomplete="new-password"
+										required
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

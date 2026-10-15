@@ -44,14 +44,17 @@
 			<div>
 				<Form.Field name="code" form={recoveryCodeForm}>
 					<Form.Control>
-						<Form.Label>Code de récupération</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$recoveryCodeData.code}
-							placeholder="Entrez votre code de récupération"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de récupération</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$recoveryCodeData.code}
+								placeholder="Entrez votre code de récupération"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

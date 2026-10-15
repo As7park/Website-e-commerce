@@ -108,83 +108,115 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			<Form.Field name="name" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Raison sociale</Form.Label>
-					<Input name="name" bind:value={$companyFormData.name} />
+					{#snippet children({ props })}
+						<Form.Label>Raison sociale</Form.Label>
+						<Input {...props} name="name" bind:value={$companyFormData.name} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="legalForm" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Forme juridique</Form.Label>
-					<Input
-						name="legalForm"
-						placeholder="SASU, SARL..."
-						bind:value={$companyFormData.legalForm}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Forme juridique</Form.Label>
+						<Input
+							{...props}
+							name="legalForm"
+							placeholder="SASU, SARL..."
+							bind:value={$companyFormData.legalForm}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="shareCapital" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Capital social</Form.Label>
-					<Input
-						name="shareCapital"
-						placeholder="10 000 €"
-						bind:value={$companyFormData.shareCapital}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Capital social</Form.Label>
+						<Input
+							{...props}
+							name="shareCapital"
+							placeholder="10 000 €"
+							bind:value={$companyFormData.shareCapital}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="publicationDirector" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Directeur de la publication</Form.Label>
-					<Input name="publicationDirector" bind:value={$companyFormData.publicationDirector} />
+					{#snippet children({ props })}
+						<Form.Label>Directeur de la publication</Form.Label>
+						<Input
+							{...props}
+							name="publicationDirector"
+							bind:value={$companyFormData.publicationDirector}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="address" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Adresse du siège</Form.Label>
-					<Input
-						name="address"
-						placeholder="123 Rue des Affaires"
-						bind:value={$companyFormData.address}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Adresse du siège</Form.Label>
+						<Input
+							{...props}
+							name="address"
+							placeholder="123 Rue des Affaires"
+							bind:value={$companyFormData.address}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="city" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Code postal et ville</Form.Label>
-					<Input name="city" placeholder="75000 Paris, France" bind:value={$companyFormData.city} />
+					{#snippet children({ props })}
+						<Form.Label>Code postal et ville</Form.Label>
+						<Input
+							{...props}
+							name="city"
+							placeholder="75000 Paris, France"
+							bind:value={$companyFormData.city}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="siret" form={companyForm}>
 				<Form.Control>
-					<Form.Label>SIRET</Form.Label>
-					<Input name="siret" bind:value={$companyFormData.siret} />
+					{#snippet children({ props })}
+						<Form.Label>SIRET</Form.Label>
+						<Input {...props} name="siret" bind:value={$companyFormData.siret} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="vatNumber" form={companyForm}>
 				<Form.Control>
-					<Form.Label>N° de TVA intracommunautaire</Form.Label>
-					<Input name="vatNumber" bind:value={$companyFormData.vatNumber} />
+					{#snippet children({ props })}
+						<Form.Label>N° de TVA intracommunautaire</Form.Label>
+						<Input {...props} name="vatNumber" bind:value={$companyFormData.vatNumber} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="phone" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Téléphone</Form.Label>
-					<Input name="phone" bind:value={$companyFormData.phone} />
+					{#snippet children({ props })}
+						<Form.Label>Téléphone</Form.Label>
+						<Input {...props} name="phone" bind:value={$companyFormData.phone} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="email" form={companyForm}>
 				<Form.Control>
-					<Form.Label>E-mail de contact</Form.Label>
-					<Input name="email" type="email" bind:value={$companyFormData.email} />
+					{#snippet children({ props })}
+						<Form.Label>E-mail de contact</Form.Label>
+						<Input {...props} name="email" type="email" bind:value={$companyFormData.email} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
