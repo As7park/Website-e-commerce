@@ -273,6 +273,57 @@ Avant de la rendre bloquante (`reportOnly` → `directives` dans
    remplacé par un autre CDN).
 3. Basculer, redéployer, revérifier le même cycle sans blocage réel.
 
+## Rollback (revenir en arrière après un déploiement défaillant)
+
+Vercel conserve chaque déploiement de Production comme une unité immuable
+(code + assets) : revenir en arrière ne nécessite pas de rebuild ni de
+revert Git, seulement de **repromouvoir** un déploiement précédent connu
+comme sain.
+
+1. Dashboard Vercel → projet → onglet **Deployments**.
+2. Repérer le dernier déploiement de Production qui fonctionnait (marqué
+   `● Ready`, antérieur au déploiement fautif).
+3. Menu `...` de ce déploiement → **Promote to Production** (anciennement
+   « Instant Rollback ») : le domaine de prod pointe à nouveau vers ce build
+   en quelques secondes, sans réexécuter `npm ci` / `vite build` /
+   `postinstall`.
+4. Vérifier immédiatement après bascule : `vercel.json` (crons) et les
+   variables d'environnement associées au déploiement restauré sont celles
+   **en vigueur au moment de ce build**, pas les valeurs actuelles du
+   dashboard — un rollback ne réapplique pas une ancienne valeur de variable
+   d'environnement si elle a été modifiée depuis (Vercel fige les valeurs au
+   moment du build, pas au moment du rollback).
+
+### Ce que le rollback Vercel ne couvre pas
+
+- **Migrations Prisma** : `prisma migrate deploy` est conçu pour être
+  appliqué en avançant uniquement — ce dépôt ne fournit pas de migrations
+  « down » automatiques. Revenir le code en arrière après une migration qui
+  a modifié le schéma (colonne renommée/supprimée, contrainte ajoutée) peut
+  casser le code restauré s'il suppose l'ancien schéma. Avant de rollback un
+  déploiement qui a embarqué une migration :
+  - si la migration est additive (nouvelle colonne nullable, nouvelle table)
+    et que l'ancien code l'ignore simplement, le rollback applicatif seul
+    suffit ;
+  - si la migration est destructive ou modifie une colonne que l'ancien code
+    lit/écrit différemment, il faut écrire et appliquer manuellement une
+    migration corrective (ou restaurer un snapshot Neon, voir plus bas)
+    **avant** ou **en même temps que** le rollback applicatif — jamais après,
+    pour éviter une fenêtre où le code restauré tourne contre un schéma
+    incompatible.
+- **Neon (base de données)** : Neon conserve un historique de restauration
+  point-in-time (durée selon le plan) via Dashboard Neon → Branches →
+  **Restore** — à utiliser uniquement en dernier recours (perte de données
+  entre le point de restauration et maintenant), indépendamment du rollback
+  Vercel qui ne touche jamais la base.
+- **Jobs déjà déclenchés** (QStash, Vercel Cron) : un job asynchrone
+  planifié ou en file d'attente avant le rollback continue de s'exécuter
+  contre le code restauré une fois celui-ci en place — pas d'action
+  spécifique nécessaire si le rollback est rapide, mais à garder en tête si
+  un job a échoué pendant la fenêtre du déploiement fautif (vérifier les
+  logs Sentry/QStash après coup plutôt que de supposer qu'il s'est
+  correctement rejoué).
+
 ## Checklist post-déploiement
 
 1. `npx prisma migrate deploy` exécuté contre la base de prod (voir section

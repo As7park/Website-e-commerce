@@ -15,9 +15,14 @@ jobs:
       # SvelteKit ne génère les types de ces modules que pour les variables
       # présentes au moment de `svelte-kit sync` : sans elles, le type-check
       # échoue avec "Module has no exported member 'X'" même si le code est
-      # correct. Valeurs factices, jamais utilisées au runtime dans ce job.
+      # correct. Valeurs factices, jamais utilisées pour un vrai chiffrement.
+      # Doivent néanmoins être un base64 décodable (32/16 octets) : le step
+      # `Build (vite build)` exécute réellement `decodeBase64(...)` au
+      # chargement de `src/lib/lucia/encryption.ts` (phase "analyse" de
+      # SvelteKit), contrairement à `svelte-check` qui ne fait qu'inférer les
+      # types sans exécuter le code.
       ENCRYPTION_KEY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaWbIUlVS8AKM=
-      ENCRYPTION_KEY_LEGACY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaW
+      ENCRYPTION_KEY_LEGACY: bYqdNqqjO678p2cX9G2uOw==
       GOOGLE_CLIENT_ID: ci-google-client-id
       GOOGLE_CLIENT_SECRET: ci-google-client-secret
       VITE_GOOGLE_REDIRECT_URI: http://localhost:2001/auth/login/google/callback
@@ -48,6 +53,15 @@ jobs:
 
       - name: Type-check (svelte-check)
         run: npm run check
+
+      - name: Build (vite build)
+        # Un build qui plante n'était jusqu'ici découvert que sur Vercel, après
+        # le merge — svelte-check ne valide pas tout ce que Vite/Rollup peuvent
+        # rejeter (imports de modules serveur en client, adapter Vercel, etc.).
+        # Mêmes env vars factices que les steps précédents, suffisantes car
+        # `sentrySvelteKit({ autoUploadSourceMaps: false })` ne requiert aucun
+        # token Sentry au build (voir commentaire dans vite.config.ts).
+        run: npm run build
 
       - name: Lint (knip)
         # Non-bloquant : les dépendances inutilisées ont été triées (voir
