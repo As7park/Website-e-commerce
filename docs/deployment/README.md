@@ -22,6 +22,86 @@ Le projet est déjà câblé pour Vercel :
   bloque rien en production tant qu'elle n'a pas été validée (voir section
   dédiée en bas de page).
 
+## Checklist de provisioning initial (un e-mail, tous les comptes, dans l'ordre)
+
+À suivre une seule fois, lors de la création d'une nouvelle instance
+(nouveau client/nouvel environnement). Ordonnée pour minimiser les
+allers-retours : les étapes lentes à valider sont lancées en premier, et les
+services qui ont besoin d'une URL publique (webhooks, redirect URI) arrivent
+après que Vercel en ait fourni une.
+
+**Phase 0 — identité (bloque tout le reste)**
+
+- [ ] Créer l'adresse e-mail dédiée au projet (pas une boîte perso) — c'est
+      l'identité utilisée pour **chaque** inscription ci-dessous ;
+      centralise la propriété et la récupération de compte. Activer 2FA +
+      gestionnaire de mots de passe dessus avant de l'utiliser : elle
+      devient un point de défaillance unique pour tous les services tiers.
+- [ ] Réserver le nom de domaine (si pas déjà fait), chez n'importe quel
+      registrar — nécessaire plus loin pour l'authentification SMTP
+      (SPF/DKIM Brevo), le domaine custom Vercel, et des redirect URI
+      stables (Google OAuth).
+- [ ] Créer le compte GitHub (avec l'adresse e-mail de la Phase 0) s'il
+      n'existe pas déjà, puis y créer le dépôt et y pousser le code —
+      prérequis à l'import du projet dans Vercel (Phase 2), qui se connecte
+      nativement à GitHub pour déployer à chaque push.
+
+**Phase 1 — à lancer immédiatement (vérifications lentes, pas bloquantes pour le reste)**
+
+- [ ] **Sendcloud** : inscription avec l'adresse e-mail, démarrer la
+      vérification business tout de suite (peut prendre plusieurs jours) —
+      le reste du provisioning peut continuer en parallèle sans l'attendre.
+- [ ] **Stripe** : inscription avec l'adresse e-mail, démarrer la
+      vérification entreprise (nécessaire pour passer en mode live) — le
+      mode test (`sk_test_...`) fonctionne immédiatement sans attendre
+      cette validation, donc ne bloque pas le développement/Preview.
+
+**Phase 2 — infra cœur (fournit l'URL publique nécessaire à la Phase 3)**
+
+- [ ] **Vercel** : inscription avec l'adresse e-mail (ou connexion via
+      GitHub), puis **Import Project** depuis le dépôt → donne
+      immédiatement une URL `*.vercel.app` utilisable comme callback/webhook
+      temporaire pour tous les services de la Phase 3, avant même d'avoir
+      branché le domaine custom.
+- [ ] **Neon** : inscription, création du projet → branche `production`
+      (par défaut) + branche `preview`/`dev` (voir
+      [section dédiée ci-dessus](#s%C3%A9parer-production-preview-et-d%C3%A9veloppement--branches-neon))
+      → récupérer les connexions pooler/directe des deux branches.
+
+**Phase 3 — services tiers (indépendants entre eux, après la Phase 2 pour avoir une URL à renseigner)**
+
+- [ ] **Cloudinary** : inscription, récupérer cloud name/clé/secret.
+- [ ] **Brevo** : inscription, récupérer les identifiants SMTP, lancer la
+      vérification SPF/DKIM/DMARC du domaine réservé en Phase 0 (peut aussi
+      prendre du temps à se propager en DNS).
+- [ ] **Google Cloud Console** : créer le projet, l'écran de consentement
+      OAuth, puis les identifiants — redirect URI = URL Vercel obtenue en
+      Phase 2 (à mettre à jour plus tard si le domaine custom change l'URL
+      finale).
+- [ ] **Upstash** : inscription, créer la base Redis puis QStash.
+- [ ] **Sentry** : inscription, créer le projet JavaScript/SvelteKit.
+- [ ] **TinyMCE Cloud** : inscription, récupérer la clé API gratuite.
+
+**Phase 4 — câblage**
+
+- [ ] Reporter toutes les clés obtenues dans Vercel → Environment Variables
+      (dashboard ou CLI, voir
+      [section dédiée ci-dessus](#cr%C3%A9er-et-partager-les-variables-en-%C3%A9quipe-dashboard-vs-cli)),
+      bien scopées par environnement (Production vs Preview/Development —
+      clés Stripe/test vs live en particulier).
+- [ ] `npx prisma migrate deploy` contre la branche `production` Neon.
+- [ ] Si le domaine custom (Phase 0) est prêt : le brancher dans Vercel →
+      Project Settings → Domains, puis **mettre à jour** `APP_URL`, le
+      redirect URI Google, et les webhooks Stripe/Sendcloud pour pointer
+      l'URL définitive plutôt que l'URL `*.vercel.app` temporaire utilisée
+      en Phase 3.
+
+**Phase 5 — vérification**
+
+- [ ] Reprendre la [Checklist post-déploiement](#checklist-post-d%C3%A9ploiement)
+      plus bas dans ce document (smoke test complet, schedules QStash,
+      modules optionnels à activer).
+
 ## Variables d'environnement
 
 Base complète et commentée : [.env.example](../../.env.example). À reporter
@@ -88,6 +168,42 @@ fourni par Vercel), mais vérifier au moins une fois qu'un de ces e-mails
 contient bien un lien cliquable vers le bon domaine avant la mise en
 production réelle.
 
+### Créer et partager les variables en équipe (dashboard vs CLI)
+
+Deux façons équivalentes de renseigner les variables ci-dessus dans Vercel,
+à combiner selon le besoin :
+
+- **Dashboard** (Project → Settings → Environment Variables) : formulaire
+  nom/valeur, avec **trois cases à cocher par variable** — `Production`,
+  `Preview`, `Development`. Une même variable peut avoir une valeur
+  différente par environnement (ex. `STRIPE_SECRET_KEY` en mode test pour
+  Preview/Development, en mode live pour Production **seulement** — ne
+  jamais cocher Production sur une clé de test, ni l'inverse). Historique
+  des modifications visible dans l'onglet, mais pas d'audit trail par
+  personne (voir la recommandation « gestionnaire de secrets dédié » dans
+  [docs/secrets-rotation.md](../secrets-rotation.md) si l'équipe grandit).
+- **CLI** (`npm i -g vercel`, une fois) :
+
+  ```bash
+  vercel link                     # relie ce clone local au projet Vercel existant
+  vercel env add DATABASE_URL preview      # ajoute/édite une variable scopée à un seul environnement
+  vercel env pull .env.local               # récupère les valeurs Development dans un fichier local
+  ```
+
+  `vercel env add <NOM> <environnement>` évite de faire circuler des
+  secrets en clair par chat/e-mail entre coéquipiers : celui qui a accès au
+  projet Vercel pousse la valeur une fois, chacun la récupère ensuite via
+  `vercel env pull` (après `vercel link`, qui demande une connexion au
+  compte/à l'équipe Vercel — géré via Project → Settings → Members, à ne
+  pas confondre avec les accès GitHub). Pratique à l'arrivée d'un nouveau
+  développeur : pas de `.env` à lui envoyer manuellement pour tout ce qui
+  est déjà dans Vercel, seuls les secrets **hors Vercel** restent à
+  transmettre via `sops`/`.env.enc` (voir
+  [docs/secrets-rotation.md](../secrets-rotation.md)) — ce sont deux
+  canaux complémentaires, pas redondants : Vercel pour ce qui doit être
+  identique entre Preview/Production, sops pour les surcharges strictement
+  locales (ex. une clé de test personnelle, un mode debug).
+
 ## Base de données — Neon
 
 1. Créer un projet Neon, récupérer les deux chaînes de connexion : celle avec
@@ -123,6 +239,111 @@ production réelle.
    des comptes de démo (`DemoPass!2026` par défaut) est surchargeable via
    `SEED_DEMO_PASSWORD` si ce jeu de données doit exister ailleurs qu'un
    poste de dev local.
+
+### Séparer Production, Preview et développement — branches Neon
+
+**Ne jamais faire pointer Preview ou le développement local vers la même
+base que Production** : un test e2e, une migration expérimentale ou une
+requête buguée testée en Preview écrirait alors dans les vraies données
+clients. Deux approches, de la plus simple à la plus automatisée :
+
+1. **Un seul projet Neon, plusieurs branches** (recommandé, gratuit sur le
+   plan Free Neon) :
+   - Neon crée une branche `production` (ou `main`) par défaut lors de la
+     création du projet — c'est celle à utiliser pour `DATABASE_URL`/
+     `DIRECT_URL` **Production** dans Vercel.
+   - Dashboard Neon → Branches → **Create branch**, à partir de
+     `production` : copie-sur-écriture instantanée (pas de dump/restore à
+     faire), la nouvelle branche (ex. `preview` ou `dev`) démarre avec les
+     mêmes données puis diverge indépendamment — rien de ce qui est écrit
+     dessus n'affecte `production`.
+   - Récupérer les connexions (`-pooler` et directe) **propres à cette
+     branche** (Neon affiche un sélecteur de branche au-dessus des chaînes
+     de connexion — ne pas réutiliser par erreur celles de `production`).
+   - Dans Vercel, renseigner `DATABASE_URL`/`DIRECT_URL` avec la valeur de
+     la branche `production` pour l'environnement **Production**, et la
+     valeur de la branche `preview`/`dev` pour les environnements
+     **Preview** et **Development** (voir section CLI/dashboard ci-dessus
+     pour scoper une variable par environnement).
+   - Rejouer les migrations sur **chaque branche séparément** — appliquer
+     une migration sur `production` ne la propage pas automatiquement à
+     `preview`/`dev` (ce sont des bases indépendantes après la création de
+     la branche) :
+
+     ```bash
+     DATABASE_URL=<branche-preview> DIRECT_URL=<branche-preview> npx prisma migrate deploy
+     ```
+2. **Intégration officielle Vercel ↔ Neon** (Vercel → Marketplace →
+   Neon) : automatise la création d'**une branche Neon éphémère par
+   Preview Deployment** (une par pull request), injecte automatiquement
+   `DATABASE_URL`/`DIRECT_URL` dans l'environnement Preview correspondant,
+   et supprime la branche quand le déploiement Preview est supprimé —
+   évite de partager une seule branche `preview` entre toutes les PR
+   ouvertes en simultané (ce que fait l'option 1 par défaut). Plus proche
+   de « une base jetable par PR », au prix d'un peu plus de configuration
+   initiale ; à activer une fois l'équipe au-delà d'un ou deux
+   contributeurs, quand les collisions sur une branche `preview` partagée
+   deviennent gênantes.
+
+Pour le développement local en équipe, deux options équivalentes à la
+branche `preview`/`dev` ci-dessus : soit tous les développeurs partagent la
+même branche Neon `dev` (simple, mais une migration ou un `npm run seed`
+lancé par l'un affecte les autres), soit chacun crée sa propre branche
+personnelle à partir de `dev` (Neon Free autorise plusieurs branches) et en
+renseigne les identifiants dans son `.env` local — à distribuer/chiffrer via
+`sops` comme les autres secrets locaux (voir
+[docs/secrets-rotation.md](../secrets-rotation.md)), jamais en les ajoutant
+aux variables Vercel du projet qui sont, elles, partagées par toute
+l'équipe.
+
+### Automatiser via les CLI (`neonctl` + `vercel`) — sans passer par les dashboards
+
+Les deux étapes manuelles ci-dessus (créer la branche Neon, reporter ses
+connexions dans Vercel) se scriptent entièrement, pratique pour onboarder
+un nouveau développeur ou recréer un environnement jetable sans cliquer :
+
+1. Installer les deux CLI une fois (`npm i -g neonctl vercel`), puis
+   s'authentifier (`neonctl auth` ouvre un navigateur et stocke un token
+   local ; `vercel login`).
+2. Créer la branche et récupérer ses connexions en une commande chacune
+   (les flags exacts peuvent varier selon la version installée — vérifier
+   avec `neonctl branches create --help` / `neonctl connection-string --help`) :
+
+   ```bash
+   NEON_PROJECT_ID=xxxxxxxx   # neonctl projects list
+
+   neonctl branches create --project-id "$NEON_PROJECT_ID" \
+     --name preview --parent production
+
+   POOLED_URL=$(neonctl connection-string preview \
+     --project-id "$NEON_PROJECT_ID" --pooled)
+   DIRECT_URL_VAL=$(neonctl connection-string preview \
+     --project-id "$NEON_PROJECT_ID")
+   ```
+
+3. Pousser directement ces valeurs dans Vercel, sans dashboard, en pipant la
+   valeur sur `stdin` de `vercel env add` (évite le prompt interactif) :
+
+   ```bash
+   vercel link --yes   # une fois par poste, relie ce clone au projet Vercel
+
+   printf '%s' "$POOLED_URL"    | vercel env add DATABASE_URL preview
+   printf '%s' "$DIRECT_URL_VAL" | vercel env add DIRECT_URL preview
+   ```
+
+4. Nettoyage une fois la branche inutile : `neonctl branches delete preview --project-id "$NEON_PROJECT_ID"` puis `vercel env rm DATABASE_URL preview --yes` (et `DIRECT_URL`).
+
+**Automatisation complète par PR (sans l'intégration Marketplace)** : Neon
+publie aussi des GitHub Actions officielles
+(`neondatabase/create-branch-action`, `neondatabase/delete-branch-action`)
+pour créer/supprimer une branche depuis un workflow GitHub Actions plutôt
+que depuis Vercel — utile si une branche Neon par PR doit être accessible
+ailleurs que dans le Preview Deployment Vercel (ex. un job GitHub Actions
+qui a besoin de sa propre base). Ce n'est **pas nécessaire** pour le job
+`e2e` de ce dépôt, qui tourne déjà contre un conteneur Postgres 16 éphémère
+local au run (voir [e2e/README.md](../../e2e/README.md)) — à réserver à un
+besoin distinct (ex. partager la branche de preview avec un outil QA
+externe).
 
 ## Stripe
 
