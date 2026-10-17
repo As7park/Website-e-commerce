@@ -39,6 +39,17 @@ import { randomUUID } from 'crypto';
 import { authHandle } from '$lib/lucia/hooks';
 // AUTH-PLUGIN ▲
 
+// Better Auth (voir MIGRATION_BETTER_AUTH.md) — monté en parallèle de Lucia
+// pendant la migration : sert /api/auth/** (callback Google, endpoints
+// internes des plugins), sans toucher `locals` tant que `authHandle` n'a
+// pas basculé.
+import { svelteKitHandler } from 'better-auth/svelte-kit';
+import { building } from '$app/environment';
+import { auth } from '$lib/auth';
+
+const betterAuthHandle: Handle = ({ event, resolve }) =>
+	svelteKitHandler({ event, resolve, auth, building });
+
 // ADMIN-PLUGIN ▼ retirer cet import et `adminHandle` de la séquence finale.
 import { adminHandle } from '$lib/admin/hooks';
 // ADMIN-PLUGIN ▲
@@ -271,6 +282,7 @@ export const handle: Handle = sequence(
 	cookieGuard,
 	rateLimit,
 	catalogAntiScraping,
+	betterAuthHandle,
 	// AUTH-PLUGIN ▼ retirer cette ligne pour désactiver l'authentification.
 	authHandle,
 	// AUTH-PLUGIN ▲

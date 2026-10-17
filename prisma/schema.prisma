@@ -104,7 +104,7 @@ model User {
 
   /// Code de parrainage unique, généré à la création du compte
   /// (`generateUniqueReferralCode`) — jamais deviné, jamais réutilisé.
-  referralCode String @unique
+  referralCode String  @unique
   /// Compte parrain, posé une seule fois à l'inscription si `?ref=<code>`
   /// désignait un compte existant et que le module était actif à ce moment-là.
   referredById String?
@@ -126,17 +126,122 @@ model User {
   stockAlerts         StockAlert[]
   productViews        ProductView[]
 
-  // Relations d'authentification (disparaissent avec le module)
+  // Relations d'authentification Lucia (disparaissent en fin de migration,
+  // voir MIGRATION_BETTER_AUTH.md)
   sessions                  Session[]
   emailVerificationRequests EmailVerificationRequest[] @relation("UserEmailVerificationRequests")
   passwordResetSessions     PasswordResetSession[]     @relation("UserPasswordResetSessions")
   loginEvents               LoginEvent[]
+
+  // Better Auth — champs additionnels exigés par les plugins `admin` et
+  // `twoFactor` (voir MIGRATION_BETTER_AUTH.md). `role`/`username`/
+  // `referralCode`/`referredById`/`marketingEmailsOptIn` existent déjà
+  // ci-dessus et sont réutilisés tels quels par le mapping Better Auth
+  // (voir `additionalFields` dans `src/lib/auth/index.ts`), pas dupliqués ici.
+  twoFactorEnabled Boolean?      @default(false)
+  banned           Boolean?      @default(false)
+  banReason        String?
+  banExpires       DateTime?
+  authSessions     AuthSession[]
+  authAccounts     AuthAccount[]
+  twoFactors       TwoFactor[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role])
   @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// Better Auth — remplace le module Lucia (voir MIGRATION_BETTER_AUTH.md).
+// Schéma généré par `npx @better-auth/cli generate` puis adapté : `User`
+// réutilisée telle quelle (pas de modèle `user` dupliqué), noms de modèle
+// explicites (`AuthSession`/`AuthAccount`/`AuthVerification` plutôt que les
+// noms par défaut `session`/`account`/`verification`, pour ne jamais les
+// confondre avec le `Session` Lucia encore présent pendant la transition).
+// -----------------------------------------------------------------------------
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ipAddress      String?
+  userAgent      String?
+  impersonatedBy String?
+
+  /// Localisation approximative (en-têtes de géolocalisation Vercel),
+  /// même principe que l'ancien `Session.city`/`.country` Lucia.
+  city         String?
+  country      String?
+  lastActiveAt DateTime?
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model AuthAccount {
+  id         String @id @default(cuid())
+  accountId  String
+  providerId String
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Argon2id, mêmes paramètres que l'ancien `User.passwordHash` Lucia —
+  /// `null` pour un compte `providerId: "google"`.
+  password String?
+
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+/// Scaffolding interne Better Auth (jetons de vérification email/reset —
+/// non utilisé par nos parcours maison à base de code, voir
+/// MIGRATION_BETTER_AUTH.md, mais requis par le schéma du plugin).
+model AuthVerification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("auth_verifications")
+}
+
+model TwoFactor {
+  id          String @id @default(cuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Secret TOTP, chiffré par Better Auth (`BETTER_AUTH_SECRET`) — jamais en clair.
+  secret      String
+  /// Tableau JSON de codes de secours, chiffré par Better Auth.
+  backupCodes String
+
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+
+  @@index([secret])
+  @@index([userId])
+  @@map("two_factors")
 }
 
 model Session {
@@ -187,25 +292,25 @@ model Session {
 /// (validation 2FA, changement de mot de passe) : voir `recordLoginEvent`,
 /// seul point d'écriture (`$lib/prisma/loginEvent/loginEvent.ts`).
 model LoginEvent {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime @default(now())
   /// Mêmes colonnes et même origine que `Session.userAgent`/`ipAddress`/
   /// `city`/`country` — capturées une seule fois, jamais recalculées.
-  userAgent String?
-  ipAddress String?
-  city      String?
-  country   String?
+  userAgent   String?
+  ipAddress   String?
+  city        String?
+  country     String?
   /// 'password' | 'google' | 'password-reset' — jamais 'signup' pour l'alerte
   /// (voir `isNewDevice`), toujours pour l'historique.
-  method    String
+  method      String
   /// Vrai si `recordLoginEvent` n'a trouvé aucune connexion antérieure avec
   /// ce même `userAgent` pour ce compte — a déclenché l'e-mail « nouvelle
   /// connexion » (`$lib/server/newDeviceAlert.ts`), jamais recalculé après
   /// coup : ce champ documente ce qui a été décidé au moment de la
   /// connexion, pas un état dérivable a posteriori.
-  isNewDevice Boolean @default(false)
+  isNewDevice Boolean  @default(false)
 
   @@index([userId, createdAt])
   @@map("login_events")
@@ -303,32 +408,32 @@ model Address {
 
 // COMMERCE-PLUGIN : commande PENDING (panier) puis PAID après webhook Stripe.
 model Order {
-  id                  String      @id @default(cuid())
-  userId              String
+  id                   String      @id @default(cuid())
+  userId               String
   // Adresse de livraison (colis Sendcloud) et adresse de facturation
   // (facture PDF) : deux champs distincts depuis la séparation shipping/billing
   // — jusque là une seule adresse servait aux deux usages. Peuvent pointer
   // vers la même `Address` (cas « identique à l'adresse de livraison », le
   // défaut au checkout).
-  shippingAddressId   String?
-  billingAddressId    String?
-  subtotal            Decimal     @default(0) @db.Decimal(10, 2)
-  tax                 Decimal     @default(0) @db.Decimal(10, 2)
-  total               Decimal     @default(0) @db.Decimal(10, 2)
-  status              OrderStatus @default(PENDING)
-  promoCode           String?
-  discountAmount      Decimal     @default(0) @db.Decimal(10, 2)
+  shippingAddressId    String?
+  billingAddressId     String?
+  subtotal             Decimal     @default(0) @db.Decimal(10, 2)
+  tax                  Decimal     @default(0) @db.Decimal(10, 2)
+  total                Decimal     @default(0) @db.Decimal(10, 2)
+  status               OrderStatus @default(PENDING)
+  promoCode            String?
+  discountAmount       Decimal     @default(0) @db.Decimal(10, 2)
   /// Carte cadeau appliquée : `giftCardAmount` est déjà inclus dans
   /// `discountAmount` ci-dessus (qui reste la remise totale utilisée par le
   /// calcul de facture) — ces deux champs ne servent qu'à l'affichage /
   /// l'audit du détail de la remise.
-  giftCardCode        String?
-  giftCardAmount      Decimal     @default(0) @db.Decimal(10, 2)
+  giftCardCode         String?
+  giftCardAmount       Decimal     @default(0) @db.Decimal(10, 2)
   /// Relance panier abandonné (`StoreSettings.cartRecoveryEnabled`,
   /// `$lib/server/jobs/cartRecovery.ts`) : horodatage de chaque email envoyé,
   /// pour ne jamais relancer deux fois le même palier sur la même commande.
-  cartReminder1SentAt DateTime?
-  cartReminder2SentAt DateTime?
+  cartReminder1SentAt  DateTime?
+  cartReminder2SentAt  DateTime?
   /// Relance avis produit post-livraison (`StoreSettings.reviewReminderEnabled`,
   /// `$lib/server/jobs/reviewReminder.ts`) : posé une seule fois, jamais
   /// réinitialisé — un seul rappel par commande, contrairement aux deux
@@ -339,12 +444,12 @@ model Order {
   /// tentative de paiement, jamais recalculés ensuite. Recopiés sur
   /// `Transaction` au moment du webhook, même pattern que les adresses
   /// aplaties ci-dessous.
-  riskScore   Int?
-  riskLevel   String?
-  riskFactors String[] @default([])
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  items               OrderItem[]
+  riskScore            Int?
+  riskLevel            String?
+  riskFactors          String[]    @default([])
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  items                OrderItem[]
 
   shippingOption String?
   shippingCost   Decimal? @db.Decimal(10, 2)
@@ -774,11 +879,11 @@ model Transaction {
   products Json
 
   /// Instantané fiscal figé au paiement (lot 2).
-  invoiceNumber  String?  @unique
-  subtotalHt     Decimal  @default(0) @db.Decimal(10, 2)
-  taxRate        Float    @default(5.5)
-  taxAmount      Decimal  @default(0) @db.Decimal(10, 2)
-  discountAmount Decimal  @default(0) @db.Decimal(10, 2)
+  invoiceNumber  String? @unique
+  subtotalHt     Decimal @default(0) @db.Decimal(10, 2)
+  taxRate        Float   @default(5.5)
+  taxAmount      Decimal @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
   promoCode      String?
 
   user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -891,19 +996,19 @@ model LoyaltyAward {
 // BLOG-PLUGIN ____________________________________________________________________________
 
 model BlogPost {
-  id         String        @id @default(cuid())
-  title      String
-  content    String
-  slug       String        @unique
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  published  Boolean       @default(false)
-  author     BlogAuthor    @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  authorId   String
-  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId String?
-  comments   BlogComment[]
-  tags       BlogPostTag[]
+  id             String                  @id @default(cuid())
+  title          String
+  content        String
+  slug           String                  @unique
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  published      Boolean                 @default(false)
+  author         BlogAuthor              @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  authorId       String
+  category       BlogCategory?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId     String?
+  comments       BlogComment[]
+  tags           BlogPostTag[]
   /// Remplace à terme `category`/`tags` ci-dessus (migration en cours, voir BlogTaxonomy).
   taxonomyValues BlogPostTaxonomyValue[]
 
@@ -1031,74 +1136,74 @@ model ContactSubmission {
 /// masqué visuellement : chaque route publique concernée vérifie le flag
 /// avant de lire/écrire ses propres données.
 model StoreSettings {
-  id                   String   @id @default("singleton")
-  wishlistEnabled      Boolean  @default(false)
-  crossSellEnabled     Boolean  @default(false)
-  returnsEnabled       Boolean  @default(false)
-  savedPaymentsEnabled Boolean  @default(false)
-  loyaltyEnabled       Boolean  @default(false)
-  giftCardsEnabled     Boolean  @default(false)
-  productQnaEnabled    Boolean  @default(false)
-  cartRecoveryEnabled  Boolean  @default(false)
-  flashSaleEnabled     Boolean  @default(false)
-  referralEnabled      Boolean  @default(false)
-  stockAlertsEnabled   Boolean  @default(false)
+  id                              String   @id @default("singleton")
+  wishlistEnabled                 Boolean  @default(false)
+  crossSellEnabled                Boolean  @default(false)
+  returnsEnabled                  Boolean  @default(false)
+  savedPaymentsEnabled            Boolean  @default(false)
+  loyaltyEnabled                  Boolean  @default(false)
+  giftCardsEnabled                Boolean  @default(false)
+  productQnaEnabled               Boolean  @default(false)
+  cartRecoveryEnabled             Boolean  @default(false)
+  flashSaleEnabled                Boolean  @default(false)
+  referralEnabled                 Boolean  @default(false)
+  stockAlertsEnabled              Boolean  @default(false)
   /// Bundle « Souvent achetés ensemble » (`$lib/prisma/bundles/bundles.ts`) :
   /// suggestion panier + petite remise automatique, basées sur la
   /// co-occurrence réelle dans `OrderItem` — pas de table dédiée.
-  frequentlyBoughtTogetherEnabled Boolean @default(false)
-  reviewReminderEnabled Boolean @default(false)
+  frequentlyBoughtTogetherEnabled Boolean  @default(false)
+  reviewReminderEnabled           Boolean  @default(false)
   /// Alerte wishlist (baisse de prix / vente flash), voir
   /// `$lib/server/jobs/wishlistPriceAlert.ts` — converge `wishlistEnabled` et
   /// `flashSaleEnabled` sans dépendre directement de ces deux flags.
-  wishlistPriceAlertEnabled Boolean @default(false)
+  wishlistPriceAlertEnabled       Boolean  @default(false)
   /// Calcule un score de risque à chaque tentative de checkout
   /// (`$lib/server/fraud.ts`) et le pose sur `Order`/`Transaction`. Affiché
   /// dans `/admin/sales`, indépendant du blocage ci-dessous.
-  fraudDetectionEnabled Boolean @default(false)
+  fraudDetectionEnabled           Boolean  @default(false)
   /// N'a d'effet que si `fraudDetectionEnabled` est aussi actif (vérifié
   /// dans le code, pas seulement documenté) : bloque la commande (jamais de
   /// session Stripe créée) quand le score atteint le niveau `high`.
-  fraudBlockingEnabled Boolean @default(false)
+  fraudBlockingEnabled            Boolean  @default(false)
   /// Relance e-mail (digest, `$lib/server/jobs/recentlyViewedReminder.ts`)
   /// pour un produit consulté (`ProductView`) puis jamais acheté — comptes
   /// connectés uniquement, aucun suivi de visiteur anonyme dans ce projet.
-  recentlyViewedReminderEnabled Boolean @default(false)
+  recentlyViewedReminderEnabled   Boolean  @default(false)
   /// Taux de TVA appliqué au catalogue (fraction, ex. 0.20 = 20 %), lu par
   /// `$lib/server/vat.ts` — remplace l'ancienne constante `TVA_RATE` figée
   /// à 5,5 % dans le code (taux réduit, incorrect pour de la bijouterie qui
   /// relève du taux normal en France). Valeur de défaut = l'ancienne
   /// constante, pour ne rien changer silencieusement en production tant que
   /// l'admin n'a pas lui-même ajusté le taux depuis `/admin/settings`.
-  vatRate Float @default(0.055)
+  vatRate                         Float    @default(0.055)
   /// Délai de livraison estimé (jours ouvrés) affiché au client avant
   /// validation de commande (Code conso. art. L216-1) — `null` = rien
   /// affiché (comportement inchangé tant que l'admin n'a pas saisi une
   /// vraie estimation depuis `/admin/settings`, aucune date inventée).
-  estimatedDeliveryMinDays Int?
-  estimatedDeliveryMaxDays Int?
+  estimatedDeliveryMinDays        Int?
+  estimatedDeliveryMaxDays        Int?
   /// Identité de l'entreprise (`$lib/server/companyIdentity.ts`), saisie
   /// depuis `/admin/identite` — remplace les `[À COMPLÉTER]` de
   /// `/mentions-legales` et les variables d'environnement `INVOICE_COMPANY_*`
   /// (`$lib/server/invoice/company.ts`, conservées comme repli si non
   /// saisi ici). `null` partout par défaut : personne ne peut deviner ces
   /// informations à la place de l'entreprise.
-  companyName                String?
-  companyLegalForm           String?
-  companyShareCapital        String?
-  companyAddress             String?
-  companyCity                String?
-  companySiret               String?
-  companyVatNumber           String?
-  companyPublicationDirector String?
-  companyPhone               String?
-  companyEmail               String?
+  companyName                     String?
+  companyLegalForm                String?
+  companyShareCapital             String?
+  companyAddress                  String?
+  companyCity                     String?
+  companySiret                    String?
+  companyVatNumber                String?
+  companyPublicationDirector      String?
+  companyPhone                    String?
+  companyEmail                    String?
   /// URL Cloudinary du logo (upload direct depuis `/admin/identite`, même
   /// mécanisme que les images produit). Utilisé pour le JSON-LD
   /// `Organization` (`SEO.svelte`) et l'en-tête des factures/avoirs PDF —
   /// jamais de logo par défaut inventé si non fourni.
-  companyLogoUrl              String?
-  updatedAt                   DateTime @updatedAt
+  companyLogoUrl                  String?
+  updatedAt                       DateTime @updatedAt
 
   @@map("store_settings")
 }
