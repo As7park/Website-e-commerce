@@ -242,4 +242,3 @@ export async function latestUsers() {
 		createdAt: user.createdAt.toISOString()
 	}));
 }
-

@@ -71,26 +71,26 @@ rg "AUTH-PLUGIN" src/ prisma/
 Les blocs encadrés par `AUTH-PLUGIN ▼` et `AUTH-PLUGIN ▲` se suppriment tels
 quels ; les marqueurs isolés demandent une décision. Inventaire :
 
-| Fichier                                                                   | Action                                                                                                                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/hooks.server.ts`                                                     | retirer `betterAuthHandle` et `authHandle` de la séquence ; adapter ou supprimer `pendingOrderHandle`                                  |
-| `src/app.d.ts`                                                            | retirer `session`, `user`, `role`, `isMfaEnabled`, `registered2FA` de `Locals`                                                         |
-| `src/routes/+layout.server.ts`                                            | retirer la projection `user`                                                                                                           |
-| `src/routes/+layout.svelte`                                               | retirer l'hydratation du panier serveur                                                                                                |
-| `src/lib/components/Navigation.svelte`                                    | retirer le bouton « Se connecter »                                                                                                     |
-| `src/lib/components/cart/Cart.svelte`                                     | retirer le bloc compte, ne garder que « Checkout »                                                                                     |
-| `src/lib/components/checkout/AddressSelector.svelte`                      | remplacer le lien vers l'espace compte par un formulaire d'adresse dans le tunnel                                                      |
-| `src/routes/auth/settings/factures/` et `src/routes/admin/sales/facture/` | rediriger vers une page de suivi de commande publique                                                                                  |
-| `src/routes/checkout/+page.server.ts`                                     | remplacer la garde `locals.user` (voir étape 4)                                                                                        |
-| `src/routes/admin/+page.server.ts`                                        | remplacer la garde d'accès **avant** de la supprimer                                                                                   |
-| `src/routes/admin/users/+page.server.ts`                                  | idem                                                                                                                                   |
-| `src/routes/admin/users/[id]/+page.server.ts`                             | idem                                                                                                                                   |
-| `src/routes/admin/blog/post/create/+page.svelte`                          | choisir l'auteur dans une liste au lieu du compte connecté                                                                             |
-| `src/lib/prisma/user/user.ts`                                             | supprimer les fonctions d'identification restantes (`getUserByEmailPrisma`, `updateUserEmail*`, `verifyUserEmail`)                     |
-| `src/lib/prisma/user/updateUserSecurity.ts`                               | supprimer, ou remplacer le hachage Argon2                                                                                              |
-| `src/lib/prisma/session/sessions.ts`                                      | supprimer (sessions Better Auth)                                                                                                       |
-| `src/lib/sitemap.config.ts`                                               | retirer `/auth` des routes exclues                                                                                                     |
-| `prisma/schema.prisma`                                                    | voir étape 3                                                                                                                           |
+| Fichier                                                                   | Action                                                                                                             |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `src/hooks.server.ts`                                                     | retirer `betterAuthHandle` et `authHandle` de la séquence ; adapter ou supprimer `pendingOrderHandle`              |
+| `src/app.d.ts`                                                            | retirer `session`, `user`, `role`, `isMfaEnabled`, `registered2FA` de `Locals`                                     |
+| `src/routes/+layout.server.ts`                                            | retirer la projection `user`                                                                                       |
+| `src/routes/+layout.svelte`                                               | retirer l'hydratation du panier serveur                                                                            |
+| `src/lib/components/Navigation.svelte`                                    | retirer le bouton « Se connecter »                                                                                 |
+| `src/lib/components/cart/Cart.svelte`                                     | retirer le bloc compte, ne garder que « Checkout »                                                                 |
+| `src/lib/components/checkout/AddressSelector.svelte`                      | remplacer le lien vers l'espace compte par un formulaire d'adresse dans le tunnel                                  |
+| `src/routes/auth/settings/factures/` et `src/routes/admin/sales/facture/` | rediriger vers une page de suivi de commande publique                                                              |
+| `src/routes/checkout/+page.server.ts`                                     | remplacer la garde `locals.user` (voir étape 4)                                                                    |
+| `src/routes/admin/+page.server.ts`                                        | remplacer la garde d'accès **avant** de la supprimer                                                               |
+| `src/routes/admin/users/+page.server.ts`                                  | idem                                                                                                               |
+| `src/routes/admin/users/[id]/+page.server.ts`                             | idem                                                                                                               |
+| `src/routes/admin/blog/post/create/+page.svelte`                          | choisir l'auteur dans une liste au lieu du compte connecté                                                         |
+| `src/lib/prisma/user/user.ts`                                             | supprimer les fonctions d'identification restantes (`getUserByEmailPrisma`, `updateUserEmail*`, `verifyUserEmail`) |
+| `src/lib/prisma/user/updateUserSecurity.ts`                               | supprimer, ou remplacer le hachage Argon2                                                                          |
+| `src/lib/prisma/session/sessions.ts`                                      | supprimer (sessions Better Auth)                                                                                   |
+| `src/lib/sitemap.config.ts`                                               | retirer `/auth` des routes exclues                                                                                 |
+| `prisma/schema.prisma`                                                    | voir étape 3                                                                                                       |
 
 Point de vigilance : les gardes d'administration ne sont pas décoratives. Les
 supprimer sans les remplacer ouvre `/admin/**` — donc la liste des clients, les

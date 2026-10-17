@@ -42,9 +42,7 @@ function fakeGoogleIdToken(claims: { sub: string; email: string; name?: string }
 test.describe('Auth — Google OAuth', () => {
 	test.setTimeout(2 * 60_000);
 
-	test('bouton, départ réel vers Google (et bypass idToken si clés factices)', async ({
-		page
-	}) => {
+	test('bouton, départ réel vers Google (et bypass idToken si clés factices)', async ({ page }) => {
 		await test.step('1. La page login expose le bouton Google', async () => {
 			await page.goto('/auth/login');
 			await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();

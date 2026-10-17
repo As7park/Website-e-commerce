@@ -124,27 +124,27 @@ nouveau cookie.
     demandait pas non plus). Compromis de sécurité assumé, pas un oubli.
 15. **Jamais de cookie de session signé à la main.** Toute création/
     modification de session passe par `auth.api.X({ returnHeaders: true })`
-    + `applyAuthCookies()` (`$lib/auth/cookies.ts`), qui rejoue les
-    `Set-Cookie` renvoyés par Better Auth tels quels. Conséquence directe :
-    **une réinitialisation de mot de passe (`/auth/forgot-password` →
-    `/auth/reset-password`) ne reconnecte plus automatiquement** —
-    contrairement à l'ancien comportement Lucia. En effet, à cette étape
-    du parcours il n'existe ni session Better Auth ni cookie « two_factor »
-    pendant (l'identité a été prouvée par notre propre code+2FA maison,
-    jamais par un appel `auth.api`), et toute tentative de ré-authentifier
-    via `auth.api.signInEmail` avec le nouveau mot de passe redéclencherait
-    une 2FA déjà prouvée dans CE MÊME parcours. Fabriquer la session à la
-    main exigerait de reproduire la signature HMAC-SHA256 interne de
-    Better Auth (algorithme stable mais non documenté publiquement, et le
-    nom du cookie varie lui-même en production selon `__Secure-` — risque
-    jugé disproportionné face au gain). L'utilisateur se reconnecte donc
-    explicitement avec son nouveau mot de passe — testé ainsi dans
-    `journey.spec.ts` (étape 13) et `reset-password-2fa.spec.ts`.
-    Les autres flux concernés restent inchangés côté UX :
-    - `/auth/settings` (changement de mot de passe) : une session existe
+    - `applyAuthCookies()` (`$lib/auth/cookies.ts`), qui rejoue les
+      `Set-Cookie` renvoyés par Better Auth tels quels. Conséquence directe :
+      **une réinitialisation de mot de passe (`/auth/forgot-password` →
+      `/auth/reset-password`) ne reconnecte plus automatiquement** —
+      contrairement à l'ancien comportement Lucia. En effet, à cette étape
+      du parcours il n'existe ni session Better Auth ni cookie « two_factor »
+      pendant (l'identité a été prouvée par notre propre code+2FA maison,
+      jamais par un appel `auth.api`), et toute tentative de ré-authentifier
+      via `auth.api.signInEmail` avec le nouveau mot de passe redéclencherait
+      une 2FA déjà prouvée dans CE MÊME parcours. Fabriquer la session à la
+      main exigerait de reproduire la signature HMAC-SHA256 interne de
+      Better Auth (algorithme stable mais non documenté publiquement, et le
+      nom du cookie varie lui-même en production selon `__Secure-` — risque
+      jugé disproportionné face au gain). L'utilisateur se reconnecte donc
+      explicitement avec son nouveau mot de passe — testé ainsi dans
+      `journey.spec.ts` (étape 13) et `reset-password-2fa.spec.ts`.
+      Les autres flux concernés restent inchangés côté UX :
+    * `/auth/settings` (changement de mot de passe) : une session existe
       déjà, `auth.api.changePassword({ revokeOtherSessions: true })` la
       réémet légitimement — aucune reconnexion requise.
-    - `/auth/2fa/reset` (code de secours **pendant une connexion normale**,
+    * `/auth/2fa/reset` (code de secours **pendant une connexion normale**,
       pas pendant un reset de mot de passe) : `verifyBackupCode` crée la
       session via le mécanisme normal de Better Auth — aucune reconnexion
       requise non plus.
@@ -192,21 +192,25 @@ suivante. Commit par phase.
       (`anonymizeUser.ts` purge aussi `AuthAccount`/`TwoFactor`), admin
       (reset mdp/MFA tiers → `AuthAccount`/`invalidateUserSessions`).
 - [x] **Phase 4** — Fichiers `src/lib/lucia/{index,session,hooks,password,
-      user,oauth,2fa,passwordReset}.ts` supprimés (zéro import restant,
+user,oauth,2fa,passwordReset}.ts` supprimés (zéro import restant,
       vérifié par grep avant suppression). Dépendances npm (`lucia`,
       `@lucia-auth/adapter-prisma`, `arctic`) et modèle Prisma `Session`
       (Lucia) **pas encore retirés** à ce stade — voir note ci-dessous.
       `src/lib/lucia/{ids,utils,email-verification,deviceContext,
-      deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
+deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
       sans dépendance sur l'objet `Lucia`/la table `Session`, toujours
       utilisés (génération d'id/OTP, vérification d'email, empreinte
       d'appareil) — un renommage mécanique (`src/lib/lucia/` →
       `src/lib/shared-auth/` ou fusion dans `$lib/server/`) est prévu mais
       pas bloquant, pas fait dans cette passe pour limiter le risque d'une
       dernière réécriture de masse juste avant la vérification finale.
-- [ ] **Phase 5** — Documentation (`docs/auth/README.md`,
-      `docs/deployment/README.md`, `RESTE_A_FAIRE.md`).
-- [ ] **Phase 6** — Vérification finale complète (suite e2e intégrale).
+- [x] **Phase 5** — Documentation (`docs/auth/README.md`,
+      `docs/auth/retrait.md`, `docs/deployment/README.md`,
+      `docs/secrets-rotation.md`, `RESTE_A_FAIRE.md`).
+- [x] **Phase 6** — Vérification finale complète (suite e2e intégrale,
+      `npm run check`/`eslint`/`prettier`/`vitest`) — voir journal
+      d'exécution pour le détail des résultats et des 5 bugs trouvés et
+      corrigés en cours de route.
 
 ## Écarts restants (à traiter avant de considérer la migration terminée)
 
@@ -214,17 +218,84 @@ suivante. Commit par phase.
   dans `package.json` — plus aucun import dans `src/`, à retirer avec
   `npm uninstall` + une migration Prisma qui supprime le modèle `Session`
   (Lucia) et les 4 colonnes `User` désormais mortes (`passwordHash`,
-  `totpKey`, `recoveryCode`, `encryptionVersion`) une fois la suite e2e
-  complète confirmée verte sur cette base.
-- `src/lib/prisma/user/user.ts` : plusieurs fonctions marquées
-  `AUTH-PLUGIN` (`createUserInDatabase`, `getUserByGoogleIdPrisma`,
-  `getUserTotpKey`, `updateUserRecoveryCode`, `upgradeUserTotpKeyEncryption`,
-  etc.) n'ont probablement plus aucun appelant réel — pas purgées dans
-  cette passe (zéro risque à les laisser, le compilateur ne signale pas
-  un export inutilisé) ; à vérifier par grep avant suppression définitive.
+  `totpKey`, `recoveryCode`, `encryptionVersion`).
 - Renommage `src/lib/lucia/` → un chemin neutre (voir Phase 4) : ~24
   sites d'import à travers `src/`, mécanique mais pas fait.
+- `scripts/check-legacy-encryption.mjs` (et le script npm associé) devenus
+  obsolètes : plus aucune écriture ne passe par l'ancien chiffrement AES
+  qu'il surveille, son compteur est figé depuis la bascule.
 
 ## Journal d'exécution
 
-(Rempli au fur et à mesure, pas à l'avance.)
+- **Fonctions mortes retirées de `src/lib/prisma/user/user.ts`**
+  (`createUserInDatabase`, `getUserByGoogleIdPrisma`, `getUserTotpKey`,
+  `updateUserRecoveryCode`, `upgradeUserTotpKeyEncryption`,
+  `getUserPasswordHashPrisma`, `getUserRecoveryAndGoogleId`,
+  `getUserByIdPrisma`, `getUserRecoverCode`, `getUserTOTPKey`,
+  `getUserPasswordHash`, `findUserWithRecoveryCode`, `findUserByGoogleId`,
+  `createUserWithGoogleOAuth`) — zéro appelant restant, vérifié par grep
+  avant suppression. L'import `$lib/lucia/encryption` a disparu avec elles.
+- **Bugs réels trouvés et corrigés pendant la vérification e2e** (tous
+  confirmés par exécution réelle, `journey.spec.ts` avant/après) :
+  1. `isMfaEnabled` manquait de `user.additionalFields`
+     (`$lib/auth/index.ts`) — Better Auth filtre silencieusement tout champ
+     non déclaré des réponses de session (`getSession`, etc.), donc
+     `toLocalsUser` le voyait toujours comme `false`, quelle que soit sa
+     valeur réelle en base. La garde « 2FA exigée mais pas configurée »
+     (`authHandle`) ne se déclenchait donc jamais. Diagnostiqué par un
+     test manuel direct (curl + inspection DB), hors du bruit d'un test
+     Playwright complet.
+  2. `auth.api.enableTwoFactor` exige le mot de passe actuel dès que le
+     compte en a un — `allowPasswordless: true` ne dispense que les
+     comptes SANS mot de passe local (`shouldRequirePassword`,
+     `node_modules/better-auth/dist/utils/password.mjs`), pas tous les
+     comptes comme je l'avais supposé. Aurait changé l'UX existante
+     (jamais de mot de passe demandé pour armer la 2FA). Remplacé par
+     `enableTwoFactorDirect` (`$lib/auth/twoFactor.ts`), qui écrit la ligne
+     `TwoFactor` nous-mêmes avec le même chiffrement — Better Auth la relit
+     ensuite normalement (`auth.api.verifyTOTP`).
+  3. `src/lib/auth/index.ts` : `baseURL` passé comme une chaîne figée au
+     démarrage (`resolveAppUrlOrDefault()`, repli port 2000). Le hook
+     `svelteKitHandler` (`isAuthPath`, `better-auth/dist/integrations/
+svelte-kit.mjs`) compare l'origine de CHAQUE requête à cette chaîne
+     pour décider si elle relève de Better Auth — sur tout port différent
+     (e2e sur 2001, un dev alternatif, un Preview Vercel), la comparaison
+     échoue en silence et **aucune** route `/api/auth/**` n'est plus
+     jamais interceptée (404 silencieux côté SvelteKit, jamais une erreur
+     Better Auth visible). Cassait spécifiquement la connexion Google
+     (`authClient.signIn.social`, qui appelle cette route en HTTP réel
+     depuis le navigateur) — les flux qui appellent `auth.api.X()`
+     directement en process (signup, login, 2FA…) n'en souffraient pas,
+     ce qui a longtemps masqué le bug. Corrigé avec la forme dynamique
+     officielle de Better Auth (`{ allowedHosts, fallback }`), résolue par
+     requête plutôt qu'une fois au démarrage.
+  4. Un `.consume()` ajouté par erreur sur `totpUpdateBucket`
+     (`/auth/2fa/setup`) lors de la réécriture — l'ancien code n'appelait
+     que `.check()` (jamais `.consume()`), un quota qui ne limitait donc
+     jamais rien en pratique. Mon ajout, plus « correct » en apparence,
+     épuisait les 3 jetons (rechargés sur 10 min) avant la fin du parcours
+     de test, qui configure la 2FA trois fois. Retiré pour revenir au
+     comportement d'origine — pas une régression à réintroduire sans en
+     discuter avec l'utilisateur d'abord (le quota d'origine était déjà un
+     no-op, mais ce n'est pas à cette migration de le corriger).
+  5. `verifyPasswordStrength` (`$lib/auth/password.ts`, appel réseau à
+     l'API Have I Been Pwned) n'avait ni timeout ni filet de sécurité —
+     un incident réseau transitoire (observé plusieurs fois dans cet
+     environnement de vérification) faisait échouer en 500 toute
+     inscription ou changement de mot de passe. Comportement préexistant
+     (identique à l'ancien `$lib/lucia/password.ts`, pas une régression de
+     cette migration), mais bloquait la vérification du reste — ajouté un
+     timeout de 5 s et un repli (« non compromis ») sur erreur réseau,
+     jamais sur un vrai mot de passe refusé par le service.
+- **Vérification finale** : `journey.spec.ts` (18 étapes, parcours complet
+  avec 2FA) vert de façon reproductible après les correctifs ci-dessus ;
+  suite `e2e/auth/**` + `e2e/admin/users.spec.ts` +
+  `e2e/commerce/cleanup.spec.ts` : 18/18 ; suite e2e complète (119 tests) :
+  111 passés directement, 8 échecs analysés individuellement — **aucun
+  n'est lié à cette migration** (bug `Prisma.Decimal` non sérialisable
+  préexistant dans le tableau de bord admin, variables d'environnement
+  `ACCOUNTING_EXPORT_EMAIL`/`DISPUTE_ALERT_EMAIL` absentes de cet
+  environnement, tests « Live » nécessitant de vraies clés tierces, et le
+  flake Have I Been Pwned déjà corrigé ci-dessus) ; les deux specs touchées
+  par ce dernier repassent au vert une fois isolées. `npm run check`,
+  `npx eslint .`, `npx prettier --check .`, `npx vitest run` : tous verts.

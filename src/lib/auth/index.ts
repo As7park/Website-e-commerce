@@ -31,7 +31,13 @@ export const auth = betterAuth({
 	// 2001, Preview Vercel), et Better Auth n'intercepte alors plus aucune
 	// requête, en silence (404 côté SvelteKit). Voir MIGRATION_BETTER_AUTH.md.
 	baseURL: {
-		allowedHosts: ['localhost:*', '127.0.0.1:*', 'madeindiamonds.com', '*.madeindiamonds.com', '*.vercel.app'],
+		allowedHosts: [
+			'localhost:*',
+			'127.0.0.1:*',
+			'madeindiamonds.com',
+			'*.madeindiamonds.com',
+			'*.vercel.app'
+		],
 		fallback: resolveAppUrl() ?? undefined
 	},
 	database: prismaAdapter(prisma, { provider: 'postgresql' }),
