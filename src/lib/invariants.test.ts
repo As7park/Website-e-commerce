@@ -43,10 +43,14 @@ const rel = (file: string) => relative(ROOT, file).split(sep).join('/');
 
 describe('Invariants du dépôt', () => {
 	/**
-	 * `Session.id` EST le token du cookie (`createSession`, $lib/lucia/session.ts) :
-	 * aucun hachage entre le cookie et la clé primaire. Le renvoyer au client ou
-	 * l'écrire dans un journal revient à publier un identifiant de connexion
-	 * réutilisable tel quel. `sessionPublicId()` existe pour ces usages.
+	 * Sous Lucia, `Session.id` ÉTAIT le token du cookie : aucun hachage entre le
+	 * cookie et la clé primaire, donc le renvoyer au client ou l'écrire dans un
+	 * journal revenait à publier un identifiant de connexion réutilisable tel
+	 * quel. Depuis la migration Better Auth (`$lib/auth/session.ts`), `.id` est
+	 * un simple id de ligne, distinct du secret (`AuthSession.token`) — mais
+	 * cette règle reste appliquée par défense en profondeur (`sessionPublicId()`
+	 * existe toujours pour ces usages, et `.id` continue d'identifier la ligne
+	 * dans les révocations, jamais le secret lui-même).
 	 *
 	 * Déjà survenu trois fois : page des sessions actives, fiche admin d'un
 	 * compte, puis deux lignes de log distinctes.
@@ -56,6 +60,7 @@ describe('Invariants du dépôt', () => {
 		// webhooks Stripe, dont `session.id` désigne une session de paiement.
 		const allowed = [
 			'src/lib/lucia/',
+			'src/lib/auth/',
 			'src/lib/prisma/session/',
 			'src/lib/prisma/passwordResetSession/',
 			'src/lib/prisma/sessionRevokeToken/',

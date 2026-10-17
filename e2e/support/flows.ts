@@ -100,12 +100,10 @@ export async function submitCode(page: Page, code: string, button = 'Vérifier')
 }
 
 /**
- * Nom du cookie de session.
- *
- * `sessionCookie.name` n'est pas surchargé dans `src/lib/lucia/index.ts`, Lucia
- * retombe donc sur sa valeur par défaut.
+ * Nom du cookie de session — défaut de Better Auth (`src/lib/auth/index.ts`
+ * ne le surcharge pas, voir MIGRATION_BETTER_AUTH.md).
  */
-export const SESSION_COOKIE = 'auth_session';
+export const SESSION_COOKIE = 'better-auth.session_token';
 
 /** Cookie de session courant du navigateur, ou `null` s'il n'y en a pas. */
 export async function sessionCookie(page: Page) {

@@ -90,6 +90,76 @@ nouveau cookie.
     pas un défaut de la migration mais une conséquence du changement de
     système. Pas un problème pour les mots de passe/comptes Google
     (préservés, voir §6-7), uniquement une reconnexion à faire.
+12. **Architecture 2FA fondamentalement différente de Lucia.** Chez Lucia,
+    le login créait IMMÉDIATEMENT une session (`twoFactorVerified: false`),
+    et chaque page vérifiait ce drapeau. Better Auth ne crée JAMAIS de
+    session tant que le second facteur (si exigé) n'a pas été validé :
+    `signInEmail` renvoie `{twoFactorRedirect: true}` et pose un cookie
+    signé éphémère (« two_factor »), opaque pour notre code — seul
+    `auth.api.verifyTOTP`/`verifyBackupCode` sait le lire. Conséquences :
+    - `event.locals.session`/`.session.twoFactorVerified` n'existe plus : si
+      une session existe, la 2FA (si exigée) est déjà passée. `authHandle`
+      (`$lib/auth/hooks.ts`) ne garde que le cas « 2FA exigée mais jamais
+      configurée » (redirige vers `/auth/2fa/setup`).
+    - `/auth/2fa` (code TOTP après connexion) et `/auth/2fa/reset` (code de
+      secours) n'ont plus besoin de session préalable : ils appellent
+      `auth.api.verifyTOTP`/`verifyBackupCode` directement, qui créent la
+      session définitive en cas de succès (cookies appliqués via
+      `applyAuthCookies`, voir §15).
+13. **Un seul code de secours par compte, pas dix.** Le plugin `twoFactor`
+    de Better Auth génère par défaut 10 codes de secours réutilisables
+    individuellement (modèle différent de l'ancien `User.recoveryCode`
+    unique, qui RETIRAIT la 2FA une fois utilisé). Pour préserver le
+    comportement existant (un seul code, son usage retire la 2FA et force
+    une reconfiguration), `backupCodeOptions: { amount: 1, length: 15 }`
+    (`$lib/auth/index.ts`) — `length: 15` donne un code affiché de 16
+    caractères (5 + tiret + 10), identique à l'ancien format en longueur.
+    `$lib/auth/twoFactor.ts` (`disableTwoFactor`) retire explicitement la
+    2FA après usage du code de secours — Better Auth ne le fait jamais de
+    lui-même (son modèle natif n'en a pas besoin, vu que plusieurs codes
+    existent).
+14. **Configurer/retirer la 2FA ne demande jamais le mot de passe**
+    (`allowPasswordless: true` dans le plugin `twoFactor`) — même
+    comportement qu'avant la migration (l'ancienne interface ne le
+    demandait pas non plus). Compromis de sécurité assumé, pas un oubli.
+15. **Jamais de cookie de session signé à la main.** Toute création/
+    modification de session passe par `auth.api.X({ returnHeaders: true })`
+    + `applyAuthCookies()` (`$lib/auth/cookies.ts`), qui rejoue les
+    `Set-Cookie` renvoyés par Better Auth tels quels. Conséquence directe :
+    **une réinitialisation de mot de passe (`/auth/forgot-password` →
+    `/auth/reset-password`) ne reconnecte plus automatiquement** —
+    contrairement à l'ancien comportement Lucia. En effet, à cette étape
+    du parcours il n'existe ni session Better Auth ni cookie « two_factor »
+    pendant (l'identité a été prouvée par notre propre code+2FA maison,
+    jamais par un appel `auth.api`), et toute tentative de ré-authentifier
+    via `auth.api.signInEmail` avec le nouveau mot de passe redéclencherait
+    une 2FA déjà prouvée dans CE MÊME parcours. Fabriquer la session à la
+    main exigerait de reproduire la signature HMAC-SHA256 interne de
+    Better Auth (algorithme stable mais non documenté publiquement, et le
+    nom du cookie varie lui-même en production selon `__Secure-` — risque
+    jugé disproportionné face au gain). L'utilisateur se reconnecte donc
+    explicitement avec son nouveau mot de passe — testé ainsi dans
+    `journey.spec.ts` (étape 13) et `reset-password-2fa.spec.ts`.
+    Les autres flux concernés restent inchangés côté UX :
+    - `/auth/settings` (changement de mot de passe) : une session existe
+      déjà, `auth.api.changePassword({ revokeOtherSessions: true })` la
+      réémet légitimement — aucune reconnexion requise.
+    - `/auth/2fa/reset` (code de secours **pendant une connexion normale**,
+      pas pendant un reset de mot de passe) : `verifyBackupCode` crée la
+      session via le mécanisme normal de Better Auth — aucune reconnexion
+      requise non plus.
+16. **Bypass e2e de Google OAuth** (remplace l'ancien `isE2eGoogleBypass`
+    codé en dur dans `/auth/login/google/callback`) : l'échange de code
+    OAuth réel (`https://oauth2.googleapis.com/token`) est codé en dur côté
+    Better Auth, donc jamais simulable. Le point d'extension officiel est
+    `verifyIdToken` (option du provider), utilisé pour le flux « sign-in
+    with ID token » (`auth.api.signInSocial({ idToken })`) — conçu pour les
+    apps mobiles/SPA qui obtiennent déjà un ID token Google par un autre
+    canal, sans jamais passer par l'échange de code. Quand
+    `GOOGLE_CLIENT_ID` est factice (`isDummySecret`, donc jamais en
+    production), `verifyIdToken` devient permissif et accepte un JWT
+    syntaxiquement valide mais non signé — voir `$lib/auth/index.ts` et
+    `e2e/auth/google.spec.ts`.
 
 ## Phases
 
@@ -97,34 +167,63 @@ Chaque phase se termine par `npm run check` + `npx eslint .` + `npx vitest
 run` + les specs e2e `e2e/auth/**` concernées, avant de passer à la
 suivante. Commit par phase.
 
-- [ ] **Phase 0** — Dépendances (`better-auth`, adapter Prisma déjà inclus
-      dans le paquet principal), configuration minimale (`src/lib/auth/index.ts`),
-      montage dans `hooks.server.ts` en PARALLÈLE de Lucia (pas encore de
-      bascule), schéma Prisma étendu (nouvelles tables + champs additifs sur
-      `User`), migration Prisma appliquée aux deux bases (dev + e2e).
-- [ ] **Phase 1** — Scripts de migration de données (mots de passe,
-      comptes Google) + vérification manuelle sur une copie/un échantillon.
-- [ ] **Phase 2** — Bascule de `authHandle` : lit Better Auth au lieu de
-      Lucia, construit `locals` à l'identique. Signup/login/logout/Google
-      réécrits pour passer par `auth.api`. 2FA (setup/vérification/reset)
-      réécrite sur le plugin `twoFactor`. Rate-limiting, alertes, historique de
-      connexion rebranchés.
-- [ ] **Phase 3** — Email verification, reset de mot de passe (code + 2FA),
-      self-service sessions actives, RGPD, admin (reset mdp/MFA tiers) —
-      repointés sur les nouvelles tables sans changement de comportement
-      visible.
-- [ ] **Phase 4** — Suppression de Lucia (`lucia`, `@lucia-auth/adapter-prisma`,
-      `arctic`), suppression des anciennes tables (`Session` Lucia, champs
-      `User` devenus inutiles si sûr de ne plus en avoir besoin après coup —
-      sinon laissés en place une itération de plus par prudence), suppression
-      des fichiers `src/lib/lucia/**` devenus morts.
-- [ ] **Phase 5** — Mise à jour de la documentation (`docs/auth/README.md`,
-      `docs/auth/retrait.md`, `docs/deployment/README.md` — nouvelles variables
-      d'environnement `BETTER_AUTH_SECRET`/`BETTER_AUTH_URL`, note sur la
-      reconfiguration 2FA obligatoire) + `RESTE_A_FAIRE.md`.
-- [ ] **Phase 6** — Vérification finale complète (suite e2e intégrale,
-      pas seulement `e2e/auth/**` — Better Auth touche l'identité donc
-      potentiellement tout parcours connecté).
+- [x] **Phase 0** — Dépendances, configuration minimale
+      (`src/lib/auth/index.ts`), montage dans `hooks.server.ts`, schéma
+      Prisma étendu (`AuthSession`/`AuthAccount`/`AuthVerification`/
+      `TwoFactor` + 4 colonnes `User`), migration Prisma appliquée aux deux
+      bases (dev + e2e). Bascule directe (pas de coexistence parallèle avec
+      Lucia : décidé en cours de route, la coexistence n'apportait rien de
+      plus qu'un git stash pour revenir en arrière si besoin).
+- [x] **Phase 1** — `scripts/migrate-better-auth-accounts.mjs` (mots de
+      passe, comptes Google → `AuthAccount`), vérifié empiriquement (connexion
+      réelle avec un hash Argon2id pré-migration, inchangé).
+- [x] **Phase 2** — `authHandle` (`$lib/auth/hooks.ts`) lit Better Auth,
+      construit `locals` à l'identique. Signup/login/logout/Google réécrits
+      sur `auth.api`. 2FA (setup/vérification post-login/reset par code de
+      secours) réécrite sur le plugin `twoFactor` (voir §12-14). Alertes et
+      historique de connexion rebranchés (`$lib/auth/finalizeLogin.ts`).
+      Rate-limiting : conservé via les mêmes primitives
+      (`$lib/server/rate-limit.ts`), appliqué directement dans les routes
+      SvelteKit réécrites (pas de `hooks.before` Better Auth : inutile, ces
+      routes restent sous notre contrôle total).
+- [x] **Phase 3** — Email verification (garde 2FA simplifiée, voir §12),
+      reset de mot de passe (code + 2FA, voir §15), self-service sessions
+      actives (`AuthSession`, `$lib/auth/session.ts`), RGPD
+      (`anonymizeUser.ts` purge aussi `AuthAccount`/`TwoFactor`), admin
+      (reset mdp/MFA tiers → `AuthAccount`/`invalidateUserSessions`).
+- [x] **Phase 4** — Fichiers `src/lib/lucia/{index,session,hooks,password,
+      user,oauth,2fa,passwordReset}.ts` supprimés (zéro import restant,
+      vérifié par grep avant suppression). Dépendances npm (`lucia`,
+      `@lucia-auth/adapter-prisma`, `arctic`) et modèle Prisma `Session`
+      (Lucia) **pas encore retirés** à ce stade — voir note ci-dessous.
+      `src/lib/lucia/{ids,utils,email-verification,deviceContext,
+      deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
+      sans dépendance sur l'objet `Lucia`/la table `Session`, toujours
+      utilisés (génération d'id/OTP, vérification d'email, empreinte
+      d'appareil) — un renommage mécanique (`src/lib/lucia/` →
+      `src/lib/shared-auth/` ou fusion dans `$lib/server/`) est prévu mais
+      pas bloquant, pas fait dans cette passe pour limiter le risque d'une
+      dernière réécriture de masse juste avant la vérification finale.
+- [ ] **Phase 5** — Documentation (`docs/auth/README.md`,
+      `docs/deployment/README.md`, `RESTE_A_FAIRE.md`).
+- [ ] **Phase 6** — Vérification finale complète (suite e2e intégrale).
+
+## Écarts restants (à traiter avant de considérer la migration terminée)
+
+- Dépendances npm `lucia`/`@lucia-auth/adapter-prisma`/`arctic` encore
+  dans `package.json` — plus aucun import dans `src/`, à retirer avec
+  `npm uninstall` + une migration Prisma qui supprime le modèle `Session`
+  (Lucia) et les 4 colonnes `User` désormais mortes (`passwordHash`,
+  `totpKey`, `recoveryCode`, `encryptionVersion`) une fois la suite e2e
+  complète confirmée verte sur cette base.
+- `src/lib/prisma/user/user.ts` : plusieurs fonctions marquées
+  `AUTH-PLUGIN` (`createUserInDatabase`, `getUserByGoogleIdPrisma`,
+  `getUserTotpKey`, `updateUserRecoveryCode`, `upgradeUserTotpKeyEncryption`,
+  etc.) n'ont probablement plus aucun appelant réel — pas purgées dans
+  cette passe (zéro risque à les laisser, le compilateur ne signale pas
+  un export inutilisé) ; à vérifier par grep avant suppression définitive.
+- Renommage `src/lib/lucia/` → un chemin neutre (voir Phase 4) : ~24
+  sites d'import à travers `src/`, mécanique mais pas fait.
 
 ## Journal d'exécution
 

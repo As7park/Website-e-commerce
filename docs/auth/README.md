@@ -4,26 +4,36 @@ Module d'identité du projet : comptes locaux (email + mot de passe), connexion
 Google, vérification d'adresse, double authentification TOTP avec code de secours,
 réinitialisation de mot de passe, sessions en base.
 
-Il est conçu pour être retirable d'un bloc. La procédure complète est dans
-[retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
+Construit sur [Better Auth](https://www.better-auth.com/) depuis la migration
+documentée dans [`MIGRATION_BETTER_AUTH.md`](../../MIGRATION_BETTER_AUTH.md)
+(remplace Lucia, dépréciée) — ce document y renvoie pour toute décision
+d'architecture ; il décrit ici l'état courant du fonctionnement.
 
 ## Frontière du module
 
 Tout le code d'authentification vit dans ces emplacements :
 
-| Emplacement                                                                     | Contenu                                                                    |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `src/lib/lucia/`                                                                | logique : sessions, mots de passe, 2FA, emails, chiffrement, OAuth         |
-| `src/routes/auth/`                                                              | pages et endpoints du parcours, dont `not-me/` (révocation sans connexion) |
-| `src/lib/schema/auth/`                                                          | schémas Zod des formulaires                                                |
-| `src/lib/prisma/{session,emailVerificationRequest,passwordResetSession,email}/` | accès aux tables d'authentification                                        |
-| `src/lib/prisma/loginEvent/`                                                    | historique des connexions (voir « Sécurité du compte » ci-dessous)         |
-| `src/lib/prisma/sessionRevokeToken/`                                            | jetons à usage unique du lien « Ce n'était pas moi »                       |
-| `src/lib/prisma/user/anonymizeUser.ts`                                          | suppression de compte par anonymisation (self-service et admin)            |
-| `src/lib/server/{newDeviceAlert,passwordChangedAlert,failedLoginAlert}.ts`      | alertes email de sécurité du compte                                        |
+| Emplacement                                                                     | Contenu                                                                               |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/lib/auth/`                                                                  | instance Better Auth, hook `authHandle`, mots de passe, 2FA directe, sessions, cookies |
+| `src/lib/lucia/`                                                                 | utilitaires génériques restants (génération d'id/OTP, email de vérification, empreinte d'appareil) — voir note ci-dessous |
+| `src/routes/auth/`                                                               | pages et endpoints du parcours, dont `not-me/` (révocation sans connexion)              |
+| `src/lib/schema/auth/`                                                          | schémas Zod des formulaires                                                           |
+| `src/lib/prisma/{session,emailVerificationRequest,passwordResetSession,email}/` | accès aux tables d'authentification                                                   |
+| `src/lib/prisma/loginEvent/`                                                     | historique des connexions (voir « Sécurité du compte » ci-dessous)                     |
+| `src/lib/prisma/sessionRevokeToken/`                                             | jetons à usage unique du lien « Ce n'était pas moi »                                   |
+| `src/lib/prisma/user/anonymizeUser.ts`                                          | suppression de compte par anonymisation (self-service et admin)                        |
+| `src/lib/server/{newDeviceAlert,passwordChangedAlert,failedLoginAlert}.ts`      | alertes email de sécurité du compte                                                    |
+
+> `src/lib/lucia/` ne contient plus Lucia elle-même (supprimée) : le nom du
+> dossier est un vestige de la migration, à renommer mécaniquement un jour
+> (voir « Écarts restants » de `MIGRATION_BETTER_AUTH.md`) — son contenu
+> actuel n'a aucune dépendance sur une bibliothèque d'authentification.
 
 Le module s'accroche au reste du projet en **un seul point** : le hook
-`authHandle` (`src/lib/lucia/hooks.ts`), branché dans `src/hooks.server.ts`.
+`authHandle` (`src/lib/auth/hooks.ts`), branché dans `src/hooks.server.ts`
+(juste après `betterAuthHandle`, qui monte les endpoints Better Auth sous
+`/api/auth/**`).
 
 Partout ailleurs, une dépendance à l'authentification est signalée par un
 marqueur `AUTH-PLUGIN` en commentaire. La liste exhaustive s'obtient ainsi :
@@ -34,29 +44,33 @@ rg "AUTH-PLUGIN" src/ prisma/
 
 Deux règles maintiennent cette frontière :
 
-1. aucun fichier hors du module n'importe `$lib/lucia` sans marqueur ;
+1. aucun fichier hors du module n'importe `$lib/auth` sans marqueur ;
 2. l'identité ne circule que par `event.locals` (typé dans `src/app.d.ts`), jamais
    par un import direct du module depuis une page.
 
 ## Modèle de données
 
-Six tables, décrites dans `prisma/schema.prisma`.
+`User` (partagée avec le commerce : `Address`, `Order`, `Transaction` s'y
+rattachent) porte les champs d'identité (email, nom d'utilisateur, rôle,
+`isMfaEnabled`) ; quatre tables Better Auth et deux tables 100 % maison la
+complètent, décrites dans `prisma/schema.prisma`.
 
 | Table                         | Rôle                                                                                             | Durée de vie        |
 | ----------------------------- | ------------------------------------------------------------------------------------------------ | ------------------- |
-| `users`                       | identifiants, email vérifié, secrets 2FA, identifiant Google, rôle                               | permanente          |
-| `sessions`                    | sessions ouvertes, avec le drapeau 2FA validée, appareil/localisation approximative              | 30 jours, glissante |
-| `email_verification_requests` | code à 8 caractères pour valider une adresse                                                     | 10 minutes          |
-| `password_reset_sessions`     | progression d'une réinitialisation (code, 2FA, mot de passe)                                     | 10 minutes          |
-| `login_events`                | historique des connexions (appareil, localisation, méthode), survit à l'expiration de la session | 90 jours            |
-| `session_revoke_tokens`       | jeton à usage unique du lien « Ce n'était pas moi » (email de nouvel appareil)                   | 7 jours             |
+| `auth_sessions`               | sessions ouvertes (Better Auth), appareil/localisation approximative, dernière activité          | 30 jours, glissante |
+| `auth_accounts`               | identifiants par fournisseur — mot de passe local (`providerId: "credential"`) ou Google (`"google"`) | permanente     |
+| `auth_verifications`          | scaffolding interne Better Auth (cookie « two_factor » en attente de vérification, etc.)         | courte, variable     |
+| `two_factors`                 | secret TOTP chiffré + code de secours chiffré (voir « Double authentification »)                 | permanente           |
+| `email_verification_requests` | code à 8 caractères pour valider une adresse — 100 % maison, pas Better Auth                     | 10 minutes           |
+| `password_reset_sessions`     | progression d'une réinitialisation (code, 2FA, mot de passe) — 100 % maison, pas Better Auth     | 10 minutes           |
+| `login_events`                | historique des connexions (appareil, localisation, méthode), survit à l'expiration de la session | 90 jours             |
+| `session_revoke_tokens`       | jeton à usage unique du lien « Ce n'était pas moi » (email de nouvel appareil)                   | 7 jours              |
 
-`users` est partagé avec le commerce : `Address`, `Order` et `Transaction` s'y
-rattachent. Les trois autres tables appartiennent exclusivement au module et
-disparaissent avec lui (`onDelete: Cascade` depuis `users`).
-
-Deux champs sont chiffrés en base, pas hachés, car le serveur doit pouvoir les
-relire pour valider un code : `totpKey` et `recoveryCode`.
+Les quatre tables Better Auth, `login_events` et `session_revoke_tokens`
+appartiennent exclusivement au module et disparaissent avec `User`
+(`onDelete: Cascade`). Le secret TOTP et le code de secours sont chiffrés en
+base (XChaCha20-Poly1305, clé `BETTER_AUTH_SECRET`), pas hachés : le serveur
+doit pouvoir les relire pour générer/valider un code.
 
 ## Parcours
 
@@ -78,9 +92,17 @@ renvoi de code supprime la demande précédente, donc invalide l'ancien code.
 
 ```
 /auth/login → /                      (compte sans 2FA)
-/auth/login → /auth/2fa → /auth      (2FA exigée)
+/auth/login → /auth/2fa → /auth      (2FA exigée et configurée)
 /auth/login → /auth/verify-email     (adresse non vérifiée)
 ```
+
+La vérification du mot de passe est déléguée à `auth.api.signInEmail`
+(Better Auth). Si le compte exige la 2FA, **aucune session n'est créée** à
+cette étape : Better Auth pose un cookie signé éphémère (« two_factor »,
+opaque pour notre code) et renvoie `{ twoFactorRedirect: true }`, lu par
+`/auth/login/+page.server.ts` pour rediriger vers `/auth/2fa` — c'est
+seulement la validation du code qui crée la session définitive (voir
+« Double authentification »).
 
 Deux protections se cumulent : un quota par adresse IP et un délai croissant par
 compte après chaque échec (jusqu'à cinq minutes d'attente). Un compte créé via
@@ -90,49 +112,72 @@ refusée comme un mot de passe invalide, sans révéler la nature du compte.
 ### Connexion Google
 
 ```
-/auth/login/google → Google → /auth/login/google/callback → /
+authClient.signIn.social({ provider: 'google' }) → Google → /api/auth/callback/google → /
 ```
 
-L'état et le vérificateur PKCE transitent par des cookies éphémères. Au retour,
-le compte est retrouvé par `googleId`, ou créé avec l'adresse déjà considérée
-comme vérifiée puisque validée par Google.
+Entièrement géré par Better Auth (`socialProviders.google`,
+`src/lib/auth/index.ts`) : plus de routes `/auth/login/google*` maison, plus
+de cookies PKCE à gérer nous-mêmes. Le bouton (`src/lib/auth/client.ts`)
+appelle le client Better Auth en JavaScript — jamais un simple lien, cet
+appel est un `POST`. Au retour, le compte est retrouvé ou créé par Better
+Auth (`AuthAccount`, `providerId: "google"`), avec l'adresse déjà considérée
+comme vérifiée puisque validée par Google ; un hook
+(`databaseHooks.account.create.after`) resynchronise `User.googleId` pour
+les quelques écrans qui le lisent encore directement (« ce compte a-t-il un
+mot de passe local ? »).
 
 ### Double authentification
 
 La 2FA se déroule en deux temps, volontairement distincts :
 
-- **exigée** (`users.isMfaEnabled`) : demandé depuis les paramètres du compte ;
-- **configurée** (`users.totpKey`) : une clé TOTP existe.
+- **exigée** (`User.isMfaEnabled`) : demandé depuis les paramètres du compte ;
+- **configurée** (`User.twoFactorEnabled`, via le plugin `twoFactor` de
+  Better Auth) : une clé TOTP existe et a été validée une première fois.
 
 Tant que la 2FA est exigée sans être configurée, `authHandle` confine la
-navigation à `/auth/2fa/setup`. Une fois configurée, chaque nouvelle session doit
-la valider (`sessions.twoFactorVerified`) avant d'accéder au reste du site.
+navigation à `/auth/2fa/setup`. Une fois configurée, le second facteur est
+déjà passé au moment où une session existe : contrairement à l'ancien modèle
+(une session « ouverte mais 2FA en attente » revérifiée à chaque requête),
+Better Auth ne crée jamais de session tant que le code n'a pas été validé —
+il n'y a donc plus rien à revérifier après coup.
 
 ```
 paramètres → /auth/2fa/setup → /auth/recovery-code
 connexion  → /auth/2fa → /auth
-téléphone perdu → /auth/2fa/reset → /auth/2fa/setup
+téléphone perdu (pendant une connexion) → /auth/2fa/reset → /auth/2fa/setup
 ```
 
-Le code de secours (16 caractères) est délivré une seule fois, à la configuration.
-L'utiliser retire la 2FA, invalide toutes les sessions du compte et délivre un
-nouveau code — en une transaction, pour qu'un même code ne serve jamais deux fois.
+Le code de secours (16 caractères) est délivré une seule fois, à la
+configuration (`auth.api.enableTwoFactor`, un seul code — voir
+`backupCodeOptions` dans `MIGRATION_BETTER_AUTH.md` §13) ; Better Auth ne
+permet plus de le relire ensuite, il transite donc par un cookie éphémère de
+`/auth/2fa/setup` jusqu'à `/auth/recovery-code`. L'utiliser retire la 2FA
+(`$lib/auth/twoFactor.ts`, `disableTwoFactor`) et force une reconfiguration —
+même comportement qu'avant la migration.
 
 ### Mot de passe oublié
 
 Trois étapes obligatoires, dont la progression est enregistrée dans la session de
-réinitialisation, ce qui interdit d'accéder directement à la dernière page :
+réinitialisation (100 % maison, indépendante de Better Auth — voir
+`MIGRATION_BETTER_AUTH.md` §4), ce qui interdit d'accéder directement à la
+dernière page :
 
 ```
 /auth/forgot-password
   → /auth/reset-password/verify-email     (code reçu par email)
   → /auth/reset-password/2fa              (si le compte exige la 2FA)
   → /auth/reset-password                  (nouveau mot de passe)
-  → /auth
+  → /auth/login
 ```
 
-Changer le mot de passe invalide toutes les autres sessions du compte : une
-session volée ne survit pas à une réinitialisation.
+Changer le mot de passe invalide toutes les autres sessions du compte (et,
+ici, la session courante aussi : voir ci-dessous). **Contrairement à un
+changement de mot de passe depuis `/auth/settings`, une réinitialisation ne
+rouvre jamais de session automatiquement** — il n'existe à cette étape ni
+session Better Auth ni cookie « two_factor » à réutiliser pour en réémettre
+une sans redemander un facteur déjà prouvé par ce même formulaire (détail
+complet : `MIGRATION_BETTER_AUTH.md` §15). L'utilisateur se reconnecte
+simplement avec son nouveau mot de passe.
 
 ### Sécurité du compte et RGPD self-service
 
@@ -141,7 +186,8 @@ simple réémission de session comme la validation 2FA) enregistre un
 `LoginEvent` (`src/lib/prisma/loginEvent/loginEvent.ts`), avec appareil et
 localisation approximative (en-têtes de géolocalisation Vercel, jamais un
 service tiers séparé). L'appareil est comparé via une empreinte normalisée
-(`normalizeDeviceFingerprint()`, `src/lib/lucia/deviceLabel.ts`) — OS +
+(`normalizeDeviceFingerprint()`, `src/lib/lucia/deviceLabel.ts` — utilitaire
+générique, voir la note sur ce dossier en tête de document) — OS +
 navigateur + **version majeure uniquement**, pas le User-Agent exact :
 Chrome se met à jour toutes les ~4 semaines avec un User-Agent différent à
 chaque fois, une comparaison exacte aurait déclenché une alerte « nouvel
@@ -207,8 +253,8 @@ branché juste après, qui s'en charge.
 | Sujet             | Choix                                                                                                                                                                                                                                                            |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mots de passe     | Argon2id (19 MiB, 2 passes), longueur minimale 8, refus des mots de passe connus de « Have I Been Pwned » (interrogé en k-anonymat : seuls 5 caractères de l'empreinte SHA-1 sortent du serveur)                                                                 |
-| Sessions          | token nanoid 32 caractères (≈190 bits), cookie `httpOnly` + `sameSite=lax` + `secure` en production ; le token sert directement d'identifiant de ligne (voir limites)                                                                                            |
-| Secrets 2FA       | AES-256-GCM (`ENCRYPTION_KEY`, `encryptionVersion=2`, tout chiffrement neuf) ; AES-128-GCM legacy (`ENCRYPTION_KEY_LEGACY`, `encryptionVersion=1`) tant que d'anciens comptes n'ont pas encore été re-chiffrés — vecteur d'initialisation tiré à chaque écriture |
+| Sessions          | gérées par Better Auth : token opaque, cookie signé (HMAC-SHA256) `httpOnly` + `sameSite=lax` + `secure` en production ; le token (secret) est distinct de l'id de ligne (`AuthSession.id`), jamais confondus — contrairement à l'ancien modèle Lucia             |
+| Secrets 2FA       | XChaCha20-Poly1305 (`BETTER_AUTH_SECRET`, géré par Better Auth, voir `better-auth/crypto`) — secret TOTP et code de secours, jamais en clair en base                                                                                                             |
 | Codes email       | base32 sans ambiguïté, 8 caractères, 10 minutes, une demande vivante par compte                                                                                                                                                                                  |
 | Énumération       | les messages d'erreur ne distinguent pas « compte inconnu » de « mot de passe invalide »                                                                                                                                                                         |
 | Données au client | `locals.user` reste serveur ; `+layout.server.ts` n'expose qu'une projection explicite, sans secret                                                                                                                                                              |
@@ -235,27 +281,35 @@ sur le nombre d'instances actives en production (voir `src/lib/server/redis.ts`,
 | saisie du code (réinitialisation) | session de reset | 5 essais par 30 min                                     |
 | changement de mot de passe        | compte           | 5 par 30 min                                            |
 | configuration 2FA                 | compte           | 3 jetons, 1 rechargé toutes les 10 min                  |
-| code TOTP                         | compte           | 5 essais par 30 min                                     |
-| code de secours                   | compte           | 3 essais par heure                                      |
+| code TOTP (après connexion)       | IP               | 5 essais par 30 min — identité connue de Better Auth seul (cookie « two_factor »), voir MIGRATION_BETTER_AUTH.md §12 |
+| code de secours (après connexion) | IP               | 3 essais par heure — même raison                        |
+| code TOTP (réinitialisation)      | session de reset | 5 essais par 30 min                                     |
+| code de secours (réinitialisation)| session de reset | 3 essais par heure                                      |
 
 ## Configuration
 
 | Variable                                             | Rôle                                                                                            | Obligatoire                                                  |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `ENCRYPTION_KEY`                                     | 32 octets en base64, AES-256-GCM, tout chiffrement neuf des secrets 2FA (`encryptionVersion=2`) | oui                                                          |
-| `ENCRYPTION_KEY_LEGACY`                              | 16 octets en base64, AES-128-GCM, déchiffre les comptes encore en `encryptionVersion=1`         | tant qu'il en reste (voir `npm run check:legacy-encryption`) |
+| `BETTER_AUTH_SECRET`                                 | secret de signature des cookies + chiffrement des secrets 2FA (XChaCha20-Poly1305)              | oui                                                           |
 | `SMTP_HOST`, `SMTP_PORT`                             | serveur d'envoi des codes                                                                       | oui                                                          |
 | `SMTP_USER`, `SMTP_PASS`                             | authentification SMTP                                                                           | selon le serveur                                             |
 | `GOOGLE_CLIENT_ID`                                   | identifiant OAuth Google                                                                        | si Google activé                                             |
 | `GOOGLE_CLIENT_SECRET`                               | secret OAuth Google                                                                             | si Google activé                                             |
-| `VITE_GOOGLE_REDIRECT_URI`                           | URI de retour, identique à la console Google Cloud                                              | si Google activé                                             |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | quotas partagés entre instances (voir Quotas)                                                   | non (repli mémoire)                                          |
 
-`ENCRYPTION_KEY` (et `ENCRYPTION_KEY_LEGACY` tant qu'elle est nécessaire) sont à
-sauvegarder comme un mot de passe de base de données : les perdre rend
-inutilisables toutes les 2FA chiffrées avec elles, qu'il faudrait alors
-reconfigurer compte par compte. Procédure de rotation :
+`BETTER_AUTH_SECRET` est à sauvegarder comme un mot de passe de base de
+données : le perdre invalide toutes les sessions ouvertes et rend
+indéchiffrables tous les secrets 2FA déjà configurés, qu'il faudrait alors
+reconfigurer compte par compte. Distinct de l'ancien `ENCRYPTION_KEY`
+(retiré avec Lucia) : ne jamais réutiliser la même valeur par commodité, ce
+sont deux secrets avec des portées différentes. Procédure de rotation :
 [docs/secrets-rotation.md](../secrets-rotation.md).
+
+**Google Cloud Console** : l'URI de redirection autorisée doit pointer vers
+`<domaine>/api/auth/callback/google` (plus `<domaine>/auth/login/google/
+callback`, la route maison d'avant la migration) — à corriger manuellement
+dans la console avant le déploiement, Better Auth ne peut pas le faire à
+notre place.
 
 Un échec d'envoi d'email n'interrompt pas l'inscription : le compte est créé et le
 code reste consultable en base pendant sa durée de validité.
@@ -279,26 +333,26 @@ du compte et RGPD self-service » ci-dessus — plus `settings.spec.ts`
 retour) et `reset-password-2fa.spec.ts` (réinitialisation de mot de passe
 sur un compte 2FA active, code TOTP et code de récupération).
 
-| #   | Étape                                        | Refusé                                 | Accepté                             |
-| --- | -------------------------------------------- | -------------------------------------- | ----------------------------------- |
-| 1   | Pages protégées fermées aux anonymes         | 9 routes `GUARDED_PAGES`               | redirection login / forgot-password |
-| 2   | Inscription : saisies invalides              | pseudo court, email HTML, 5 règles MDP | pas de session                      |
-| 3   | Inscription : compte créé, non vérifié       | —                                      | hash argon, `emailVerified=false`   |
-| 4   | Vérif email : codes invalides                | trop court, inexistant                 | toujours non vérifié                |
-| 5   | Vérif email : renvoi invalide l'ancien code  | ancien code                            | nouveau code → `/auth`              |
-| 6   | MDP : courant erroné                         | trop court, courant faux               | hash inchangé                       |
-| 7   | MDP : changement révoque les autres sessions | —                                      | 1 session                           |
-| 8   | Connexion : identifiants erronés             | inconnu, ancien MDP, MDP faux          | pas de cookie                       |
-| 9   | Connexion : nouveau MDP accepté              | —                                      | `/`                                 |
-| 10  | Email déjà pris                              | adresse occupée                        | email inchangé                      |
-| 11  | Email changé après le code                   | avant le code, encore l'ancien         | code sur la **nouvelle** adresse    |
-| 12  | MDP oublié : demande / code invalides        | inconnu, code faux, GET reset          | reste sur verify                    |
-| 13  | MDP oublié : bon code                        | MDP trop court                         | réinitialisé                        |
-| 14  | 2FA setup invalide                           | TOTP court / faux                      | `totpKey` null                      |
-| 15  | 2FA configurée + code de secours             | —                                      | code UI = base                      |
-| 16  | Session bridée sans TOTP                     | TOTP faux, GET settings                | Verify → `/auth`                    |
-| 17  | Code de secours                              | trop court, faux                       | 2FA retirée, recovery renouvelé     |
-| 18  | Reconfig 2FA puis déconnexion                | TOTP sur clé périmée                   | 0 session, `/auth/` → login         |
+| #   | Étape                                        | Refusé                                 | Accepté                                  |
+| --- | -------------------------------------------- | -------------------------------------- | ----------------------------------------- |
+| 1   | Pages protégées fermées aux anonymes         | 9 routes `GUARDED_PAGES`               | redirection login / forgot-password       |
+| 2   | Inscription : saisies invalides              | pseudo court, email HTML, 5 règles MDP | pas de session                            |
+| 3   | Inscription : compte créé, non vérifié       | —                                      | hash argon (`AuthAccount`), `emailVerified=false` |
+| 4   | Vérif email : codes invalides                | trop court, inexistant                 | toujours non vérifié                      |
+| 5   | Vérif email : renvoi invalide l'ancien code  | ancien code                            | nouveau code → `/auth`                    |
+| 6   | MDP : courant erroné                         | trop court, courant faux               | hash inchangé                             |
+| 7   | MDP : changement révoque les autres sessions | —                                      | 1 session (`auth.api.changePassword`)     |
+| 8   | Connexion : identifiants erronés             | inconnu, ancien MDP, MDP faux          | pas de cookie                             |
+| 9   | Connexion : nouveau MDP accepté              | —                                      | `/`                                       |
+| 10  | Email déjà pris                              | adresse occupée                        | email inchangé                            |
+| 11  | Email changé après le code                   | avant le code, encore l'ancien         | code sur la **nouvelle** adresse          |
+| 12  | MDP oublié : demande / code invalides        | inconnu, code faux, GET reset          | reste sur verify                          |
+| 13  | MDP oublié : bon code                        | MDP trop court                         | réinitialisé, **0 session → `/auth/login`** (voir « Mot de passe oublié ») |
+| 14  | 2FA setup invalide                           | TOTP court / faux                      | `TwoFactor` absent (pas configurée)       |
+| 15  | 2FA configurée + code de secours             | —                                      | code UI = base déchiffrée                 |
+| 16  | Connexion : second facteur requis            | TOTP faux                              | code valide → session créée → `/auth`     |
+| 17  | Code de secours (connexion)                  | trop court, faux                       | 2FA retirée, session créée puis `/auth/2fa/setup` |
+| 18  | Reconfig 2FA puis déconnexion                | TOTP sur clé périmée                   | 0 session, `/auth/` → login               |
 
 Test à part : déconnexion depuis le tiroir panier — cookie absent, 0 session,
 GET `/auth/settings` → login.
@@ -315,37 +369,45 @@ si absent. Pour un espace entier, préférer un préfixe traité dans `authHandl
 comme `/auth/settings`, afin que l'oubli d'une garde sur une page ne crée pas de
 faille.
 
-**Ajouter un fournisseur OAuth.** Déclarer le client dans
-`src/lib/lucia/oauth.ts`, ajouter le couple de routes sur le modèle de
-`src/routes/auth/login/google/`, ajouter la colonne d'identifiant externe dans
-`users` et sa recherche dans `src/lib/prisma/user/user.ts`.
+**Ajouter un fournisseur OAuth.** Déclarer le provider dans
+`socialProviders` (`src/lib/auth/index.ts`, voir la doc Better Auth pour la
+liste des fournisseurs intégrés) ; le bouton (sur le modèle de
+`signInWithGoogle`, `src/lib/auth/client.ts` + `+page.svelte` de
+`/auth/login`/`/auth/signup`) appelle `authClient.signIn.social({ provider:
+'<id>' })`. Better Auth monte lui-même les routes de départ/callback sous
+`/api/auth/**` — rien à écrire côté SvelteKit pour ça.
 
-**Ajouter un champ au compte.** Étendre le modèle Prisma, puis le type `User`
-(`src/lib/lucia/user.ts`) et la projection de `loadFreshUser`
-(`src/lib/lucia/hooks.ts`). Si le champ doit être visible côté client, l'ajouter
-explicitement dans `src/routes/+layout.server.ts` — la projection y est
-volontairement manuelle pour éviter toute fuite.
+**Ajouter un champ au compte.** Étendre le modèle Prisma (`User`), puis
+`user.additionalFields` (`src/lib/auth/index.ts`) pour que Better Auth le
+lise/l'écrive, puis le type `User` et `toLocalsUser()`
+(`src/lib/auth/user.ts`). Si le champ doit être visible côté client,
+l'ajouter explicitement dans `src/routes/+layout.server.ts` — la projection
+y est volontairement manuelle pour éviter toute fuite.
 
-**Changer la durée des sessions.** Une seule constante, dans
-`createSession` (`src/lib/lucia/session.ts`), avec le seuil de prolongation
-automatique juste en dessous dans `validateSessionToken`.
+**Changer la durée des sessions.** Deux options dans `session`
+(`src/lib/auth/index.ts`) : `expiresIn` (durée totale) et `updateAge` (seuil
+de prolongation automatique, « glissante »).
 
 ## Limites connues
 
-- **Le token de session est stocké en clair** : `sessions.id` est la valeur même du
-  cookie. Un accès en lecture à la base suffit donc à usurper les sessions
-  ouvertes. Le renforcement consiste à stocker le SHA-256 du token et à le hacher
-  à la lecture, dans `createSession` et `validateSessionToken`
-  (`src/lib/lucia/session.ts`) — en tenant compte du fait que l'inscription et la
-  connexion Google passent, elles, par `auth.createSession` de Lucia.
-- Deux chemins de création de session coexistent, celui de Lucia et celui du
-  module. Les unifier éviterait ce genre d'écart.
+- **Une réinitialisation de mot de passe ne reconnecte jamais
+  automatiquement** (voir « Mot de passe oublié » ci-dessus et
+  `MIGRATION_BETTER_AUTH.md` §15) — différence de comportement assumée
+  depuis la migration Better Auth, pas un défaut à corriger.
+- `src/lib/lucia/` ne contient plus Lucia (voir la note en tête de ce
+  document) — le nom du dossier n'a pas encore été corrigé, purement
+  cosmétique.
+- Plusieurs fonctions de `src/lib/prisma/user/user.ts` et la table Prisma
+  `Session` (Lucia) restent en base/dans le code sans plus aucun appelant —
+  à retirer définitivement une fois la suite e2e confirmée stable sur cette
+  base (voir « Écarts restants » de `MIGRATION_BETTER_AUTH.md`).
 - Les quotas ne sont pas partagés entre instances (voir ci-dessus).
-- Le hook recharge l'utilisateur et la session à chaque requête, soit deux
-  requêtes SQL par page servie à un visiteur connecté. C'est le prix d'un état
-  toujours à jour ; un cache court serait le premier levier d'optimisation.
+- Le hook recharge l'utilisateur et la session via `auth.api.getSession` à
+  chaque requête non mise en cache — un cache court (8 s, Redis si
+  configuré) absorbe l'essentiel de la charge pour un visiteur qui navigue
+  normalement (`SESSION_IDENTITY_CACHE_TTL_SECONDS`, `$lib/auth/hooks.ts`).
 - Les emails partent en SMTP direct, sans file d'attente : un envoi lent ralentit
   la requête qui le déclenche.
-- Aucune purge automatique des sessions et demandes expirées ; elles restent en
-  base jusqu'à suppression manuelle. Les index sur `expiresAt` sont en place pour
-  une tâche planifiée.
+- Les sessions et demandes expirées sont purgées par la tâche planifiée
+  `/api/jobs/cleanup` (`$lib/server/jobs/cleanup.ts`), pas à la volée à
+  chaque lecture.

@@ -1,56 +1,83 @@
 import { test, expect } from '../support/fixtures';
-import { sessionCookie, waitForPath } from '../support/flows';
+import { sessionCookie } from '../support/flows';
 import { deleteUser, requireUser } from '../support/db';
 import { hasLiveGoogleOAuth } from '../support/third-party';
 
 /**
- * Connexion Google : départ réel vers accounts.google.com.
- * Le callback sans écran Google n'existe que si GOOGLE_CLIENT_ID est factice.
+ * Connexion Google : départ réel vers accounts.google.com, déclenché par le
+ * client Better Auth (`authClient.signIn.social`, `src/lib/auth/client.ts`)
+ * — il n'y a plus de route serveur dédiée (`/auth/login/google`) à
+ * interroger directement, Better Auth monte tout sous `/api/auth/**`.
+ *
+ * Le callback complet ne peut être simulé que si `GOOGLE_CLIENT_ID` est
+ * factice (voir `hasLiveGoogleOAuth`) : avec un vrai client, l'échange de
+ * code auprès de Google est irréalisable sans y accéder. Dans ce cas, le
+ * bypass passe par `auth.api.signInSocial({ idToken })`
+ * (`$lib/auth/index.ts`, `verifyIdToken` permissif) : un jeton d'ID JWT
+ * syntaxiquement valide mais non signé, que seule cette vérification
+ * permissive accepte — jamais en dehors d'un `GOOGLE_CLIENT_ID` factice.
  */
+
+function base64url(value: unknown): string {
+	return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+/** Jeton d'ID Google syntaxiquement valide, non signé — voir le bypass ci-dessus. */
+function fakeGoogleIdToken(claims: { sub: string; email: string; name?: string }): string {
+	const header = base64url({ alg: 'none', typ: 'JWT' });
+	const payload = base64url({
+		iss: 'https://accounts.google.com',
+		aud: 'e2e-google-client-id',
+		sub: claims.sub,
+		email: claims.email,
+		email_verified: true,
+		name: claims.name ?? 'E2e Google',
+		picture: '',
+		iat: Math.floor(Date.now() / 1000),
+		exp: Math.floor(Date.now() / 1000) + 3600
+	});
+	return `${header}.${payload}.e2e-unsigned`;
+}
+
 test.describe('Auth — Google OAuth', () => {
-	test.setTimeout(6 * 60_000);
+	test.setTimeout(2 * 60_000);
 
-	test('lien, état invalide, départ (et callback e2e si clés factices)', async ({
-		page,
-		account
+	test('bouton, départ réel vers Google (et bypass idToken si clés factices)', async ({
+		page
 	}) => {
-		await test.step('1. La page login expose le lien Google', async () => {
+		await test.step('1. La page login expose le bouton Google', async () => {
 			await page.goto('/auth/login');
-			await expect(page.getByRole('link', { name: 'Sign in with Google' })).toHaveAttribute(
-				'href',
-				'/auth/login/google'
-			);
+			await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
 		});
 
-		await test.step('2. Callback sans cookies PKCE', async () => {
-			const response = await page.request.get(
-				'/auth/login/google/callback?code=e2e-oauth&state=nope&email=' +
-					encodeURIComponent(account.email)
-			);
-			expect(response.status()).toBe(400);
+		await test.step('2. Clic : départ vers accounts.google.com', async () => {
+			await Promise.all([
+				page.waitForURL((url) => url.hostname.endsWith('google.com')),
+				page.getByRole('button', { name: 'Sign in with Google' }).click()
+			]);
+			expect(page.url()).toContain('accounts.google.com');
+			expect(page.url()).toContain('client_id=');
 		});
 
-		await test.step('3. Départ OAuth vers Google', async () => {
-			const start = await page.request.get('/auth/login/google', { maxRedirects: 0 });
-			expect(start.status()).toBe(302);
-			const location = start.headers()['location'] ?? '';
-			expect(location).toContain('accounts.google.com');
-			expect(location).toContain('client_id=');
+		if (hasLiveGoogleOAuth()) {
+			// Au-delà, compléter le flux exigerait un vrai accès à Google —
+			// non reproductible ici (voir le commentaire de tête).
+			return;
+		}
 
-			if (hasLiveGoogleOAuth()) {
-				return;
-			}
-
-			const cookies = await page.context().cookies();
-			const state = cookies.find((cookie) => cookie.name === 'google_oauth_state')?.value;
-			expect(state).toBeTruthy();
-
+		await test.step('3. Bypass idToken (clés factices) : compte créé, connecté', async () => {
 			const oauthEmail = `e2e-oauth-${Date.now()}@example.test`;
 			try {
-				await page.goto(
-					`/auth/login/google/callback?code=e2e-oauth&state=${state}&email=${encodeURIComponent(oauthEmail)}`
-				);
-				await waitForPath(page, '/');
+				const response = await page.request.post('/api/auth/sign-in/social', {
+					data: {
+						provider: 'google',
+						idToken: {
+							token: fakeGoogleIdToken({ sub: `e2e-google-${oauthEmail}`, email: oauthEmail })
+						}
+					}
+				});
+				expect(response.ok()).toBe(true);
+
 				expect(await sessionCookie(page)).not.toBeNull();
 
 				const user = await requireUser(oauthEmail);

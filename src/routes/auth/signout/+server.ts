@@ -6,15 +6,19 @@
 // -----------------------------------------------------------------------------
 
 import type { RequestHandler } from './$types';
-import { invalidateSession, deleteSessionTokenCookie } from '$lib/lucia/session';
+import { auth } from '$lib/auth';
+import { applyAuthCookies } from '$lib/auth/cookies';
 
 export const POST: RequestHandler = async (event) => {
 	if (!event.locals.session) {
 		return new Response(JSON.stringify({ message: 'Not authenticated' }), { status: 401 });
 	}
 
-	await invalidateSession(event.locals.session.id);
-	deleteSessionTokenCookie(event);
+	const { headers } = await auth.api.signOut({
+		headers: event.request.headers,
+		returnHeaders: true
+	});
+	applyAuthCookies(event, headers);
 
 	return new Response(JSON.stringify({ success: true }), { status: 200 });
 };

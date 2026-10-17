@@ -274,7 +274,11 @@
 									{[session.city, session.country].filter(Boolean).join(', ') || '—'}
 								</td>
 								<td class="py-2 pr-4">{session.ipAddress ?? '—'}</td>
-								<td class="py-2 pr-4">{new Date(session.lastActiveAt).toLocaleString('fr-FR')}</td>
+								<td class="py-2 pr-4"
+									>{session.lastActiveAt
+										? new Date(session.lastActiveAt).toLocaleString('fr-FR')
+										: '—'}</td
+								>
 								<td class="py-2">{new Date(session.createdAt).toLocaleString('fr-FR')}</td>
 							</tr>
 						{/each}

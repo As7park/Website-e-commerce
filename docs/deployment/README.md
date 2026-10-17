@@ -116,12 +116,9 @@ Preview Deployments doivent aussi fonctionner).
 | -------------------------------------------------------- | ----------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                                           | oui                     | Neon        | connexion runtime, via le pooler (`-pooler`)                                                                                             |
 | `DIRECT_URL`                                             | oui                     | Neon        | connexion directe, requise par `prisma migrate`                                                                                          |
-| `ENCRYPTION_KEY`                                         | oui                     | —           | AES-256-GCM, secrets 2FA (32 octets, base64)                                                                                             |
-| `ENCRYPTION_KEY_LEGACY`                                  | non (tant que utile)    | —           | AES-128-GCM, déchiffrement des secrets 2FA `encryptionVersion=1`                                                                         |
+| `BETTER_AUTH_SECRET`                                     | oui                     | —           | signature des cookies de session + chiffrement des secrets 2FA (Better Auth, voir [docs/auth](../auth/README.md))                        |
 | `PUBLIC_ENV`                                             | oui                     | —           | `production` en prod                                                                                                                     |
-| `SECRET_NAME_DATA_COOKIE`                                | oui                     | —           | nom du cookie de session                                                                                                                 |
-| `VITE_GOOGLE_REDIRECT_URI`                               | oui (si Google actif)   | Google      | doit pointer vers le domaine de prod                                                                                                     |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`              | oui (si Google actif)   | Google      | OAuth                                                                                                                                    |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`              | oui (si Google actif)   | Google      | OAuth — l'URI de redirection à autoriser dans Google Cloud Console est `<domaine>/api/auth/callback/google` (Better Auth, pas une route maison) |
 | `STRIPE_SECRET_KEY`                                      | oui                     | Stripe      | paiements                                                                                                                                |
 | `STRIPE_WEBHOOK_SECRET`                                  | oui                     | Stripe      | signature `POST /api/webhooks`                                                                                                           |
 | `VITE_STRIPE_PUBLISHABLE_KEY`                            | oui                     | Stripe      | Stripe Elements / Checkout côté client                                                                                                   |
@@ -398,13 +395,13 @@ externe).
 
 1. Google Cloud Console → Identifiants OAuth 2.0 : ajouter l'URI de
    redirection de **production**
-   (`https://<domaine-prod>/auth/login/google/callback`) en plus de celle de
-   dev — Google refuse toute redirection non listée.
-2. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, et
-   `VITE_GOOGLE_REDIRECT_URI` alignée sur le domaine de prod (variable
-   `VITE_*` : embarquée au build, donc spécifique à chaque environnement —
-   Preview et Production doivent avoir des valeurs cohérentes avec leur
-   propre domaine si Google Login doit fonctionner en Preview aussi).
+   (`https://<domaine-prod>/api/auth/callback/google` — montée par Better
+   Auth, voir [docs/auth](../auth/README.md), plus
+   `/auth/login/google/callback`, la route maison d'avant la migration) en
+   plus de celle de dev — Google refuse toute redirection non listée.
+2. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Plus de variable `VITE_*` à
+   aligner sur le domaine de prod : Better Auth calcule lui-même l'URI de
+   callback depuis `APP_URL`/`VERCEL_URL` (voir `resolveAppUrlOrDefault()`).
 
 ## Upstash Redis (rate-limit, cache, verrous)
 
@@ -579,7 +576,7 @@ comme sain.
 3. Webhooks configurés côté fournisseurs :
    `https://<domaine-prod>/api/webhooks` (Stripe),
    `https://<domaine-prod>/api/webhooks/sendcloud` (Sendcloud),
-   `https://<domaine-prod>/auth/login/google/callback` (Google, redirect URI).
+   `https://<domaine-prod>/api/auth/callback/google` (Google, redirect URI).
 4. Si QStash configuré : schedules enregistrés
    (`npm run jobs:register-cleanup-schedule`,
    `npm run jobs:register-cart-recovery-schedule`) avec `APP_URL` pointant le

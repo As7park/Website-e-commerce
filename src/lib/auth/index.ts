@@ -12,25 +12,28 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin as adminPlugin } from 'better-auth/plugins/admin';
 import { twoFactor } from 'better-auth/plugins/two-factor';
 import { haveIBeenPwned } from 'better-auth/plugins/haveibeenpwned';
-import { hash, verify } from '@node-rs/argon2';
+import { hashPassword, verifyPasswordHash } from '$lib/auth/password';
 import { prisma } from '$lib/server';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { generateUniqueReferralCode, getUserByReferralCode } from '$lib/prisma/referral/referral';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { resolveAppUrl } from '$lib/server/app-url';
+import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
+import { isDummySecret } from '$lib/server/dummy-secrets';
 import { BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$env/static/private';
-
-/** Mêmes paramètres que `$lib/lucia/password.ts` (à retirer en Phase 4). */
-const ARGON2_OPTIONS = {
-	memoryCost: 19456,
-	timeCost: 2,
-	outputLen: 32,
-	parallelism: 1
-} as const;
 
 export const auth = betterAuth({
 	appName: 'MadeInDiamonds',
 	secret: BETTER_AUTH_SECRET,
-	baseURL: resolveAppUrlOrDefault(),
+	// Résolu PAR REQUÊTE (hôte demandé, voir `allowedHosts`), jamais une
+	// chaîne figée au démarrage : `svelteKitHandler` (`src/hooks.server.ts`)
+	// compare l'origine de chaque requête à cette valeur pour décider si elle
+	// relève de Better Auth (`/api/auth/**`) — une chaîne fixe calculée une
+	// fois (ex. port 2000 par défaut de `resolveAppUrlOrDefault()`) ne
+	// correspond jamais sur un autre port (dev alternatif, suite e2e sur
+	// 2001, Preview Vercel), et Better Auth n'intercepte alors plus aucune
+	// requête, en silence (404 côté SvelteKit). Voir MIGRATION_BETTER_AUTH.md.
+	baseURL: {
+		allowedHosts: ['localhost:*', '127.0.0.1:*', 'madeindiamonds.com', '*.madeindiamonds.com', '*.vercel.app'],
+		fallback: resolveAppUrl() ?? undefined
+	},
 	database: prismaAdapter(prisma, { provider: 'postgresql' }),
 
 	user: {
@@ -44,7 +47,16 @@ export const auth = betterAuth({
 			username: { type: 'string', required: false },
 			referralCode: { type: 'string', input: false },
 			referredById: { type: 'string', required: false, input: false },
-			marketingEmailsOptIn: { type: 'boolean', input: false, defaultValue: false }
+			marketingEmailsOptIn: { type: 'boolean', input: false, defaultValue: false },
+			// Resynchronisé par `databaseHooks.account.create.after` ci-dessous,
+			// jamais fourni en entrée directement.
+			googleId: { type: 'string', required: false, input: false },
+			// La 2FA est EXIGÉE sur ce compte (distinct de `twoFactorEnabled`,
+			// propre au plugin `twoFactor`, qui dit si elle est CONFIGURÉE) —
+			// sans cette déclaration, Better Auth filtre silencieusement le
+			// champ de toute réponse (`getSession`, etc.), et `toLocalsUser`
+			// le voit toujours comme `false` quelle que soit sa valeur réelle.
+			isMfaEnabled: { type: 'boolean', input: false, defaultValue: false }
 		}
 	},
 	session: {
@@ -67,8 +79,8 @@ export const auth = betterAuth({
 		minPasswordLength: 8,
 		maxPasswordLength: 255,
 		password: {
-			hash: (password) => hash(password, ARGON2_OPTIONS),
-			verify: ({ hash: storedHash, password }) => verify(storedHash, password)
+			hash: hashPassword,
+			verify: ({ hash: storedHash, password }) => verifyPasswordHash(storedHash, password)
 		},
 		// Comme avant la migration : l'inscription connecte immédiatement
 		// (session créée avant même la vérification d'email) — c'est
@@ -82,42 +94,71 @@ export const auth = betterAuth({
 	socialProviders: {
 		google: {
 			clientId: GOOGLE_CLIENT_ID,
-			clientSecret: GOOGLE_CLIENT_SECRET
+			clientSecret: GOOGLE_CLIENT_SECRET,
+			// `GOOGLE_CLIENT_ID` factice (e2e) : l'échange de code OAuth réel
+			// (`https://oauth2.googleapis.com/token`) n'est jamais atteignable
+			// dans ce cas, donc impossible à simuler via ce chemin. Les tests
+			// passent plutôt par `auth.api.signInSocial({ idToken: ... })`
+			// (voir `e2e/support/flows.ts`, `signInWithFakeGoogle`), qui ne
+			// touche jamais le réseau Google si cette vérification est
+			// permissive. N'existe que dans cette configuration : avec un
+			// vrai `GOOGLE_CLIENT_ID`, Better Auth retombe sur sa vérification
+			// cryptographique habituelle (JWKS Google), jamais contournée.
+			...(isDummySecret(GOOGLE_CLIENT_ID) ? { verifyIdToken: async () => true } : {})
 		}
 	},
 
 	plugins: [
-		twoFactor({ issuer: 'MadeInDiamonds' }),
+		twoFactor({
+			issuer: 'MadeInDiamonds',
+			// Un seul code de secours, jamais régénérable sans reconfigurer la
+			// 2FA — même sémantique que l'ancien `User.recoveryCode` (Lucia).
+			// `length: 15` donne un code affiché de 16 caractères
+			// (5 + tiret + 10), comme avant la migration.
+			backupCodeOptions: { amount: 1, length: 15 },
+			// Comme avant la migration : configurer/retirer la 2FA ne demande
+			// jamais le mot de passe du compte.
+			allowPasswordless: true
+		}),
 		adminPlugin({ adminRoles: ['ADMIN'], defaultRole: 'CLIENT' }),
 		haveIBeenPwned()
 	],
 
 	databaseHooks: {
+		account: {
+			create: {
+				/**
+				 * `User.googleId` reste la source lue par ~6 fichiers existants
+				 * (« ce compte a-t-il un mot de passe local ou vient-il
+				 * uniquement de Google ? ») — Better Auth, lui, ne connaît que la
+				 * ligne `AuthAccount` (`providerId: "google"`). On la
+				 * resynchronise ici pour ne changer aucun de ces call sites.
+				 */
+				after: async (account) => {
+					if (account.providerId === 'google') {
+						await prisma.user.update({
+							where: { id: account.userId },
+							data: { googleId: account.accountId }
+						});
+					}
+				}
+			}
+		},
 		user: {
 			create: {
 				/**
 				 * `referralCode` est une colonne requise (pas de défaut Prisma,
 				 * générée via `generateUniqueReferralCode()`) — Better Auth ne
 				 * fournit que les champs qu'on lui déclare, jamais une valeur
-				 * métier comme celle-ci. `referredById` reprend le même principe
-				 * que l'ancien `createUser()` Lucia : résolu depuis `?ref=<code>`
-				 * (lu ici dans `ctx.query`, posé par la page `/auth/signup`),
-				 * jamais bloquant si le code est invalide ou le module désactivé.
+				 * métier comme celle-ci. `referredById` (le parrain) n'est PAS
+				 * résolu ici : `ctx.query`/`ctx.body` ne sont pas fiables quand
+				 * `auth.api.signUpEmail` est appelé directement depuis le serveur
+				 * (pas via une vraie requête HTTP) — résolu explicitement dans
+				 * l'action `/auth/signup`, juste après la création du compte.
 				 */
-				before: async (user, ctx) => {
+				before: async (user) => {
 					const referralCode = await generateUniqueReferralCode();
-
-					let referredById: string | null = null;
-					const refParam = ctx?.query?.ref;
-					if (typeof refParam === 'string') {
-						const { referralEnabled } = await getStoreFeatureFlags();
-						if (referralEnabled) {
-							const referrer = await getUserByReferralCode(refParam);
-							referredById = referrer?.id ?? null;
-						}
-					}
-
-					return { data: { ...user, referralCode, referredById } };
+					return { data: { ...user, referralCode } };
 				}
 			}
 		}

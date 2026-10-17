@@ -122,7 +122,9 @@
 								{:else if session.device}
 									Localisation non disponible ·
 								{/if}
-								Dernière activité : {new Date(session.lastActiveAt).toLocaleString('fr-FR')}
+								Dernière activité : {session.lastActiveAt
+									? new Date(session.lastActiveAt).toLocaleString('fr-FR')
+									: 'inconnue'}
 							</p>
 						</div>
 					</div>

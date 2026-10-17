@@ -20,7 +20,7 @@
  */
 import { prisma } from '$lib/server';
 import { stripe } from '$lib/server/stripe';
-import { invalidateUserSessions } from '$lib/lucia/session';
+import { invalidateUserSessions } from '$lib/auth/session';
 
 export async function anonymizeUser(userId: string): Promise<void> {
 	const savedPaymentMethods = await prisma.savedPaymentMethod.findMany({
@@ -63,7 +63,11 @@ export async function anonymizeUser(userId: string): Promise<void> {
 		prisma.stockAlert.deleteMany({ where: { userId } }),
 		prisma.productView.deleteMany({ where: { userId } }),
 		prisma.emailVerificationRequest.deleteMany({ where: { userId } }),
-		prisma.passwordResetSession.deleteMany({ where: { userId } })
+		prisma.passwordResetSession.deleteMany({ where: { userId } }),
+		// Identifiants Better Auth (mot de passe, lien Google, 2FA) — mêmes
+		// garanties de conservation que ci-dessus : jamais `Order`/`Transaction`/…
+		prisma.authAccount.deleteMany({ where: { userId } }),
+		prisma.twoFactor.deleteMany({ where: { userId } })
 	]);
 
 	// Même mécanisme que la déconnexion/le changement de mot de passe — pas

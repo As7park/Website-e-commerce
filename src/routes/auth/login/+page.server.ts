@@ -5,19 +5,23 @@
 // par compte après chaque échec. Les messages d'erreur ne distinguent jamais un
 // compte inconnu d'un mot de passe erroné, pour ne pas révéler quelles adresses
 // sont inscrites.
+//
+// La vérification du mot de passe est entièrement déléguée à
+// `auth.api.signInEmail` (Better Auth) : si le compte exige la 2FA, aucune
+// session n'est créée ici — seul un cookie signé éphémère l'est, lu par
+// `/auth/2fa` à la soumission du code (voir MIGRATION_BETTER_AUTH.md).
 // -----------------------------------------------------------------------------
 
 import { fail, redirect } from '@sveltejs/kit';
-import { getUserFromEmail, getUserPasswordHash } from '$lib/lucia/user';
+import { APIError } from 'better-auth/api';
+import { prisma } from '$lib/server';
+import { auth } from '$lib/auth';
+import { applyAuthCookies } from '$lib/auth/cookies';
+import { finalizeLogin } from '$lib/auth/finalizeLogin';
 import { RefillingTokenBucket, Throttler } from '$lib/server/rate-limit';
-import { verifyPasswordHash } from '$lib/lucia/password';
-import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/lucia/session';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
-import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
-import { notifyNewDeviceLogin } from '$lib/server/newDeviceAlert';
 import { reportFailedLoginAttempt } from '$lib/server/failedLoginAlert';
+import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
 
-import type { SessionFlags } from '$lib/lucia/session';
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
 import { loginSchema } from '$lib/schema/auth/loginSchema';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -63,7 +67,10 @@ export const actions: Actions = {
 			return fail(400, { form });
 		}
 
-		const user = await getUserFromEmail(email);
+		// Lecture directe : il faut `user.id` pour le throttler et `googleId`
+		// pour la branche OAuth AVANT même de tenter la vérification du mot de
+		// passe (déléguée à `auth.api.signInEmail` ci-dessous).
+		const user = await prisma.user.findUnique({ where: { email } });
 
 		if (user === null) {
 			return message(form, 'Le compte nexiste pas');
@@ -80,55 +87,46 @@ export const actions: Actions = {
 		if (!(await throttler.consume(user.id))) {
 			return message(form, 'Too many requests');
 		}
-		const passwordHash = await getUserPasswordHash(user.id ?? undefined, email);
-		// Calculé avant la vérification du mot de passe : utilisé aussi bien en
-		// cas d'échec (compteur de tentatives ci-dessous) qu'en cas de succès
-		// (session, historique).
-		const device = getSessionDeviceContext(event.request);
 
-		// Un compte sans mot de passe n'en a jamais défini : la vérification
-		// planterait au lieu de refuser proprement.
-		if (passwordHash === null) {
-			await reportFailedLoginAttempt(user.id, user.email, device);
-			return message(form, 'Invalid password');
-		}
-
-		const validPassword = await verifyPasswordHash(passwordHash, password);
-		if (!validPassword) {
-			await reportFailedLoginAttempt(user.id, user.email, device);
-			return message(form, 'Invalid password');
+		let authHeaders: Headers | undefined;
+		let response: Awaited<ReturnType<typeof auth.api.signInEmail>>;
+		try {
+			const result = await auth.api.signInEmail({
+				body: { email, password },
+				headers: event.request.headers,
+				returnHeaders: true
+			});
+			authHeaders = result.headers;
+			response = result.response;
+		} catch (error) {
+			if (error instanceof APIError) {
+				await reportFailedLoginAttempt(user.id, user.email, getSessionDeviceContext(event.request));
+				return message(form, 'Invalid password');
+			}
+			throw error;
 		}
 		await throttler.reset(user.id);
-		const sessionFlags: SessionFlags = {
-			twoFactorVerified: false
-		};
+		applyAuthCookies(event, authHeaders);
 
-		const sessionToken = generateSessionToken();
-		const session = await createSession(sessionToken, user.id, sessionFlags, null, device);
-		setSessionTokenCookie(event, sessionToken, session.expiresAt);
-
-		// Historique + alerte « nouvel appareil » — la ligne est toujours
-		// écrite (attendue, pour un ordre fiable) ; l'e-mail, lui, ne bloque
-		// jamais la réponse (voir `notifyNewDeviceLogin`, qui avale ses
-		// propres erreurs).
-		const { isNewDevice } = await recordLoginEvent(user.id, 'password', device);
-		if (isNewDevice) {
-			void notifyNewDeviceLogin(user.email, user.id, session.id, device);
+		// Le type inféré de `signInEmail` ne porte pas la variante « 2FA
+		// requise » (elle dépend du plugin, pas de la signature générique) —
+		// vérifiée ainsi plutôt que castée en dur.
+		if ('twoFactorRedirect' in response && response.twoFactorRedirect) {
+			redirect(302, '/auth/2fa');
 		}
 
-		if (!user.emailVerified) {
+		const sessionUser = response.user;
+		await finalizeLogin(event.request, {
+			userId: sessionUser.id,
+			email: sessionUser.email,
+			token: response.token,
+			method: 'password'
+		});
+
+		if (!sessionUser.emailVerified) {
 			return redirect(302, '/auth/verify-email');
 		}
 
-		if (!user.registered2FA) {
-			if (user.isMfaEnabled) {
-				return redirect(302, '/auth/2fa/setup');
-			}
-		}
-
-		if (!user.isMfaEnabled) {
-			return redirect(302, '/');
-		}
-		redirect(302, '/auth/2fa');
+		redirect(302, '/');
 	}
 };

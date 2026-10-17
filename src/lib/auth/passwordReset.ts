@@ -6,15 +6,14 @@
 // Son identifiant vit dans un cookie dédié, distinct du cookie de session, et
 // elle est détruite dès le mot de passe changé.
 //
-// Les deux drapeaux (`emailVerified`, `twoFactorVerified`) doivent être
-// contrôlés à chaque étape : c'est ce qui interdit d'accéder directement à la
-// dernière page du parcours.
+// Entièrement indépendant de Better Auth (table et cookie maison) : seule la
+// toute dernière étape (écriture du nouveau mot de passe) touche
+// `AuthAccount`, voir `/auth/reset-password/+page.server.ts`.
 // -----------------------------------------------------------------------------
 
-import { generateRandomOTP } from './utils';
-import { generateSecureToken, isValidId } from './ids';
+import { generateRandomOTP } from '$lib/lucia/utils';
+import { generateSecureToken, isValidId } from '$lib/lucia/ids';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { User } from './user';
 import {
 	createPasswordResetSessionPrisma,
 	deletePasswordResetSession,
@@ -33,8 +32,19 @@ export interface PasswordResetSession {
 	twoFactorVerified: boolean;
 }
 
+/** Sous-ensemble du compte nécessaire au parcours de réinitialisation. */
+export interface PasswordResetUser {
+	id: string;
+	email: string;
+	username: string | null;
+	emailVerified: boolean;
+	registered2FA: boolean;
+	googleId: string | null;
+	isMfaEnabled: boolean;
+}
+
 export type PasswordResetSessionValidationResult =
-	{ session: PasswordResetSession; user: User } | { session: null; user: null };
+	{ session: PasswordResetSession; user: PasswordResetUser } | { session: null; user: null };
 
 // Crée une session de réinitialisation de mot de passe
 export async function createPasswordResetSession(
@@ -43,7 +53,6 @@ export async function createPasswordResetSession(
 ): Promise<PasswordResetSession> {
 	const sessionId = generateSecureToken();
 
-	// Crée une nouvelle session
 	const session: PasswordResetSession = {
 		id: sessionId,
 		userId,
@@ -54,7 +63,6 @@ export async function createPasswordResetSession(
 		twoFactorVerified: false
 	};
 
-	// Ajoutez les champs dans la requête Prisma
 	await createPasswordResetSessionPrisma(session);
 
 	return session;
@@ -86,18 +94,14 @@ export async function validatePasswordResetSessionToken(
 		twoFactorVerified: result.twoFactorVerified
 	};
 
-	const user: User = {
+	const user: PasswordResetUser = {
 		id: result.user.id,
 		email: result.user.email,
 		username: result.user.username,
 		emailVerified: result.user.emailVerified,
-		registered2FA: result.user.totpKey !== null,
+		registered2FA: result.user.twoFactorEnabled ?? false,
 		googleId: result.user.googleId,
-		name: result.user.name,
-		picture: result.user.picture,
-		role: result.user.role,
-		isMfaEnabled: result.user.isMfaEnabled,
-		totpKey: result.user.totpKey ? result.user.totpKey.toString() : null
+		isMfaEnabled: result.user.isMfaEnabled
 	};
 
 	return { session, user };
@@ -234,7 +238,7 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
           <p>We received a request to reset your password. Use the code below to reset it:</p>
           <p class="code">${code}</p>
           <p>This code will expire in 10 minutes.</p>
-          
+
           <div class="footer">
             <p>If you did not request this, please ignore this email.</p>
             <p>— The MadeInDiamonds Team</p>

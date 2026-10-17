@@ -5,8 +5,10 @@ import { recordDuration } from '$lib/server/metrics';
  * Purge périodique des lignes qui n'ont plus de valeur passé leur expiration.
  *
  * Ce qui est purgé (aucune obligation de conservation) :
- * - `sessions`, `email_verification_requests`, `password_reset_sessions`,
- *   `session_revoke_tokens` expirées : jusqu'ici supprimées seulement au coup
+ * - `sessions` (Lucia, en voie de suppression), `auth_sessions`/
+ *   `auth_verifications` (Better Auth), `email_verification_requests`,
+ *   `password_reset_sessions`, `session_revoke_tokens` expirées : jusqu'ici
+ *   supprimées seulement au coup
  *   par coup, à la prochaine lecture du même token (`validateSessionToken`,
  *   etc.) — une session jamais revisitée restait en base indéfiniment. Un
  *   jeton « Ce n'était pas moi » jamais cliqué (voir
@@ -38,6 +40,7 @@ const LOGIN_EVENT_RETENTION_DAYS = 90;
 
 export interface CleanupResult {
 	expiredSessions: number;
+	expiredAuthVerifications: number;
 	expiredEmailVerificationRequests: number;
 	expiredPasswordResetSessions: number;
 	expiredSessionRevokeTokens: number;
@@ -56,13 +59,21 @@ export async function runCleanupJob(): Promise<CleanupResult> {
 
 	try {
 		const [
-			expiredSessions,
+			expiredLegacySessions,
+			expiredAuthSessions,
+			expiredAuthVerifications,
 			expiredEmailVerificationRequests,
 			expiredPasswordResetSessions,
 			expiredSessionRevokeTokens,
 			oldLoginEvents
 		] = await Promise.all([
+			// `sessions` (Lucia) : table en voie de suppression (voir
+			// MIGRATION_BETTER_AUTH.md), gardée ici tant qu'elle existe encore.
 			prisma.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+			prisma.authSession.deleteMany({ where: { expiresAt: { lt: now } } }),
+			// Scaffolding interne Better Auth (jetons de vérification email/reset,
+			// cookie « two_factor » en attente — voir `prisma/schema.prisma`).
+			prisma.authVerification.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.emailVerificationRequest.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.passwordResetSession.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.sessionRevokeToken.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -76,7 +87,11 @@ export async function runCleanupJob(): Promise<CleanupResult> {
 		});
 
 		const result: CleanupResult = {
-			expiredSessions: expiredSessions.count,
+			// Les deux tables de sessions comptent ensemble : du point de vue de
+			// l'appelant (le job cron), c'est une seule catégorie « sessions
+			// expirées », peu importe laquelle des deux tables d'auth les porte.
+			expiredSessions: expiredLegacySessions.count + expiredAuthSessions.count,
+			expiredAuthVerifications: expiredAuthVerifications.count,
 			oldLoginEvents: oldLoginEvents.count,
 			expiredEmailVerificationRequests: expiredEmailVerificationRequests.count,
 			expiredPasswordResetSessions: expiredPasswordResetSessions.count,

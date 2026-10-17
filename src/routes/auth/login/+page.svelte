@@ -8,8 +8,13 @@
 	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { loginSchema } from '$lib/schema/auth/loginSchema';
 	import { toast } from 'svelte-sonner';
+	import { authClient } from '$lib/auth/client';
 
 	let { data } = $props();
+
+	async function signInWithGoogle() {
+		await authClient.signIn.social({ provider: 'google', callbackURL: '/auth' });
+	}
 
 	//console.log(data);
 
@@ -78,9 +83,9 @@
 				<Button type="submit" class="w-full">Continuer</Button>
 			</div>
 
-			<a href="/auth/login/google">
-				<Button class="w-full mt-10">Sign in with Google</Button>
-			</a>
+			<Button type="button" class="w-full mt-10" onclick={signInWithGoogle}>
+				Sign in with Google
+			</Button>
 		</form>
 
 		<div class="mt-4 flex justify-between text-sm">

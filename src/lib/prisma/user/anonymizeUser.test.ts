@@ -17,6 +17,8 @@ const stockAlertDeleteMany = vi.fn().mockResolvedValue({});
 const productViewDeleteMany = vi.fn().mockResolvedValue({});
 const emailVerificationRequestDeleteMany = vi.fn().mockResolvedValue({});
 const passwordResetSessionDeleteMany = vi.fn().mockResolvedValue({});
+const authAccountDeleteMany = vi.fn().mockResolvedValue({});
+const twoFactorDeleteMany = vi.fn().mockResolvedValue({});
 const transactionMock = { updateMany: vi.fn(), deleteMany: vi.fn(), delete: vi.fn() };
 const orderMock = { updateMany: vi.fn(), deleteMany: vi.fn(), delete: vi.fn() };
 const reviewMock = { updateMany: vi.fn(), deleteMany: vi.fn(), delete: vi.fn() };
@@ -39,6 +41,8 @@ vi.mock('$lib/server', () => ({
 		productView: { deleteMany: productViewDeleteMany },
 		emailVerificationRequest: { deleteMany: emailVerificationRequestDeleteMany },
 		passwordResetSession: { deleteMany: passwordResetSessionDeleteMany },
+		authAccount: { deleteMany: authAccountDeleteMany },
+		twoFactor: { deleteMany: twoFactorDeleteMany },
 		transaction: transactionMock,
 		order: orderMock,
 		review: reviewMock,
@@ -54,7 +58,7 @@ vi.mock('$lib/server/stripe', () => ({
 	stripe: { paymentMethods: { detach: stripePaymentMethodsDetach } }
 }));
 
-vi.mock('$lib/lucia/session', () => ({ invalidateUserSessions }));
+vi.mock('$lib/auth/session', () => ({ invalidateUserSessions }));
 
 beforeEach(() => {
 	vi.clearAllMocks();

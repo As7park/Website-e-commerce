@@ -16,7 +16,7 @@ import {
 	findSessionsForUser
 } from '$lib/prisma/session/sessions';
 import { findRecentLoginEvents } from '$lib/prisma/loginEvent/loginEvent';
-import { sessionIdentityCacheKey, sessionPublicId } from '$lib/lucia/session';
+import { sessionIdentityCacheKey, sessionPublicId } from '$lib/auth/session';
 import { invalidateCache } from '$lib/server/cache';
 import { describeUserAgent } from '$lib/lucia/deviceLabel';
 import { log } from '$lib/server/log';
@@ -93,7 +93,7 @@ export const actions: Actions = {
 			return fail(404, { message: 'Session introuvable' });
 		}
 
-		await invalidateCache(sessionIdentityCacheKey(target.id));
+		await invalidateCache(sessionIdentityCacheKey(target.token));
 		log('INFO', 'auth:sessions', 'Session déconnectée (self-service)', { userId });
 
 		return { success: true };
@@ -113,7 +113,7 @@ export const actions: Actions = {
 		const others = (await findSessionsForUser(userId)).filter((s) => s.id !== currentSessionId);
 
 		await deleteOtherSessionsForUser(userId, currentSessionId);
-		await Promise.all(others.map((s) => invalidateCache(sessionIdentityCacheKey(s.id))));
+		await Promise.all(others.map((s) => invalidateCache(sessionIdentityCacheKey(s.token))));
 
 		log('INFO', 'auth:sessions', 'Autres sessions déconnectées (self-service)', {
 			userId,

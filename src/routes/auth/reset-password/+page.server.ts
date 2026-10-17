@@ -6,30 +6,28 @@
 // La robustesse est contrôlée côté serveur : un envoi direct ne peut pas
 // contourner la validation du navigateur.
 //
-// En sortie : ancien mot de passe remplacé, toutes les sessions du compte
-// invalidées, session de réinitialisation détruite, nouvelle session ouverte.
+// En sortie : ancien mot de passe remplacé (`AuthAccount`), toutes les
+// sessions du compte invalidées, session de réinitialisation détruite.
+// Aucune session n'est recréée automatiquement : contrairement à
+// `auth.api.changePassword` (session déjà active, voir `/auth/settings`),
+// il n'y a ici aucune session Better Auth à réémettre sans redemander un
+// second facteur déjà validé par ce même parcours — l'utilisateur se
+// reconnecte simplement avec son nouveau mot de passe.
 // -----------------------------------------------------------------------------
 
 import {
 	deletePasswordResetSessionTokenCookie,
 	validatePasswordResetSessionRequest
-} from '$lib/lucia/passwordReset';
+} from '$lib/auth/passwordReset';
 import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
+import { invalidateUserSessions } from '$lib/auth/session';
 import { fail, redirect } from '@sveltejs/kit';
-import { verifyPasswordStrength } from '$lib/lucia/password';
-import {
-	createSession,
-	generateSessionToken,
-	invalidateUserSessions,
-	setSessionTokenCookie
-} from '$lib/lucia/session';
-import { updateUserPassword } from '$lib/lucia/user';
+import { hashPassword, verifyPasswordStrength } from '$lib/auth/password';
+import { prisma } from '$lib/server';
 import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
 import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
-import { notifyNewDeviceLogin } from '$lib/server/newDeviceAlert';
 
 import type { Actions, RequestEvent } from './$types';
-import type { SessionFlags } from '$lib/lucia/session';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { resetPasswordSchema } from '$lib/schema/auth/resetPasswordSchema';
@@ -87,24 +85,29 @@ export const actions: Actions = {
 
 		await invalidateUserPasswordResetSessions(passwordResetSession.userId);
 		await invalidateUserSessions(passwordResetSession.userId);
-		await updateUserPassword(passwordResetSession.userId, password);
 
-		const sessionFlags: SessionFlags = {
-			twoFactorVerified: passwordResetSession.twoFactorVerified
-		};
-		const device = getSessionDeviceContext(event.request);
-		const sessionToken = generateSessionToken();
-		const session = await createSession(sessionToken, user.id, sessionFlags, null, device);
+		const hashed = await hashPassword(password);
+		await prisma.authAccount.upsert({
+			where: {
+				providerId_accountId: { providerId: 'credential', accountId: passwordResetSession.userId }
+			},
+			update: { password: hashed },
+			create: {
+				userId: passwordResetSession.userId,
+				providerId: 'credential',
+				accountId: passwordResetSession.userId,
+				password: hashed
+			}
+		});
 
-		// Une réinitialisation de mot de passe est une authentification à part
-		// entière (pas une simple réémission) — historique + alerte au même
-		// titre qu'une connexion classique, voir login/+page.server.ts.
-		const { isNewDevice } = await recordLoginEvent(user.id, 'password-reset', device);
-		if (isNewDevice) {
-			void notifyNewDeviceLogin(user.email, user.id, session.id, device);
-		}
-		setSessionTokenCookie(event, sessionToken, session.expiresAt);
+		// Historique, même titre qu'une connexion classique (voir
+		// login/+page.server.ts) — mais jamais d'alerte « nouvel appareil » :
+		// aucune session n'est ouverte ici (l'utilisateur devra se reconnecter
+		// avec son nouveau mot de passe), donc rien qu'un lien « Ce n'était
+		// pas moi » pourrait révoquer.
+		await recordLoginEvent(user.id, 'password-reset', getSessionDeviceContext(event.request));
+
 		deletePasswordResetSessionTokenCookie(event);
-		return redirect(302, '/auth/');
+		return redirect(302, '/auth/login');
 	}
 };

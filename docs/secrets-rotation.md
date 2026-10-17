@@ -1,7 +1,7 @@
 # Rotation des secrets
 
 Ce document couvre le **stockage** des secrets applicatifs, puis leur
-**rotation** : `ENCRYPTION_KEY`, `STRIPE_SECRET_KEY`, les clés Sendcloud,
+**rotation** : `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY`, les clés Sendcloud,
 ainsi que les autres secrets de l'application selon le même schéma.
 
 ## Stockage
@@ -76,8 +76,10 @@ premier départ d'équipe nécessitant de révoquer un accès sans redéployer.
 Deux familles bien distinctes, avec des procédures différentes :
 
 1. **Secrets à rotation « zéro coupure » supportée par le code** : deux clés
-   valides simultanément le temps de la transition. C'est le cas
-   d'`ENCRYPTION_KEY` (2FA) et des clés de signature QStash.
+   valides simultanément le temps de la transition. C'est le cas des clés de
+   signature QStash. `BETTER_AUTH_SECRET` n'en fait **pas** partie (voir
+   ci-dessous) — configuré comme un secret simple (chaîne), pas comme
+   l'objet multi-clés que Better Auth supporte en interne pour ce cas.
 2. **Secrets à clé unique côté fournisseur** (Stripe, Sendcloud, Cloudinary,
    SMTP, Google OAuth, Upstash, Neon) : pas de double-lecture côté code, mais
    la plupart des fournisseurs permettent de garder l'ancienne clé active
@@ -89,33 +91,29 @@ avant d'avoir confirmé que le déploiement avec le nouveau fonctionne** (santé
 de l'app, `/admin/metrics`, pas de pic de `http.5xx`, voir
 [docs/admin/README.md](./admin/README.md#alerting)).
 
-## `ENCRYPTION_KEY` (secrets 2FA : TOTP, codes de secours)
+## `BETTER_AUTH_SECRET` (cookies de session, secrets 2FA : TOTP, codes de secours)
 
-Mécanisme déjà en place (`src/lib/lucia/encryption.ts`, `User.encryptionVersion`) :
-un secret 2FA est chiffré avec la clé et l'algorithme correspondant à sa
-version (`1` = AES-128-GCM / `ENCRYPTION_KEY_LEGACY`, `2` = AES-256-GCM /
-`ENCRYPTION_KEY`, version par défaut pour tout chiffrement neuf). Chaque
-authentification 2FA réussie qui déchiffre un secret encore en version `1`
-le ré-encode en version `2` à la volée — pas de migration en masse à lancer.
+Géré entièrement par Better Auth (voir [docs/auth](./auth/README.md)) :
+signe les cookies de session (HMAC-SHA256) et chiffre les secrets 2FA
+(XChaCha20-Poly1305, `better-auth/crypto`). Configuré ici comme une chaîne
+simple (`secret: BETTER_AUTH_SECRET`, `src/lib/auth/index.ts`), pas comme
+l'objet multi-clés que Better Auth accepte pour une rotation sans coupure
+(`{ keys: Map, currentVersion, legacySecret }`) — passer à cette forme est
+le préalable si une rotation « zéro coupure » devient nécessaire un jour.
 
-Cela couvre **une** rotation déjà effectuée (l'ancienne clé AES-128 devient la
-clé legacy). Pour vérifier où en est la migration et savoir quand
-`ENCRYPTION_KEY_LEGACY` peut être retirée de l'environnement :
+**En l'état, changer `BETTER_AUTH_SECRET` est disruptif et invalide
+immédiatement** :
 
-```bash
-npm run check:legacy-encryption
-```
+- toutes les sessions ouvertes (les cookies signés avec l'ancienne clé ne
+  vérifient plus) ;
+- tous les secrets 2FA déjà configurés (TOTP, code de secours) — devenus
+  indéchiffrables, forçant une reconfiguration complète par l'utilisateur
+  concerné, sans détection automatique ni message d'erreur distinct d'un
+  code simplement invalide.
 
-**Limite à connaître** : le schéma actuel gère exactement deux versions
-(`1`/`2`), chacune pinnée à un algorithme précis. Il ne permet donc pas de
-faire une _nouvelle_ rotation d'`ENCRYPTION_KEY` (ex. remplacer la clé
-AES-256 actuelle par une autre clé AES-256) sans extension de code : il
-faudrait ajouter une version `3` suivant exactement le même patron (nouvelle
-clé + nouvel algorithme ou nouveau nom de variable, ancienne clé `2` devenant
-lisible comme « legacy suivante »). Tant que ce n'est pas fait, la seule façon
-de changer `ENCRYPTION_KEY` sans code neuf est disruptive : invalider tous les
-secrets 2FA existants et forcer une reconfiguration (perte du confort
-utilisateur, à réserver à une compromission avérée de la clé).
+Réservé à une compromission avérée de la clé, jamais à une rotation de
+routine. Avant de le faire : prévenir que tout le monde devra se
+reconnecter, et que les comptes avec la 2FA active devront la reconfigurer.
 
 ## Clés Sendcloud (`SENDCLOUD_PUBLIC_KEY` / `SENDCLOUD_SECRET_KEY`)
 

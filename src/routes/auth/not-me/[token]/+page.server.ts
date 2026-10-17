@@ -16,7 +16,7 @@ import {
 	peekSessionRevokeToken
 } from '$lib/prisma/sessionRevokeToken/sessionRevokeToken';
 import { findSessionDeviceInfo } from '$lib/prisma/session/sessions';
-import { invalidateSession, sessionPublicId } from '$lib/lucia/session';
+import { invalidateSession, sessionPublicId } from '$lib/auth/session';
 import { describeUserAgent } from '$lib/lucia/deviceLabel';
 import { log } from '$lib/server/log';
 

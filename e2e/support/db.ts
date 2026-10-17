@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { createDecipheriv, randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+import { symmetricDecrypt } from 'better-auth/crypto';
 
 /**
  * Client Prisma dédié aux tests, branché explicitement sur l'URL de `.env.test`
@@ -112,57 +113,83 @@ async function resilient<T>(operation: () => Promise<T>, attempts = 4): Promise<
 	throw lastError;
 }
 
-/**
- * Déchiffre une charge produite par `src/lib/lucia/encryption.ts`. Le module
- * applicatif n'est pas réutilisable ici car il dépend de `$env/static/private`,
- * indisponible hors du bundle SvelteKit — d'où cette réimplémentation.
- *
- * `encryptionVersion` (1 = AES-128-GCM legacy, 2 = AES-256-GCM) doit suivre
- * exactement `$lib/lucia/encryption.ts` : sans ça, un compte encore en v1 (ou
- * migré en v2 après une vérification 2FA réussie) échoue ici avec une taille
- * de clé invalide, alors que l'application le déchiffre très bien.
- */
-function decryptPayload(payload: Uint8Array, encryptionVersion: number): Buffer {
-	const isLegacy = encryptionVersion === 1;
-	const keyEnv = isLegacy ? process.env.ENCRYPTION_KEY_LEGACY : process.env.ENCRYPTION_KEY;
-	const algorithm = isLegacy ? 'aes-128-gcm' : 'aes-256-gcm';
-	const key = Buffer.from(keyEnv ?? '', 'base64');
-	const bytes = Buffer.from(payload);
-
-	const iv = bytes.subarray(0, 16);
-	const tag = bytes.subarray(bytes.length - 16);
-	const ciphertext = bytes.subarray(16, bytes.length - 16);
-
-	const decipher = createDecipheriv(algorithm, key, iv);
-	decipher.setAuthTag(tag);
-	return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-}
-
 export async function getUser(email: string) {
 	return resilient(() => db.user.findUnique({ where: { email } }));
 }
 
-export async function requireUser(email: string) {
-	const user = await getUser(email);
-	if (!user) throw new Error(`Utilisateur introuvable en base : ${email}`);
-	return user;
+/**
+ * Déchiffre un secret Better Auth (clé TOTP, codes de secours) — même
+ * mécanisme que `scripts/migrate-better-auth-accounts.mjs` et
+ * `src/lib/auth/twoFactor.ts` : XChaCha20-Poly1305, clé = `BETTER_AUTH_SECRET`
+ * en chaîne brute (jamais l'enveloppe `$ba$<version>$...`, réservée au mode
+ * multi-clés, non utilisé ici).
+ */
+async function decryptBetterAuthSecret(encrypted: string): Promise<string> {
+	return symmetricDecrypt({ key: process.env.BETTER_AUTH_SECRET ?? '', data: encrypted });
 }
 
 /**
- * Clé TOTP déchiffrée, telle qu'enregistrée après la configuration de la 2FA. */
-export async function getTotpKey(email: string): Promise<Uint8Array> {
-	const user = await requireUser(email);
-	if (!user.totpKey) throw new Error(`Aucune clé TOTP enregistrée pour ${email}`);
-	return new Uint8Array(decryptPayload(user.totpKey, user.encryptionVersion));
+ * Utilisateur enrichi des équivalents Better Auth des anciennes colonnes
+ * Lucia `totpKey`/`passwordHash` — ces deux champs n'existent plus sur
+ * `User` (voir MIGRATION_BETTER_AUTH.md), mais sont recalculés ici à
+ * l'identique pour ne pas devoir réécrire chaque assertion existante :
+ *   - `totpKey` : `'configured'` si une ligne `TwoFactor` existe pour ce
+ *     compte, sinon `null` — jamais la clé elle-même (les tests ne
+ *     comparaient déjà que sa présence, jamais sa valeur).
+ *   - `passwordHash` : le hash Argon2id de `AuthAccount` (`providerId:
+ *     "credential"`), ou `null` pour un compte sans mot de passe local.
+ */
+export async function requireUser(email: string) {
+	const user = await getUser(email);
+	if (!user) throw new Error(`Utilisateur introuvable en base : ${email}`);
+
+	const credentialAccount = await resilient(() =>
+		db.authAccount.findUnique({
+			where: { providerId_accountId: { providerId: 'credential', accountId: user.id } },
+			select: { password: true }
+		})
+	);
+
+	return {
+		...user,
+		passwordHash: credentialAccount?.password ?? null,
+		// `User.twoFactorEnabled` (Better Auth) ne passe à `true` qu'après une
+		// vérification TOTP réussie — jamais pendant une configuration en
+		// attente (une ligne `TwoFactor` existe déjà à ce stade, `verified:
+		// false`), même sémantique que l'ancien `totpKey` Lucia.
+		totpKey: user.twoFactorEnabled ? 'configured' : null
+	};
 }
 
-/** Code de récupération en clair, généré à la création du compte. */
+/**
+ * Clé TOTP déchiffrée, telle qu'enregistrée après la configuration de la
+ * 2FA — octets UTF-8 du secret, jamais un décodage base32 (voir
+ * `@better-auth/utils/otp` : la chaîne déchiffrée sert directement de clé
+ * HMAC, même convention que `src/lib/auth/twoFactor.ts`).
+ */
+export async function getTotpKey(email: string): Promise<Uint8Array> {
+	const user = await requireUser(email);
+	const twoFactor = await resilient(() => db.twoFactor.findFirst({ where: { userId: user.id } }));
+	if (!twoFactor) throw new Error(`Aucune clé TOTP enregistrée pour ${email}`);
+	const secret = await decryptBetterAuthSecret(twoFactor.secret);
+	return new TextEncoder().encode(secret);
+}
+
+/**
+ * Code de secours en clair — un seul par compte (voir `backupCodeOptions`
+ * dans `src/lib/auth/index.ts`), déchiffré depuis `TwoFactor.backupCodes`
+ * (tableau JSON chiffré d'un seul élément).
+ */
 export async function getRecoveryCode(email: string): Promise<string> {
 	const user = await requireUser(email);
-	if (!user.recoveryCode) throw new Error(`Aucun code de récupération pour ${email}`);
-	return decryptPayload(Buffer.from(user.recoveryCode, 'base64'), user.encryptionVersion).toString(
-		'utf-8'
-	);
+	const twoFactor = await resilient(() => db.twoFactor.findFirst({ where: { userId: user.id } }));
+	if (!twoFactor) throw new Error(`Aucun code de récupération pour ${email}`);
+	const json = await decryptBetterAuthSecret(twoFactor.backupCodes);
+	const codes = JSON.parse(json);
+	if (!Array.isArray(codes) || !codes[0]) {
+		throw new Error(`Aucun code de récupération pour ${email}`);
+	}
+	return codes[0];
 }
 
 /**
@@ -198,7 +225,10 @@ export async function promoteToAdmin(email: string) {
 
 /** Simule un compte sans mot de passe (façon Google) pour tester le repli confirmText de la suppression RGPD. */
 export async function clearUserPassword(email: string) {
-	await resilient(() => db.user.update({ where: { email }, data: { passwordHash: null } }));
+	const user = await requireUser(email);
+	await resilient(() =>
+		db.authAccount.deleteMany({ where: { providerId: 'credential', accountId: user.id } })
+	);
 }
 
 /** Code promo jetable (admin, API de validation, checkout). */
@@ -825,23 +855,53 @@ export async function deleteCatalogProduct(productId: string) {
 	}
 }
 
-/** Nombre de sessions actives, pour vérifier révocations et déconnexions. */
+/** Compte les sessions Better Auth actives (`AuthSession`) d'un compte. */
 export async function countSessions(email: string): Promise<number> {
 	const user = await requireUser(email);
-	return resilient(() => db.session.count({ where: { userId: user.id } }));
+	return resilient(() => db.authSession.count({ where: { userId: user.id } }));
+}
+
+/**
+ * Empreinte publique d'une session, même calcul que `sessionPublicId()`
+ * (`src/lib/auth/session.ts`) — dupliquée ici volontairement (`e2e/support/**`
+ * n'importe jamais `$lib`).
+ */
+export function sessionPublicId(sessionId: string): string {
+	return createHash('sha256').update(sessionId).digest('hex');
+}
+
+/**
+ * Empreinte publique de la session désignée par la valeur BRUTE du cookie
+ * navigateur (`better-auth.session_token`, signée : `<token>.<signature>`,
+ * encodée URL).
+ *
+ * `AuthSession.id` (l'id de ligne, ce que `sessionPublicId` hache côté
+ * application) est distinct de `AuthSession.token` (le secret porté par le
+ * cookie) sous Better Auth — contrairement à Lucia, où les deux étaient
+ * confondus. On retrouve donc la ligne par son `token` avant de hacher son
+ * `id`.
+ */
+export async function sessionPublicIdFromCookieValue(cookieValue: string): Promise<string> {
+	const decoded = decodeURIComponent(cookieValue);
+	const token = decoded.slice(0, decoded.lastIndexOf('.'));
+	const session = await resilient(() => db.authSession.findUnique({ where: { token } }));
+	if (!session) throw new Error('Session introuvable pour ce cookie');
+	return sessionPublicId(session.id);
 }
 
 /**
  * Insère directement une session valide pour un utilisateur, sans passer par
  * un vrai login navigateur — sert à prouver qu'une action admin (reset mot de
  * passe, bascule MFA) révoque bien les sessions existantes de la CIBLE, sans
- * avoir à simuler un parcours de connexion complet dans le test.
+ * avoir à simuler un parcours de connexion complet dans le test. Jamais un
+ * cookie réellement valide (`token` n'est jamais signé/posé navigateur),
+ * seulement une ligne `AuthSession` à compter/révoquer.
  */
 export async function createRawSession(userId: string) {
 	return resilient(() =>
-		db.session.create({
+		db.authSession.create({
 			data: {
-				id: randomBytes(20).toString('hex'),
+				token: randomBytes(20).toString('hex'),
 				userId,
 				expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
 			}
@@ -858,9 +918,9 @@ export async function createRawSession(userId: string) {
  */
 export async function createExpiredSession(userId: string) {
 	return resilient(() =>
-		db.session.create({
+		db.authSession.create({
 			data: {
-				id: randomBytes(20).toString('hex'),
+				token: randomBytes(20).toString('hex'),
 				userId,
 				expiresAt: new Date(Date.now() - 60 * 60 * 1000)
 			}
@@ -871,7 +931,7 @@ export async function createExpiredSession(userId: string) {
 /**
  * Insère une session « autre appareil » directement en base, sans passer par
  * un vrai navigateur — suffisant pour tester la liste/révocation
- * (`/auth/settings/sessions`), qui ne lit que les colonnes de `Session`,
+ * (`/auth/settings/sessions`), qui ne lit que les colonnes de `AuthSession`,
  * jamais un cookie réellement valide pour cette session-là.
  */
 export async function createExtraSessionForUser(
@@ -879,9 +939,9 @@ export async function createExtraSessionForUser(
 	overrides?: { userAgent?: string; city?: string; country?: string; lastActiveAt?: Date }
 ) {
 	return resilient(() =>
-		db.session.create({
+		db.authSession.create({
 			data: {
-				id: `e2e-session-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+				token: `e2e-session-${Date.now()}-${Math.random().toString(36).slice(2)}`,
 				userId,
 				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
 				userAgent:

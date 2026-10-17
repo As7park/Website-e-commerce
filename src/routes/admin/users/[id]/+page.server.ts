@@ -7,7 +7,7 @@ import { getUsersById, updateUserMFA, updateUserRole } from '$lib/prisma/user/us
 import { getUserAddresses, updateAddress } from '$lib/prisma/addresses/addresses';
 import { serializeData } from '$lib/utils/serializeData';
 import { updateUserSecurity } from '$lib/prisma/user/updateUserSecurity';
-import { invalidateUserSessions, sessionPublicId } from '$lib/lucia/session';
+import { invalidateUserSessions, sessionPublicId } from '$lib/auth/session';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
 import { logAdminAction } from '$lib/server/audit-log';
 import { findSessionsForUser } from '$lib/prisma/session/sessions';

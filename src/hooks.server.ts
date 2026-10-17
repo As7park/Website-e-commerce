@@ -36,13 +36,12 @@ import { log, withRequestId } from '$lib/server/log';
 import { randomUUID } from 'crypto';
 
 // AUTH-PLUGIN ▼ retirer cet import et `authHandle` de la séquence finale.
-import { authHandle } from '$lib/lucia/hooks';
+import { authHandle } from '$lib/auth/hooks';
 // AUTH-PLUGIN ▲
 
-// Better Auth (voir MIGRATION_BETTER_AUTH.md) — monté en parallèle de Lucia
-// pendant la migration : sert /api/auth/** (callback Google, endpoints
-// internes des plugins), sans toucher `locals` tant que `authHandle` n'a
-// pas basculé.
+// Better Auth (voir MIGRATION_BETTER_AUTH.md) — sert /api/auth/** (callback
+// Google, endpoints internes des plugins) ; `authHandle` ci-dessus lit
+// désormais Better Auth directement.
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
 import { auth } from '$lib/auth';

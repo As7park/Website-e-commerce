@@ -16,9 +16,7 @@
  */
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getUserPasswordHash } from '$lib/lucia/user';
-import { verifyPasswordHash } from '$lib/lucia/password';
-import { deleteSessionTokenCookie } from '$lib/lucia/session';
+import { getCredentialPasswordHash, verifyPasswordHash } from '$lib/auth/password';
 import { anonymizeUser } from '$lib/prisma/user/anonymizeUser';
 import { log } from '$lib/server/log';
 
@@ -28,7 +26,7 @@ export const load = (async ({ locals }) => {
 	if (!locals.user) {
 		redirect(302, '/auth/login');
 	}
-	const passwordHash = await getUserPasswordHash(locals.user.id);
+	const passwordHash = await getCredentialPasswordHash(locals.user.id);
 	return { hasPassword: passwordHash !== null };
 }) satisfies PageServerLoad;
 
@@ -40,7 +38,7 @@ export const actions: Actions = {
 		}
 
 		const formData = await event.request.formData();
-		const passwordHash = await getUserPasswordHash(userId);
+		const passwordHash = await getCredentialPasswordHash(userId);
 
 		if (passwordHash !== null) {
 			const password = String(formData.get('password') ?? '');
@@ -57,7 +55,9 @@ export const actions: Actions = {
 		await anonymizeUser(userId);
 		log('INFO', 'gdpr', 'Compte anonymisé (demande self-service)', { userId });
 
-		deleteSessionTokenCookie(event);
+		// `anonymizeUser` a déjà révoqué toutes les sessions en base — il ne
+		// reste qu'à effacer le cookie du navigateur.
+		event.cookies.delete('better-auth.session_token', { path: '/' });
 		redirect(303, '/');
 	}
 };
