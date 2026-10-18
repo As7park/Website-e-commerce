@@ -20,7 +20,7 @@ import { applyAuthCookies } from '$lib/auth/cookies';
 import { finalizeLogin } from '$lib/auth/finalizeLogin';
 import { RefillingTokenBucket, Throttler } from '$lib/server/rate-limit';
 import { reportFailedLoginAttempt } from '$lib/server/failedLoginAlert';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
+import { getSessionDeviceContext } from '$lib/server/deviceContext';
 
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
 import { loginSchema } from '$lib/schema/auth/loginSchema';

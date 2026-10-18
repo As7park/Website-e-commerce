@@ -15,7 +15,7 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '$lib/server/emailVerification';
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { auth } from '$lib/auth';
@@ -35,7 +35,7 @@ import {
 	updateUserMFA
 } from '$lib/prisma/user/user';
 import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
+import { getSessionDeviceContext } from '$lib/server/deviceContext';
 import { notifyPasswordChanged } from '$lib/server/passwordChangedAlert';
 
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');

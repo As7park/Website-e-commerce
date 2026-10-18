@@ -59,7 +59,6 @@ describe('Invariants du dépôt', () => {
 		// Exclus : les modules qui manipulent légitimement le token brut, et les
 		// webhooks Stripe, dont `session.id` désigne une session de paiement.
 		const allowed = [
-			'src/lib/lucia/',
 			'src/lib/auth/',
 			'src/lib/prisma/session/',
 			'src/lib/prisma/passwordResetSession/',

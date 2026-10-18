@@ -9,7 +9,7 @@
 // précédente, ce qui invalide de fait l'ancien code.
 // -----------------------------------------------------------------------------
 
-import { generateRandomOTP } from './utils';
+import { generateRandomOTP } from './otpCodes';
 import { ExpiringTokenBucket } from '$lib/server/rate-limit';
 import { generateSecureToken, isValidId } from './ids';
 import type { RequestEvent } from '@sveltejs/kit';

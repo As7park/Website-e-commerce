@@ -24,7 +24,7 @@ import { invalidateUserSessions } from '$lib/auth/session';
 import { fail, redirect } from '@sveltejs/kit';
 import { hashPassword, verifyPasswordStrength } from '$lib/auth/password';
 import { prisma } from '$lib/server';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
+import { getSessionDeviceContext } from '$lib/server/deviceContext';
 import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
 
 import type { Actions, RequestEvent } from './$types';

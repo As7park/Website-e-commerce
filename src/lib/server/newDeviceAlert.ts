@@ -9,9 +9,9 @@
 import { sendMail } from '$lib/server/smtp-mail';
 import { log } from '$lib/server/log';
 import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
+import { describeUserAgent } from '$lib/server/deviceLabel';
 import { createSessionRevokeToken } from '$lib/prisma/sessionRevokeToken/sessionRevokeToken';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
+import type { SessionDeviceContext } from '$lib/server/deviceContext';
 
 export async function notifyNewDeviceLogin(
 	email: string,

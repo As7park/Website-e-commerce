@@ -16,8 +16,8 @@ import { reportIfRepeated } from '$lib/server/alerting';
 import { sendMail } from '$lib/server/smtp-mail';
 import { log } from '$lib/server/log';
 import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
+import { describeUserAgent } from '$lib/server/deviceLabel';
+import type { SessionDeviceContext } from '$lib/server/deviceContext';
 
 const THRESHOLD = 3;
 const WINDOW_SECONDS = 15 * 60;

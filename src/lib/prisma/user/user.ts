@@ -12,7 +12,7 @@
 
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 import { anonymizeUser } from './anonymizeUser';
-import { isValidId } from '$lib/lucia/ids';
+import { isValidId } from '$lib/server/ids';
 
 const USER_SORTABLE = ['email', 'username', 'role', 'createdAt'] as const;
 import { prisma } from '$lib/server';

@@ -71,19 +71,11 @@ model User {
   email        String  @unique
   /// Facultatif : un compte créé via Google n'en possède pas.
   username     String?
-  /// Argon2id. Nul pour les comptes Google (aucun mot de passe local).
-  passwordHash String?
-  /// Code de secours 2FA, chiffré puis encodé en base64 (algorithme selon `encryptionVersion`).
-  recoveryCode String?
 
-  emailVerified     Boolean @default(false)
-  /// La 2FA est exigée sur ce compte (distinct de « une clé TOTP existe »).
-  isMfaEnabled      Boolean @default(false)
-  /// Secret TOTP chiffré (algorithme selon `encryptionVersion`). Jamais exposé au client.
-  totpKey           Bytes?
-  /// 1 = AES-128-GCM (legacy), 2 = AES-256-GCM. Bascule à 2 automatiquement
-  /// à la prochaine authentification réussie qui déchiffre `totpKey`/`recoveryCode`.
-  encryptionVersion Int     @default(1)
+  emailVerified Boolean @default(false)
+  /// La 2FA est exigée sur ce compte (distinct de « une clé TOTP existe »,
+  /// voir `twoFactorEnabled` plus bas — Better Auth).
+  isMfaEnabled  Boolean @default(false)
 
   /// Identifiant Google, présent uniquement pour les comptes OAuth.
   googleId String? @unique
@@ -126,9 +118,8 @@ model User {
   stockAlerts         StockAlert[]
   productViews        ProductView[]
 
-  // Relations d'authentification Lucia (disparaissent en fin de migration,
-  // voir MIGRATION_BETTER_AUTH.md)
-  sessions                  Session[]
+  // Relations d'authentification 100 % maison (jamais Lucia ni Better
+  // Auth — code et verification par code, voir MIGRATION_BETTER_AUTH.md)
   emailVerificationRequests EmailVerificationRequest[] @relation("UserEmailVerificationRequests")
   passwordResetSessions     PasswordResetSession[]     @relation("UserPasswordResetSessions")
   loginEvents               LoginEvent[]
@@ -244,48 +235,9 @@ model TwoFactor {
   @@map("two_factors")
 }
 
-model Session {
-  /// Token de session, tel qu'il figure dans le cookie. À traiter comme un secret :
-  /// un accès en lecture à cette table permet d'usurper les sessions ouvertes.
-  id                String   @id
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  expiresAt         DateTime
-  /// La 2FA a été validée pour cette session précise, pas seulement pour le compte.
-  twoFactorVerified Boolean  @default(false)
-  /// Fournisseur OAuth à l'origine de la session (« google »), sinon nul.
-  oauthProvider     String?
-  createdAt         DateTime @default(now())
-  /// User-Agent brut envoyé à la création de la session, jamais reparsé après
-  /// coup — l'étiquette lisible (« Chrome sur Windows ») est dérivée à
-  /// l'affichage par `$lib/lucia/deviceLabel.ts`, voir
-  /// `/auth/settings/sessions`. Absent pour une session créée hors requête
-  /// HTTP (aucune, à ce jour).
-  userAgent         String?
-  /// IP à l'origine de la connexion — donnée personnelle (voir
-  /// RESTE_A_FAIRE.md). Sa durée de vie est bornée à celle de la
-  /// session elle-même : purgée avec elle par `$lib/server/jobs/cleanup.ts`,
-  /// jamais conservée au-delà.
-  ipAddress         String?
-  /// Ville/pays approximatifs dérivés de l'IP à la connexion, lus depuis les
-  /// en-têtes de géolocalisation que Vercel ajoute lui-même
-  /// (`x-vercel-ip-city`/`x-vercel-ip-country`) — aucun service tiers, aucun
-  /// appel réseau supplémentaire. Absents en local/hors Vercel.
-  city              String?
-  country           String?
-  /// Dernière requête authentifiée servie par cette session — voir
-  /// `touchSessionActivity`, appelée depuis `$lib/lucia/hooks.ts` sur le
-  /// chemin non caché de la résolution de session (donc déjà bornée par le
-  /// cache Redis de 8s, pas une écriture à chaque requête).
-  lastActiveAt      DateTime @default(now())
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("sessions")
-}
-
-/// Historique des connexions — distinct de `Session` : survit à l'expiration
-/// ou à la révocation de la session qu'il documente (jamais de clé étrangère
+/// Historique des connexions — distinct de `AuthSession` (Better Auth) :
+/// survit à l'expiration ou à la révocation de la session qu'il documente
+/// (jamais de clé étrangère
 /// vers elle), pour qu'« il y a 2 mois, connexion depuis un iPhone à Lyon »
 /// reste consultable bien après que cette session-là a disparu. Une ligne par
 /// authentification réelle seulement — pas à chaque réémission de session
@@ -296,7 +248,7 @@ model LoginEvent {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   createdAt   DateTime @default(now())
-  /// Mêmes colonnes et même origine que `Session.userAgent`/`ipAddress`/
+  /// Mêmes colonnes et même origine que `AuthSession.userAgent`/`ipAddress`/
   /// `city`/`country` — capturées une seule fois, jamais recalculées.
   userAgent   String?
   ipAddress   String?

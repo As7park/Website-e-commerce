@@ -7,7 +7,7 @@ authentification, sur PostgreSQL via Prisma.
 
 ```bash
 npm install
-cp .env.example .env          # renseigner DATABASE_URL, DIRECT_URL, ENCRYPTION_KEY…
+cp .env.example .env          # renseigner DATABASE_URL, DIRECT_URL, BETTER_AUTH_SECRET…
 npm run db:deploy             # applique les migrations
 npm run seed                  # jeu de données de démonstration
 npm run dev

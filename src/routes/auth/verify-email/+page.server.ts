@@ -19,7 +19,7 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '$lib/server/emailVerification';
 
 import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
 import { updateUserEmailAndSetEmailAsVerified } from '$lib/prisma/user/user';

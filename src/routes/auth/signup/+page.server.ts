@@ -25,12 +25,12 @@ import {
 	createEmailVerificationRequest,
 	sendVerificationEmail,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '$lib/server/emailVerification';
 
 import { RefillingTokenBucket } from '$lib/server/rate-limit';
 import { auth } from '$lib/auth';
 import { applyAuthCookies } from '$lib/auth/cookies';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
+import { getSessionDeviceContext } from '$lib/server/deviceContext';
 import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
 
 import type { PageServerLoad, Actions } from './$types';

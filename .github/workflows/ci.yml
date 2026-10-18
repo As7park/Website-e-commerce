@@ -10,22 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # `svelte-check` importe des modules `$env/static/private` et
-      # `$env/static/public` (voir src/lib/lucia/encryption.ts, oauth.ts,
+      # `$env/static/public` (voir src/lib/auth/index.ts,
       # src/routes/api/address-search, src/routes/admin/blog/post/**).
       # SvelteKit ne génère les types de ces modules que pour les variables
       # présentes au moment de `svelte-kit sync` : sans elles, le type-check
       # échoue avec "Module has no exported member 'X'" même si le code est
-      # correct. Valeurs factices, jamais utilisées pour un vrai chiffrement.
-      # Doivent néanmoins être un base64 décodable (32/16 octets) : le step
-      # `Build (vite build)` exécute réellement `decodeBase64(...)` au
-      # chargement de `src/lib/lucia/encryption.ts` (phase "analyse" de
-      # SvelteKit), contrairement à `svelte-check` qui ne fait qu'inférer les
-      # types sans exécuter le code.
-      ENCRYPTION_KEY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaWbIUlVS8AKM=
-      ENCRYPTION_KEY_LEGACY: bYqdNqqjO678p2cX9G2uOw==
+      # correct. Valeurs factices, jamais utilisées en dehors de CI.
+      BETTER_AUTH_SECRET: ci-better-auth-secret-jamais-utilise-en-prod
       GOOGLE_CLIENT_ID: ci-google-client-id
       GOOGLE_CLIENT_SECRET: ci-google-client-secret
-      VITE_GOOGLE_REDIRECT_URI: http://localhost:2001/auth/login/google/callback
       SECRET_ADDRESS_SEARCH_MODE: e2e
       PUBLIC_TINYMCE_API_KEY: ci
       STRIPE_SECRET_KEY: sk_test_ci
@@ -96,10 +89,9 @@ jobs:
       # Base Postgres jetable du job (pas Neon) : aucun secret de dépôt requis.
       DATABASE_URL: postgresql://e2e:e2e@localhost:5432/e2e
       DIRECT_URL: postgresql://e2e:e2e@localhost:5432/e2e
-      # Clé de test dédiée à cette base éphémère, jamais utilisée en dehors de la CI.
-      ENCRYPTION_KEY: us+RPM5EHBb2Fvk3k6Az8N5d0cYu4dGaWbIUlVS8AKM=
+      # Secret de test dédié à cette base éphémère, jamais utilisé en dehors de la CI.
+      BETTER_AUTH_SECRET: ci-e2e-better-auth-secret-jamais-utilise-en-prod
       PUBLIC_ENV: test
-      SECRET_NAME_DATA_COOKIE: test-cookie-name
       CRON_SECRET: e2e-cron-secret
       ACCOUNTING_EXPORT_EMAIL: e2e-comptabilite@example.test
       DISPUTE_ALERT_EMAIL: e2e-litiges@example.test
@@ -113,7 +105,6 @@ jobs:
       # Cloudinary...) détectent ces placeholders et s'exécutent en mode mock
       # (voir `.env.test.example`). Les specs réellement live vivent sous
       # `e2e/live/` et sont exclues ci-dessous.
-      VITE_GOOGLE_REDIRECT_URI: http://localhost:2001/auth/login/google/callback
       GOOGLE_CLIENT_ID: e2e-google-client-id
       GOOGLE_CLIENT_SECRET: e2e-google-client-secret
       # Stripe n'a pas de mode mock (contrairement aux autres intégrations

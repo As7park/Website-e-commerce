@@ -6,8 +6,8 @@
  * qu'elle documente. Voir le commentaire du modèle dans `schema.prisma`.
  */
 import { prisma } from '$lib/server';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
-import { normalizeDeviceFingerprint } from '$lib/lucia/deviceLabel';
+import type { SessionDeviceContext } from '$lib/server/deviceContext';
+import { normalizeDeviceFingerprint } from '$lib/server/deviceLabel';
 
 export type LoginMethod = 'password' | 'google' | 'password-reset' | 'signup';
 

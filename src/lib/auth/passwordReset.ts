@@ -11,8 +11,8 @@
 // `AuthAccount`, voir `/auth/reset-password/+page.server.ts`.
 // -----------------------------------------------------------------------------
 
-import { generateRandomOTP } from '$lib/lucia/utils';
-import { generateSecureToken, isValidId } from '$lib/lucia/ids';
+import { generateRandomOTP } from '$lib/server/otpCodes';
+import { generateSecureToken, isValidId } from '$lib/server/ids';
 import type { RequestEvent } from '@sveltejs/kit';
 import {
 	createPasswordResetSessionPrisma,

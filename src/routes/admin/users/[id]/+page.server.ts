@@ -11,7 +11,7 @@ import { invalidateUserSessions, sessionPublicId } from '$lib/auth/session';
 import { assertAdmin, requireAdmin } from '$lib/admin/guards';
 import { logAdminAction } from '$lib/server/audit-log';
 import { findSessionsForUser } from '$lib/prisma/session/sessions';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
+import { describeUserAgent } from '$lib/server/deviceLabel';
 
 /**
  * Fiche d'un utilisateur : rôle, 2FA, mot de passe, adresses.

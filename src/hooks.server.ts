@@ -3,7 +3,7 @@
 //
 // Ce fichier ne contient que de l'assemblage : chaque préoccupation vit dans son
 // propre module. L'authentification est fournie par `authHandle`
-// (`src/lib/lucia/hooks.ts`) et constitue le seul point de raccordement de
+// (`src/lib/auth/hooks.ts`) et constitue le seul point de raccordement de
 // l'auth au cycle de requête.
 //
 // Ordre de la chaîne (voir `handle` en bas de fichier) :
