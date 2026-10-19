@@ -9,15 +9,15 @@
 
 import { redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { auth } from '$lib/auth';
-import { applyAuthCookies, TWO_FACTOR_PENDING_COOKIE } from '$lib/auth/cookies';
-import { finalizeLogin } from '$lib/auth/finalizeLogin';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { auth } from '#lib/auth';
+import { applyAuthCookies, TWO_FACTOR_PENDING_COOKIE } from '#lib/auth/cookies';
+import { finalizeLogin } from '#lib/auth/finalizeLogin';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 
 import type { Actions, RequestEvent } from './$types';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
-import { totpCodeSchema } from '$lib/schema/auth/totpCodeSchema';
+import { totpCodeSchema } from '#lib/schema/auth/totpCodeSchema';
 
 // Par IP, pas par compte : l'identité n'est connue que du cookie signé
 // « two_factor » que Better Auth lit lui-même, jamais exposé ici (voir

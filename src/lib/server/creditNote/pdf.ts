@@ -1,14 +1,14 @@
 /**
- * PDF avoir — même moteur que la facture (`$lib/server/invoice/pdf.ts`),
+ * PDF avoir — même moteur que la facture (`#lib/server/invoice/pdf.ts`),
  * montant affiché en négatif pour ne jamais être confondu avec une facture.
  *
  * COMMERCE-PLUGIN
  */
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatMoney } from '$lib/utils/formatMoney';
+import { formatMoney } from '#lib/utils/formatMoney';
 import { fetchLogoForPdf } from '../invoice/logo';
-import type { CreditNoteView } from '$lib/creditNote/types';
+import type { CreditNoteView } from '#lib/creditNote/types';
 
 function money(amount: number, currency: string): string {
 	return formatMoney(amount, currency);

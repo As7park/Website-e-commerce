@@ -22,13 +22,13 @@
  * le cron, donc rien d'autre ne garde le flag en amont.
  */
 import { randomBytes } from 'crypto';
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
 
 const REMINDER_1_HOURS = 1;
 const REMINDER_2_HOURS = 24;

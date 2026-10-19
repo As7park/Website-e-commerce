@@ -1,7 +1,7 @@
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { env } from '$env/dynamic/public';
 import * as Sentry from '@sentry/sveltekit';
-import { isValidSentryDsn } from '$lib/sentryDsn';
+import { isValidSentryDsn } from '#lib/sentryDsn';
 
 /**
  * Suivi d'erreurs/traces côté navigateur (plan gratuit Sentry). Sans

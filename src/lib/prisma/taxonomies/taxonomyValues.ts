@@ -4,8 +4,8 @@
  * reste petit (facette catalogue) : la résolution de l'arbre et de ses
  * descendants se fait en mémoire plutôt qu'en SQL récursif.
  */
-import { prisma } from '$lib/server';
-import { bumpCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { bumpCacheVersion } from '#lib/server/cache';
 import type { TaxonomyValue } from '@prisma/client';
 
 export const getValuesByTaxonomyId = async (taxonomyId: string) => {

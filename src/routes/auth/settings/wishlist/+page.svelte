@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
-	import { toTTC } from '$lib/utils/price';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
+	import { toTTC } from '#lib/utils/price';
 	import Heart from 'lucide-svelte/icons/heart';
 
 	let { data } = $props();

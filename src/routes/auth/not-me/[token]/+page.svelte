@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
 	import { enhance } from '$app/forms';
 	import { toast } from 'svelte-sonner';
 	import { ShieldAlert, ShieldCheck } from 'lucide-svelte';

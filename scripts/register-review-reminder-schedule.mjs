@@ -6,7 +6,7 @@ dotenv.config();
 /**
  * Enregistre (une seule fois) le QStash Schedule qui déclenche la relance
  * d'avis produit post-livraison (`/api/jobs/review-reminder`, voir
- * `$lib/server/jobs/reviewReminder.ts`). Même logique idempotente que
+ * `#lib/server/jobs/reviewReminder.ts`). Même logique idempotente que
  * `register-cart-recovery-schedule.mjs` : vérifie qu'aucun schedule n'existe
  * déjà pour cette destination avant d'en créer un.
  *

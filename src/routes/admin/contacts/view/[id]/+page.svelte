@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$shadcn/card';
-	import { formatDate } from '$lib/utils/formatDate';
+	import { Button } from '#shadcn/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '#shadcn/card';
+	import { formatDate } from '#lib/utils/formatDate';
 	import { ArrowLeft, Mail, User, Calendar, MessageSquare } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 

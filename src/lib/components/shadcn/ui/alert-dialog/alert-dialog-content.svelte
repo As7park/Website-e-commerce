@@ -5,7 +5,7 @@
 		cn,
 		type WithoutChild,
 		type WithoutChildrenOrChild
-	} from '$lib/components/shadcn/utils.js';
+	} from '#lib/components/shadcn/utils.js';
 
 	let {
 		ref = $bindable(null),

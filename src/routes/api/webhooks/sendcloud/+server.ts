@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { prisma } from '$lib/server';
-import { log } from '$lib/server/log';
-import { withLock } from '$lib/server/lock';
+import { prisma } from '#lib/server';
+import { log } from '#lib/server/log';
+import { withLock } from '#lib/server/lock';
 import {
 	sendcloudWebhookSecretCandidates,
 	verifySendcloudSignature
-} from '$lib/sendcloud/webhookSignature';
+} from '#lib/sendcloud/webhookSignature';
 
 // Forme minimale du webhook `parcel_status_changed`, uniquement les champs
 // effectivement lus ci-dessous (réponse Sendcloud non garantie au-delà).
@@ -23,7 +23,7 @@ type SendcloudWebhookPayload = {
 /**
  * Webhook entrant Sendcloud (`parcel_status_changed`).
  *
- * Complète le job post-paiement (`$lib/server/jobs/post-payment.ts`, qui crée
+ * Complète le job post-paiement (`#lib/server/jobs/post-payment.ts`, qui crée
  * la commande + l'étiquette Sendcloud) par le sens inverse : Sendcloud nous
  * notifie ensuite de chaque changement de statut transporteur, affiché tel
  * quel par `OrderTrackingPanel` (`shippingStatusMessage`) — jamais interprété

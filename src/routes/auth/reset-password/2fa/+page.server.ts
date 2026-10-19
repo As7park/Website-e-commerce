@@ -8,18 +8,18 @@
 // Aucune session Better Auth n'existe à ce stade (l'utilisateur n'est pas
 // connecté, seulement en train de réinitialiser son mot de passe) : la
 // vérification se fait directement contre `TwoFactor` (voir
-// `$lib/auth/twoFactor.ts`), pas via `auth.api.verifyTOTP`/`verifyBackupCode`.
+// `#lib/auth/twoFactor.ts`), pas via `auth.api.verifyTOTP`/`verifyBackupCode`.
 // -----------------------------------------------------------------------------
 
-import { validatePasswordResetSessionRequest } from '$lib/auth/passwordReset';
-import { setPasswordResetSessionAs2FAVerified } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { verifyAndConsumeRecoveryCodeDirect, verifyTotpCodeDirect } from '$lib/auth/twoFactor';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { validatePasswordResetSessionRequest } from '#lib/auth/passwordReset';
+import { setPasswordResetSessionAs2FAVerified } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { verifyAndConsumeRecoveryCodeDirect, verifyTotpCodeDirect } from '#lib/auth/twoFactor';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 import { redirect } from '@sveltejs/kit';
 
 import type { Actions, RequestEvent } from './$types';
-import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
-import { totpCodeSchema } from '$lib/schema/auth/totpCodeSchema';
+import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
+import { totpCodeSchema } from '#lib/schema/auth/totpCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
 

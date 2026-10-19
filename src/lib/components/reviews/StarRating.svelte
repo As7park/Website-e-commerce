@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib/components/shadcn/utils.js';
+	import { cn } from '#lib/components/shadcn/utils.js';
 	import Star from 'lucide-svelte/icons/star';
 
 	let {

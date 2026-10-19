@@ -6,8 +6,8 @@
  * insensible à la casse, le numéro de facture est déjà un identifiant
  * exact généré par l'app (pas de recherche floue).
  */
-import { prisma } from '$lib/server';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 
 export async function getTransactionByInvoiceAndEmail(invoiceNumber: string, email: string) {
 	const transaction = await prisma.transaction.findFirst({

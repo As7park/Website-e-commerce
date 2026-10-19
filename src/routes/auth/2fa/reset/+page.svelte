@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
+	import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
 
 	let { data } = $props();
 

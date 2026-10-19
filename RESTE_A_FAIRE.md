@@ -584,7 +584,7 @@ rester dans l'esprit du dépôt.
   couvrirait un vrai besoin de conformité comptable française.
 - **Vérification renforcée (KYC léger) pour les grosses commandes** ⭐ —
   extension directe de la détection de fraude déjà en place
-  (`$lib/server/fraud.ts`) : au-delà d'un montant seuil, exige une pièce
+  (`#lib/server/fraud.ts`) : au-delà d'un montant seuil, exige une pièce
   d'identité uploadée avant validation admin manuelle, plutôt qu'un simple
   score automatique. Réutilise le stockage d'images déjà en place
   (Cloudinary) et le flux d'approbation manuelle des retours/SAV comme
@@ -652,7 +652,7 @@ sections correspondantes plus bas, marquées ✅ mise à jour) :
 appliquée à la base.
 
 Pour situer par rapport à la Partie A : la purge RGPD automatisée déjà en
-place (`$lib/server/jobs/cleanup.ts` — sessions expirées, tokens, paniers
+place (`#lib/server/jobs/cleanup.ts` — sessions expirées, tokens, paniers
 abandonnés) couvre le principe de minimisation des données (RGPD
 art. 5.1.e), **distinct** du droit à l'effacement sur demande d'une
 personne (art. 17) — désormais traité lui aussi, voir [C.1](#c1-protection-des-donn%C3%A9es-personnelles-rgpd--cnil).
@@ -666,7 +666,7 @@ admin existant (`/admin/users?/deleteUser`) : il supprimait purement et
 simplement les commandes du compte avant suppression, contredisant le
 commentaire du schéma qui exige leur conservation — les deux flux
 partagent désormais la même fonction correcte
-(`$lib/prisma/user/anonymizeUser.ts`).
+(`#lib/prisma/user/anonymizeUser.ts`).
 
 **Consommation, mentions, fiscal** :
 
@@ -685,7 +685,7 @@ partagent désormais la même fonction correcte
   au consommateur, sans conversion TVA — alors que le panier/checkout
   appliquent bien la TVA séparément. Contraire à l'Arrêté du 3 déc. 1987
   (prix annoncé au consommateur = TTC). Corrigé par une conversion à
-  l'affichage uniquement (`toTTC()`, `$lib/utils/price.ts`) ; le prix HT
+  l'affichage uniquement (`toTTC()`, `#lib/utils/price.ts`) ; le prix HT
   transmis au panier reste inchangé pour ne pas casser le calcul
   panier/commande. Le filtre de prix du catalogue (curseur, bornes) a
   été converti en cohérence.
@@ -853,7 +853,7 @@ porte plus que les interrupteurs de modules.
 | ----------------------------- | --------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Taux de TVA correct           | CGI art. 278 s.                         | 🟡 Configurable         | `StoreSettings.vatRate`, modifiable depuis `/admin/tva` — reste à saisir le bon taux (20 % attendu), décision volontairement laissée à un humain                                                                                                                                                       |
 | Mentions obligatoires facture | Code com. L441-9, CGI art. 242 nonies A | ✅ SIRET + TVA affichés | `InvoiceCompany.siret`/`.vat` imprimés sur le PDF facture/avoir et l'aperçu HTML — priorité à l'identité saisie depuis `/admin/identite` ([C.3](#c3-mentions-l%C3%A9gales--identification-lcen)), repli sur `INVOICE_COMPANY_*` (env) puis sur un placeholder manifestement fictif si rien n'est saisi |
-| Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | ✅ Corrigé              | Catalogue, fiche produit (+ ventes croisées, récemment consultés), liste d'envies affichaient le prix HT stocké sans conversion — désormais convertis en TTC à l'affichage (`toTTC()`, `$lib/utils/price.ts`) ; panier/commande restent inchangés (HT + TVA déjà détaillés séparément, conforme)       |
+| Affichage des prix TTC        | Arrêté du 3 déc. 1987                   | ✅ Corrigé              | Catalogue, fiche produit (+ ventes croisées, récemment consultés), liste d'envies affichaient le prix HT stocké sans conversion — désormais convertis en TTC à l'affichage (`toTTC()`, `#lib/utils/price.ts`) ; panier/commande restent inchangés (HT + TVA déjà détaillés séparément, conforme)       |
 | Guichet unique TVA (OSS)      | CGI art. 298 sexdecies-G                | ❌ Manquant             | Pertinent seulement au-delà de 10 000 €/an de ventes hors France vers l'UE                                                                                                                                                                                                                             |
 
 ## C.5 Paiement en ligne
@@ -943,7 +943,7 @@ de cette partie), pas juste une case à cocher.
 | Données                        | `User` (email, username, name, picture), `passwordHash` (Argon2id), `recoveryCode`/`totpKey` (chiffrés AES), `googleId`, `Session` (dont `userAgent`, `ipAddress`, `city`/`country` approximatifs — ajoutés pour l'auto-service « Sessions actives », `/auth/settings/sessions`), `LoginEvent` (historique des connexions, mêmes colonnes appareil/localisation — voir D.1bis), `EmailVerificationRequest`, `PasswordResetSession` |
 | Personnes concernées           | Clients                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Destinataires / sous-traitants | Google (connexion OAuth, si utilisée) ; Vercel (en-têtes de géolocalisation `x-vercel-ip-*`, dérivés de l'IP côté edge, jamais un service de géolocalisation tiers séparé)                                                                                                                                                                                                                                                         |
-| Durée de conservation          | Sessions et jetons expirés purgés automatiquement (`$lib/server/jobs/cleanup.ts`) — l'IP/ville/pays d'une session ont donc la même durée de vie qu'elle (30 jours glissants au plus) ; `LoginEvent` conservé 90 jours (même job), plus long que la session car c'est un journal de sécurité, voir D.1bis ; le compte lui-même n'a pas de purge automatique — suppression uniquement sur demande (self-service ou admin, voir D.8)  |
+| Durée de conservation          | Sessions et jetons expirés purgés automatiquement (`#lib/server/jobs/cleanup.ts`) — l'IP/ville/pays d'une session ont donc la même durée de vie qu'elle (30 jours glissants au plus) ; `LoginEvent` conservé 90 jours (même job), plus long que la session car c'est un journal de sécurité, voir D.1bis ; le compte lui-même n'a pas de purge automatique — suppression uniquement sur demande (self-service ou admin, voir D.8)  |
 
 ### D.1bis Historique des connexions et alerte « nouvel appareil »
 
@@ -951,10 +951,10 @@ de cette partie), pas juste une case à cocher.
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Finalité                       | Détecter et signaler au client une connexion depuis un appareil inconnu (sécurité du compte) ; conserver un historique consultable après expiration des sessions                                                                                                                               |
 | Base légale                    | Intérêt légitime (art. 6.1.f) — sécurité du compte                                                                                                                                                                                                                                             |
-| Données                        | `LoginEvent` (userAgent, ipAddress, city, country, méthode de connexion, indicateur « nouvel appareil ») — jamais créé pour une simple réémission de session (validation 2FA, changement de mot de passe), seulement pour une authentification réelle (`$lib/prisma/loginEvent/loginEvent.ts`) |
+| Données                        | `LoginEvent` (userAgent, ipAddress, city, country, méthode de connexion, indicateur « nouvel appareil ») — jamais créé pour une simple réémission de session (validation 2FA, changement de mot de passe), seulement pour une authentification réelle (`#lib/prisma/loginEvent/loginEvent.ts`) |
 | Personnes concernées           | Clients                                                                                                                                                                                                                                                                                        |
 | Destinataires / sous-traitants | Aucun (l'alerte part par SMTP, déjà listé en D.6, vers le client lui-même)                                                                                                                                                                                                                     |
-| Durée de conservation          | **90 jours, explicite dans le code** (`LOGIN_EVENT_RETENTION_DAYS`, `$lib/server/jobs/cleanup.ts`) — plus long que la session qu'il documente (justifié : un journal de sécurité doit survivre à l'expiration de ce qu'il journalise), pas indéfini                                            |
+| Durée de conservation          | **90 jours, explicite dans le code** (`LOGIN_EVENT_RETENTION_DAYS`, `#lib/server/jobs/cleanup.ts`) — plus long que la session qu'il documente (justifié : un journal de sécurité doit survivre à l'expiration de ce qu'il journalise), pas indéfini                                            |
 
 ## D.2 Commandes, factures et paiement
 
@@ -1028,7 +1028,7 @@ de cette partie), pas juste une case à cocher.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Finalité                  | Export des données personnelles (portabilité) et suppression de compte (effacement)                                                                                                                                                                                                                                                                                                                             |
 | Base légale               | Obligation légale (RGPD art. 15, 17, 20)                                                                                                                                                                                                                                                                                                                                                                        |
-| Où                        | `/auth/settings/donnees` — export JSON complet ; suppression par **anonymisation** (`$lib/prisma/user/anonymizeUser.ts`), jamais de suppression physique du compte                                                                                                                                                                                                                                              |
+| Où                        | `/auth/settings/donnees` — export JSON complet ; suppression par **anonymisation** (`#lib/prisma/user/anonymizeUser.ts`), jamais de suppression physique du compte                                                                                                                                                                                                                                              |
 | Détail de l'anonymisation | Vide les champs identifiants de `User` (email, nom, mot de passe...), supprime `SavedPaymentMethod` (+ détachement Stripe), `Address`, `WishlistItem`, `StockAlert`, `ProductView`, jetons de session/réinitialisation ; conserve `Order`/`Transaction`/`Review`/`ReturnRequest`/`ProductQuestion`/`LoyaltyAward`/`ReferralReward` rattachés au compte désormais anonyme, pour l'obligation comptable de 10 ans |
 | Même flux côté admin      | `/admin/users?/deleteUser` utilise la même fonction (un bug qui supprimait les commandes au lieu de les conserver a été corrigé, voir le résumé exécutif de la [Partie C](#partie-c--conformit%C3%A9-r%C3%A9glementaire-e-commerce))                                                                                                                                                                            |
 

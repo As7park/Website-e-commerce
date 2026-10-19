@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Point d'entrée serveur de l'authentification — remplace `$lib/lucia/hooks.ts`
+// Point d'entrée serveur de l'authentification — remplace `#lib/lucia/hooks.ts`
 // (voir MIGRATION_BETTER_AUTH.md). Mêmes responsabilités, mêmes noms de champs
 // dans `event.locals` (voir `src/app.d.ts`) : aucun consommateur en dehors de
 // ce fichier n'a besoin de changer.
@@ -14,11 +14,11 @@
 // -----------------------------------------------------------------------------
 
 import { redirect, type Handle } from '@sveltejs/kit';
-import { auth } from '$lib/auth';
-import { toLocalsUser, type User } from '$lib/auth/user';
-import { toLocalsSession, sessionIdentityCacheKey, type Session } from '$lib/auth/session';
-import { isRedisConfigured, getRedis } from '$lib/server/redis';
-import { touchSessionActivity } from '$lib/prisma/session/sessions';
+import { auth } from '#lib/auth';
+import { toLocalsUser, type User } from '#lib/auth/user';
+import { toLocalsSession, sessionIdentityCacheKey, type Session } from '#lib/auth/session';
+import { isRedisConfigured, getRedis } from '#lib/server/redis';
+import { touchSessionActivity } from '#lib/prisma/session/sessions';
 
 const DEBUG = false;
 function log(...args: unknown[]) {

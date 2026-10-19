@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
-	import * as Select from '$shadcn/select';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
+	import * as Select from '#shadcn/select';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 

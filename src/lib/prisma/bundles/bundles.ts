@@ -9,8 +9,8 @@
 //     moment du paiement, jamais une valeur transmise par le client (même
 //     garde que `validatePromo`/le parrainage, voir `checkout/+page.server.ts`).
 // -----------------------------------------------------------------------------
-import { prisma } from '$lib/server';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import { toNumber } from '#lib/server/decimal';
 
 /** Remise appliquée une seule fois (pas cumulée par paire) au checkout. */
 export const BUNDLE_DISCOUNT_PERCENT = 0.1;

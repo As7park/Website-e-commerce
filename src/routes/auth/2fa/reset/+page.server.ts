@@ -3,7 +3,7 @@
 //
 // Le code accepté connecte le compte (comme `/auth/2fa`) ET retire la clé
 // TOTP — un seul code de secours existe par compte (voir
-// `backupCodeOptions` dans `$lib/auth/index.ts`), l'utiliser est donc
+// `backupCodeOptions` dans `#lib/auth/index.ts`), l'utiliser est donc
 // nécessairement une sortie définitive de la 2FA actuelle, jamais une
 // simple connexion. L'utilisateur est renvoyé vers sa (re)configuration,
 // toujours exigée sur son compte.
@@ -11,16 +11,16 @@
 
 import { redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { auth } from '$lib/auth';
-import { applyAuthCookies, TWO_FACTOR_PENDING_COOKIE } from '$lib/auth/cookies';
-import { disableTwoFactor } from '$lib/auth/twoFactor';
-import { finalizeLogin } from '$lib/auth/finalizeLogin';
-import { prisma } from '$lib/server';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { auth } from '#lib/auth';
+import { applyAuthCookies, TWO_FACTOR_PENDING_COOKIE } from '#lib/auth/cookies';
+import { disableTwoFactor } from '#lib/auth/twoFactor';
+import { finalizeLogin } from '#lib/auth/finalizeLogin';
+import { prisma } from '#lib/server';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 
 import type { Actions, RequestEvent } from './$types';
 import { message, superValidate } from 'sveltekit-superforms';
-import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
+import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 
 // Par IP, même raison que `/auth/2fa` (`totpBucket`).

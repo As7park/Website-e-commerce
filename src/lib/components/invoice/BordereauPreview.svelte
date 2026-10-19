@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import type { BordereauView } from '$lib/invoice/types';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import type { BordereauView } from '#lib/invoice/types';
 	import ArrowLeft from 'lucide-svelte/icons/arrow-left';
 	import Download from 'lucide-svelte/icons/download';
 

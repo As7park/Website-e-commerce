@@ -1,5 +1,5 @@
-import { prisma } from '$lib/server';
-import { hashPassword } from '$lib/auth/password';
+import { prisma } from '#lib/server';
+import { hashPassword } from '#lib/auth/password';
 
 /**
  * Met à jour les paramètres de sécurité d'un compte depuis l'administration.

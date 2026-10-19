@@ -137,7 +137,7 @@ en recréer une seconde.
 L'écriture de ces deux marqueurs suit toujours un appel réseau Sendcloud
 déjà réussi : un simple timeout DB à cet instant précis ne doit pas se
 traduire par un retry QStash qui referait l'appel réseau. `persistSendcloudMarker`
-(`$lib/server/sendcloud-marker.ts`) retente l'écriture (3 tentatives, léger
+(`#lib/server/sendcloud-marker.ts`) retente l'écriture (3 tentatives, léger
 backoff) ; si elle échoue quand même, le job s'arrête sans relancer
 (`SendcloudMarkerPersistError`, journalisé en `ERROR` + Sentry
 `deadLetter: 'sendcloud-marker'`) plutôt que de laisser QStash retenter et
@@ -146,12 +146,12 @@ recréer la commande/étiquette.
 ### Résilience Sendcloud (disjoncteur + dead-letter)
 
 Les appels `createSendcloudOrder`/`createSendcloudLabel` passent par
-`withCircuitBreaker('sendcloud', …)` (`$lib/server/circuit-breaker.ts`) : au
+`withCircuitBreaker('sendcloud', …)` (`#lib/server/circuit-breaker.ts`) : au
 5e échec en moins de 2 minutes, le disjoncteur s'ouvre et court-circuite les
 appels Sendcloud pendant 60s (sans requête réseau), pour ne pas marteler un
 fournisseur déjà en difficulté à chaque retry QStash.
 
-En parallèle, `recordJobAttempt` (`$lib/server/job-attempts.ts`) compte les
+En parallèle, `recordJobAttempt` (`#lib/server/job-attempts.ts`) compte les
 échecs pour **cette transaction précise** (clé `sendcloud:<transaction id>`,
 TTL 24h) : après 5 tentatives infructueuses, le job arrête de relancer
 l'erreur (donc QStash arrête de retenter) et journalise en `ERROR` + Sentry
@@ -185,7 +185,7 @@ le débit de l'app elle-même — tailles largement suffisantes.
 ### Suivi de commande côté client
 
 `/auth/settings/factures/[id]` affiche, au-dessus de la facture, un panneau
-« Suivi de commande » (`$lib/components/invoice/OrderTrackingPanel.svelte`) —
+« Suivi de commande » (`#lib/components/invoice/OrderTrackingPanel.svelte`) —
 statut de paiement (`formatOrderStatus`), méthode d'expédition, et numéro +
 lien de suivi transporteur dès que `createSendcloudLabel` les a posés sur la
 `Transaction` (`trackingNumber`/`trackingUrl`, voir résilience Sendcloud
@@ -202,7 +202,7 @@ Un couple invalide renvoie un message générique unique (« Aucune commande ne
 correspond à ces informations. ») sans préciser lequel des deux champs est en
 cause — sinon le formulaire devient un oracle pour tester des numéros de
 facture au hasard. Limité par IP (`guestTrackingLimiter`,
-`RefillingTokenBucket` de 8 jetons/30 s, `$lib/server/rate-limit.ts`) pour la
+`RefillingTokenBucket` de 8 jetons/30 s, `#lib/server/rate-limit.ts`) pour la
 même raison : sans compte ni mot de passe à deviner, seul ce débit protège
 contre l'énumération. Lien affiché sur `/checkout/success`.
 
@@ -214,7 +214,7 @@ entrant du flux ci-dessus, qui ne fait que créer commande + étiquette.
 Signature HMAC-SHA256 vérifiée sur le corps brut (header
 `Sendcloud-Signature`, secret `SENDCLOUD_WEBHOOK_SECRET`, à renseigner dans
 les réglages de l'intégration Sendcloud) via
-`$lib/sendcloud/webhookSignature.ts` ; une signature absente ou invalide
+`#lib/sendcloud/webhookSignature.ts` ; une signature absente ou invalide
 renvoie 401. Les autres actions (`integration_connected`, `return_created`,
 …) sont acquittées (200) sans traitement.
 
@@ -304,7 +304,7 @@ tests pour confirmer une vraie création réussie.
 
 ### Débit SMTP sous rafale (facture)
 
-`runInvoiceEmailJob` (`$lib/server/jobs/invoice-email.ts`) consomme un jeton
+`runInvoiceEmailJob` (`#lib/server/jobs/invoice-email.ts`) consomme un jeton
 d'un `RefillingTokenBucket` global (`smtp-send`, 5 en rafale, 1/s en
 soutenu — donc environ 60 e-mails/min max) avant d'appeler `sendInvoiceEmail`.
 Volontairement conservateur : à ajuster selon le plan SMTP souscrit (Brevo)
@@ -437,14 +437,14 @@ blocage « avant capture » aurait supposé de passer tout le tunnel en capture
 manuelle — nouveau webhook `payment_intent.requires_capture`, actions admin
 capturer/annuler, gestion de l'expiration Stripe à 7 jours, impact sur
 _toutes_ les commandes puisque le mode de capture est global à l'intégration.
-À la place, `computeFraudScore` (`$lib/server/fraud.ts`) est appelé dans
+À la place, `computeFraudScore` (`#lib/server/fraud.ts`) est appelé dans
 l'action `checkout` (`src/routes/checkout/+page.server.ts`), juste avant
 `createCheckoutSession` : si le score dépasse le seuil, aucune session
 Stripe n'est jamais ouverte. Zéro nouveau flux Stripe, zéro risque sur le
 tunnel de paiement existant.
 
 **Trois facteurs, poids fixes** (constantes nommées en tête de
-`$lib/server/fraud.ts`, pas de seuils configurables en admin — même
+`#lib/server/fraud.ts`, pas de seuils configurables en admin — même
 convention que `ABANDONED_ORDER_DAYS`/`REVIEW_REMINDER_DELAY_DAYS` ailleurs
 dans ce projet) :
 
@@ -453,7 +453,7 @@ dans ce projet) :
 | Vélocité de commandes               | ≥ 3 `Transaction` payées sur les dernières 24h pour ce compte                                        | +40   |
 | Écart adresse facturation/livraison | Adresses différentes, pays différent                                                                 | +30   |
 | Écart adresse facturation/livraison | Adresses différentes, même pays mais ville/code postal différent                                     | +15   |
-| E-mail jetable                      | Domaine dans `$lib/server/fraud/disposableEmailDomains.ts` (liste statique, à enrichir manuellement) | +30   |
+| E-mail jetable                      | Domaine dans `#lib/server/fraud/disposableEmailDomains.ts` (liste statique, à enrichir manuellement) | +30   |
 
 Score plafonné à 100. Bandes : `< 30` → Faible, `30-59` → Moyen, `≥ 60` →
 Élevé. La vélocité compte les `Transaction` (commandes réellement payées),
@@ -513,7 +513,7 @@ carte qui transite par le serveur applicatif, uniquement l'id de
 `PaymentMethod` renvoyé par Stripe après confirmation côté client.
 
 `User.stripeCustomerId` est créé **paresseusement** (`ensureStripeCustomer`,
-`$lib/server/stripeCustomer.ts`) : à l'ajout de la première carte, jamais au
+`#lib/server/stripeCustomer.ts`) : à l'ajout de la première carte, jamais au
 signup ni au premier passage en caisse. Au checkout suivant, si le compte a
 déjà un `stripeCustomerId`, il est passé à `stripe.checkout.sessions.create`
 (`customer`) pour que Stripe propose les cartes déjà enregistrées — sans
@@ -528,7 +528,7 @@ efface la ligne locale. Une seule carte par défaut à la fois.
 Module activable depuis `/admin/settings` (`StoreSettings.cartRecoveryEnabled`).
 Contrairement aux autres modules de cette page, ce n'est pas une route ou un
 champ qui apparaît/disparaît : c'est un scan périodique
-(`$lib/server/jobs/cartRecovery.ts`, `runCartRecoveryJob`) qui détecte les
+(`#lib/server/jobs/cartRecovery.ts`, `runCartRecoveryJob`) qui détecte les
 `Order` `PENDING` non finalisées et envoie un e-mail de relance avec un code
 promo à usage unique, généré via le moteur de codes promo existant
 (`createPromoCode`-like, `type: PERCENTAGE`, `usageLimit: 1`, expire après 7
@@ -553,7 +553,7 @@ ne court jamais après une commande déjà supprimée.
 Ce scan est **déclenché**, pas événementiel : contrairement à la fidélité ou
 la facture (enfilées depuis le webhook Stripe), personne n'appelle ce job
 après une action utilisateur. Il est planifié comme la purge
-(`$lib/server/jobs/cleanup.ts`) : QStash Schedule
+(`#lib/server/jobs/cleanup.ts`) : QStash Schedule
 (`scripts/register-cart-recovery-schedule.mjs`, toutes les 30 minutes) ou
 repli Vercel Cron (`vercel.json` → `/api/jobs/cart-recovery`), même route
 double-auth (signature QStash ou `Authorization: Bearer $CRON_SECRET`) que
@@ -569,7 +569,7 @@ token ou d'un lien spécial.
 
 Module activable depuis `/admin/settings` (`StoreSettings.reviewReminderEnabled`).
 Même mécanique que la relance panier ci-dessus : un scan périodique
-(`$lib/server/jobs/reviewReminder.ts`, `runReviewReminderJob`), pas un job
+(`#lib/server/jobs/reviewReminder.ts`, `runReviewReminderJob`), pas un job
 déclenché par une action utilisateur. Il détecte les `Order` `SHIPPED` dont
 `updatedAt` date de plus de 7 jours (`REVIEW_REMINDER_DELAY_DAYS`) et envoie
 un e-mail « notez votre achat » avec un lien direct vers le formulaire
@@ -598,12 +598,12 @@ Module activable depuis `/admin/settings`
 distinction avec l'historique vitrine « Récemment consultés »
 (`localStorage`, inchangé, fonctionne aussi pour un visiteur anonyme). Ce
 module ne couvre que les comptes connectés : `ProductView`
-(`$lib/prisma/products/productViews.ts`, posée depuis le `load()` de
+(`#lib/prisma/products/productViews.ts`, posée depuis le `load()` de
 `/products/[slug]`) n'existe que pour un visiteur identifié — aucun suivi
 anonyme dans ce projet (même contrainte que le panier invité).
 
 Même mécanique que les deux relances ci-dessus : scan périodique
-(`$lib/server/jobs/recentlyViewedReminder.ts`, `runRecentlyViewedReminderJob`),
+(`#lib/server/jobs/recentlyViewedReminder.ts`, `runRecentlyViewedReminderJob`),
 détecte les `ProductView` de plus de 24h sans relance déjà envoyée
 (`reminderSentAt: null`), écarte tout produit déjà acheté par ce compte
 (`OrderItem`/`Order.status IN (PAID, SHIPPED)`, même filtre que « Souvent

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Textarea } from '$shadcn/textarea/index.js';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Textarea } from '#shadcn/textarea/index.js';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { createGiftCardSchema } from '$lib/schema/giftCards/giftCardSchema.js';
+	import { createGiftCardSchema } from '#lib/schema/giftCards/giftCardSchema.js';
 
 	let { data } = $props();
 

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createPromoSchema } from '$lib/schema/promo/promoSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createPromoSchema } from '#lib/schema/promo/promoSchema.js';
 	import { goto } from '$app/navigation';
 
 	let { data } = $props();

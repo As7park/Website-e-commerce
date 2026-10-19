@@ -3,9 +3,9 @@ import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { answerQuestionSchema } from '$lib/schema/products/questionSchema';
-import { answerQuestion, getQuestionById } from '$lib/prisma/productQuestions/productQuestions';
-import { requireAdmin } from '$lib/admin/guards';
+import { answerQuestionSchema } from '#lib/schema/products/questionSchema';
+import { answerQuestion, getQuestionById } from '#lib/prisma/productQuestions/productQuestions';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const question = await getQuestionById(params.id);

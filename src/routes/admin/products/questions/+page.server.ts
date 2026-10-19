@@ -2,9 +2,9 @@ import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { deleteQuestionSchema } from '$lib/schema/products/questionSchema';
-import { deleteQuestionById, getAllQuestions } from '$lib/prisma/productQuestions/productQuestions';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { deleteQuestionSchema } from '#lib/schema/products/questionSchema';
+import { deleteQuestionById, getAllQuestions } from '#lib/prisma/productQuestions/productQuestions';
 
 /**
  * Modération des questions produit (Q&A).

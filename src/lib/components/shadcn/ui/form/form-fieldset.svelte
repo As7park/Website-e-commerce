@@ -6,7 +6,7 @@
 
 <script lang="ts" generics="T extends Record<string, unknown>, U extends _FormPath<T>">
 	import * as FormPrimitive from 'formsnap';
-	import { cn, type WithoutChild } from '$lib/components/shadcn/utils.js';
+	import { cn, type WithoutChild } from '#lib/components/shadcn/utils.js';
 
 	let {
 		ref = $bindable(null),

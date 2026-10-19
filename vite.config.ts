@@ -3,7 +3,8 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
-import { dropStalePwa } from './vite-plugin-drop-stale-pwa';
+import { dropStalePwa } from './vite-plugin-drop-stale-pwa.ts';
+import svelteKitConfig from './sveltekit.config.ts';
 
 export default defineConfig({
 	// `sentrySvelteKit()` doit précéder `sveltekit()` : instrumentation auto
@@ -15,7 +16,7 @@ export default defineConfig({
 		sentrySvelteKit({ autoUploadSourceMaps: false }),
 		dropStalePwa(),
 		tailwindcss(),
-		sveltekit()
+		sveltekit(svelteKitConfig)
 	],
 
 	optimizeDeps: {
@@ -59,9 +60,6 @@ export default defineConfig({
 		// Dev uniquement : `vite dev` ne tourne jamais en production.
 		allowedHosts: ['.loca.lt']
 	},
-
-	// `preprocess` retiré : redondant avec svelte.config.js (vitePreprocess()
-	// y est déjà déclaré, seul endroit pertinent pour cette option).
 
 	clearScreen: false
 });

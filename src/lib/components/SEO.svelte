@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { seoConfig } from '$lib/seo.config';
+	import { page } from '$app/state';
+	import { seoConfig } from '#lib/seo.config';
 	import StructuredData from './StructuredData.svelte';
 
 	interface SEOProps {
@@ -68,7 +68,7 @@
 	const finalAuthor = $derived(author || seoConfig.site.author);
 
 	// Construire l'URL canonique
-	const canonicalUrl = $derived(url || `${seoConfig.site.url}${$page.url.pathname}`);
+	const canonicalUrl = $derived(url || `${seoConfig.site.url}${page.url.pathname}`);
 
 	// Construire le titre complet
 	const fullTitle = $derived(
@@ -86,8 +86,8 @@
 	const organizationData = $derived({
 		name: seoConfig.site.name,
 		url: seoConfig.site.url,
-		...($page.data.companyLogoUrl
-			? { logo: { '@type': 'ImageObject', url: $page.data.companyLogoUrl } }
+		...(page.data.companyLogoUrl
+			? { logo: { '@type': 'ImageObject', url: page.data.companyLogoUrl } }
 			: {}),
 		description: seoConfig.site.description,
 		sameAs: [

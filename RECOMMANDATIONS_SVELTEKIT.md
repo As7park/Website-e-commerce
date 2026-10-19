@@ -1,77 +1,65 @@
 # Évolutions recommandées pour le projet SvelteKit
 
 État examiné le 16 octobre 2026 à partir de `package.json`, de la configuration
-SvelteKit, de la CI et de l'organisation de `src/`. Ce document est une feuille
-de route : il ne signifie pas que les migrations proposées ont déjà été
-réalisées.
+SvelteKit, de la CI et de l'organisation de `src/`. Les statuts ci-dessous
+séparent les changements effectués des validations qui restent à réaliser.
 
 ## Priorités
 
-### 1. Remplacer progressivement Lucia
+### 1. Migration Lucia → Better Auth — réalisée
 
-**Priorité : haute.** Lucia v3 et son adaptateur Prisma sont utilisés dans
-`src/lib/lucia/index.ts` pour la validation des sessions et les cookies. Lucia
-est dépréciée ; cependant, le projet a déjà bâti autour d'elle un système
-d'authentification métier conséquent (2FA, récupération de compte, OAuth Google,
-alertes et révocation de sessions). Une migration doit donc préserver ce
-comportement, et ne pas se limiter à remplacer un paquet.
+**Statut : réalisée dans le code et les dépendances.** Better Auth est configuré
+avec Prisma dans `src/lib/auth/index.ts` ; les parcours de session, Google et 2FA
+ont été migrés, en conservant notamment les règles métier de récupération de
+compte, de codes de secours, de rôles et d'alertes. Lucia et son adaptateur
+Prisma ne sont plus déclarés dans `package.json`, et le schéma Prisma ne contient
+plus l'ancien modèle `Session`.
 
-Étapes recommandées :
+Le détail des choix, étapes, tests et écarts de comportement documentés se trouve
+dans [MIGRATION_BETTER_AUTH.md](./MIGRATION_BETTER_AUTH.md).
 
-1. Inventorier les contrats actuels : format et durée des cookies, création,
-   validation, renouvellement et révocation des sessions, données exposées dans
-   `event.locals`, 2FA et OAuth.
-2. Isoler derrière une petite interface interne les opérations de session
-   actuellement liées à Lucia, sans modifier le comportement visible.
-3. Comparer une implémentation de sessions maison fondée sur les recommandations
-   actuelles de Lucia avec une bibliothèque intégrée telle que Better Auth.
-   Vérifier dans les deux cas la compatibilité avec Prisma, le modèle de données
-   existant et les parcours métier avant de choisir.
-4. Migrer par étapes, ajouter des tests de non-régression et documenter la
-   procédure de déploiement et, si nécessaire, d'invalidation des sessions.
-5. Supprimer `lucia` et `@lucia-auth/adapter-prisma` uniquement lorsque plus
-   aucun code ne les utilise.
+**À vérifier lors du déploiement en production :** la migration de base de
+données est appliquée ; les utilisateurs ayant une 2FA existante la reconfigurent
+conformément à la procédure prévue ; les utilisateurs se reconnectent après
+l'invalidation des anciennes sessions. Cette feuille de route ne confirme pas à
+elle seule l'état d'un déploiement production.
 
-**Critères de validation :** les parcours d'inscription, connexion, déconnexion,
-Google, 2FA, récupération de compte et révocation des sessions passent les tests
-existants ; les cookies gardent les attributs de sécurité attendus ; aucun
-compte ni session n'est perdu par surprise au déploiement.
+### 2. Mise à niveau majeure de SvelteKit et de l'adapter Vercel
 
-Références : [annonce de dépréciation de Lucia](https://lucia-auth.com/),
-[guide d'authentification de Lucia](https://auth.pilcrowonpaper.com/),
-[intégration SvelteKit de Better Auth](https://www.better-auth.com/docs/integrations/svelte-kit).
+**Statut : migration du code en cours ; validation complète bloquée.** Les
+dépendances ont été mises à niveau vers SvelteKit 3.1, Vite 8, le plugin Svelte
+7, TypeScript 6, Superforms 3 et adapter-vercel 7. Le runtime cible est
+`nodejs22.x` ; Node 22.17 minimum est déclaré dans `package.json` et Node
+22.22.0 est utilisé en CI.
 
-### 2. Préparer la mise à niveau majeure de SvelteKit et de l'adapter Vercel
+Les changements de compatibilité déjà appliqués comprennent le déplacement de
+la configuration dans `sveltekit.config.ts` et `vite.config.ts`, l'usage de
+`$app/state` et `afterNavigate` à la place de `$app/stores`, la déclaration
+explicite des variables d'environnement dans `src/env.ts` et la migration des
+anciens alias vers les sous-chemins `#...` de `package.json#imports`.
 
-**Priorité : haute, après vérification des dépendances et de la plateforme.**
-Au moment de l'examen, le projet déclare SvelteKit `^2.21.1`, Vite `^6.4.4`,
-`@sveltejs/vite-plugin-svelte` `^5.0.3`, adapter-vercel `^6.3.4` et Svelte 5.
-La configuration choisit aussi le runtime Vercel `nodejs20.x`, tandis que la CI
-utilise Node 22.
+**Validation locale :** `npm ci --ignore-scripts` et la compilation Vite des
+modules passent. Le build complet et `npm run check` restent bloqués parce que
+le client Prisma généré est absent ; `prisma generate` ne peut pas télécharger
+son moteur dans cet environnement à cause d'une erreur de chaîne de certificats
+TLS (`self-signed certificate in certificate chain`). Ne pas désactiver la
+vérification TLS pour contourner ce blocage. Le contrôle TypeScript signale
+également des incompatibilités Tailwind préexistantes dans `tailwind.config.ts`.
 
-Avant de mettre à niveau :
+Avant de considérer la migration terminée :
 
-1. Vérifier les versions stables disponibles, les prérequis Node et les guides de
-   migration officiels de SvelteKit, Vite, du plugin Svelte et de l'adapter
-   Vercel. Traiter ces paquets comme un ensemble compatible, pas comme des mises
-   à jour indépendantes.
-2. Confirmer les runtimes réellement pris en charge par le compte et le plan
-   Vercel. Aligner le runtime déclaré dans `svelte.config.js` et la version
-   utilisée en CI ; ne pas augmenter le runtime avant cette confirmation.
-3. Créer une branche dédiée et mettre à niveau progressivement en suivant les
-   guides officiels.
-4. Exécuter `npm ci`, `npm run check`, `npm run lint`, `npm run test:unit`,
-   `npm run test:e2e` et `npm run build`.
-5. Vérifier en préproduction le checkout Stripe, les webhooks, les tâches
+1. Régénérer le client Prisma dans un environnement où la chaîne de certificats
+   est approuvée, puis exécuter `npm run check`, `npm run lint`,
+   `npm run test:unit`, `npm run test:e2e` et `npm run build`.
+2. Vérifier en préproduction le checkout Stripe, les webhooks, les tâches
    planifiées, les PDF, l'authentification, les cartes MapLibre et la politique
-   CSP. Les durées de fonctions configurées pour Vercel doivent également être
-   testées sur la plateforme cible.
+   CSP. Tester aussi les durées de fonctions sur la plateforme Vercel cible.
 
-**Critères de validation :** les versions installées sont compatibles entre
-elles et avec le runtime de déploiement ; CI, build de production et parcours
-critiques fonctionnent avant la mise en production.
+**Critères de validation :** contrôle, tests, build et parcours critiques
+réussissent avec le client Prisma généré ; le runtime Node 22 est vérifié sur
+Vercel ; les smoke-tests préproduction sont concluants.
 
-Références : [guide officiel de migration SvelteKit](https://svelte.dev/docs/kit/migrating-to-sveltekit-2),
+Références : [SvelteKit](https://svelte.dev/docs/kit),
 [adapters SvelteKit](https://svelte.dev/docs/kit/adapters),
 [adapter Vercel](https://svelte.dev/docs/kit/adapter-vercel).
 

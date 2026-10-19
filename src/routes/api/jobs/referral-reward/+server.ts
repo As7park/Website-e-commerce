@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { runReferralRewardJob } from '$lib/server/jobs/referral';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { runReferralRewardJob } from '#lib/server/jobs/referral';
 
 /**
- * Appelé par QStash (`$lib/server/qstash.ts` → `enqueueReferralRewardJob`),
+ * Appelé par QStash (`#lib/server/qstash.ts` → `enqueueReferralRewardJob`),
  * jamais directement par un client — même garde de signature que
  * `/api/jobs/loyalty-check`.
  */

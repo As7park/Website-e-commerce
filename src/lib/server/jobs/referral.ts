@@ -9,12 +9,12 @@
  * Coût maîtrisé : une seule récompense par filleul, jamais à ses commandes
  * suivantes — garanti par la contrainte unique `ReferralReward.referredId`.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { createGiftCard } from '$lib/prisma/giftCards/giftCards';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { createGiftCard } from '#lib/prisma/giftCards/giftCards';
 
 /** Carte cadeau accordée au parrain — montant fixe, pas de config admin. */
 export const REFERRAL_REWARD_AMOUNT = 10;

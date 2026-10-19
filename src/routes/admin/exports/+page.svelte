@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
 
 	type Kind = 'sales' | 'users' | 'products' | 'blog' | 'promo' | 'contacts';
 

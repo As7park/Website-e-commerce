@@ -20,14 +20,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const createSendcloudOrder = vi.fn().mockResolvedValue(undefined);
 const createSendcloudLabel = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('$lib/sendcloud/order', () => ({ createSendcloudOrder }));
-vi.mock('$lib/sendcloud/label', () => ({ createSendcloudLabel }));
+vi.mock('#lib/sendcloud/order', () => ({ createSendcloudOrder }));
+vi.mock('#lib/sendcloud/label', () => ({ createSendcloudLabel }));
 
 const transactionUpdate = vi.fn();
 const transactionFindUnique = vi.fn();
 const orderFindUnique = vi.fn().mockResolvedValue(null);
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		transaction: {
 			findUnique: transactionFindUnique,

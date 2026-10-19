@@ -1,6 +1,6 @@
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 
 const USER_TRANSACTION_SORTABLE = ['amount', 'createdAt', 'status'] as const;
 

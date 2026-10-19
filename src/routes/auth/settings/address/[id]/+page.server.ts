@@ -1,9 +1,9 @@
-import { updateAddressSchema } from '$lib/schema/addresses/addressSchema';
+import { updateAddressSchema } from '#lib/schema/addresses/addressSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { getAddressById, updateAddress } from '$lib/prisma/addresses/addresses';
+import { getAddressById, updateAddress } from '#lib/prisma/addresses/addresses';
 
 export const load: PageServerLoad = async (event) => {
 	if (!event.locals.user) {

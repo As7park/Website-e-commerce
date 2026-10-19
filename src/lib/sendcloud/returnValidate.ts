@@ -5,7 +5,7 @@
  * Sendcloud comme un pur contrôle, aucun enregistrement ni coût).
  *
  * Sert uniquement à vérifier que les données d'adresse que
- * `$lib/sendcloud/returnLabel.ts` construit à l'aveugle aujourd'hui (adresse
+ * `#lib/sendcloud/returnLabel.ts` construit à l'aveugle aujourd'hui (adresse
  * de retour de la boutique, via les mêmes variables d'environnement) sont
  * réellement bien formées côté Sendcloud — pas encore branché sur le vrai
  * flux d'approbation de retour (`/admin/returns`), qui reste en v2 tant que

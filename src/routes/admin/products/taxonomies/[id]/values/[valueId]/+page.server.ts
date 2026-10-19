@@ -3,14 +3,14 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateTaxonomyValueSchema } from '$lib/schema/taxonomies/taxonomyValueSchema';
-import { getTaxonomyById } from '$lib/prisma/taxonomies/taxonomies';
+import { updateTaxonomyValueSchema } from '#lib/schema/taxonomies/taxonomyValueSchema';
+import { getTaxonomyById } from '#lib/prisma/taxonomies/taxonomies';
 import {
 	getTaxonomyValueById,
 	updateTaxonomyValue,
 	resolveDescendantIds
-} from '$lib/prisma/taxonomies/taxonomyValues';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/taxonomies/taxonomyValues';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const [taxonomy, value] = await Promise.all([

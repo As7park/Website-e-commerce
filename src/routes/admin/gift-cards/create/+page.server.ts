@@ -2,9 +2,9 @@ import type { Actions, PageServerLoad } from './$types';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { createGiftCardSchema } from '$lib/schema/giftCards/giftCardSchema';
-import { createGiftCard } from '$lib/prisma/giftCards/giftCards';
-import { requireAdmin } from '$lib/admin/guards';
+import { createGiftCardSchema } from '#lib/schema/giftCards/giftCardSchema';
+import { createGiftCard } from '#lib/prisma/giftCards/giftCards';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const createGiftCardForm = await superValidate(zod(createGiftCardSchema));

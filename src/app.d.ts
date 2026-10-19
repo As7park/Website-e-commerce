@@ -1,5 +1,5 @@
 // Voir https://svelte.dev/docs/kit/types#app.d.ts
-import type { findPendingOrder } from '$lib/prisma/order/prendingOrder';
+import type { findPendingOrder } from '#lib/prisma/order/prendingOrder';
 
 declare global {
 	namespace App {
@@ -11,9 +11,9 @@ declare global {
 		interface Locals {
 			// AUTH-PLUGIN ▼ renseigné par `authHandle` (`src/lib/auth/hooks.ts`).
 			/** Session courante, ou `null` pour un visiteur anonyme. */
-			session: import('$lib/auth/session').Session | null;
+			session: import('#lib/auth/session').Session | null;
 			/** Utilisateur relu en base à chaque requête, ou `null`. */
-			user: import('$lib/auth/user').User | null;
+			user: import('#lib/auth/user').User | null;
 			/** Rôle de l'utilisateur (`ADMIN` / `CLIENT`), raccourci de `user.role`. */
 			role: string | null;
 			/** La 2FA est exigée sur ce compte. */

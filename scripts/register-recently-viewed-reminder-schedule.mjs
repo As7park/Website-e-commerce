@@ -6,7 +6,7 @@ dotenv.config();
 /**
  * Enregistre (une seule fois) le QStash Schedule qui déclenche la relance
  * « produits consultés, jamais achetés » (`/api/jobs/recently-viewed-reminder`,
- * voir `$lib/server/jobs/recentlyViewedReminder.ts`). Même logique
+ * voir `#lib/server/jobs/recentlyViewedReminder.ts`). Même logique
  * idempotente que `register-review-reminder-schedule.mjs` : vérifie qu'aucun
  * schedule n'existe déjà pour cette destination avant d'en créer un.
  *

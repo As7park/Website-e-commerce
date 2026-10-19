@@ -1,7 +1,7 @@
 import { Role, PromoType } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { parseCsv } from '$lib/server/export/csv';
-import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
+import { prisma } from '#lib/server';
+import { parseCsv } from '#lib/server/export/csv';
+import { generateUniqueReferralCode } from '#lib/prisma/referral/referral';
 import { EXPORT_COLUMNS, EXPORT_KINDS, EXPORT_MAX_ROWS, type ExportKind } from './export';
 
 export type ImportKind = Exclude<ExportKind, 'sales'>;

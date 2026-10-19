@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
+	import * as Form from '#shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
 	import { toast } from 'svelte-sonner';
-	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
-	import type { AddressSuggestion } from '$lib/addresses/types';
+	import AddressAutocomplete from '#lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '#lib/addresses/types';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 
 	import { goto } from '$app/navigation';
-	import { updateAddressSchema } from '$lib/schema/addresses/addressSchema.js';
+	import { updateAddressSchema } from '#lib/schema/addresses/addressSchema.js';
 
 	let { data } = $props();
 

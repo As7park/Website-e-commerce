@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Table from '$components/Table.svelte';
-	import { formatDate } from '$lib/utils/formatDate';
+	import Table from '#components/Table.svelte';
+	import { formatDate } from '#lib/utils/formatDate';
 
 	let { data } = $props();
 

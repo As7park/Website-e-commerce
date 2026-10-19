@@ -13,7 +13,7 @@ import { hasLiveGoogleOAuth } from '../support/third-party';
  * factice (voir `hasLiveGoogleOAuth`) : avec un vrai client, l'échange de
  * code auprès de Google est irréalisable sans y accéder. Dans ce cas, le
  * bypass passe par `auth.api.signInSocial({ idToken })`
- * (`$lib/auth/index.ts`, `verifyIdToken` permissif) : un jeton d'ID JWT
+ * (`#lib/auth/index.ts`, `verifyIdToken` permissif) : un jeton d'ID JWT
  * syntaxiquement valide mais non signé, que seule cette vérification
  * permissive accepte — jamais en dehors d'un `GOOGLE_CLIENT_ID` factice.
  */

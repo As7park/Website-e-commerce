@@ -1,6 +1,6 @@
 /**
  * Étiquette de retour Sendcloud — trajet inverse de `createSendcloudLabel`
- * (`$lib/sendcloud/label.ts`) : le colis part du domicile client pour
+ * (`#lib/sendcloud/label.ts`) : le colis part du domicile client pour
  * revenir à l'atelier, l'adresse de livraison du parcel est donc la nôtre,
  * pas celle du client.
  *
@@ -12,7 +12,7 @@
  * avant la première utilisation en production, comme `label.ts` le fait
  * déjà pour l'envoi aller.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 function envOr(name: string, fallback: string): string {
 	const value = process.env[name]?.trim();

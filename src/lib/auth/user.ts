@@ -1,6 +1,6 @@
 /**
  * Forme de `event.locals.user` — même champs qu'avant la migration
- * (`$lib/lucia/user.ts`), sauf `totpKey` (le secret TOTP ne quitte plus
+ * (`#lib/lucia/user.ts`), sauf `totpKey` (le secret TOTP ne quitte plus
  * jamais la table `TwoFactor` de Better Auth, aucun code applicatif n'a
  * plus besoin de le lire). Voir MIGRATION_BETTER_AUTH.md.
  */

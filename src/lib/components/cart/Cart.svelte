@@ -14,11 +14,11 @@
 		resetCart,
 		getCustomCanPrice,
 		type OrderItem
-	} from '$lib/store/Data/cartStore';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
-	import { Badge } from '$shadcn/badge';
-	import Button from '$shadcn/button/button.svelte';
-	import * as Sheet from '$shadcn/sheet/index.js';
+	} from '#lib/store/Data/cartStore';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
+	import { Badge } from '#shadcn/badge';
+	import Button from '#shadcn/button/button.svelte';
+	import * as Sheet from '#shadcn/sheet/index.js';
 	import { Trash, ShoppingCart } from 'lucide-svelte';
 	import QuantityInput from '../QuantityInput.svelte';
 	import { enhance } from '$app/forms';

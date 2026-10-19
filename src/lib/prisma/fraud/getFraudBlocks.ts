@@ -1,7 +1,7 @@
 /** Liste paginée pour `/admin/fraud` — mêmes conventions que `getAllTransactions.ts`. */
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { formatRiskLevel } from '$lib/server/fraud';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { formatRiskLevel } from '#lib/server/fraud';
 
 const FRAUD_BLOCK_SORTABLE = ['createdAt', 'riskScore'] as const;
 

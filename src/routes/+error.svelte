@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import SEO from '$lib/components/SEO.svelte';
+	import { page } from '$app/state';
+	import SEO from '#lib/components/SEO.svelte';
 
 	// Le statut était codé en dur à « 404 » : une panne serveur s'affichait donc
 	// comme une page introuvable, envoyant l'utilisateur chercher une faute
 	// d'URL au lieu de réessayer ou de nous contacter.
-	const status = $derived($page.status);
+	const status = $derived(page.status);
 	const isNotFound = $derived(status === 404);
 	const message = $derived(
 		isNotFound

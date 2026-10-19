@@ -1,14 +1,14 @@
 /**
  * Délai de livraison estimé (`StoreSettings.estimatedDelivery{Min,Max}Days`,
- * ligne unique `id = "singleton"`, même ligne que `$lib/server/storeSettings.ts`).
+ * ligne unique `id = "singleton"`, même ligne que `#lib/server/storeSettings.ts`).
  * `null` tant que l'admin ne l'a pas saisi depuis `/admin/settings` — aucune
  * date inventée, affiché au client uniquement si les deux bornes sont posées
  * (Code conso. art. L216-1 : le délai doit être communiqué avant la commande).
  *
  * Même cache courte durée que `getVatRate`/`getStoreFeatureFlags`.
  */
-import { prisma } from '$lib/server';
-import { cached, bumpCacheVersion, getCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { cached, bumpCacheVersion, getCacheVersion } from '#lib/server/cache';
 
 const CACHE_NAMESPACE = 'settings';
 const CACHE_TTL_SECONDS = 30;

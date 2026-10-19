@@ -1,17 +1,17 @@
 /**
  * Hachage des mots de passe — paramètres partagés entre la config Better Auth
- * (`$lib/auth/index.ts`) et les quelques flux qui écrivent directement dans
+ * (`#lib/auth/index.ts`) et les quelques flux qui écrivent directement dans
  * `AuthAccount` sans passer par `auth.api` (réinitialisation par email,
  * administration : aucune session active à ce stade pour appeler
  * `auth.api.changePassword`/`setPassword`).
  *
- * Mêmes paramètres que l'ancien `$lib/lucia/password.ts` : aucun hash
+ * Mêmes paramètres que l'ancien `#lib/lucia/password.ts` : aucun hash
  * existant n'a à être recalculé par cette migration.
  */
 import { hash, verify } from '@node-rs/argon2';
 import { sha1 } from '@oslojs/crypto/sha1';
 import { encodeHexLowerCase } from '@oslojs/encoding';
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 const ARGON2_OPTIONS = {
 	memoryCost: 19456,

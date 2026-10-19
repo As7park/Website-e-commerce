@@ -2,13 +2,13 @@
  * Accès Prisma au système de taxonomies du blog (Catégorie, Tag, et toute
  * facette future créée par l'admin sans nouvelle migration).
  *
- * BLOG-PLUGIN : mirroring volontaire de `$lib/prisma/taxonomies` (produits)
+ * BLOG-PLUGIN : mirroring volontaire de `#lib/prisma/taxonomies` (produits)
  * mais sur des tables dédiées (`BlogTaxonomy`/`BlogTaxonomyValue`), pour ne
  * pas coupler le blog aux tables PRODUCT-PLUGIN et garder le module retirable.
  * Pas de `type`/hiérarchie ici : les valeurs de taxonomie blog sont toujours
  * du texte simple, à plat.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 export const getAllBlogTaxonomies = async () => {
 	return prisma.blogTaxonomy.findMany({

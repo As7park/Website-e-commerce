@@ -7,10 +7,10 @@ import { error } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
-import { getPostById, updatePost } from '$lib/prisma/blogPost/blogPost';
-import { getAllBlogTaxonomiesWithValues } from '$lib/prisma/blogPost/blogTaxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+import { updateBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema';
+import { getPostById, updatePost } from '#lib/prisma/blogPost/blogPost';
+import { getAllBlogTaxonomiesWithValues } from '#lib/prisma/blogPost/blogTaxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const blogPost = await getPostById(params.id);

@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const storeSettingsFindUnique = vi.fn();
 const storeSettingsUpdate = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		storeSettings: {
 			findUnique: storeSettingsFindUnique,

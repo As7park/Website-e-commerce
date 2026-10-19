@@ -11,8 +11,8 @@
 // -----------------------------------------------------------------------------
 
 import { redirect } from '@sveltejs/kit';
-import { auth } from '$lib/auth';
-import { applyAuthCookies } from '$lib/auth/cookies';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
 
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
 

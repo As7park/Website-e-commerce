@@ -3,14 +3,14 @@ import { error, type Actions, fail } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { deleteVariantSchema } from '$lib/schema/products/variantSchema';
+import { deleteVariantSchema } from '#lib/schema/products/variantSchema';
 import {
 	deleteVariantById,
 	getVariantsForProduct,
 	VariantInUseError
-} from '$lib/prisma/productVariants/productVariants';
-import { getProductById } from '$lib/prisma/products/products';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/productVariants/productVariants';
+import { getProductById } from '#lib/prisma/products/products';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const product = await getProductById(params.id);

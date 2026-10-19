@@ -14,12 +14,12 @@ import {
 	deleteOtherSessionsForUser,
 	deleteSessionForUser,
 	findSessionsForUser
-} from '$lib/prisma/session/sessions';
-import { findRecentLoginEvents } from '$lib/prisma/loginEvent/loginEvent';
-import { sessionIdentityCacheKey, sessionPublicId } from '$lib/auth/session';
-import { invalidateCache } from '$lib/server/cache';
-import { describeUserAgent } from '$lib/server/deviceLabel';
-import { log } from '$lib/server/log';
+} from '#lib/prisma/session/sessions';
+import { findRecentLoginEvents } from '#lib/prisma/loginEvent/loginEvent';
+import { sessionIdentityCacheKey, sessionPublicId } from '#lib/auth/session';
+import { invalidateCache } from '#lib/server/cache';
+import { describeUserAgent } from '#lib/server/deviceLabel';
+import { log } from '#lib/server/log';
 
 export const load = (async ({ locals }) => {
 	if (!locals.user || !locals.session) {
@@ -107,7 +107,7 @@ export const actions: Actions = {
 		}
 
 		// Lues avant suppression : il faut leurs ids pour invalider le cache
-		// d'identité de chacune (voir `resolveIdentity`, `$lib/auth/hooks.ts`),
+		// d'identité de chacune (voir `resolveIdentity`, `#lib/auth/hooks.ts`),
 		// sans quoi une session tout juste supprimée resterait valide jusqu'à
 		// 8s de plus pour qui l'utilisait.
 		const others = (await findSessionsForUser(userId)).filter((s) => s.id !== currentSessionId);

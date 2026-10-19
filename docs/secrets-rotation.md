@@ -48,8 +48,8 @@ ainsi que les autres secrets de l'application selon le même schéma.
   au build/à l'exécution des fonctions serverless, pas lues dynamiquement).
 - **CI (GitHub Actions)** : le job `lint-and-check` utilise des valeurs
   factices en dur dans `ci.yml` (aucun vrai secret nécessaire, juste de quoi
-  satisfaire la résolution de types `$env/static/*`). Le job `e2e` fait de
-  même contre une base Postgres éphémère locale au run — aucun secret de
+  satisfaire les imports de variables statiques déclarées dans `src/env.ts`).
+  Le job `e2e` fait de même contre une base Postgres éphémère locale au run — aucun secret de
   dépôt (`Settings → Secrets and variables → Actions`) n'est utilisé
   aujourd'hui dans ce projet.
 
@@ -117,7 +117,7 @@ reconnecter, et que les comptes avec la 2FA active devront la reconfigurer.
 
 ## Clés Sendcloud (`SENDCLOUD_PUBLIC_KEY` / `SENDCLOUD_SECRET_KEY`)
 
-Pas de double-lecture côté code (`$lib/server/sendcloud/`) : une seule paire
+Pas de double-lecture côté code (`#lib/server/sendcloud/`) : une seule paire
 de clés active à la fois.
 
 1. Générer une nouvelle paire de clés dans le panel Sendcloud (Settings → API

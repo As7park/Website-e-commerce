@@ -6,9 +6,9 @@
 	 * `taxonomy.multiple = true` → cases à cocher (plusieurs valeurs possibles).
 	 * `taxonomy.multiple = false` → sélection unique (ex: Matière).
 	 */
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
-	import * as Select from '$shadcn/select';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
+	import * as Select from '#shadcn/select';
 
 	type TaxonomyValue = {
 		id: string;

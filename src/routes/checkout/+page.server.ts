@@ -13,28 +13,28 @@ import { superValidate } from 'sveltekit-superforms';
 import { error, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-import { getOrderById } from '$lib/prisma/order/prendingOrder';
-import { getUserAddresses } from '$lib/prisma/addresses/addresses';
-import { OrderSchema } from '$lib/schema/order/order';
-import { validatePromo } from '$lib/prisma/promo/promo';
-import { validateGiftCard } from '$lib/prisma/giftCards/giftCards';
+import { getOrderById } from '#lib/prisma/order/prendingOrder';
+import { getUserAddresses } from '#lib/prisma/addresses/addresses';
+import { OrderSchema } from '#lib/schema/order/order';
+import { validatePromo } from '#lib/prisma/promo/promo';
+import { validateGiftCard } from '#lib/prisma/giftCards/giftCards';
 import {
 	isReferralDiscountEligible,
 	REFERRAL_REFEREE_DISCOUNT_PERCENT
-} from '$lib/prisma/referral/referral';
-import { computeBundleDiscount, BUNDLE_DISCOUNT_PERCENT } from '$lib/prisma/bundles/bundles';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { computeFraudScore } from '$lib/server/fraud';
-import { log } from '$lib/server/log';
-import { prisma } from '$lib/server';
+} from '#lib/prisma/referral/referral';
+import { computeBundleDiscount, BUNDLE_DISCOUNT_PERCENT } from '#lib/prisma/bundles/bundles';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { computeFraudScore } from '#lib/server/fraud';
+import { log } from '#lib/server/log';
+import { prisma } from '#lib/server';
 import {
 	assertOrderOwnedBy,
 	createCheckoutSession,
 	resolveTrustedShippingCost
-} from '$lib/commerce/checkout';
-import { getVatRate } from '$lib/server/vat';
-import { getDeliveryEstimate } from '$lib/server/delivery';
-import { CartForbiddenError, InvalidShippingError } from '$lib/commerce/errors';
+} from '#lib/commerce/checkout';
+import { getVatRate } from '#lib/server/vat';
+import { getDeliveryEstimate } from '#lib/server/delivery';
+import { CartForbiddenError, InvalidShippingError } from '#lib/commerce/errors';
 
 export const load = (async ({ locals }) => {
 	// AUTH-PLUGIN ▼ le paiement est réservé aux comptes : la commande et les
@@ -229,7 +229,7 @@ export const actions: Actions = {
 		// Détection de fraude (`StoreSettings.fraudDetectionEnabled`) : calculée
 		// ici, juste avant la session Stripe, jamais après — un score élevé
 		// n'ouvre jamais de session quand `fraudBlockingEnabled` est aussi actif
-		// (voir `$lib/server/fraud.ts` et docs/commerce/README.md pour le choix
+		// (voir `#lib/server/fraud.ts` et docs/commerce/README.md pour le choix
 		// « avant paiement » plutôt qu'une capture Stripe différée).
 		if (fraudDetectionEnabled) {
 			const risk = await computeFraudScore({

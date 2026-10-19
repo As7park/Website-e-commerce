@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const addressFindFirst = vi.fn();
 const addressUpdate = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		address: {
 			findFirst: (...args: unknown[]) => addressFindFirst(...args),

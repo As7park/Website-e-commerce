@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getTransactionByInvoiceAndEmail } from '$lib/prisma/transaction/getTransactionByInvoiceAndEmail';
-import { getClientIP, guestTrackingLimiter } from '$lib/server/rate-limit';
+import { getTransactionByInvoiceAndEmail } from '#lib/prisma/transaction/getTransactionByInvoiceAndEmail';
+import { getClientIP, guestTrackingLimiter } from '#lib/server/rate-limit';
 
 /**
  * Suivi de commande sans compte — email + numéro de facture, aucune session

@@ -18,19 +18,19 @@
 import {
 	deletePasswordResetSessionTokenCookie,
 	validatePasswordResetSessionRequest
-} from '$lib/auth/passwordReset';
-import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { invalidateUserSessions } from '$lib/auth/session';
+} from '#lib/auth/passwordReset';
+import { invalidateUserPasswordResetSessions } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { invalidateUserSessions } from '#lib/auth/session';
 import { fail, redirect } from '@sveltejs/kit';
-import { hashPassword, verifyPasswordStrength } from '$lib/auth/password';
-import { prisma } from '$lib/server';
-import { getSessionDeviceContext } from '$lib/server/deviceContext';
-import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
+import { hashPassword, verifyPasswordStrength } from '#lib/auth/password';
+import { prisma } from '#lib/server';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
+import { recordLoginEvent } from '#lib/prisma/loginEvent/loginEvent';
 
 import type { Actions, RequestEvent } from './$types';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import { resetPasswordSchema } from '$lib/schema/auth/resetPasswordSchema';
+import { resetPasswordSchema } from '#lib/schema/auth/resetPasswordSchema';
 
 export const load = async (event: RequestEvent) => {
 	const { session, user } = await validatePasswordResetSessionRequest(event);

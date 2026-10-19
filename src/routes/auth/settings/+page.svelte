@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import * as Card from '$shadcn/card';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import * as Card from '#shadcn/card';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
-	import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
-	import { Switch } from '$shadcn/switch/index.js';
-	import { Label } from '$shadcn/label/index.js';
-	import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema.js';
+	import { emailSchema, passwordSchema } from '#lib/schema/auth/settingsSchemas';
+	import { Switch } from '#shadcn/switch/index.js';
+	import { Label } from '#shadcn/label/index.js';
+	import { isMfaEnabledSchema } from '#lib/schema/users/MfaEnabledSchema.js';
 
 	import {
 		UserCircle,

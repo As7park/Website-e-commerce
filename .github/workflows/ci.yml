@@ -9,13 +9,12 @@ jobs:
   lint-and-check:
     runs-on: ubuntu-latest
     env:
-      # `svelte-check` importe des modules `$env/static/private` et
-      # `$env/static/public` (voir src/lib/auth/index.ts,
+      # `svelte-check` importe des modules `$app/env/private` et
+      # `$app/env/public` (voir src/lib/auth/index.ts,
       # src/routes/api/address-search, src/routes/admin/blog/post/**).
-      # SvelteKit ne génère les types de ces modules que pour les variables
-      # présentes au moment de `svelte-kit sync` : sans elles, le type-check
-      # échoue avec "Module has no exported member 'X'" même si le code est
-      # correct. Valeurs factices, jamais utilisées en dehors de CI.
+      # Les variables sont déclarées dans src/env.ts et les valeurs factices
+      # suffisent aux étapes de build/test de CI ; elles ne sont jamais
+      # utilisées en production.
       BETTER_AUTH_SECRET: ci-better-auth-secret-jamais-utilise-en-prod
       GOOGLE_CLIENT_ID: ci-google-client-id
       GOOGLE_CLIENT_SECRET: ci-google-client-secret
@@ -27,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 22.22.0
           cache: npm
 
       - name: Install dependencies
@@ -134,7 +133,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 22.22.0
           cache: npm
 
       - name: Install dependencies

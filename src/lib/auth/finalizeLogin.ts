@@ -5,10 +5,10 @@
  * appareil ». Jamais appelée quand `signInEmail` renvoie `twoFactorRedirect`
  * (aucune session n'existe encore à ce stade, voir `/auth/login`).
  */
-import { prisma } from '$lib/server';
-import { getSessionDeviceContext, type SessionDeviceContext } from '$lib/server/deviceContext';
-import { recordLoginEvent, type LoginMethod } from '$lib/prisma/loginEvent/loginEvent';
-import { notifyNewDeviceLogin } from '$lib/server/newDeviceAlert';
+import { prisma } from '#lib/server';
+import { getSessionDeviceContext, type SessionDeviceContext } from '#lib/server/deviceContext';
+import { recordLoginEvent, type LoginMethod } from '#lib/prisma/loginEvent/loginEvent';
+import { notifyNewDeviceLogin } from '#lib/server/newDeviceAlert';
 
 export async function finalizeLogin(
 	request: Request,

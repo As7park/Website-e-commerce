@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn, TableItem } from '$components/Table.svelte';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn, TableItem } from '#components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
-	import { deleteBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
+	import { deleteBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';

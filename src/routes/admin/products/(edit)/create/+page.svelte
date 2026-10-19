@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Label } from '$shadcn/label';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Textarea } from '$shadcn/textarea';
+	import * as Form from '#shadcn/form';
+	import { Label } from '#shadcn/label';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Textarea } from '#shadcn/textarea';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createProductSchema } from '$lib/schema/products/productSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createProductSchema } from '#lib/schema/products/productSchema';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
+	import TaxonomyValuePicker from '#components/TaxonomyValuePicker.svelte';
 
 	let { data } = $props();
 

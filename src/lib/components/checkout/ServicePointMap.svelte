@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { MapLibre, Marker, Popup } from 'svelte-maplibre-gl';
-	import * as Card from '$shadcn/card/index.js';
+	import * as Card from '#shadcn/card/index.js';
 	import { MapPin } from 'lucide-svelte';
 	import type { Offset } from 'maplibre-gl';
-	import type { ServicePointDTO } from '$lib/sendcloud/checkoutTypes';
+	import type { ServicePointDTO } from '#lib/sendcloud/checkoutTypes';
 
 	interface Props {
 		showMap: boolean;

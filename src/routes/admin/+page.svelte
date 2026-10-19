@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Chart from '$lib/components/Chart.svelte';
-	import ChartMonthly from '$lib/components/ChartMonthly.svelte';
-	import ChartBar from '$lib/components/ChartBar.svelte';
-	import LastInscriptions from '$lib/components/LastInscriptions.svelte';
-	import * as Card from '$shadcn/card/index.js';
+	import Chart from '#lib/components/Chart.svelte';
+	import ChartMonthly from '#lib/components/ChartMonthly.svelte';
+	import ChartBar from '#lib/components/ChartBar.svelte';
+	import LastInscriptions from '#lib/components/LastInscriptions.svelte';
+	import * as Card from '#shadcn/card/index.js';
 
 	let { data } = $props();
 

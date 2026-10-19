@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const reportIfRepeated = vi.fn();
-vi.mock('$lib/server/alerting', () => ({
+vi.mock('#lib/server/alerting', () => ({
 	reportIfRepeated: (...args: unknown[]) => reportIfRepeated(...args)
 }));
 
@@ -19,7 +19,7 @@ const sendMail = vi.fn().mockResolvedValue(undefined);
 // cette déclaration `const` — référencer `sendMail` sans l'envelopper la
 // lirait avant son initialisation (TDZ). Même patron que `reportIfRepeated`
 // ci-dessus, qui fonctionne parce que l'appel est différé dans une closure.
-vi.mock('$lib/server/smtp-mail', () => ({
+vi.mock('#lib/server/smtp-mail', () => ({
 	sendMail: (...args: unknown[]) => sendMail(...args)
 }));
 

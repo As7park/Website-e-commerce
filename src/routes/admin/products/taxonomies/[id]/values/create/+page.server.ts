@@ -3,10 +3,10 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { createTaxonomyValueSchema } from '$lib/schema/taxonomies/taxonomyValueSchema';
-import { getTaxonomyById } from '$lib/prisma/taxonomies/taxonomies';
-import { createTaxonomyValue } from '$lib/prisma/taxonomies/taxonomyValues';
-import { requireAdmin } from '$lib/admin/guards';
+import { createTaxonomyValueSchema } from '#lib/schema/taxonomies/taxonomyValueSchema';
+import { getTaxonomyById } from '#lib/prisma/taxonomies/taxonomies';
+import { createTaxonomyValue } from '#lib/prisma/taxonomies/taxonomyValues';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const taxonomy = await getTaxonomyById(params.id);

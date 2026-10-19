@@ -1,4 +1,4 @@
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 /**
  * Appareil/localisation d'une session, sans le reste (jamais `user` — voir
@@ -43,7 +43,7 @@ export const deleteOtherSessionsForUser = async (userId: string, currentSessionI
 
 /**
  * Marque une session comme active à l'instant présent — appelée depuis
- * `$lib/auth/hooks.ts`, jamais bloquante pour la requête (best-effort).
+ * `#lib/auth/hooks.ts`, jamais bloquante pour la requête (best-effort).
  * Déjà bornée à ~1 écriture toutes les 8s par visiteur par le cache
  * d'identité Redis (`SESSION_IDENTITY_CACHE_TTL_SECONDS`) : pas besoin d'un
  * seuil de fraîcheur supplémentaire ici.

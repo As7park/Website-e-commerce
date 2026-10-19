@@ -1,12 +1,12 @@
 import { fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
 import {
 	getStoreFeatureFlagsUncached,
 	updateStoreFeatureFlags,
 	type StoreFeatureFlags
-} from '$lib/server/storeSettings';
-import { log } from '$lib/server/log';
+} from '#lib/server/storeSettings';
+import { log } from '#lib/server/log';
 
 const FLAG_KEYS = [
 	'wishlistEnabled',

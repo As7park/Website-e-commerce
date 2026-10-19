@@ -6,8 +6,8 @@
  * qui masque le formulaire une fois l'avis posé.
  */
 import { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
 
 export class AlreadyReviewedError extends Error {
 	constructor() {

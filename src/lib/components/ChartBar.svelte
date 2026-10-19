@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Chart from '$lib/components/shadcn/ui/chart/index.js';
+	import * as Chart from '#lib/components/shadcn/ui/chart/index.js';
 	import { BarChart } from 'layerchart';
 
 	type Point = {

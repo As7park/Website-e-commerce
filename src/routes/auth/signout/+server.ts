@@ -6,8 +6,8 @@
 // -----------------------------------------------------------------------------
 
 import type { RequestHandler } from './$types';
-import { auth } from '$lib/auth';
-import { applyAuthCookies } from '$lib/auth/cookies';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
 
 export const POST: RequestHandler = async (event) => {
 	if (!event.locals.session) {

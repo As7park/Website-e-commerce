@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn } from '$components/Table.svelte';
-	import { formatDate } from '$lib/utils/formatDate';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn } from '#components/Table.svelte';
+	import { formatDate } from '#lib/utils/formatDate';
 	import Mail from 'lucide-svelte/icons/mail';
 	import Eye from 'lucide-svelte/icons/eye';
 

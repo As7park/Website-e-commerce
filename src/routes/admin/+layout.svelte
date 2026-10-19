@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Importation des composants principaux
-	import * as Sidebar from '$shadcn/sidebar/index.js';
-	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
-	import SEO from '$lib/components/SEO.svelte';
+	import * as Sidebar from '#shadcn/sidebar/index.js';
+	import SmoothScrollBar from '#lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import SEO from '#lib/components/SEO.svelte';
 
 	let { data, children } = $props();
 

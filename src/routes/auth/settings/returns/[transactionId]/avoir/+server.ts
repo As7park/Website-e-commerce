@@ -1,11 +1,11 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getTransactionByIdForUser } from '$lib/prisma/transaction/getTransactionById';
-import { getReturnRequestByTransactionId } from '$lib/prisma/returns/returns';
-import { pdfDownloadResponse } from '$lib/server/invoice/http';
-import { renderCreditNotePdf } from '$lib/server/creditNote/pdf';
-import { buildCreditNoteView } from '$lib/server/creditNote/view';
-import { getInvoiceCompany } from '$lib/server/invoice/company';
+import { getTransactionByIdForUser } from '#lib/prisma/transaction/getTransactionById';
+import { getReturnRequestByTransactionId } from '#lib/prisma/returns/returns';
+import { pdfDownloadResponse } from '#lib/server/invoice/http';
+import { renderCreditNotePdf } from '#lib/server/creditNote/pdf';
+import { buildCreditNoteView } from '#lib/server/creditNote/view';
+import { getInvoiceCompany } from '#lib/server/invoice/company';
 
 /**
  * Téléchargement PDF — avoir du visiteur connecté, une fois son retour

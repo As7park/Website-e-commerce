@@ -6,13 +6,13 @@ import { zod } from 'sveltekit-superforms/adapters';
 import {
 	updateGiftCardSchema,
 	adjustGiftCardBalanceSchema
-} from '$lib/schema/giftCards/giftCardSchema';
+} from '#lib/schema/giftCards/giftCardSchema';
 import {
 	getGiftCardById,
 	updateGiftCard,
 	adjustGiftCardBalance
-} from '$lib/prisma/giftCards/giftCards';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/giftCards/giftCards';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const giftCard = await getGiftCardById(params.id);

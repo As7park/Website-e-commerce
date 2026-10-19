@@ -87,7 +87,7 @@ Les listes d'utilisateurs n'exposent jamais `passwordHash`, `totpKey` ni
 
 Purge manuelle, déclenchée par un admin, ciblée par ancienneté (`createdAt`) —
 jamais un vidage total de table. Complète, sans le remplacer, le job
-automatique `$lib/server/jobs/cleanup.ts` (qui purge déjà, sans action admin,
+automatique `#lib/server/jobs/cleanup.ts` (qui purge déjà, sans action admin,
 les sessions expirées et les paniers `PENDING` abandonnés depuis 30 jours).
 
 Les ventes (`Transaction`) sont l'exception à la règle "jamais purgé"
@@ -107,7 +107,7 @@ commentaires de blog). Indisponible pour les ventes.
 
 Remplace l'export manuel ponctuel (`GET /admin/exports/sales`) par un envoi
 périodique sans action admin : le 1er de chaque mois, un job planifié
-(`$lib/server/jobs/accountingExport.ts`, `runAccountingExportJob`) génère un
+(`#lib/server/jobs/accountingExport.ts`, `runAccountingExportJob`) génère un
 CSV des transactions payées du mois calendaire précédent et l'envoie en
 pièce jointe à `ACCOUNTING_EXPORT_EMAIL`.
 
@@ -146,13 +146,13 @@ ensemble (`frequentlyBoughtTogetherEnabled`), relance d'avis
 (`wishlistPriceAlertEnabled`), détection et blocage de fraude
 (`fraudDetectionEnabled`/`fraudBlockingEnabled`), relance « récemment
 consultés » (`recentlyViewedReminderEnabled`). Réglage unique
-(`StoreSettings`, ligne `id = "singleton"`, `$lib/server/storeSettings.ts`),
+(`StoreSettings`, ligne `id = "singleton"`, `#lib/server/storeSettings.ts`),
 lu par chaque route publique concernée — un module désactivé ne se contente
 pas d'être masqué à l'écran, sa route reste fermée (ex. `/auth/settings/wishlist`
 répond 404, `POST /api/wishlist` répond 404) : un accès direct à l'URL ne
 contourne pas l'interrupteur. Exception : la relance panier abandonné n'a pas
 de route publique à fermer — c'est un job planifié
-(`$lib/server/jobs/cartRecovery.ts`) qui vérifie le flag lui-même avant
+(`#lib/server/jobs/cartRecovery.ts`) qui vérifie le flag lui-même avant
 d'agir.
 
 Chaque interrupteur s'enregistre immédiatement au clic (pas de bouton
@@ -161,7 +161,7 @@ le formulaire (`requestSubmit`), désactivé le temps de la requête pour évite
 un double clic pendant la sauvegarde.
 
 Lecture mise en cache 30 s (même mécanisme que le catalogue,
-`$lib/server/cache.ts`, `bumpCacheVersion('settings')` à chaque sauvegarde) —
+`#lib/server/cache.ts`, `bumpCacheVersion('settings')` à chaque sauvegarde) —
 une modification depuis `/admin/settings` peut donc mettre jusqu'à 30 s à se
 répercuter partout sans Redis pour invalider immédiatement. `/admin/settings`
 lui-même lit toujours la valeur non mise en cache.
@@ -205,7 +205,7 @@ test `e2e/products/admin-bulk.spec.ts`.
 
 ### Alerting
 
-`$lib/server/alerting.ts` (`reportIfRepeated`) complète les compteurs de
+`#lib/server/alerting.ts` (`reportIfRepeated`) complète les compteurs de
 `/admin/metrics` : quand un signal lié à la charge dépasse un seuil dans une
 fenêtre glissante, il déclenche un `Sentry.captureMessage` (tag
 `alert:<clé>`) en plus d'un log `ERROR` — une seule alerte par fenêtre, pas à
@@ -214,7 +214,7 @@ chaque occurrence. Deux signaux instrumentés :
 - `http-5xx` : 20+ réponses ≥500 en 1 minute (`errorRateTracking` dans
   `hooks.server.ts`, compteur `http.5xx`).
 - `lock-contention` : 20+ échecs d'acquisition de verrou distribué en 5
-  minutes, tous verrous confondus (`withLock` dans `$lib/server/lock.ts`,
+  minutes, tous verrous confondus (`withLock` dans `#lib/server/lock.ts`,
   compteur `lock.contention`).
 
 Ce n'est pas un remplacement d'un outil d'alerting dédié (PagerDuty/Slack) :

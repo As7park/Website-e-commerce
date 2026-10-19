@@ -13,7 +13,7 @@ import {
 /**
  * Sessions actives (`/auth/settings/sessions`) : liste des sessions d'un
  * compte, avec appareil/localisation dérivés de `Session.userAgent`/`city`/
- * `country` (voir `$lib/lucia/deviceLabel.ts`), et deux actions — déconnecter
+ * `country` (voir `#lib/lucia/deviceLabel.ts`), et deux actions — déconnecter
  * une session précise, déconnecter toutes les autres. La session en cours
  * n'est jamais révocable par ce chemin (`?/revoke` la refuse explicitement),
  * seule `/auth/signout` la ferme.

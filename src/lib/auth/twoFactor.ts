@@ -28,11 +28,11 @@
 import { symmetricDecrypt, symmetricEncrypt } from 'better-auth/crypto';
 import { verifyTOTP } from '@oslojs/otp';
 import { encodeBase32NoPadding } from '@oslojs/encoding';
-import { prisma } from '$lib/server';
-import { BETTER_AUTH_SECRET } from '$env/static/private';
+import { prisma } from '#lib/server';
+import { BETTER_AUTH_SECRET } from '$app/env/private';
 
 const TOTP_ISSUER = 'MadeInDiamonds';
-/** Même valeur que `backupCodeOptions.amount` dans `$lib/auth/index.ts`. */
+/** Même valeur que `backupCodeOptions.amount` dans `#lib/auth/index.ts`. */
 const RECOVERY_CODE_LENGTH = 15;
 
 function randomString(length: number): string {
@@ -75,7 +75,7 @@ export async function verifyTotpCodeDirect(userId: string, code: string): Promis
  * sortie complète, pas une simple authentification ponctuelle (Better Auth,
  * qui autorise plusieurs connexions avec des codes de secours différents,
  * n'a pas cette notion : `backupCodeOptions.amount` vaut `1` ici précisément
- * pour que ce comportement reste cohérent, voir `$lib/auth/index.ts`).
+ * pour que ce comportement reste cohérent, voir `#lib/auth/index.ts`).
  */
 export async function verifyAndConsumeRecoveryCodeDirect(
 	userId: string,

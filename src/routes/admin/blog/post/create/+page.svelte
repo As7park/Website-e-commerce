@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
+	import TaxonomyValuePicker from '#components/TaxonomyValuePicker.svelte';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import { goto } from '$app/navigation';
 	import Editor from '@tinymce/tinymce-svelte';
 	import { toast } from 'svelte-sonner';
-	import { createBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema.js';
-	import { PUBLIC_TINYMCE_API_KEY } from '$env/static/public';
+	import { createBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema.js';
+	import { PUBLIC_TINYMCE_API_KEY } from '$app/env/public';
 
 	// Receive props from the server
 	let { data } = $props();

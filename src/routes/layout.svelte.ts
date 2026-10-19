@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import SmoothScrollBarStore from '$lib/store/SmoothScrollBarStore';
+import SmoothScrollBarStore from '#lib/store/SmoothScrollBarStore';
 
 export const isClient = writable(false);
 

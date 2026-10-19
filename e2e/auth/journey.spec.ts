@@ -405,7 +405,7 @@ test.describe('Parcours complet', () => {
 
 			// La 2FA est retirée : une nouvelle configuration est exigée, et le
 			// code de secours déjà remplacé — `/auth/2fa/setup` en génère un
-			// nouveau dès son chargement (voir `$lib/auth/twoFactor.ts`,
+			// nouveau dès son chargement (voir `#lib/auth/twoFactor.ts`,
 			// `enableTwoFactorDirect`), avant même qu'une saisie ait eu lieu.
 			await waitForPath(page, '/auth/2fa/setup');
 			expect((await requireUser(currentEmail)).totpKey).toBeNull();

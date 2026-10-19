@@ -6,7 +6,7 @@ dotenv.config();
 /**
  * Enregistre (une seule fois) le QStash Schedule qui déclenche l'export
  * comptable mensuel (`/api/jobs/accounting-export`, voir
- * `$lib/server/jobs/accountingExport.ts`). Même logique idempotente que
+ * `#lib/server/jobs/accountingExport.ts`). Même logique idempotente que
  * `register-cleanup-schedule.mjs` : vérifie qu'aucun schedule n'existe déjà
  * pour cette destination avant d'en créer un.
  *

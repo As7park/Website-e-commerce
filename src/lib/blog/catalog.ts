@@ -8,7 +8,7 @@
 // -----------------------------------------------------------------------------
 
 import type { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 // La vitrine suppose une taxonomie "catégorie" (nav de filtre, une par
 // article) et une taxonomie "tag" (affichage libre, plusieurs par article) —

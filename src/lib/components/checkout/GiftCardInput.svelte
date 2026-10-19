@@ -2,9 +2,9 @@
 	// Solde décroissant, distinct du code promo (`PromoCodeInput.svelte`) :
 	// les deux se cumulent, le solde de la carte s'appliquant sur ce qu'il
 	// reste à payer une fois la remise promo déduite (`maxApplicable`).
-	import * as Card from '$shadcn/card/index.js';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Card from '#shadcn/card/index.js';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { Gift, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 

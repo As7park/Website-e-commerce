@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import * as Form from '$shadcn/form';
-	import Button from '$shadcn/button/button.svelte';
-	import Input from '$shadcn/input/input.svelte';
+	import * as Form from '#shadcn/form';
+	import Button from '#shadcn/button/button.svelte';
+	import Input from '#shadcn/input/input.svelte';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { verifyCodeSchema } from '#lib/schema/auth/verifyCodeSchema';
 
 	let { data } = $props();
 

@@ -1,10 +1,10 @@
 import { json, error } from '@sveltejs/kit';
-import { runAccountingExportJob } from '$lib/server/jobs/accountingExport';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { matchesCronSecret } from '$lib/server/cronAuth';
+import { runAccountingExportJob } from '#lib/server/jobs/accountingExport';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { matchesCronSecret } from '#lib/server/cronAuth';
 
 /**
- * Export comptable mensuel — voir `$lib/server/jobs/accountingExport.ts`.
+ * Export comptable mensuel — voir `#lib/server/jobs/accountingExport.ts`.
  * Même garde double-auth que `/api/jobs/cleanup`/`/api/jobs/cart-recovery` :
  * QStash Schedule signé (`upstash-signature`), ou repli Vercel Cron avec
  * `Authorization: Bearer $CRON_SECRET`.

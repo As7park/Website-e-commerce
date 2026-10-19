@@ -3,17 +3,17 @@
 	import { goto } from '$app/navigation';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 
-	import * as Form from '$shadcn/form';
-	import { Label } from '$shadcn/label';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Textarea } from '$shadcn/textarea';
+	import * as Form from '#shadcn/form';
+	import { Label } from '#shadcn/label';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Textarea } from '#shadcn/textarea';
 
-	import { updateProductSchema } from '$lib/schema/products/productSchema.js';
+	import { updateProductSchema } from '#lib/schema/products/productSchema.js';
 	import { toast } from 'svelte-sonner';
-	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
+	import TaxonomyValuePicker from '#components/TaxonomyValuePicker.svelte';
 
 	let { data } = $props();
 

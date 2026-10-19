@@ -1,5 +1,5 @@
-import { prisma } from '$lib/server';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import { toNumber } from '#lib/server/decimal';
 
 /** Fenêtre du dashboard : les 3 graphiques (timeline, cumul du mois, top produits)
  * ne regardent jamais plus loin qu'un an en arrière. Sans cette borne, la requête

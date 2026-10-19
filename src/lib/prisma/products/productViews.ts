@@ -1,11 +1,11 @@
 /**
  * Consultation de fiche produit par un compte connecté — sert uniquement à
  * la relance e-mail (`StoreSettings.recentlyViewedReminderEnabled`,
- * `$lib/server/jobs/recentlyViewedReminder.ts`). Sans rapport avec
- * l'historique vitrine « Récemment consultés » (`$lib/store/recentlyViewed.ts`,
+ * `#lib/server/jobs/recentlyViewedReminder.ts`). Sans rapport avec
+ * l'historique vitrine « Récemment consultés » (`#lib/store/recentlyViewed.ts`,
  * localStorage, fonctionne aussi pour un visiteur anonyme).
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 /**
  * Upsert : une revisite met juste à jour `viewedAt`, ne réinitialise jamais

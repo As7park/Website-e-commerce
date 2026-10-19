@@ -5,12 +5,12 @@
 import type { Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import { createBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
-import { createPost } from '$lib/prisma/blogPost/blogPost';
-import { getAllBlogTaxonomiesWithValues } from '$lib/prisma/blogPost/blogTaxonomies';
-import { slugify } from '$lib/prisma/slugify';
-import { prisma } from '$lib/server';
-import { requireAdmin } from '$lib/admin/guards';
+import { createBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema';
+import { createPost } from '#lib/prisma/blogPost/blogPost';
+import { getAllBlogTaxonomiesWithValues } from '#lib/prisma/blogPost/blogTaxonomies';
+import { slugify } from '#lib/prisma/slugify';
+import { prisma } from '#lib/server';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load = async () => {
 	const taxonomies = await getAllBlogTaxonomiesWithValues();

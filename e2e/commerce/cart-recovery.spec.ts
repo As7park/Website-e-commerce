@@ -17,7 +17,7 @@ const CRON_HEADERS = { authorization: `Bearer ${process.env.CRON_SECRET}` };
 
 /**
  * Relance panier abandonné : scan périodique
- * (`$lib/server/jobs/cartRecovery.ts`, route `/api/jobs/cart-recovery`), pas
+ * (`#lib/server/jobs/cartRecovery.ts`, route `/api/jobs/cart-recovery`), pas
  * un job déclenché par une action utilisateur (contrairement à la fidélité
  * ou la facture, enfilés depuis le webhook) — on appelle donc directement la
  * route, avec le même en-tête `CRON_SECRET` que Vercel Cron en repli sans

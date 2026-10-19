@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
-import { assertAdmin } from '$lib/admin/guards';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { assertAdmin } from '#lib/admin/guards';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 /**
  * Données partagées par toutes les pages d'administration.

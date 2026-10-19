@@ -14,7 +14,7 @@ export const db = new PrismaClient({
 /**
  * Conversion `Prisma.Decimal` → `number`, même sémantique que `toNumber()`
  * côté app (`src/lib/server/decimal.ts`) — dupliquée ici volontairement :
- * `e2e/support/**` n'importe jamais `$lib`. Les champs `@db.Decimal(10,2)`
+ * `e2e/support/**` n'importe jamais `#lib`. Les champs `@db.Decimal(10,2)`
  * (voir RESTE_A_FAIRE.md §A.2.1) remontent en `Prisma.Decimal` depuis une
  * lecture Prisma directe comme celles de ce fichier, qui ne passent jamais
  * par les mappers applicatifs (`mapOrder`/`mapProduct`/`mapTransaction`,
@@ -864,7 +864,7 @@ export async function countSessions(email: string): Promise<number> {
 /**
  * Empreinte publique d'une session, même calcul que `sessionPublicId()`
  * (`src/lib/auth/session.ts`) — dupliquée ici volontairement (`e2e/support/**`
- * n'importe jamais `$lib`).
+ * n'importe jamais `#lib`).
  */
 export function sessionPublicId(sessionId: string): string {
 	return createHash('sha256').update(sessionId).digest('hex');
@@ -1199,7 +1199,7 @@ export async function getTransactionById(id: string) {
 
 /**
  * Place `Transaction.createdAt` dans le mois comptable voulu (export
- * périodique, `$lib/server/jobs/accountingExport.ts`) — champ simple
+ * périodique, `#lib/server/jobs/accountingExport.ts`) — champ simple
  * (`@default(now())`, pas `@updatedAt`), directement réécrivable par un
  * `update()` classique, contrairement à `Order.updatedAt` (`backdateOrder`).
  */

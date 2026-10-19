@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { getTransactionById } from '$lib/prisma/transaction/getTransactionById';
-import { buildInvoiceView } from '$lib/server/invoice/view';
-import { getInvoiceCompany } from '$lib/server/invoice/company';
+import { getTransactionById } from '#lib/prisma/transaction/getTransactionById';
+import { buildInvoiceView } from '#lib/server/invoice/view';
+import { getInvoiceCompany } from '#lib/server/invoice/company';
 
 /**
  * Facture admin.

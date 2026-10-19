@@ -1,8 +1,8 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { ensureStripeCustomer } from '$lib/server/stripeCustomer';
-import { stripe } from '$lib/server/stripe';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { ensureStripeCustomer } from '#lib/server/stripeCustomer';
+import { stripe } from '#lib/server/stripe';
 
 /**
  * Crée un `SetupIntent` Stripe pour le compte connecté — appelé en `fetch`

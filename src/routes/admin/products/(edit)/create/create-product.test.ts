@@ -13,17 +13,17 @@ const createProductMock = vi.fn();
 const connectProductToTaxonomyValuesMock = vi.fn();
 const getTaxonomyValuesByIdsMock = vi.fn();
 
-vi.mock('$lib/server/cloudinary', () => ({
+vi.mock('#lib/server/cloudinary', () => ({
 	default: { uploader: { upload: (...args: unknown[]) => cloudinaryUpload(...args) } }
 }));
 
-vi.mock('$lib/prisma/products/products', () => ({
+vi.mock('#lib/prisma/products/products', () => ({
 	createProduct: (...args: unknown[]) => createProductMock(...args),
 	connectProductToTaxonomyValues: (...args: unknown[]) =>
 		connectProductToTaxonomyValuesMock(...args)
 }));
 
-vi.mock('$lib/prisma/taxonomies/taxonomyValues', () => ({
+vi.mock('#lib/prisma/taxonomies/taxonomyValues', () => ({
 	getTaxonomyValuesByIds: (...args: unknown[]) => getTaxonomyValuesByIdsMock(...args)
 }));
 

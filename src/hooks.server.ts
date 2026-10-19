@@ -9,7 +9,7 @@
 // Ordre de la chaîne (voir `handle` en bas de fichier) :
 //   securityHeaders → errorRateTracking → devtoolsGuard → cookieGuard → rateLimit → catalogAntiScraping → authHandle → adminHandle → pendingOrderHandle
 //
-// CSRF : aucune configuration `csrf` dans `svelte.config.js` → la protection
+// CSRF : aucune configuration `csrf` dans `sveltekit.config.ts` → la protection
 // par défaut de SvelteKit (`checkOrigin`, qui bloque les requêtes de type
 // formulaire — multipart/form-data, x-www-form-urlencoded, text/plain — dont
 // l'origine ne correspond pas) est active, vérifié explicitement (pas juste
@@ -22,35 +22,35 @@
 
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { env } from '$env/dynamic/private';
 import * as Sentry from '@sentry/sveltekit';
-import { isValidSentryDsn } from '$lib/sentryDsn';
+import { isValidSentryDsn } from '#lib/sentryDsn';
 
-import { RefillingTokenBucket } from '$lib/server/rate-limit';
-import { isSuspiciousUserAgent } from '$lib/server/anti-scraping';
-import { incrementMetric } from '$lib/server/metrics';
-import { reportIfRepeated } from '$lib/server/alerting';
-import { createPendingOrder, findPendingOrder } from '$lib/prisma/order/prendingOrder';
-import { log, withRequestId } from '$lib/server/log';
+import { RefillingTokenBucket } from '#lib/server/rate-limit';
+import { isSuspiciousUserAgent } from '#lib/server/anti-scraping';
+import { incrementMetric } from '#lib/server/metrics';
+import { reportIfRepeated } from '#lib/server/alerting';
+import { createPendingOrder, findPendingOrder } from '#lib/prisma/order/prendingOrder';
+import { log, withRequestId } from '#lib/server/log';
 import { randomUUID } from 'crypto';
 
 // AUTH-PLUGIN ▼ retirer cet import et `authHandle` de la séquence finale.
-import { authHandle } from '$lib/auth/hooks';
+import { authHandle } from '#lib/auth/hooks';
 // AUTH-PLUGIN ▲
 
 // Better Auth (voir MIGRATION_BETTER_AUTH.md) — sert /api/auth/** (callback
 // Google, endpoints internes des plugins) ; `authHandle` ci-dessus lit
 // désormais Better Auth directement.
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { building } from '$app/environment';
-import { auth } from '$lib/auth';
+import { building } from '$app/env';
+import { auth } from '#lib/auth';
 
 const betterAuthHandle: Handle = ({ event, resolve }) =>
 	svelteKitHandler({ event, resolve, auth, building });
 
 // ADMIN-PLUGIN ▼ retirer cet import et `adminHandle` de la séquence finale.
-import { adminHandle } from '$lib/admin/hooks';
+import { adminHandle } from '#lib/admin/hooks';
 // ADMIN-PLUGIN ▲
 
 /**
@@ -102,7 +102,7 @@ function isLoopbackPeer(event: Parameters<Handle>[0]['event']): boolean {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Ouvre le contexte de corrélation (`$lib/server/log.ts`) pour toute la durée
+ * Ouvre le contexte de corrélation (`#lib/server/log.ts`) pour toute la durée
  * de la requête : réutilise `x-vercel-id` s'il existe (déjà unique bout-en-bout
  * côté Vercel) plutôt que d'en générer un second qui ne correspondrait à rien
  * dans les logs de la plateforme.
@@ -119,7 +119,7 @@ const requestIdHandle: Handle = ({ event, resolve }) => {
 /**
  * En-têtes de sécurité posés sur toute réponse, quel que soit ce que font les
  * handles suivants. La CSP n'est pas ici : elle est posée nativement par
- * SvelteKit (`kit.csp` dans `svelte.config.js`), qui gère les hash/nonce de
+ * SvelteKit (`csp` dans `sveltekit.config.ts`), qui gère les hash/nonce de
  * ses propres scripts inline — la reproduire à la main ici casserait
  * l'hydratation.
  */
@@ -201,7 +201,7 @@ const rateLimit: Handle = async ({ event, resolve }) => {
  * Anti-scraping du catalogue public (`/products*`) : quota dédié, plus
  * strict que `global-ip` (un humain qui feuillette quelques fiches produit
  * ne l'atteint jamais), et rejet heuristique des clients HTTP scriptés
- * (`$lib/server/anti-scraping.ts`). Placé après `rateLimit` : le plafond
+ * (`#lib/server/anti-scraping.ts`). Placé après `rateLimit` : le plafond
  * global s'applique déjà à tout, celui-ci vient resserrer spécifiquement le
  * catalogue.
  */

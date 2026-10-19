@@ -26,5 +26,5 @@ l'état de sécurité connu et les points déjà identifiés.
 - Chiffrement AES-256-GCM (avec migration depuis un legacy AES-128-GCM,
   voir `src/lib/lucia/encryption.ts`).
 - Rate limiting (Upstash Redis avec repli mémoire).
-- CSP, en cours de bascule report-only → bloquant (voir `svelte.config.js`).
+- CSP bloquante (voir `sveltekit.config.ts`).
 - Rotation des secrets documentée : [docs/secrets-rotation.md](./docs/secrets-rotation.md).

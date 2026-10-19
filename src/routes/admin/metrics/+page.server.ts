@@ -1,5 +1,5 @@
-import { assertAdmin } from '$lib/admin/guards';
-import { getMetricsSnapshot } from '$lib/server/metrics';
+import { assertAdmin } from '#lib/admin/guards';
+import { getMetricsSnapshot } from '#lib/server/metrics';
 
 import type { PageServerLoad } from './$types';
 

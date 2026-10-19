@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
+	import { Button } from '#shadcn/button';
 
 	/**
 	 * Bannière d'information cookies — pas un gestionnaire de consentement :

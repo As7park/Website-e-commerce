@@ -1,24 +1,24 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
 import {
 	getAllReturnRequests,
 	getReturnRequestById,
 	markReturnApproved,
 	markReturnCredited,
 	markReturnRejected
-} from '$lib/prisma/returns/returns';
-import { createGiftCard } from '$lib/prisma/giftCards/giftCards';
-import { stripe } from '$lib/server/stripe';
-import { createSendcloudReturnLabel } from '$lib/sendcloud/returnLabel';
-import { log } from '$lib/server/log';
-import { sendMail } from '$lib/server/smtp-mail';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { buildCreditNoteView } from '$lib/server/creditNote/view';
-import { sendCreditNoteEmail } from '$lib/server/creditNote/email';
-import { getInvoiceCompany } from '$lib/server/invoice/company';
-import { withLock } from '$lib/server/lock';
-import { bumpCacheVersion } from '$lib/server/cache';
+} from '#lib/prisma/returns/returns';
+import { createGiftCard } from '#lib/prisma/giftCards/giftCards';
+import { stripe } from '#lib/server/stripe';
+import { createSendcloudReturnLabel } from '#lib/sendcloud/returnLabel';
+import { log } from '#lib/server/log';
+import { sendMail } from '#lib/server/smtp-mail';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { buildCreditNoteView } from '#lib/server/creditNote/view';
+import { sendCreditNoteEmail } from '#lib/server/creditNote/email';
+import { getInvoiceCompany } from '#lib/server/invoice/company';
+import { withLock } from '#lib/server/lock';
+import { bumpCacheVersion } from '#lib/server/cache';
 
 /**
  * Gestion admin des demandes de retour (`ReturnRequest`).
@@ -33,7 +33,7 @@ import { bumpCacheVersion } from '$lib/server/cache';
  * Stripe. N'apparaît que si `giftCardsEnabled` est actif (le crédit s'appuie
  * sur ce module).
  *
- * Dans les deux cas, un avoir PDF (`$lib/server/creditNote/`) est généré et
+ * Dans les deux cas, un avoir PDF (`#lib/server/creditNote/`) est généré et
  * envoyé par e-mail — best-effort, un échec ne doit jamais annuler le
  * remboursement/crédit déjà acquis.
  */

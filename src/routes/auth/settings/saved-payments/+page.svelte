@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Badge } from '$shadcn/badge';
-	import * as Card from '$shadcn/card';
-	import SEO from '$lib/components/SEO.svelte';
-	import StructuredData from '$lib/components/StructuredData.svelte';
-	import { seoConfig } from '$lib/seo.config';
+	import { Badge } from '#shadcn/badge';
+	import * as Card from '#shadcn/card';
+	import SEO from '#lib/components/SEO.svelte';
+	import StructuredData from '#lib/components/StructuredData.svelte';
+	import { seoConfig } from '#lib/seo.config';
 
 	let { data } = $props();
 	let post = $derived(data.post);
@@ -73,7 +73,7 @@
 	<div class="leading-relaxed">
 		<!-- Contenu saisi par un administrateur (TinyMCE), déjà assaini à
 		     l'écriture (`sanitizeBlogHtml`, DOMPurify — voir
-		     `$lib/prisma/blogPost/blogPost.ts`) : jamais de HTML brut non
+		     `#lib/prisma/blogPost/blogPost.ts`) : jamais de HTML brut non
 		     filtré en base, ce `{@html}` ne fait que rendre le résultat déjà
 		     nettoyé. -->
 		{@html post.content}

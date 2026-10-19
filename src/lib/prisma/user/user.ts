@@ -10,12 +10,12 @@
 // transitent jamais en clair dans la base.
 // -----------------------------------------------------------------------------
 
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
 import { anonymizeUser } from './anonymizeUser';
-import { isValidId } from '$lib/server/ids';
+import { isValidId } from '#lib/server/ids';
 
 const USER_SORTABLE = ['email', 'username', 'role', 'createdAt'] as const;
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { Role } from '@prisma/client';
 
 // 1. On ajoute createdAt dans la sélection, car on retourne déjà un ensemble de champs utilisateur
@@ -149,7 +149,7 @@ export const getAllUsers = async (params: ListParams = {}) => {
 
 /**
  * Anonymise le compte plutôt que de le supprimer physiquement — voir
- * `$lib/prisma/user/anonymizeUser.ts` pour le détail et pourquoi (l'ancienne
+ * `#lib/prisma/user/anonymizeUser.ts` pour le détail et pourquoi (l'ancienne
  * implémentation supprimait purement et simplement les commandes de
  * l'utilisateur, perdant l'historique comptable que `Order.user`
  * (`onDelete: Restrict`) est censé protéger). Nom de fonction et signature

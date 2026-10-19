@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Table from '$components/Table.svelte';
-	import type { TableItem } from '$components/Table.svelte';
-	import { formatDate } from '$lib/utils/formatDate';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import Table from '#components/Table.svelte';
+	import type { TableItem } from '#components/Table.svelte';
+	import { formatDate } from '#lib/utils/formatDate';
+	import { formatMoney } from '#lib/utils/formatMoney';
 	import FileText from 'lucide-svelte/icons/file-text';
 	import Receipt from 'lucide-svelte/icons/receipt';
 

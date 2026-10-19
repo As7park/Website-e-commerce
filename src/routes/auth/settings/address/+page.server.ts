@@ -1,5 +1,5 @@
-import { deleteAddress, getUserAddresses } from '$lib/prisma/addresses/addresses';
-import { deleteAddressSchema } from '$lib/schema/addresses/addressSchema';
+import { deleteAddress, getUserAddresses } from '#lib/prisma/addresses/addresses';
+import { deleteAddressSchema } from '#lib/schema/addresses/addressSchema';
 import { redirect, type Actions } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';

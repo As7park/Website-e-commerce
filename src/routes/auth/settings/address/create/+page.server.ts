@@ -1,9 +1,9 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { createAddressSchema } from '$lib/schema/addresses/addressSchema';
+import { createAddressSchema } from '#lib/schema/addresses/addressSchema';
 import { zod } from 'sveltekit-superforms/adapters';
-import { createAddress } from '$lib/prisma/addresses/addresses';
+import { createAddress } from '#lib/prisma/addresses/addresses';
 
 export const load: PageServerLoad = async (event) => {
 	// Vérification de l'authentification

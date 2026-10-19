@@ -6,13 +6,13 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
+import { updateBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
 import {
 	getBlogTaxonomyById,
 	getBlogTaxonomyValueById,
 	updateBlogTaxonomyValue
-} from '$lib/prisma/blogPost/blogTaxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/blogPost/blogTaxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const [taxonomy, value] = await Promise.all([

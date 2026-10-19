@@ -1,10 +1,10 @@
 <script lang="ts">
 	/* ── Deps ─────────────────────────────────────────────────────────────── */
-	import Cart from '$lib/components/cart/Cart.svelte';
-	import Options from '$lib/components/navigation/Options.svelte';
+	import Cart from '#lib/components/cart/Cart.svelte';
+	import Options from '#lib/components/navigation/Options.svelte';
 	import { goto } from '$app/navigation';
-	import * as Drawer from '$shadcn/drawer';
-	import { Button, buttonVariants } from '$shadcn/button';
+	import * as Drawer from '#shadcn/drawer';
+	import { Button, buttonVariants } from '#shadcn/button';
 	import { Menu } from 'lucide-svelte';
 	import { mode } from 'mode-watcher';
 

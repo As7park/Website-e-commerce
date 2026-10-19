@@ -5,12 +5,12 @@
  * COMMERCE-PLUGIN : best-effort — un échec SMTP ne doit jamais faire échouer
  * l'action admin, le remboursement/crédit est déjà acquis (voir l'appelant).
  */
-import { isDummySecret } from '$lib/server/dummy-secrets';
-import { log } from '$lib/server/log';
-import { sendMail } from '$lib/server/smtp-mail';
-import { formatMoney } from '$lib/utils/formatMoney';
+import { isDummySecret } from '#lib/server/dummy-secrets';
+import { log } from '#lib/server/log';
+import { sendMail } from '#lib/server/smtp-mail';
+import { formatMoney } from '#lib/utils/formatMoney';
 import { renderCreditNotePdf } from './pdf';
-import type { CreditNoteView } from '$lib/creditNote/types';
+import type { CreditNoteView } from '#lib/creditNote/types';
 
 export function shouldSendCreditNoteEmail(): boolean {
 	return !isDummySecret(process.env.SMTP_HOST);

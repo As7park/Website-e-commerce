@@ -2,16 +2,16 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	/* ───────────────────────────── Imports ───────────────────────────── */
-	import * as Card from '$shadcn/card/index.js';
-	import { Button } from '$shadcn/button/index.js'; // Shadcn button
+	import * as Card from '#shadcn/card/index.js';
+	import { Button } from '#shadcn/button/index.js'; // Shadcn button
 	import Plus from 'lucide-svelte/icons/plus';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { deleteAddressSchema } from '$lib/schema/addresses/addressSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { deleteAddressSchema } from '#lib/schema/addresses/addressSchema.js';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 

@@ -14,14 +14,14 @@ const orderItemFindMany = vi.fn().mockResolvedValue([]);
 const sendMail = vi.fn().mockResolvedValue(undefined);
 const getStoreFeatureFlags = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		productView: { findMany: productViewFindMany, updateMany: productViewUpdateMany },
 		orderItem: { findMany: orderItemFindMany }
 	}
 }));
-vi.mock('$lib/server/smtp-mail', () => ({ sendMail }));
-vi.mock('$lib/server/storeSettings', () => ({ getStoreFeatureFlags }));
+vi.mock('#lib/server/smtp-mail', () => ({ sendMail }));
+vi.mock('#lib/server/storeSettings', () => ({ getStoreFeatureFlags }));
 
 function view(
 	overrides: Partial<{

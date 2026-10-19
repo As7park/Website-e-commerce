@@ -9,16 +9,17 @@ post-déploiement. Il ne documente pas une fonctionnalité retirable (pas de
 
 Le projet est déjà câblé pour Vercel :
 
-- `svelte.config.js` utilise `@sveltejs/adapter-vercel` (`runtime: 'nodejs20.x'`,
-  `memory: 1024`, `maxDuration: 30`) — build/preset détectés automatiquement,
-  rien à choisir manuellement dans les réglages Vercel du projet.
+- `sveltekit.config.ts` configure `@sveltejs/adapter-vercel`
+  (`runtime: 'nodejs22.x'`, `memory: 1024`, `maxDuration: 30`) — build/preset
+  détectés automatiquement, rien à choisir manuellement dans les réglages Vercel
+  du projet. Le projet requiert Node 22.17 ou supérieur.
 - `vercel.json` déclare deux Cron Jobs (`/api/jobs/cleanup` quotidien,
   `/api/jobs/cart-recovery` toutes les 30 min) — **voir la limite du plan
   Hobby ci-dessous, elle bloque le déploiement tel quel.**
 - `postinstall` (`package.json`) exécute `prisma generate` et copie les
   assets TinyMCE : aucune étape manuelle nécessaire pour ces deux points au
   build.
-- La CSP (`svelte.config.js` → `kit.csp`) est **bloquante** (`directives`,
+- La CSP (`sveltekit.config.ts` → `csp`) est **bloquante** (`directives`,
   plus `reportOnly`) depuis l'audit statique du code (domaines externes
   réellement appelés côté navigateur). `/api/csp-report` reste actif comme
   canari — voir section dédiée en bas de page pour le détail des directives
@@ -160,7 +161,7 @@ Dépendent aussi de cette résolution (`resolveAppUrlOrDefault()`, repli
 inclus dans les e-mails de sécurité du compte : alerte « nouvelle
 connexion détectée », confirmation de changement de mot de passe, alerte
 « tentatives de connexion échouées », et le lien de révocation à distance
-« Ce n'était pas moi » (`$lib/server/newDeviceAlert.ts`,
+« Ce n'était pas moi » (`#lib/server/newDeviceAlert.ts`,
 `passwordChangedAlert.ts`, `failedLoginAlert.ts`). Un `APP_URL` absent en
 Preview n'empêche rien de fonctionner (repli sur `VERCEL_URL`, toujours
 fourni par Vercel), mais vérifier au moins une fois qu'un de ces e-mails
@@ -475,7 +476,7 @@ si le module blog est actif (`docs/blog/README.md`). Le script
 
 ## CSP — bloquante (`directives`)
 
-La CSP (`svelte.config.js` → `kit.csp`) est en mode **bloquant**
+La CSP (`sveltekit.config.ts` → `csp`) est en mode **bloquant**
 (`directives`, plus `reportOnly`). Les directives ont été établies par audit
 statique du code (`grep` de tous les domaines externes appelés côté
 navigateur dans `src/`), pas par observation DevTools en conditions réelles :
@@ -512,7 +513,7 @@ son domaine à la directive concernée **avant** la mise en prod — ne pas
 compter sur `/api/csp-report` pour le découvrir après coup.
 
 En cas de blocage inattendu en prod, le rollback le plus rapide est de
-repasser `directives` en `reportOnly` dans `svelte.config.js` (revert ou
+repasser `directives` en `reportOnly` dans `sveltekit.config.ts` (revert ou
 correctif ponctuel) et redéployer — ou **Promote to Production** d'un
 déploiement antérieur sain (voir section Rollback ci-dessous).
 

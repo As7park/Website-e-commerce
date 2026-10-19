@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import * as Form from '$shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import * as Form from '#shadcn/form';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { vatRateSchema } from '$lib/schema/settings/vatSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { vatRateSchema } from '#lib/schema/settings/vatSchema';
 
 	let { data } = $props();
 

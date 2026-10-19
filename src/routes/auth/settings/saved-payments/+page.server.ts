@@ -1,14 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 import {
 	listSavedPaymentMethods,
 	createSavedPaymentMethod,
 	getSavedPaymentMethodById,
 	deleteSavedPaymentMethod,
 	setDefaultSavedPaymentMethod
-} from '$lib/prisma/savedPayments/savedPayments';
-import { stripe } from '$lib/server/stripe';
+} from '#lib/prisma/savedPayments/savedPayments';
+import { stripe } from '#lib/server/stripe';
 
 /**
  * Cartes enregistrées du compte (`SavedPaymentMethod`).

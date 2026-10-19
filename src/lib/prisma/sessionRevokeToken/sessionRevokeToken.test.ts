@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const sessionRevokeTokenDelete = vi.fn();
 const sessionRevokeTokenFindUnique = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		sessionRevokeToken: {
 			delete: (...args: unknown[]) => sessionRevokeTokenDelete(...args),

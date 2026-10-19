@@ -46,7 +46,7 @@ describe('Invariants du dépôt', () => {
 	 * Sous Lucia, `Session.id` ÉTAIT le token du cookie : aucun hachage entre le
 	 * cookie et la clé primaire, donc le renvoyer au client ou l'écrire dans un
 	 * journal revenait à publier un identifiant de connexion réutilisable tel
-	 * quel. Depuis la migration Better Auth (`$lib/auth/session.ts`), `.id` est
+	 * quel. Depuis la migration Better Auth (`#lib/auth/session.ts`), `.id` est
 	 * un simple id de ligne, distinct du secret (`AuthSession.token`) — mais
 	 * cette règle reste appliquée par défense en profondeur (`sessionPublicId()`
 	 * existe toujours pour ces usages, et `.id` continue d'identifier la ligne

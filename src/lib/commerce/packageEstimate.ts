@@ -3,7 +3,7 @@
 // de la commande. Module isomorphe (aucune dépendance serveur) : utilisé à la
 // fois par le devis checkout (`/api/sendcloud/shipping-options`) et par la
 // création réelle de la commande Sendcloud après paiement
-// (`$lib/server/jobs/post-payment.ts`) — source unique, pour que le devis
+// (`#lib/server/jobs/post-payment.ts`) — source unique, pour que le devis
 // affiché au client corresponde exactement au colis réellement expédié.
 //
 // `Product.weight/length/width/height` sont nullable : tant que le catalogue

@@ -10,15 +10,15 @@
 // -----------------------------------------------------------------------------
 
 import { generateRandomOTP } from './otpCodes';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 import { generateSecureToken, isValidId } from './ids';
 import type { RequestEvent } from '@sveltejs/kit';
 import {
 	createEmailVerificationRequestPrisma,
 	deleteEmailVerificationRequestsByUserId,
 	findEmailVerificationRequest
-} from '$lib/prisma/emailVerificationRequest/emailVerificationRequest';
-import { sendVerificationEmail } from '$lib/server/smtp-mail';
+} from '#lib/prisma/emailVerificationRequest/emailVerificationRequest';
+import { sendVerificationEmail } from '#lib/server/smtp-mail';
 
 import dotenv from 'dotenv';
 dotenv.config();

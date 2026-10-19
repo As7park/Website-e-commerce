@@ -1,13 +1,13 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Badge } from '$shadcn/badge';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Badge } from '#shadcn/badge';
 	import { goto } from '$app/navigation';
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
-	import SEO from '$lib/components/SEO.svelte';
+	import SEO from '#lib/components/SEO.svelte';
 
 	let { data } = $props();
 

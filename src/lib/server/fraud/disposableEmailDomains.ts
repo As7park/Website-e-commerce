@@ -1,7 +1,7 @@
 /**
  * Domaines d'e-mail jetable connus — liste statique de départ, à enrichir
  * manuellement dans le temps (pas de service tiers consulté ici). Utilisée
- * uniquement par `computeFraudScore` (`$lib/server/fraud.ts`) comme l'un des
+ * uniquement par `computeFraudScore` (`#lib/server/fraud.ts`) comme l'un des
  * trois facteurs de risque, jamais pour bloquer une inscription/adresse en
  * dehors de ce contexte.
  */

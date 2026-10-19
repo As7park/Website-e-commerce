@@ -13,25 +13,25 @@ import { redirect, fail } from '@sveltejs/kit';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { signupSchema } from '$lib/schema/auth/signupSchema';
+import { signupSchema } from '#lib/schema/auth/signupSchema';
 
-import { checkEmailAvailability } from '$lib/prisma/email/email';
-import { verifyPasswordStrength } from '$lib/auth/password';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getUserByReferralCode } from '$lib/prisma/referral/referral';
-import { prisma } from '$lib/server';
+import { checkEmailAvailability } from '#lib/prisma/email/email';
+import { verifyPasswordStrength } from '#lib/auth/password';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getUserByReferralCode } from '#lib/prisma/referral/referral';
+import { prisma } from '#lib/server';
 
 import {
 	createEmailVerificationRequest,
 	sendVerificationEmail,
 	setEmailVerificationRequestCookie
-} from '$lib/server/emailVerification';
+} from '#lib/server/emailVerification';
 
-import { RefillingTokenBucket } from '$lib/server/rate-limit';
-import { auth } from '$lib/auth';
-import { applyAuthCookies } from '$lib/auth/cookies';
-import { getSessionDeviceContext } from '$lib/server/deviceContext';
-import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
+import { RefillingTokenBucket } from '#lib/server/rate-limit';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
+import { recordLoginEvent } from '#lib/prisma/loginEvent/loginEvent';
 
 import type { PageServerLoad, Actions } from './$types';
 
@@ -129,7 +129,7 @@ export const actions: Actions = {
 
 		/* ---------- 4. Création de l’utilisateur (+ session) --------------- */
 		// `referralCode` du NOUVEAU compte est généré par
-		// `databaseHooks.user.create.before` ($lib/auth/index.ts). Le parrain
+		// `databaseHooks.user.create.before` (#lib/auth/index.ts). Le parrain
 		// (`referredById`), lui, est résolu ici : `ctx.query`/`ctx.body` ne sont
 		// pas fiables depuis un appel serveur direct à `auth.api`.
 		const { headers: authHeaders, response } = await auth.api.signUpEmail({

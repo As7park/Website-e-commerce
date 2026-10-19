@@ -28,7 +28,7 @@ const invalidateUserSessions = vi.fn().mockResolvedValue(undefined);
 
 const transactionCalls: unknown[] = [];
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		user: { update: userUpdate },
 		savedPaymentMethod: {
@@ -54,11 +54,11 @@ vi.mock('$lib/server', () => ({
 	}
 }));
 
-vi.mock('$lib/server/stripe', () => ({
+vi.mock('#lib/server/stripe', () => ({
 	stripe: { paymentMethods: { detach: stripePaymentMethodsDetach } }
 }));
 
-vi.mock('$lib/auth/session', () => ({ invalidateUserSessions }));
+vi.mock('#lib/auth/session', () => ({ invalidateUserSessions }));
 
 beforeEach(() => {
 	vi.clearAllMocks();

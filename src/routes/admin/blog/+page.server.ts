@@ -7,16 +7,16 @@ import { type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { deleteBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema';
-import { deleteBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
+import { deleteBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema';
+import { deleteBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
 
-import { getPostById, deletePost, getAllPosts } from '$lib/prisma/blogPost/blogPost';
+import { getPostById, deletePost, getAllPosts } from '#lib/prisma/blogPost/blogPost';
 import {
 	getAllBlogTaxonomies,
 	getBlogTaxonomyById,
 	deleteBlogTaxonomyById
-} from '$lib/prisma/blogPost/blogTaxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/blogPost/blogTaxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const { items, total, page, perPage, search, sort, dir } = await getAllPosts({

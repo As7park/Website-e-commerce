@@ -6,8 +6,8 @@
  * dès la lecture, jamais en aval (cf. RESTE_A_FAIRE.md §A.2.1).
  */
 import type { Prisma } from '@prisma/client';
-import { toNumber } from '$lib/server/decimal';
-import { mapProductPrice, mapVariantPrice } from '$lib/prisma/products/mapProduct';
+import { toNumber } from '#lib/server/decimal';
+import { mapProductPrice, mapVariantPrice } from '#lib/prisma/products/mapProduct';
 
 export { mapProductPrice, mapVariantPrice };
 

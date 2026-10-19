@@ -14,16 +14,16 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { prisma } from '$lib/server';
-import { auth } from '$lib/auth';
-import { applyAuthCookies } from '$lib/auth/cookies';
-import { finalizeLogin } from '$lib/auth/finalizeLogin';
-import { RefillingTokenBucket, Throttler } from '$lib/server/rate-limit';
-import { reportFailedLoginAttempt } from '$lib/server/failedLoginAlert';
-import { getSessionDeviceContext } from '$lib/server/deviceContext';
+import { prisma } from '#lib/server';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
+import { finalizeLogin } from '#lib/auth/finalizeLogin';
+import { RefillingTokenBucket, Throttler } from '#lib/server/rate-limit';
+import { reportFailedLoginAttempt } from '#lib/server/failedLoginAlert';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
 
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
-import { loginSchema } from '$lib/schema/auth/loginSchema';
+import { loginSchema } from '#lib/schema/auth/loginSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
 

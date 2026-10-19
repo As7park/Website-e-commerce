@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { runWishlistPriceAlertJob } from '$lib/server/jobs/wishlistPriceAlert';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { runWishlistPriceAlertJob } from '#lib/server/jobs/wishlistPriceAlert';
 
 /**
- * Appelé par QStash (`$lib/server/qstash.ts` → `enqueueWishlistPriceAlertJob`),
+ * Appelé par QStash (`#lib/server/qstash.ts` → `enqueueWishlistPriceAlertJob`),
  * jamais directement par un client — même garde de signature que
  * `/api/jobs/stock-alerts`.
  */

@@ -4,12 +4,12 @@
  * volée ici). Lue par les routes publiques pour savoir si un module doit
  * apparaître ; modifiée uniquement depuis `/admin/settings`.
  *
- * Cache courte durée (comme `$lib/products/catalog`) : ces lectures arrivent
+ * Cache courte durée (comme `#lib/products/catalog`) : ces lectures arrivent
  * sur quasi toutes les pages vitrine, la fraîcheur immédiate importe moins
  * que sur `/admin/settings` lui-même, qui ne passe jamais par ce cache.
  */
-import { prisma } from '$lib/server';
-import { cached, bumpCacheVersion, getCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { cached, bumpCacheVersion, getCacheVersion } from '#lib/server/cache';
 
 const CACHE_NAMESPACE = 'settings';
 const CACHE_TTL_SECONDS = 30;

@@ -1,8 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getReferralStats } from '$lib/prisma/referral/referral';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { prisma } from '$lib/server';
+import { getReferralStats } from '#lib/prisma/referral/referral';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { prisma } from '#lib/server';
 
 /**
  * Mon parrainage — lien unique du compte (`User.referralCode`) et récompenses

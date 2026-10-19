@@ -1,12 +1,12 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button, buttonVariants } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import * as AlertDialog from '$shadcn/alert-dialog/index.js';
+	import * as Card from '#shadcn/card';
+	import { Button, buttonVariants } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import * as AlertDialog from '#shadcn/alert-dialog/index.js';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
-	import { cn } from '$lib/components/shadcn/utils.js';
+	import { cn } from '#lib/components/shadcn/utils.js';
 
 	let { data, form } = $props();
 

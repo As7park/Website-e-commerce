@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const transactionUpdate = vi.fn();
 const transactionFindUnique = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		transaction: {
 			findUnique: transactionFindUnique,

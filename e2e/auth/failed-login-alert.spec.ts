@@ -5,7 +5,7 @@ import { clearMailbox, waitForEmailContaining, fetchMailbox } from '../support/m
 
 /**
  * Alerte « plusieurs tentatives de connexion échouées »
- * (`$lib/server/failedLoginAlert.ts`) : un e-mail part au 3ᵉ mot de passe
+ * (`#lib/server/failedLoginAlert.ts`) : un e-mail part au 3ᵉ mot de passe
  * refusé sur un compte réel, jamais avant (2 échecs ne suffisent pas), et
  * une seule fois (pas un e-mail par échec au-delà du seuil, dans la même
  * fenêtre de 15 minutes).

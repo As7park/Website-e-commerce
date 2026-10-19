@@ -3,33 +3,33 @@
 	// COMMERCE-PLUGIN : UI du tunnel. SENDCLOUD = carte / options. PROMO = champ code.
 	import type { Offset } from 'maplibre-gl';
 
-	import * as Card from '$shadcn/card/index.js';
+	import * as Card from '#shadcn/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
-	import AddressSelector from '$lib/components/checkout/AddressSelector.svelte';
-	import ShippingOptions from '$lib/components/checkout/ShippingOptions.svelte';
-	import ServicePointMap from '$lib/components/checkout/ServicePointMap.svelte';
-	import CartSummary from '$lib/components/checkout/CartSummary.svelte';
-	import PromoCodeInput from '$lib/components/checkout/PromoCodeInput.svelte'; // PROMO-PLUGIN
-	import GiftCardInput from '$lib/components/checkout/GiftCardInput.svelte';
+	import SmoothScrollBar from '#lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import AddressSelector from '#lib/components/checkout/AddressSelector.svelte';
+	import ShippingOptions from '#lib/components/checkout/ShippingOptions.svelte';
+	import ServicePointMap from '#lib/components/checkout/ServicePointMap.svelte';
+	import CartSummary from '#lib/components/checkout/CartSummary.svelte';
+	import PromoCodeInput from '#lib/components/checkout/PromoCodeInput.svelte'; // PROMO-PLUGIN
+	import GiftCardInput from '#lib/components/checkout/GiftCardInput.svelte';
 	import { CreditCard } from 'lucide-svelte';
-	import Button from '$shadcn/button/button.svelte';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Label } from '$shadcn/label';
-	import { OrderSchema } from '$lib/schema/order/order.js';
+	import Button from '#shadcn/button/button.svelte';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
+	import { Label } from '#shadcn/label';
+	import { OrderSchema } from '#lib/schema/order/order.js';
 	import { toast } from 'svelte-sonner';
 	import {
 		cart as cartStore,
 		removeFromCart,
 		setShippingCostHT,
 		updateCartItemQuantity
-	} from '$lib/store/Data/cartStore';
-	import SEO from '$lib/components/SEO.svelte';
+	} from '#lib/store/Data/cartStore';
+	import SEO from '#lib/components/SEO.svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
-	import { estimatePackage } from '$lib/commerce/packageEstimate';
-	import type { ShippingOptionDTO, ServicePointDTO } from '$lib/sendcloud/checkoutTypes';
+	import { estimatePackage } from '#lib/commerce/packageEstimate';
+	import type { ShippingOptionDTO, ServicePointDTO } from '#lib/sendcloud/checkoutTypes';
 
 	let { data } = $props();
 

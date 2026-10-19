@@ -1,13 +1,13 @@
 /**
  * Historique des connexions (`LoginEvent`) — distinct des sessions actives
- * (`$lib/prisma/session/sessions.ts`) : une ligne par authentification
+ * (`#lib/prisma/session/sessions.ts`) : une ligne par authentification
  * réelle, jamais par réémission de session (2FA, changement de mot de
  * passe), et jamais supprimée à l'expiration/révocation de la session
  * qu'elle documente. Voir le commentaire du modèle dans `schema.prisma`.
  */
-import { prisma } from '$lib/server';
-import type { SessionDeviceContext } from '$lib/server/deviceContext';
-import { normalizeDeviceFingerprint } from '$lib/server/deviceLabel';
+import { prisma } from '#lib/server';
+import type { SessionDeviceContext } from '#lib/server/deviceContext';
+import { normalizeDeviceFingerprint } from '#lib/server/deviceLabel';
 
 export type LoginMethod = 'password' | 'google' | 'password-reset' | 'signup';
 

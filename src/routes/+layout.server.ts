@@ -1,8 +1,8 @@
 import type { LayoutServerLoad } from './$types';
-import { toPublicCart } from '$lib/commerce/cart';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getVatRate } from '$lib/server/vat';
-import { getCompanyIdentity } from '$lib/server/companyIdentity';
+import { toPublicCart } from '#lib/commerce/cart';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getVatRate } from '#lib/server/vat';
+import { getCompanyIdentity } from '#lib/server/companyIdentity';
 
 /**
  * Données partagées par toutes les pages.
@@ -16,7 +16,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	const { frequentlyBoughtTogetherEnabled } = await getStoreFeatureFlags();
 	// BUNDLE-PLUGIN ▲
 
-	// Taux de TVA courant (`StoreSettings.vatRate`, `$lib/server/vat.ts`) —
+	// Taux de TVA courant (`StoreSettings.vatRate`, `#lib/server/vat.ts`) —
 	// exposé ici pour que les stores panier côté client (`cartStore.ts`,
 	// `guestCart.ts`) ne portent plus une constante figée à 5,5 %.
 	const vatRate = await getVatRate();

@@ -5,9 +5,9 @@
  * toutes les lignes : le coût et le payload restent constants quel que soit
  * le volume en base.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { OrderStatus } from '@prisma/client';
-import { LOW_STOCK_THRESHOLD } from '$lib/prisma/products/products';
+import { LOW_STOCK_THRESHOLD } from '#lib/prisma/products/products';
 
 /** Fenêtre des KPI liés à l'activité récente (ventes, relances, nouveaux
  * comptes, engagement) — les compteurs de file d'attente (stock, retours,

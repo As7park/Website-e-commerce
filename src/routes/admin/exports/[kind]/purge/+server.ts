@@ -1,8 +1,8 @@
 import { error, json } from '@sveltejs/kit';
-import { assertAdmin } from '$lib/admin/guards';
-import { EXPORT_KINDS, type ExportKind } from '$lib/server/jobs/export';
-import { previewPurge, runPurge } from '$lib/server/jobs/purge';
-import { log } from '$lib/server/log';
+import { assertAdmin } from '#lib/admin/guards';
+import { EXPORT_KINDS, type ExportKind } from '#lib/server/jobs/export';
+import { previewPurge, runPurge } from '#lib/server/jobs/purge';
+import { log } from '#lib/server/log';
 import type { RequestHandler } from './$types';
 
 function requireKind(kind: string): ExportKind {
@@ -34,7 +34,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
  * Exécute la purge. Pour `sales`, exige `confirmText === 'SUPPRIMER'` — pas
  * seulement désactivé côté client, vérifié ici aussi, pour qu'une requête
  * rejouée ne puisse pas contourner la confirmation. Voir la politique de
- * purge dans `$lib/server/jobs/purge.ts`.
+ * purge dans `#lib/server/jobs/purge.ts`.
  */
 export const POST: RequestHandler = async ({ params, locals, request }) => {
 	assertAdmin(locals);

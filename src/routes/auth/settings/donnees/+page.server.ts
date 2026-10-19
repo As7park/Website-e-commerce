@@ -4,7 +4,7 @@
  * que par un canal de contact.
  *
  * La suppression n'efface jamais physiquement le compte : elle l'anonymise
- * (`$lib/prisma/user/anonymizeUser.ts`) — `Order`/`Transaction` sont
+ * (`#lib/prisma/user/anonymizeUser.ts`) — `Order`/`Transaction` sont
  * légalement conservés (obligation comptable), seuls les champs
  * identifiants et les données de préférence disparaissent.
  *
@@ -16,9 +16,9 @@
  */
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getCredentialPasswordHash, verifyPasswordHash } from '$lib/auth/password';
-import { anonymizeUser } from '$lib/prisma/user/anonymizeUser';
-import { log } from '$lib/server/log';
+import { getCredentialPasswordHash, verifyPasswordHash } from '#lib/auth/password';
+import { anonymizeUser } from '#lib/prisma/user/anonymizeUser';
+import { log } from '#lib/server/log';
 
 const DELETE_CONFIRM_TEXT = 'SUPPRIMER';
 

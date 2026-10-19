@@ -21,7 +21,7 @@ import { waitForEmailContaining } from '../support/mailbox';
  * déclencheur possible pour la notification de réassort reste donc une
  * édition admin qui fait repasser le stock au-dessus de 0
  * (`updateProductById`), qui enfile alors
- * `$lib/server/jobs/stockAlerts.ts` — en fallback synchrone dans la requête
+ * `#lib/server/jobs/stockAlerts.ts` — en fallback synchrone dans la requête
  * admin quand QStash n'est pas configuré (cas e2e).
  *
  * `StoreSettings` est une ligne unique partagée par toute la suite : les

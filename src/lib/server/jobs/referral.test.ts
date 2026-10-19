@@ -21,7 +21,7 @@ const transaction = vi.fn((callback: (tx: typeof txClient) => Promise<unknown>) 
 	callback(txClient)
 );
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		order: { findUnique: orderFindUnique, count: orderCount },
 		user: { findUnique: userFindUnique },
@@ -31,12 +31,12 @@ vi.mock('$lib/server', () => ({
 }));
 
 const createGiftCard = vi.fn();
-vi.mock('$lib/prisma/giftCards/giftCards', () => ({
+vi.mock('#lib/prisma/giftCards/giftCards', () => ({
 	createGiftCard: (...args: unknown[]) => createGiftCard(...args)
 }));
 
 const sendMail = vi.fn().mockResolvedValue(undefined);
-vi.mock('$lib/server/smtp-mail', () => ({ sendMail }));
+vi.mock('#lib/server/smtp-mail', () => ({ sendMail }));
 
 const order = { id: 'order_1', userId: 'user_referred', status: 'PAID' };
 const referredUser = { id: 'user_referred', referredById: 'user_referrer' };

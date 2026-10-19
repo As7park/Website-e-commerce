@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { estimateReadingMinutes, getPublishedPostBySlug, getRelatedPosts } from '$lib/blog/catalog';
+import { estimateReadingMinutes, getPublishedPostBySlug, getRelatedPosts } from '#lib/blog/catalog';
 
 /**
  * Article public.

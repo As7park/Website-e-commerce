@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn, BulkAction } from '$components/Table.svelte';
-	import { deleteProductSchema } from '$lib/schema/products/productSchema.js';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn, BulkAction } from '#components/Table.svelte';
+	import { deleteProductSchema } from '#lib/schema/products/productSchema.js';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
-	import { deleteTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema.js';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import { deleteTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema.js';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 

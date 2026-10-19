@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getFrequentlyBoughtTogether } from '$lib/prisma/bundles/bundles';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getFrequentlyBoughtTogether } from '#lib/prisma/bundles/bundles';
 
 /**
  * Suggestions « souvent achetés ensemble » pour le panier courant.

@@ -4,7 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import { mode } from 'mode-watcher';
 	import { Power } from 'lucide-svelte';
-	import SEO from '$lib/components/SEO.svelte';
+	import SEO from '#lib/components/SEO.svelte';
 
 	let animateLines = $state(false);
 

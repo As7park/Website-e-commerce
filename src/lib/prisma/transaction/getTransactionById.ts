@@ -4,8 +4,8 @@
  * COMMERCE-PLUGIN : `getTransactionById` est réservé à l'admin.
  * `getTransactionByIdForUser` refuse l'IDOR sur l'espace compte.
  */
-import { prisma } from '$lib/server';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 
 export const getTransactionById = async (id: string) => {
 	try {

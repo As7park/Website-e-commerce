@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import Input from '$shadcn/input/input.svelte';
-	import Button from '$shadcn/button/button.svelte';
+	import * as Form from '#shadcn/form';
+	import Input from '#shadcn/input/input.svelte';
+	import Button from '#shadcn/button/button.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { totpSchema } from '$lib/schema/auth/totpSchema';
+	import { totpSchema } from '#lib/schema/auth/totpSchema';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();

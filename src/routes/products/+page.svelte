@@ -1,22 +1,22 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import { Checkbox } from '$shadcn/checkbox';
-	import * as Accordion from '$shadcn/accordion';
-	import * as Select from '$shadcn/select';
-	import { Slider } from '$shadcn/slider';
-	import { Badge } from '$shadcn/badge';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import { Checkbox } from '#shadcn/checkbox';
+	import * as Accordion from '#shadcn/accordion';
+	import * as Select from '#shadcn/select';
+	import { Slider } from '#shadcn/slider';
+	import { Badge } from '#shadcn/badge';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
 	import { goto } from '$app/navigation';
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
-	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
-	import { toTTC } from '$lib/utils/price';
-	import SEO from '$lib/components/SEO.svelte';
+	import FlashSaleCountdown from '#lib/components/products/FlashSaleCountdown.svelte';
+	import { toTTC } from '#lib/utils/price';
+	import SEO from '#lib/components/SEO.svelte';
 
 	let { data } = $props();
 

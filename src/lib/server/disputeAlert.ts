@@ -7,10 +7,10 @@
  * mérite une alerte, pas seulement au-delà d'un seuil de répétition.
  */
 import * as Sentry from '@sentry/sveltekit';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { formatDisputeStatus } from '$lib/server/dispute';
-import { formatMoney } from '$lib/utils/formatMoney';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { formatDisputeStatus } from '#lib/server/dispute';
+import { formatMoney } from '#lib/utils/formatMoney';
 
 type DisputeTransaction = {
 	id: string;

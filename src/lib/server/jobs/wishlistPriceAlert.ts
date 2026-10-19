@@ -19,17 +19,17 @@
  * d'enfiler ce job, pas ici (même convention que `stockAlerts.ts`).
  */
 import * as Sentry from '@sentry/sveltekit';
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
 import {
 	listWishlistItemsForProduct,
 	markWishlistItemNotified
-} from '$lib/prisma/wishlist/wishlist';
-import { toNumber } from '$lib/server/decimal';
+} from '#lib/prisma/wishlist/wishlist';
+import { toNumber } from '#lib/server/decimal';
 
 /**
  * L'email est déjà parti quand cette fonction est appelée (§2.2 de l'audit

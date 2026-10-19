@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { resetCart } from '$lib/store/Data/cartStore';
-	import SEO from '$lib/components/SEO.svelte';
+	import { resetCart } from '#lib/store/Data/cartStore';
+	import SEO from '#lib/components/SEO.svelte';
 
 	// On reset le panier dès que la page est consultée
 	$effect(() => {

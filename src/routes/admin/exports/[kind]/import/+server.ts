@@ -1,12 +1,12 @@
 import { error, json } from '@sveltejs/kit';
-import { assertAdmin } from '$lib/admin/guards';
-import { IMPORT_KINDS, runImport, type ImportKind } from '$lib/server/jobs/import';
-import { log } from '$lib/server/log';
+import { assertAdmin } from '#lib/admin/guards';
+import { IMPORT_KINDS, runImport, type ImportKind } from '#lib/server/jobs/import';
+import { log } from '#lib/server/log';
 import type { RequestHandler } from './$types';
 
 /**
  * Restauration d'un CSV exporté par cette même page. `sales` n'est
- * volontairement pas importable (voir `$lib/server/jobs/import.ts`).
+ * volontairement pas importable (voir `#lib/server/jobs/import.ts`).
  */
 export const POST: RequestHandler = async ({ params, locals, request }) => {
 	assertAdmin(locals);

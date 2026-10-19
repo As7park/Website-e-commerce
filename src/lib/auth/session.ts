@@ -11,8 +11,8 @@
  * couvert par `userAgent`.
  */
 import { createHash } from 'node:crypto';
-import { prisma } from '$lib/server';
-import { invalidateCache } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { invalidateCache } from '#lib/server/cache';
 
 export type Session = {
 	id: string;
@@ -37,7 +37,7 @@ export async function invalidateUserSessions(userId: string): Promise<void> {
 }
 
 /**
- * Clé du cache court d'identité résolue par requête (`$lib/auth/hooks.ts`),
+ * Clé du cache court d'identité résolue par requête (`#lib/auth/hooks.ts`),
  * keyée sur le `token` du cookie (le secret), jamais sur `AuthSession.id`
  * (un simple id de ligne, distinct du token sous Better Auth — voir
  * MIGRATION_BETTER_AUTH.md). Toute action qui révoque une session doit

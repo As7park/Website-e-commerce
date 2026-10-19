@@ -77,7 +77,7 @@ nouveau cookie.
 10. **Rate limiting, alertes, RGPD restent maison** : Better Auth a son
     propre rate-limiter interne, mais nos quotas actuels (par IP, par
     compte, délai croissant) sont plus fins et déjà testés — conservés via
-    nos primitives existantes (`$lib/server/rate-limit.ts`), appliquées
+    nos primitives existantes (`#lib/server/rate-limit.ts`), appliquées
     dans des `hooks.before` qui interceptent les chemins Better Auth
     concernés avant de les laisser continuer. Alerte nouvel appareil,
     alerte mot de passe changé, alerte échecs de connexion répétés,
@@ -99,7 +99,7 @@ nouveau cookie.
     `auth.api.verifyTOTP`/`verifyBackupCode` sait le lire. Conséquences :
     - `event.locals.session`/`.session.twoFactorVerified` n'existe plus : si
       une session existe, la 2FA (si exigée) est déjà passée. `authHandle`
-      (`$lib/auth/hooks.ts`) ne garde que le cas « 2FA exigée mais jamais
+      (`#lib/auth/hooks.ts`) ne garde que le cas « 2FA exigée mais jamais
       configurée » (redirige vers `/auth/2fa/setup`).
     - `/auth/2fa` (code TOTP après connexion) et `/auth/2fa/reset` (code de
       secours) n'ont plus besoin de session préalable : ils appellent
@@ -112,9 +112,9 @@ nouveau cookie.
     unique, qui RETIRAIT la 2FA une fois utilisé). Pour préserver le
     comportement existant (un seul code, son usage retire la 2FA et force
     une reconfiguration), `backupCodeOptions: { amount: 1, length: 15 }`
-    (`$lib/auth/index.ts`) — `length: 15` donne un code affiché de 16
+    (`#lib/auth/index.ts`) — `length: 15` donne un code affiché de 16
     caractères (5 + tiret + 10), identique à l'ancien format en longueur.
-    `$lib/auth/twoFactor.ts` (`disableTwoFactor`) retire explicitement la
+    `#lib/auth/twoFactor.ts` (`disableTwoFactor`) retire explicitement la
     2FA après usage du code de secours — Better Auth ne le fait jamais de
     lui-même (son modèle natif n'en a pas besoin, vu que plusieurs codes
     existent).
@@ -124,7 +124,7 @@ nouveau cookie.
     demandait pas non plus). Compromis de sécurité assumé, pas un oubli.
 15. **Jamais de cookie de session signé à la main.** Toute création/
     modification de session passe par `auth.api.X({ returnHeaders: true })`
-    - `applyAuthCookies()` (`$lib/auth/cookies.ts`), qui rejoue les
+    - `applyAuthCookies()` (`#lib/auth/cookies.ts`), qui rejoue les
       `Set-Cookie` renvoyés par Better Auth tels quels. Conséquence directe :
       **une réinitialisation de mot de passe (`/auth/forgot-password` →
       `/auth/reset-password`) ne reconnecte plus automatiquement** —
@@ -158,7 +158,7 @@ nouveau cookie.
     canal, sans jamais passer par l'échange de code. Quand
     `GOOGLE_CLIENT_ID` est factice (`isDummySecret`, donc jamais en
     production), `verifyIdToken` devient permissif et accepte un JWT
-    syntaxiquement valide mais non signé — voir `$lib/auth/index.ts` et
+    syntaxiquement valide mais non signé — voir `#lib/auth/index.ts` et
     `e2e/auth/google.spec.ts`.
 
 ## Phases
@@ -177,18 +177,18 @@ suivante. Commit par phase.
 - [x] **Phase 1** — `scripts/migrate-better-auth-accounts.mjs` (mots de
       passe, comptes Google → `AuthAccount`), vérifié empiriquement (connexion
       réelle avec un hash Argon2id pré-migration, inchangé).
-- [x] **Phase 2** — `authHandle` (`$lib/auth/hooks.ts`) lit Better Auth,
+- [x] **Phase 2** — `authHandle` (`#lib/auth/hooks.ts`) lit Better Auth,
       construit `locals` à l'identique. Signup/login/logout/Google réécrits
       sur `auth.api`. 2FA (setup/vérification post-login/reset par code de
       secours) réécrite sur le plugin `twoFactor` (voir §12-14). Alertes et
-      historique de connexion rebranchés (`$lib/auth/finalizeLogin.ts`).
+      historique de connexion rebranchés (`#lib/auth/finalizeLogin.ts`).
       Rate-limiting : conservé via les mêmes primitives
-      (`$lib/server/rate-limit.ts`), appliqué directement dans les routes
+      (`#lib/server/rate-limit.ts`), appliqué directement dans les routes
       SvelteKit réécrites (pas de `hooks.before` Better Auth : inutile, ces
       routes restent sous notre contrôle total).
 - [x] **Phase 3** — Email verification (garde 2FA simplifiée, voir §12),
       reset de mot de passe (code + 2FA, voir §15), self-service sessions
-      actives (`AuthSession`, `$lib/auth/session.ts`), RGPD
+      actives (`AuthSession`, `#lib/auth/session.ts`), RGPD
       (`anonymizeUser.ts` purge aussi `AuthAccount`/`TwoFactor`), admin
       (reset mdp/MFA tiers → `AuthAccount`/`invalidateUserSessions`).
 - [x] **Phase 4** — Fichiers `src/lib/lucia/{index,session,hooks,password,
@@ -201,7 +201,7 @@ deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
       sans dépendance sur l'objet `Lucia`/la table `Session`, toujours
       utilisés (génération d'id/OTP, vérification d'email, empreinte
       d'appareil) — un renommage mécanique (`src/lib/lucia/` →
-      `src/lib/shared-auth/` ou fusion dans `$lib/server/`) est prévu mais
+      `src/lib/shared-auth/` ou fusion dans `#lib/server/`) est prévu mais
       pas bloquant, pas fait dans cette passe pour limiter le risque d'une
       dernière réécriture de masse juste avant la vérification finale.
 - [x] **Phase 5** — Documentation (`docs/auth/README.md`,
@@ -212,18 +212,23 @@ deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
       d'exécution pour le détail des résultats et des 5 bugs trouvés et
       corrigés en cours de route.
 
-## Écarts restants (à traiter avant de considérer la migration terminée)
+## État actuel
 
-- Dépendances npm `lucia`/`@lucia-auth/adapter-prisma`/`arctic` encore
-  dans `package.json` — plus aucun import dans `src/`, à retirer avec
-  `npm uninstall` + une migration Prisma qui supprime le modèle `Session`
-  (Lucia) et les 4 colonnes `User` désormais mortes (`passwordHash`,
-  `totpKey`, `recoveryCode`, `encryptionVersion`).
-- Renommage `src/lib/lucia/` → un chemin neutre (voir Phase 4) : ~24
-  sites d'import à travers `src/`, mécanique mais pas fait.
-- `scripts/check-legacy-encryption.mjs` (et le script npm associé) devenus
-  obsolètes : plus aucune écriture ne passe par l'ancien chiffrement AES
-  qu'il surveille, son compteur est figé depuis la bascule.
+La migration est terminée dans le dépôt : Better Auth est la dépendance
+d'authentification, l'ancien adaptateur et le paquet Lucia ne sont plus déclarés,
+et le schéma Prisma ne contient plus l'ancien modèle `Session` ni les champs
+d'authentification Lucia supprimés. Les anciens fichiers sous
+`src/lib/lucia/` ont également été retirés.
+
+La phase 4 ci-dessus décrit l'état intermédiaire au moment de son exécution ;
+elle n'est pas une liste des travaux encore à faire.
+
+**Vérifications restantes hors dépôt :** confirmer que le déploiement de
+production applique la migration de base de données, communiquer la reconnexion
+après invalidation des anciennes sessions et faire reconfigurer la 2FA aux
+comptes concernés. Les sessions existantes et les secrets TOTP ne sont pas
+compatibles avec le nouveau système ; ces conséquences sont détaillées aux
+sections 8 et 11.
 
 ## Journal d'exécution
 
@@ -234,11 +239,11 @@ deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
   `getUserByIdPrisma`, `getUserRecoverCode`, `getUserTOTPKey`,
   `getUserPasswordHash`, `findUserWithRecoveryCode`, `findUserByGoogleId`,
   `createUserWithGoogleOAuth`) — zéro appelant restant, vérifié par grep
-  avant suppression. L'import `$lib/lucia/encryption` a disparu avec elles.
+  avant suppression. L'import `#lib/lucia/encryption` a disparu avec elles.
 - **Bugs réels trouvés et corrigés pendant la vérification e2e** (tous
   confirmés par exécution réelle, `journey.spec.ts` avant/après) :
   1. `isMfaEnabled` manquait de `user.additionalFields`
-     (`$lib/auth/index.ts`) — Better Auth filtre silencieusement tout champ
+     (`#lib/auth/index.ts`) — Better Auth filtre silencieusement tout champ
      non déclaré des réponses de session (`getSession`, etc.), donc
      `toLocalsUser` le voyait toujours comme `false`, quelle que soit sa
      valeur réelle en base. La garde « 2FA exigée mais pas configurée »
@@ -251,7 +256,7 @@ deviceLabel,encryption}.ts` **gardés sous ce chemin** : généreux,
      `node_modules/better-auth/dist/utils/password.mjs`), pas tous les
      comptes comme je l'avais supposé. Aurait changé l'UX existante
      (jamais de mot de passe demandé pour armer la 2FA). Remplacé par
-     `enableTwoFactorDirect` (`$lib/auth/twoFactor.ts`), qui écrit la ligne
+     `enableTwoFactorDirect` (`#lib/auth/twoFactor.ts`), qui écrit la ligne
      `TwoFactor` nous-mêmes avec le même chiffrement — Better Auth la relit
      ensuite normalement (`auth.api.verifyTOTP`).
   3. `src/lib/auth/index.ts` : `baseURL` passé comme une chaîne figée au
@@ -278,12 +283,12 @@ svelte-kit.mjs`) compare l'origine de CHAQUE requête à cette chaîne
      comportement d'origine — pas une régression à réintroduire sans en
      discuter avec l'utilisateur d'abord (le quota d'origine était déjà un
      no-op, mais ce n'est pas à cette migration de le corriger).
-  5. `verifyPasswordStrength` (`$lib/auth/password.ts`, appel réseau à
+  5. `verifyPasswordStrength` (`#lib/auth/password.ts`, appel réseau à
      l'API Have I Been Pwned) n'avait ni timeout ni filet de sécurité —
      un incident réseau transitoire (observé plusieurs fois dans cet
      environnement de vérification) faisait échouer en 500 toute
      inscription ou changement de mot de passe. Comportement préexistant
-     (identique à l'ancien `$lib/lucia/password.ts`, pas une régression de
+     (identique à l'ancien `#lib/lucia/password.ts`, pas une régression de
      cette migration), mais bloquait la vérification du reste — ajouté un
      timeout de 5 s et un repli (« non compromis ») sur erreur réseau,
      jamais sur un vrai mot de passe refusé par le service.

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { tick, untrack } from 'svelte';
-	import { Switch } from '$shadcn/switch';
-	import { Label } from '$shadcn/label';
-	import { Button } from '$shadcn/button';
-	import * as Dialog from '$shadcn/dialog';
+	import { Switch } from '#shadcn/switch';
+	import { Label } from '#shadcn/label';
+	import { Button } from '#shadcn/button';
+	import * as Dialog from '#shadcn/dialog';
 	import { toast } from 'svelte-sonner';
 
 	let { data, form } = $props();

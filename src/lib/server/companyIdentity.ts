@@ -1,17 +1,17 @@
 /**
  * Identité de l'entreprise (`StoreSettings.company*`, ligne unique
- * `id = "singleton"`, même ligne que `$lib/server/storeSettings.ts`) —
+ * `id = "singleton"`, même ligne que `#lib/server/storeSettings.ts`) —
  * saisie depuis `/admin/identite`, consommée par `/mentions-legales`, le
  * JSON-LD `Organization` (`SEO.svelte`) et les factures/avoirs
- * (`$lib/server/invoice/company.ts`, PDF inclus pour le logo).
+ * (`#lib/server/invoice/company.ts`, PDF inclus pour le logo).
  *
  * Chaque champ est `null` tant que l'admin ne l'a pas saisi — aucune
  * valeur inventée à sa place (voir RESTE_A_FAIRE.md).
  *
  * Même cache courte durée que `getVatRate`/`getDeliveryEstimate`.
  */
-import { prisma } from '$lib/server';
-import { cached, bumpCacheVersion, getCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { cached, bumpCacheVersion, getCacheVersion } from '#lib/server/cache';
 
 const CACHE_NAMESPACE = 'settings';
 const CACHE_TTL_SECONDS = 30;

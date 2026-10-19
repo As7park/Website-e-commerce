@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Navigation from './../lib/components/Navigation.svelte';
-	import Footer from '$lib/components/Footer.svelte';
-	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import Footer from '#lib/components/Footer.svelte';
+	import CookieNotice from '#lib/components/CookieNotice.svelte';
 	import '@fontsource-variable/open-sans';
 	import '@fontsource-variable/raleway';
 	import '../app.css';
@@ -9,19 +9,20 @@
 	import { initializeLayoutState, isClient } from './layout.svelte';
 
 	import { ModeWatcher } from 'mode-watcher';
-	import Toaster from '$lib/components/shadcn/ui/sonner/sonner.svelte';
+	import Toaster from '#lib/components/shadcn/ui/sonner/sonner.svelte';
 
-	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
-	import Loader from '$lib/components/loader/Loader.svelte';
+	import SmoothScrollBar from '#lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import Loader from '#lib/components/loader/Loader.svelte';
 	import {
 		bootstrapInitialLoad,
 		firstLoadComplete,
 		setDomLoaded
-	} from '$lib/store/initialLoaderStore';
-	import { page } from '$app/stores';
+	} from '#lib/store/initialLoaderStore';
+	import { afterNavigate } from '$app/navigation';
+	import { page } from '$app/state';
 
-	import { resetCart, setCart, setVatRate } from '$lib/store/Data/cartStore';
-	import { setCartSyncAuthenticated, startSync } from '$lib/store/Data/cartSync';
+	import { resetCart, setCart, setVatRate } from '#lib/store/Data/cartStore';
+	import { setCartSyncAuthenticated, startSync } from '#lib/store/Data/cartSync';
 	import {
 		clearGuestCart,
 		guestToMergeLines,
@@ -32,10 +33,10 @@
 		serverOrderToStore,
 		toSaveCartItems,
 		totalsFromItems
-	} from '$lib/commerce/guestCart';
+	} from '#lib/commerce/guestCart';
 	import { toast } from 'svelte-sonner';
 	import { untrack } from 'svelte';
-	import SmoothScrollBarStore from '$lib/store/SmoothScrollBarStore';
+	import SmoothScrollBarStore from '#lib/store/SmoothScrollBarStore';
 	import type Scrollbar from 'smooth-scrollbar';
 
 	let { children, data } = $props();
@@ -69,17 +70,9 @@
 		setVatRate(data.vatRate);
 	});
 
-	$effect(() => {
-		const unsubscribe = page.subscribe(() => {
-			initializeLayoutState();
-		});
-		const stopLoad = bootstrapInitialLoad();
+	afterNavigate(() => initializeLayoutState());
 
-		return () => {
-			unsubscribe();
-			stopLoad();
-		};
-	});
+	$effect(() => bootstrapInitialLoad());
 
 	// COMMERCE-PLUGIN : invité = localStorage ; compte = Order PENDING.
 	// AUTH-PLUGIN : la fusion part dès que `data.user` apparaît (signup / login).

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Calendar as CalendarPrimitive } from 'bits-ui';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
-	import { buttonVariants } from '$lib/components/shadcn/ui/button/index.js';
-	import { cn } from '$lib/components/shadcn/utils.js';
+	import { buttonVariants } from '#lib/components/shadcn/ui/button/index.js';
+	import { cn } from '#lib/components/shadcn/utils.js';
 
 	let {
 		ref = $bindable(null),

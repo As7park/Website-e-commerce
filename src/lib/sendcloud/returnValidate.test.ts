@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDummySecret } from '$lib/server/dummy-secrets';
+import { isDummySecret } from '#lib/server/dummy-secrets';
 import { validateSendcloudReturn } from './returnValidate';
 
 /**

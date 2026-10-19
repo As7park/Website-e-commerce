@@ -1,7 +1,7 @@
-import { getAllTransactionsDashboard } from '$lib/prisma/transaction/getAllTransactionsDashboard';
-import { latestUsers } from '$lib/prisma/user/user';
-import { getDashboardKpis } from '$lib/prisma/dashboard/dashboardKpis';
-import { assertAdmin } from '$lib/admin/guards';
+import { getAllTransactionsDashboard } from '#lib/prisma/transaction/getAllTransactionsDashboard';
+import { latestUsers } from '#lib/prisma/user/user';
+import { getDashboardKpis } from '#lib/prisma/dashboard/dashboardKpis';
+import { assertAdmin } from '#lib/admin/guards';
 
 import type { PageServerLoad } from './$types';
 

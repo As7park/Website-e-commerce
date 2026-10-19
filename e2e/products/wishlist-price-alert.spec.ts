@@ -16,7 +16,7 @@ import { clearMailbox, fetchMailbox, waitForEmailContaining } from '../support/m
  * Alerte wishlist (baisse de prix / vente flash) : fait converger deux
  * modules déjà en place (Liste d'envies, Vente flash) sans nouveau concept
  * — event-triggered depuis `updateProductById` (seul point d'écriture de
- * `price`/`flashSaleEndsAt`, voir `$lib/server/jobs/wishlistPriceAlert.ts`),
+ * `price`/`flashSaleEndsAt`, voir `#lib/server/jobs/wishlistPriceAlert.ts`),
  * en fallback synchrone dans la requête admin quand QStash n'est pas
  * configuré (cas e2e), même mécanique que `stock-alerts.spec.ts`.
  *

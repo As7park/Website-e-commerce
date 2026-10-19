@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { runInvoiceEmailJob } from '$lib/server/jobs/invoice-email';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { runInvoiceEmailJob } from '#lib/server/jobs/invoice-email';
 
 /**
- * Appelé par QStash (`$lib/server/qstash.ts` → `enqueueInvoiceEmailJob`),
+ * Appelé par QStash (`#lib/server/qstash.ts` → `enqueueInvoiceEmailJob`),
  * jamais directement par un client — même garde de signature que
  * `/api/jobs/post-payment`, dont ce job a été séparé pour ne pas coupler un
  * pic SMTP à la disponibilité de Sendcloud.

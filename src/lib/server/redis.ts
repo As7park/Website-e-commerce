@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 
 /**
  * Client Upstash Redis (REST/HTTP, sans connexion persistante — compatible

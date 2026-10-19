@@ -15,28 +15,28 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/server/emailVerification';
+} from '#lib/server/emailVerification';
 import { fail, redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
-import { auth } from '$lib/auth';
-import { applyAuthCookies } from '$lib/auth/cookies';
-import { checkEmailAvailability } from '$lib/prisma/email/email';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
+import { checkEmailAvailability } from '#lib/prisma/email/email';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 import { message, setError, superValidate } from 'sveltekit-superforms';
-import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
+import { emailSchema, passwordSchema } from '#lib/schema/auth/settingsSchemas';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import type { Actions, RequestEvent } from './$types';
-import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema';
+import { isMfaEnabledSchema } from '#lib/schema/users/MfaEnabledSchema';
 import {
 	getMarketingEmailsOptIn,
 	getUserMFA,
 	updateMarketingEmailsOptIn,
 	updateUserMFA
-} from '$lib/prisma/user/user';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getSessionDeviceContext } from '$lib/server/deviceContext';
-import { notifyPasswordChanged } from '$lib/server/passwordChangedAlert';
+} from '#lib/prisma/user/user';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
+import { notifyPasswordChanged } from '#lib/server/passwordChangedAlert';
 
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
 

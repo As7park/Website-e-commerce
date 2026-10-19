@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import { formatDate } from '$lib/utils/formatDate';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { formatDate } from '#lib/utils/formatDate';
+	import { formatMoney } from '#lib/utils/formatMoney';
 
 	let { data } = $props();
 

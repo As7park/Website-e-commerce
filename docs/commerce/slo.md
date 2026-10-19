@@ -29,7 +29,7 @@ en échec (il retente lui-même en cas de timeout/5xx).
 ## Ce qui n'a pas (encore) de cible chiffrée
 
 - **Jobs asynchrones** (`job.post-payment`, `job.invoice-email`,
-  `job.cleanup`) : leur durée est mesurée (`$lib/server/metrics.ts`,
+  `job.cleanup`) : leur durée est mesurée (`#lib/server/metrics.ts`,
   visible sur `/admin/metrics`), mais sans seuil d'alerte formel — ils
   tournent hors du chemin critique d'une requête utilisateur, un
   ralentissement n'est pas directement visible pour un visiteur. À
@@ -39,8 +39,8 @@ en échec (il retente lui-même en cas de timeout/5xx).
   indicateurs de performance — un taux élevé signale une attaque/un bug
   client, pas une régression de latence.
 - **Disponibilité Sendcloud** : couverte par le disjoncteur
-  (`$lib/server/circuit-breaker.ts`) et le dead-letter
-  (`$lib/server/job-attempts.ts`, voir [docs/commerce/README.md](./README.md#résilience-sendcloud-disjoncteur--dead-letter)),
+  (`#lib/server/circuit-breaker.ts`) et le dead-letter
+  (`#lib/server/job-attempts.ts`, voir [docs/commerce/README.md](./README.md#résilience-sendcloud-disjoncteur--dead-letter)),
   pas par un SLO de latence — Sendcloud est un tiers, sa latence ne se
   pilote pas depuis ce projet.
 

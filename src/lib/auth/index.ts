@@ -12,12 +12,12 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin as adminPlugin } from 'better-auth/plugins/admin';
 import { twoFactor } from 'better-auth/plugins/two-factor';
 import { haveIBeenPwned } from 'better-auth/plugins/haveibeenpwned';
-import { hashPassword, verifyPasswordHash } from '$lib/auth/password';
-import { prisma } from '$lib/server';
-import { resolveAppUrl } from '$lib/server/app-url';
-import { generateUniqueReferralCode } from '$lib/prisma/referral/referral';
-import { isDummySecret } from '$lib/server/dummy-secrets';
-import { BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$env/static/private';
+import { hashPassword, verifyPasswordHash } from '#lib/auth/password';
+import { prisma } from '#lib/server';
+import { resolveAppUrl } from '#lib/server/app-url';
+import { generateUniqueReferralCode } from '#lib/prisma/referral/referral';
+import { isDummySecret } from '#lib/server/dummy-secrets';
+import { BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
 
 export const auth = betterAuth({
 	appName: 'MadeInDiamonds',
@@ -73,7 +73,7 @@ export const auth = betterAuth({
 			lastActiveAt: { type: 'date', input: false }
 		},
 		// 30 jours glissants, renouvelée dès qu'il reste moins de 15 jours —
-		// mêmes seuils que `$lib/lucia/session.ts` avant migration.
+		// mêmes seuils que `#lib/lucia/session.ts` avant migration.
 		expiresIn: 60 * 60 * 24 * 30,
 		updateAge: 60 * 60 * 24 * 15
 	},

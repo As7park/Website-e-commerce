@@ -4,7 +4,7 @@ import { clearMailbox, waitForEmailContaining } from '../support/mailbox';
 
 /**
  * Confirmation par e-mail au changement de mot de passe (`/auth/settings`,
- * action `password`) — voir `$lib/server/passwordChangedAlert.ts`. Le seul
+ * action `password`) — voir `#lib/server/passwordChangedAlert.ts`. Le seul
  * comportement à vérifier ici est que l'e-mail part bien ; le changement de
  * mot de passe lui-même (révocation des autres sessions, réémission) est
  * déjà couvert par `journey.spec.ts` §7.

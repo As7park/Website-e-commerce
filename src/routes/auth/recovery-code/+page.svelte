@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '#shadcn/card';
 	import { AlertCircle } from 'lucide-svelte'; // Icône pour un effet visuel
 
 	let { data } = $props();

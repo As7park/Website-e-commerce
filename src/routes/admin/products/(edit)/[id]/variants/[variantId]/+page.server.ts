@@ -4,9 +4,9 @@ import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { Prisma } from '@prisma/client';
 
-import { updateVariantSchema } from '$lib/schema/products/variantSchema';
-import { getVariantById, updateVariant } from '$lib/prisma/productVariants/productVariants';
-import { requireAdmin } from '$lib/admin/guards';
+import { updateVariantSchema } from '#lib/schema/products/variantSchema';
+import { getVariantById, updateVariant } from '#lib/prisma/productVariants/productVariants';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const variant = await getVariantById(params.variantId);

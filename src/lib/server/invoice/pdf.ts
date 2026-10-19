@@ -5,7 +5,7 @@
  */
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatMoney } from '$lib/utils/formatMoney';
+import { formatMoney } from '#lib/utils/formatMoney';
 import { fetchLogoForPdf } from './logo';
 import type { InvoiceView } from './view';
 

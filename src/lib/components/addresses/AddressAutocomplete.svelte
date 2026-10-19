@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import type { AddressSuggestion } from '$lib/addresses/types';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import type { AddressSuggestion } from '#lib/addresses/types';
 
 	interface Props {
 		id?: string;

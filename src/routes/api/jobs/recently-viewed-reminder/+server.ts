@@ -1,11 +1,11 @@
 import { json, error } from '@sveltejs/kit';
-import { runRecentlyViewedReminderJob } from '$lib/server/jobs/recentlyViewedReminder';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { matchesCronSecret } from '$lib/server/cronAuth';
+import { runRecentlyViewedReminderJob } from '#lib/server/jobs/recentlyViewedReminder';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { matchesCronSecret } from '#lib/server/cronAuth';
 
 /**
  * Relance « produits consultés, jamais achetés » — voir
- * `$lib/server/jobs/recentlyViewedReminder.ts`. Même garde double-auth que
+ * `#lib/server/jobs/recentlyViewedReminder.ts`. Même garde double-auth que
  * `/api/jobs/review-reminder` (QStash Schedule signé, ou repli Vercel Cron
  * avec `Authorization: Bearer $CRON_SECRET`).
  */

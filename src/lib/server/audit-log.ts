@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { log } from '$lib/server/log';
+import { prisma } from '#lib/server';
+import { log } from '#lib/server/log';
 
 /**
  * Journalise une action admin sensible (suppression de compte, changement de

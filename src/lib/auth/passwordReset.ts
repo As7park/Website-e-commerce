@@ -11,16 +11,16 @@
 // `AuthAccount`, voir `/auth/reset-password/+page.server.ts`.
 // -----------------------------------------------------------------------------
 
-import { generateRandomOTP } from '$lib/server/otpCodes';
-import { generateSecureToken, isValidId } from '$lib/server/ids';
+import { generateRandomOTP } from '#lib/server/otpCodes';
+import { generateSecureToken, isValidId } from '#lib/server/ids';
 import type { RequestEvent } from '@sveltejs/kit';
 import {
 	createPasswordResetSessionPrisma,
 	deletePasswordResetSession,
 	findPasswordResetSession
-} from '$lib/prisma/passwordResetSession/passwordResetSession';
+} from '#lib/prisma/passwordResetSession/passwordResetSession';
 import nodemailer from 'nodemailer';
-import { getCompanyIdentity } from '$lib/server/companyIdentity';
+import { getCompanyIdentity } from '#lib/server/companyIdentity';
 
 export interface PasswordResetSession {
 	id: string;

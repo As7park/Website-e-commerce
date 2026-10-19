@@ -1,5 +1,5 @@
 /**
- * Collecte des violations CSP (`svelte.config.js` → `kit.csp.directives`,
+ * Collecte des violations CSP (`sveltekit.config.ts` → `csp.directives`,
  * directive `report-uri`). Le navigateur poste ici en `application/csp-report`
  * ou `application/reports+json` selon le format. La politique est bloquante :
  * ces logs signalent une directive manquante (le navigateur a déjà bloqué la

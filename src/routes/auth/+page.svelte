@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Card, CardHeader, CardTitle, CardContent } from '$shadcn/card';
-	import { Button } from '$shadcn/button';
+	import { Card, CardHeader, CardTitle, CardContent } from '#shadcn/card';
+	import { Button } from '#shadcn/button';
 	let { data } = $props();
 </script>
 

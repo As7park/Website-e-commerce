@@ -9,10 +9,10 @@
 // -----------------------------------------------------------------------------
 
 import type Stripe from 'stripe';
-import { prisma } from '$lib/server';
-import { stripe } from '$lib/server/stripe';
-import { updateOrder, type getOrderById } from '$lib/prisma/order/prendingOrder';
-import { getVatRate } from '$lib/server/vat';
+import { prisma } from '#lib/server';
+import { stripe } from '#lib/server/stripe';
+import { updateOrder, type getOrderById } from '#lib/prisma/order/prendingOrder';
+import { getVatRate } from '#lib/server/vat';
 import { CartForbiddenError, InvalidShippingError } from './errors';
 
 type OrderWithItems = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
@@ -89,7 +89,7 @@ export async function createCheckoutSession(params: {
 	giftCardAmount?: number;
 	/**
 	 * Client Stripe déjà existant (`User.stripeCustomerId`, posé au premier
-	 * ajout d'une carte enregistrée — voir `$lib/server/stripeCustomer.ts`).
+	 * ajout d'une carte enregistrée — voir `#lib/server/stripeCustomer.ts`).
 	 * Jamais créé ici : un visiteur sans carte enregistrée paie sans
 	 * `customer`, comme avant ce module.
 	 */

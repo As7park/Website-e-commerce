@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const loginEventFindMany = vi.fn();
 const loginEventCreate = vi.fn().mockResolvedValue({});
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		loginEvent: {
 			findMany: (...args: unknown[]) => loginEventFindMany(...args),

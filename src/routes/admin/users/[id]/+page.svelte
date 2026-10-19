@@ -3,17 +3,17 @@
 	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateUserAndAddressSchema } from '$lib/schema/addresses/updateUserAndAddressSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateUserAndAddressSchema } from '#lib/schema/addresses/updateUserAndAddressSchema.js';
 	// Importation des composants nécessaires de Shadcn
-	import * as Form from '$shadcn/form';
-	import * as DropdownMenu from '$shadcn/dropdown-menu';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import * as DropdownMenu from '#shadcn/dropdown-menu';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
-	import type { AddressSuggestion } from '$lib/addresses/types';
+	import AddressAutocomplete from '#lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '#lib/addresses/types';
 
 	let { data } = $props();
 

@@ -1,8 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { listWishlistForUser } from '$lib/prisma/wishlist/wishlist';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getVatRate } from '$lib/server/vat';
+import { listWishlistForUser } from '#lib/prisma/wishlist/wishlist';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getVatRate } from '#lib/server/vat';
 
 /**
  * Liste d'envies du compte.

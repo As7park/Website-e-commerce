@@ -18,13 +18,13 @@
  * `StoreSettings.reviewReminderEnabled` est vérifié ICI, comme
  * `cartRecoveryEnabled` : ce job n'a pas d'autre déclencheur que le cron.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
 
 const REVIEW_REMINDER_DELAY_DAYS = 7;
 

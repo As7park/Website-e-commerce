@@ -2,16 +2,16 @@
  * Accès Prisma aux demandes de retour (`ReturnRequest`).
  *
  * COMMERCE-PLUGIN : module activable, voir `StoreSettings.returnsEnabled`
- * (`$lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
+ * (`#lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
  * flag avant d'arriver ici. Le remboursement Stripe lui-même (approbation)
  * vit dans la route admin, pas ici : ce fichier ne fait que la persistance.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { Prisma } from '@prisma/client';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { nextCreditNoteNumber } from '$lib/server/creditNote/number';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
-import { toNumber } from '$lib/server/decimal';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { nextCreditNoteNumber } from '#lib/server/creditNote/number';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
+import { toNumber } from '#lib/server/decimal';
 
 export async function getReturnRequestByTransactionId(transactionId: string) {
 	return prisma.returnRequest.findUnique({ where: { transactionId } });

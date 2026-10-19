@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { ExportKind } from './export';
 
 export interface PurgePreview {
@@ -13,7 +13,7 @@ export interface PurgeResult {
 
 /**
  * Purge ciblée par ancienneté (`createdAt`), jamais un vidage total de table
- * — voir `docs/admin/README.md` et `$lib/server/jobs/cleanup.ts` (qui purge
+ * — voir `docs/admin/README.md` et `#lib/server/jobs/cleanup.ts` (qui purge
  * déjà, automatiquement, les sessions expirées et les paniers abandonnés).
  *
  * `users` porte un filtre supplémentaire NON exposé au paramètre `days` :

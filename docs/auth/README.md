@@ -44,7 +44,7 @@ rg "AUTH-PLUGIN" src/ prisma/
 
 Deux règles maintiennent cette frontière :
 
-1. aucun fichier hors du module n'importe `$lib/auth` sans marqueur ;
+1. aucun fichier hors du module n'importe `#lib/auth` sans marqueur ;
 2. l'identité ne circule que par `event.locals` (typé dans `src/app.d.ts`), jamais
    par un import direct du module depuis une page.
 
@@ -152,7 +152,7 @@ configuration (`auth.api.enableTwoFactor`, un seul code — voir
 `backupCodeOptions` dans `MIGRATION_BETTER_AUTH.md` §13) ; Better Auth ne
 permet plus de le relire ensuite, il transite donc par un cookie éphémère de
 `/auth/2fa/setup` jusqu'à `/auth/recovery-code`. L'utiliser retire la 2FA
-(`$lib/auth/twoFactor.ts`, `disableTwoFactor`) et force une reconfiguration —
+(`#lib/auth/twoFactor.ts`, `disableTwoFactor`) et force une reconfiguration —
 même comportement qu'avant la migration.
 
 ### Mot de passe oublié
@@ -405,9 +405,9 @@ de prolongation automatique, « glissante »).
 - Le hook recharge l'utilisateur et la session via `auth.api.getSession` à
   chaque requête non mise en cache — un cache court (8 s, Redis si
   configuré) absorbe l'essentiel de la charge pour un visiteur qui navigue
-  normalement (`SESSION_IDENTITY_CACHE_TTL_SECONDS`, `$lib/auth/hooks.ts`).
+  normalement (`SESSION_IDENTITY_CACHE_TTL_SECONDS`, `#lib/auth/hooks.ts`).
 - Les emails partent en SMTP direct, sans file d'attente : un envoi lent ralentit
   la requête qui le déclenche.
 - Les sessions et demandes expirées sont purgées par la tâche planifiée
-  `/api/jobs/cleanup` (`$lib/server/jobs/cleanup.ts`), pas à la volée à
+  `/api/jobs/cleanup` (`#lib/server/jobs/cleanup.ts`), pas à la volée à
   chaque lecture.

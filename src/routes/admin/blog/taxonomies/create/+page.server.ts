@@ -7,9 +7,9 @@ import { fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { createBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
-import { createBlogTaxonomy } from '$lib/prisma/blogPost/blogTaxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+import { createBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
+import { createBlogTaxonomy } from '#lib/prisma/blogPost/blogTaxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateBlogTaxonomySchema = await superValidate(

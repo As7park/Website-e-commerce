@@ -65,7 +65,7 @@ test.describe('Administration — produits', () => {
 				expect(updated?.price).toBeCloseTo(9.99, 2);
 				expect(updated?.stock).toBe(7);
 
-				// La vitrine affiche le prix TTC (`toTTC`, voir `$lib/utils/price.ts`) —
+				// La vitrine affiche le prix TTC (`toTTC`, voir `#lib/utils/price.ts`) —
 				// le formulaire admin édite le prix HT stocké en base, donc le prix
 				// affiché dépend du taux de TVA courant (`StoreSettings.vatRate`).
 				const { vatRate } = await getStoreFeatureFlags();

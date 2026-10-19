@@ -7,19 +7,19 @@
 // sinon la 2FA serait contournable par un simple accès à la boîte mail.
 // -----------------------------------------------------------------------------
 
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import {
 	createPasswordResetSession,
 	sendPasswordResetEmail,
 	setPasswordResetSessionTokenCookie
-} from '$lib/auth/passwordReset';
-import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { RefillingTokenBucket } from '$lib/server/rate-limit';
+} from '#lib/auth/passwordReset';
+import { invalidateUserPasswordResetSessions } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { RefillingTokenBucket } from '#lib/server/rate-limit';
 import { fail, redirect } from '@sveltejs/kit';
 
 import type { Actions, RequestEvent } from './$types';
 import { message, superValidate } from 'sveltekit-superforms';
-import { forgotPasswordSchema } from '$lib/schema/auth/forgotPasswordSchema';
+import { forgotPasswordSchema } from '#lib/schema/auth/forgotPasswordSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 
 const ipBucket = new RefillingTokenBucket<string>(3, 60, 'forgot-password-ip');

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SmoothScrollBarStore from '$lib/store/SmoothScrollBarStore';
+	import SmoothScrollBarStore from '#lib/store/SmoothScrollBarStore';
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/dist/ScrollTrigger';
 	import Scrollbar from 'smooth-scrollbar';

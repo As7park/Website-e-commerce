@@ -6,7 +6,7 @@
  * technique tiers exposé (id Stripe, id PaymentMethod) — seulement ce qui a
  * un sens pour le titulaire des données lui-même.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 export async function buildUserDataExport(userId: string) {
 	const [
@@ -62,7 +62,7 @@ export async function buildUserDataExport(userId: string) {
 		}),
 		prisma.returnRequest.findMany({ where: { userId } }),
 		prisma.loyaltyAward.findMany({ where: { userId } }),
-		// Conservé 90 jours (`$lib/server/jobs/cleanup.ts`), distinct des
+		// Conservé 90 jours (`#lib/server/jobs/cleanup.ts`), distinct des
 		// sessions actives — voir `LoginEvent` dans schema.prisma.
 		prisma.loginEvent.findMany({
 			where: { userId },

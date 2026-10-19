@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import * as Form from '$shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
+	import * as Form from '#shadcn/form';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { companyIdentitySchema } from '#lib/schema/settings/companyIdentitySchema';
 
 	let { data } = $props();
 
@@ -29,11 +29,8 @@
 
 	// Aperçu local avant envoi — le fichier lui-même part avec le reste du
 	// formulaire (`enctype="multipart/form-data"`), jamais uploadé à part.
-	// `readAsDataURL` plutôt que `URL.createObjectURL` : une URL `blob:`
-	// viole la CSP `img-src` (seuls `'self'`, `data:` et Cloudinary sont
-	// autorisés, voir svelte.config.js) — encore en Report-Only, mais
-	// autant ne pas ajouter de violation à confirmer avant de la rendre
-	// bloquante.
+	// `readAsDataURL` évite de créer et révoquer une URL temporaire ; la CSP
+	// `img-src` autorise les données locales (voir sveltekit.config.ts).
 	let logoPreview = $state<string | null>(null);
 	let removeLogo = $state(false);
 

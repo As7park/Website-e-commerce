@@ -1,11 +1,11 @@
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendInvoiceEmail } from '$lib/server/invoice/email';
-import { log } from '$lib/server/log';
-import { withDuration, incrementMetric } from '$lib/server/metrics';
-import { RefillingTokenBucket } from '$lib/server/rate-limit';
-import { reportIfRepeated } from '$lib/server/alerting';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendInvoiceEmail } from '#lib/server/invoice/email';
+import { log } from '#lib/server/log';
+import { withDuration, incrementMetric } from '#lib/server/metrics';
+import { RefillingTokenBucket } from '#lib/server/rate-limit';
+import { reportIfRepeated } from '#lib/server/alerting';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 
 /**
  * Débit volontairement conservateur envers le fournisseur SMTP (Brevo) :
@@ -19,7 +19,7 @@ const smtpSendBucket = new RefillingTokenBucket<string>(5, 1, 'smtp-send');
 /**
  * Envoi de la facture, sorti du job Sendcloud (`post-payment.ts`) : un pic de
  * commandes ne doit pas coupler l'envoi SMTP (ses propres limites de débit,
- * voir `$lib/server/invoice/email.ts`) à la disponibilité de Sendcloud, ni
+ * voir `#lib/server/invoice/email.ts`) à la disponibilité de Sendcloud, ni
  * l'inverse — chacun a son propre retry QStash indépendant.
  */
 export async function runInvoiceEmailJob(transactionId: string): Promise<void> {

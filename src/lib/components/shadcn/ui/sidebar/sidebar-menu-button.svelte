@@ -26,12 +26,12 @@
 </script>
 
 <script lang="ts">
-	import * as Tooltip from '$lib/components/shadcn/ui/tooltip/index.js';
+	import * as Tooltip from '#lib/components/shadcn/ui/tooltip/index.js';
 	import {
 		cn,
 		type WithElementRef,
 		type WithoutChildrenOrChild
-	} from '$lib/components/shadcn/utils.js';
+	} from '#lib/components/shadcn/utils.js';
 	import { mergeProps } from 'bits-ui';
 	import type { ComponentProps, Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';

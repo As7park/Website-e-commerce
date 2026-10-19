@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getCatalogFacets, listProducts, type ProductSort } from '$lib/products/catalog';
-import { getAllTaxonomies } from '$lib/prisma/taxonomies/taxonomies';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getVatRate } from '$lib/server/vat';
-import { toTTC } from '$lib/utils/price';
+import { getCatalogFacets, listProducts, type ProductSort } from '#lib/products/catalog';
+import { getAllTaxonomies } from '#lib/prisma/taxonomies/taxonomies';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getVatRate } from '#lib/server/vat';
+import { toTTC } from '#lib/utils/price';
 
 const SORTS: ProductSort[] = ['pertinence', 'prix-asc', 'prix-desc', 'nouveaute'];
 

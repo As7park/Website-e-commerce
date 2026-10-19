@@ -19,17 +19,17 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/server/emailVerification';
+} from '#lib/server/emailVerification';
 
-import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { updateUserEmailAndSetEmailAsVerified } from '$lib/prisma/user/user';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { invalidateUserPasswordResetSessions } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { updateUserEmailAndSetEmailAsVerified } from '#lib/prisma/user/user';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 
 import type { Actions, RequestEvent } from './$types';
-import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
+import { verifyCodeSchema } from '#lib/schema/auth/verifyCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
-import { getUserByEmailPrisma } from '$lib/prisma/user/user';
+import { getUserByEmailPrisma } from '#lib/prisma/user/user';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
 const bucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'verify-email-code');
