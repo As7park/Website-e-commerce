@@ -3,7 +3,6 @@
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
-	import SlidersHorizontal from 'lucide-svelte/icons/sliders-horizontal';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';

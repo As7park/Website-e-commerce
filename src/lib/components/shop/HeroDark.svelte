@@ -75,7 +75,6 @@
 
 		if (!canvasEl) return;
 
-		const BG_NEAR = 0x18201c;
 		const FOG_COLOR = 0x030302;
 
 		const scene = new THREE.Scene();
