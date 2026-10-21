@@ -4,33 +4,74 @@
 	   maquette statique (poussière + volutes autour du curseur,
 	   parallaxe souris/scroll). Nettoyage complet au démontage
 	   pour rester compatible avec la navigation SPA de SvelteKit.
-	   ========================================================= */
-	import { onMount, onDestroy } from 'svelte';
-	import * as THREE from 'three';
-	import { gsap } from 'gsap';
 
-	let { children } = $props();
+	   HERO ++ (maquette) : titre XXL mot par mot, plaques produits
+	   en parallaxe par profondeur, faisceau, mot géant en fond,
+	   rubans, HUD et chiffres clés.
+	   ========================================================= */
+	import { onMount, onDestroy, type Snippet } from 'svelte';
+	import * as THREE from 'three';
+	import { page } from '$app/state';
+	import { gsap, onWindow, prefersReducedMotion } from '$lib/shop/fx';
+	import { formatMoney } from '$lib/utils/formatMoney';
+	import { toTTC } from '$lib/utils/price';
+	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import SplitTitle from '$lib/components/shop/fx/SplitTitle.svelte';
+	import Tape from '$lib/components/shop/fx/Tape.svelte';
+
+	type PlateProduct = {
+		id: string;
+		slug: string;
+		name: string;
+		price: number;
+		images: string[];
+		categories: { category: { name: string } }[];
+	};
+
+	let {
+		eyebrow,
+		title,
+		accent = '',
+		text,
+		ctas,
+		stats = [],
+		plates = [],
+		bgWord,
+		hud = ['', ''],
+		tapes
+	}: {
+		eyebrow: string;
+		title: string;
+		accent?: string;
+		text: string;
+		ctas: Snippet;
+		stats?: { value: string; label: string }[];
+		/** Jusqu'à 3 produits affichés en plaques flottantes à droite. */
+		plates?: PlateProduct[];
+		bgWord: string;
+		hud?: [string, string];
+		tapes: [string[], string[]];
+	} = $props();
+
+	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
+	const ttc = (priceHT: number) => toTTC(priceHT, page.data.vatRate ?? 0);
+
+	// Formes de repli quand un produit n'a pas encore d'image.
+	const FALLBACK_ART = [
+		'M32,6 L54,19 L54,45 L32,58 L10,45 L10,19 Z',
+		'M36,4 L18,34 L30,34 L26,60 L48,26 L34,26 Z',
+		'M32,10 A22,22 0 1 1 31.9,10 Z M32,22 A10,10 0 1 1 31.9,22 Z'
+	];
 
 	let canvasEl: HTMLCanvasElement;
 	let contentEl: HTMLDivElement;
-	let introEl: HTMLDivElement;
 	let sectionEl: HTMLElement;
 
 	let rafId = 0;
 	const cleanups: Array<() => void> = [];
 
 	onMount(() => {
-		if (introEl) {
-			const targets = introEl.children;
-			gsap.to(targets, {
-				opacity: 1,
-				y: 0,
-				duration: 0.9,
-				ease: 'power3.out',
-				stagger: 0.12,
-				delay: 0.2
-			});
-		}
+		setupHeroFx();
 
 		if (!canvasEl) return;
 
@@ -252,10 +293,11 @@
 		function onCanvasMouseLeave() {
 			mouseNDC.set(-9, -9);
 		}
-		canvasEl.addEventListener('mousemove', onCanvasMouseMove);
-		canvasEl.addEventListener('mouseleave', onCanvasMouseLeave);
-		cleanups.push(() => canvasEl.removeEventListener('mousemove', onCanvasMouseMove));
-		cleanups.push(() => canvasEl.removeEventListener('mouseleave', onCanvasMouseLeave));
+		// Écouté sur la section : les calques du hero (plaques, texte) couvrent le canvas.
+		sectionEl.addEventListener('mousemove', onCanvasMouseMove);
+		sectionEl.addEventListener('mouseleave', onCanvasMouseLeave);
+		cleanups.push(() => sectionEl.removeEventListener('mousemove', onCanvasMouseMove));
+		cleanups.push(() => sectionEl.removeEventListener('mouseleave', onCanvasMouseLeave));
 
 		function resize() {
 			const w = canvasEl.clientWidth;
@@ -363,6 +405,111 @@
 		});
 	});
 
+	/** Plaques en parallaxe souris par profondeur, intro et parallaxes scroll. */
+	function setupHeroFx() {
+		const plateEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.shop-hero-plate'));
+		const depth = [0.35, 0.6, 1];
+		let mx = 0;
+		let my = 0;
+		let tx = 0;
+		let ty = 0;
+		const onMove = (e: MouseEvent) => {
+			const r = sectionEl.getBoundingClientRect();
+			tx = (e.clientX - r.left) / r.width - 0.5;
+			ty = (e.clientY - r.top) / r.height - 0.5;
+		};
+		const onLeave = () => {
+			tx = 0;
+			ty = 0;
+		};
+		sectionEl.addEventListener('mousemove', onMove);
+		sectionEl.addEventListener('mouseleave', onLeave);
+		const tick = () => {
+			mx += (tx - mx) * 0.06;
+			my += (ty - my) * 0.06;
+			plateEls.forEach((p, i) => {
+				p.style.setProperty('--mx', `${(-mx * 70 * depth[i]).toFixed(2)}px`);
+				p.style.setProperty('--my', `${(-my * 44 * depth[i]).toFixed(2)}px`);
+			});
+		};
+		gsap.ticker.add(tick);
+		cleanups.push(() => {
+			gsap.ticker.remove(tick);
+			sectionEl.removeEventListener('mousemove', onMove);
+			sectionEl.removeEventListener('mouseleave', onLeave);
+		});
+
+		if (prefersReducedMotion()) return;
+
+		const ctx = gsap.context(() => {
+			const q = gsap.utils.selector(sectionEl);
+			const intro = gsap.timeline({ defaults: { ease: 'power4.out' } });
+			intro
+				.from(q('.shop-hero-content .shop-eyebrow'), { y: 24, opacity: 0, duration: 0.7 }, 0.1)
+				.from(
+					q('.shop-hero-title-light .shop-wi'),
+					{ yPercent: 115, duration: 1.1, stagger: 0.07 },
+					0.15
+				)
+				.from(q('.shop-hero-text-light'), { y: 28, opacity: 0, duration: 0.8 }, 0.7)
+				.from(q('.shop-hero-ctas > *'), { y: 28, opacity: 0, duration: 0.7, stagger: 0.1 }, 0.85);
+			gsap.from(plateEls, {
+				'--iy': '170px',
+				opacity: 0,
+				duration: 1.3,
+				ease: 'power4.out',
+				stagger: 0.15,
+				delay: 0.5
+			});
+			gsap.from(q('.shop-hero-burst'), {
+				scale: 0,
+				rotation: -40,
+				duration: 0.9,
+				ease: 'back.out(2)',
+				delay: 1.3
+			});
+			gsap.from(q('.shop-hero-tape .shop-tape'), {
+				yPercent: 130,
+				duration: 1,
+				ease: 'power4.out',
+				stagger: 0.12,
+				delay: 0.9
+			});
+			gsap.from(q('.shop-hero-stat'), {
+				y: 24,
+				opacity: 0,
+				duration: 0.8,
+				ease: 'power3.out',
+				stagger: 0.1,
+				delay: 1.1
+			});
+			gsap.from(q('.shop-hero-hud, .shop-hero-scroll-cue'), {
+				opacity: 0,
+				duration: 1,
+				delay: 1.3
+			});
+
+			const scrub = () =>
+				onWindow({ trigger: sectionEl, start: 'top top', end: 'bottom top', scrub: true });
+			gsap.to(contentEl, {
+				opacity: 0,
+				ease: 'none',
+				scrollTrigger: onWindow({
+					trigger: sectionEl,
+					start: 'top top',
+					end: 'bottom 35%',
+					scrub: true
+				})
+			});
+			const rise = [-40, -90, -150];
+			plateEls.forEach((p, i) => {
+				gsap.to(p, { '--py': `${rise[i]}px`, ease: 'none', scrollTrigger: scrub() });
+			});
+			gsap.to(q('.shop-hero-bgword'), { xPercent: -25, ease: 'none', scrollTrigger: scrub() });
+		}, sectionEl);
+		cleanups.push(() => ctx.revert());
+	}
+
 	onDestroy(() => {
 		if (rafId) cancelAnimationFrame(rafId);
 		for (const fn of cleanups) fn();
@@ -374,12 +521,66 @@
 	<canvas class="shop-hero-canvas" bind:this={canvasEl}></canvas>
 	<div class="shop-hero-vignette"></div>
 	<div class="shop-hero-grain"></div>
+	<div class="shop-hero-speed"></div>
+	<div class="shop-hero-glow"></div>
+	<div class="shop-hero-beam"><i></i></div>
+	<div class="shop-hero-bgword" aria-hidden="true">{bgWord}</div>
 	<div class="shop-container shop-hero-dark-inner">
 		<div class="shop-hero-content" bind:this={contentEl}>
-			<div class="shop-hero-intro" bind:this={introEl}>
-				{@render children?.()}
+			<p class="shop-eyebrow shop-eyebrow-light">{eyebrow}</p>
+			<h1 class="shop-hero-title-light"><SplitTitle text={title} {accent} /></h1>
+			<p class="shop-hero-text-light">{text}</p>
+			<div class="shop-hero-ctas">{@render ctas()}</div>
+			{#if stats.length}
+				<div class="shop-hero-stats">
+					{#each stats as stat (stat.label)}
+						<div class="shop-hero-stat"><b>{stat.value}</b><span>{stat.label}</span></div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+		<div class="shop-hero-plates">
+			{#each plates.slice(0, 3) as product, i (product.id)}
+				<a
+					class="shop-hero-plate is-p{i + 1}"
+					href={`/products/${product.slug}`}
+					data-wheel-nav
+					aria-label={product.name}
+				>
+					<div class="shop-hero-plate-body">
+						<div class="shop-hero-plate-tagrow">
+							<span class="shop-hero-plate-category"
+								>{product.categories?.[0]?.category?.name ?? 'Boutique'}</span
+							>
+							<span class="shop-hero-plate-bib">{String(3 - i).padStart(2, '0')}</span>
+						</div>
+						<div class="shop-hero-plate-art">
+							{#if product.images?.[0]}
+								<img src={optimizedImageUrl(product.images[0], 360)} alt="" loading="lazy" />
+							{:else}
+								<svg viewBox="0 0 64 64" aria-hidden="true"><path d={FALLBACK_ART[i]} /></svg>
+							{/if}
+						</div>
+						<h3 class="shop-hero-plate-name">{product.name}</h3>
+						<span class="shop-hero-plate-price">{formatMoney(ttc(product.price))}</span>
+					</div>
+				</a>
+			{/each}
+			<div class="shop-hero-burst" aria-hidden="true">
+				<svg viewBox="0 0 46 46" fill="currentColor"
+					><polygon
+						points="23.0,3.0 26.1,15.6 37.1,8.9 30.4,19.9 43.0,23.0 30.4,26.1 37.1,37.1 26.1,30.4 23.0,43.0 19.9,30.4 8.9,37.1 15.6,26.1 3.0,23.0 15.6,19.9 8.9,8.9 19.9,15.6"
+					/></svg
+				>
+				<span>NEW</span>
 			</div>
 		</div>
 	</div>
-	<div class="shop-hero-scroll-cue">Scroll</div>
+	<div class="shop-hero-hud is-tl" aria-hidden="true">{hud[0]}</div>
+	<div class="shop-hero-hud is-tr" aria-hidden="true">{hud[1]}</div>
+	<div class="shop-hero-tape">
+		<Tape items={tapes[0]} variant="a" duration={30} />
+		<Tape items={tapes[1]} variant="b" reverse duration={38} />
+	</div>
+	<div class="shop-hero-scroll-cue" aria-hidden="true">Scroll</div>
 </section>

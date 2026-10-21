@@ -7,6 +7,10 @@
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
+	import CubeBand from '$lib/components/shop/fx/CubeBand.svelte';
+	import { gridParallax, sectionBg } from '$lib/shop/fx';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
@@ -97,6 +101,14 @@
 			(data.inStockOnly ? 1 : 0)
 	);
 
+	// Bandeau : la catégorie filtrée (s'il n'y en a qu'une) devient le titre.
+	let activeCategory = $derived.by(() => {
+		const taxonomy = facets.taxonomies.find((t) => t.slug === 'categorie');
+		const selected = data.taxonomyFilters['categorie'] ?? [];
+		if (!taxonomy || selected.length !== 1) return null;
+		return taxonomy.values.find((v) => v.value === selected[0])?.label ?? null;
+	});
+
 	function resetFilters() {
 		updateFilters({
 			...Object.fromEntries(facets.taxonomies.map((t) => [t.slug, []])),
@@ -109,9 +121,30 @@
 
 <SEO pageKey="products" title="Boutique" />
 
-<nav class="shop-breadcrumb"><a href="/">Accueil</a> / Boutique</nav>
+<PageBanner
+	word="Boutique"
+	num="01"
+	crumbs={activeCategory
+		? [{ label: 'Boutique', href: '/products' }, { label: activeCategory }]
+		: [{ label: 'Boutique' }]}
+	eyebrow={`${activeCategory ?? 'Boutique'} — ${data.total} article${data.total > 1 ? 's' : ''}`}
+	title={activeCategory ?? 'Équipement'}
+	accent={activeCategory ? '' : '& accessoires'}
+	lead="Équipement pilote, pièces et accessoires moto sélectionnés par des passionnés, pour la piste comme pour la route."
+	chips={[
+		{ label: 'Nouveautés', href: '/products?tri=nouveaute', hot: true },
+		{ label: 'En stock', href: '/products?dispo=1' },
+		{ label: 'Petits prix', href: '/products?tri=prix-asc' }
+	]}
+	tapes={[
+		['Nouveautés', 'Cross', 'Enduro', 'Route'],
+		['Livraison offerte dès 50 €', 'Retours sous 14 jours']
+	]}
+/>
 
-<main class="shop-container">
+<CubeBand bgText="Collection" rowItems={['AS7 Park', 'Cross · Enduro · Route']} />
+
+<main class="shop-container" use:sectionBg={'#1b1409'}>
 	<form
 		method="GET"
 		action="/products"
@@ -207,7 +240,7 @@
 		<div class="shop-listing-main">
 			<div class="shop-listing-head">
 				<div>
-					<h1 class="shop-section-title" style="margin-bottom:4px;">Boutique</h1>
+					<p class="shop-section-title" style="margin-bottom:4px;">Résultats</p>
 					<p class="shop-result-count">
 						{data.total} produit{data.total > 1 ? 's' : ''}
 					</p>
@@ -235,7 +268,7 @@
 					{/if}
 				</p>
 			{:else}
-				<div class="shop-grid shop-grid-4">
+				<div class="shop-grid shop-grid-4" use:gridParallax={products}>
 					{#each products as product, i (product.id)}
 						<div in:fly={{ y: 18, duration: 400, delay: i * 45, easing: quintOut }}>
 							<ProductCard
@@ -262,3 +295,5 @@
 		</div>
 	</div>
 </main>
+
+<PageDivider />

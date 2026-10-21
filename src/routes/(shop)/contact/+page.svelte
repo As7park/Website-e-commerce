@@ -6,6 +6,9 @@
 	import { contactSchema } from '$lib/schema/contact/contactSchema';
 	import { reveal } from '$lib/actions/reveal';
 	import SEO from '$lib/components/SEO.svelte';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '$lib/shop/fx';
 
 	let { data } = $props();
 
@@ -41,12 +44,28 @@
 
 <SEO pageKey="contact" />
 
-<nav class="shop-breadcrumb"><a href="/">Accueil</a> / Contact</nav>
+<PageBanner
+	word="Contact"
+	num="03"
+	crumbs={[{ label: 'Contact' }]}
+	eyebrow="Service client"
+	title="Contactez"
+	accent="nous"
+	lead="Une question sur une pièce, une taille ou une commande ? Écrivez-nous, on vous répond au plus vite."
+	chips={[
+		{ label: 'Suivi de commande', href: '/suivi-commande', hot: true },
+		{ label: 'Mon compte', href: '/auth/settings' }
+	]}
+	tapes={[
+		['Une question ?', 'On vous répond'],
+		['Service client', 'AS7 Park']
+	]}
+/>
 
-<main class="shop-container">
+<main class="shop-container" use:sectionBg={'#0f1713'}>
 	<div class="shop-contact-layout">
 		<div use:reveal>
-			<h1 class="shop-section-title">Nous contacter</h1>
+			<h2 class="shop-section-title">Écrivez-nous</h2>
 			<form method="POST" action="?/send" use:contactEnhance>
 				<div class="shop-form-field">
 					<label for="contact-name">Nom</label>
@@ -89,7 +108,7 @@
 				</div>
 				<button
 					type="submit"
-					class="shop-btn"
+					class="shop-btn shop-btn-block"
 					class:shop-btn-success={justSent}
 					disabled={$contactDelayed}
 				>
@@ -127,3 +146,5 @@
 		</div>
 	</div>
 </main>
+
+<PageDivider />

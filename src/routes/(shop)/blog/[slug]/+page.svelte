@@ -4,6 +4,9 @@
 	import { seoConfig } from '$lib/seo.config';
 	import { reveal } from '$lib/actions/reveal';
 	import { splatCard } from '$lib/actions/splatCard';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '$lib/shop/fx';
 
 	let { data } = $props();
 	let post = $derived(data.post);
@@ -47,11 +50,21 @@
 />
 <StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
-<nav class="shop-breadcrumb">
-	<a href="/">Accueil</a> / <a href="/blog">Blog</a> / {post.title}
-</nav>
+<PageBanner
+	slim
+	word="Article"
+	num="06"
+	crumbs={[{ label: 'Blog', href: '/blog' }, { label: post.title }]}
+	eyebrow={post.category?.name ?? 'Blog'}
+	title={post.title}
+	titleTag="p"
+	tapes={[
+		['Conseils', 'Entretien', 'Actus'],
+		['AS7 Park', 'Blog']
+	]}
+/>
 
-<main class="shop-container">
+<main class="shop-container" use:sectionBg={'#14120F'}>
 	<article style="padding:24px 0 64px;">
 		<div use:reveal style="max-width:68ch;">
 			{#if post.category}
@@ -105,3 +118,5 @@
 		{/if}
 	</article>
 </main>
+
+<PageDivider />

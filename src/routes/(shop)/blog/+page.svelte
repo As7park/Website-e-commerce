@@ -6,6 +6,9 @@
 	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	import { splatCard } from '$lib/actions/splatCard';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '$lib/shop/fx';
 
 	let { data } = $props();
 
@@ -54,9 +57,21 @@
 
 <SEO pageKey="blog" />
 
-<nav class="shop-breadcrumb"><a href="/">Accueil</a> / Blog</nav>
+<PageBanner
+	word="Blog"
+	num="05"
+	crumbs={[{ label: 'Blog' }]}
+	eyebrow="Conseils · Entretien · Actus"
+	title="Le"
+	accent="blog"
+	lead="Conseils d’équipement, entretien de la moto et actus du terrain, par l’équipe AS7 Park."
+	tapes={[
+		['Conseils', 'Entretien', 'Actus'],
+		['Cross', 'Enduro', 'Route']
+	]}
+/>
 
-<main class="shop-container">
+<main class="shop-container" use:sectionBg={'#14120F'}>
 	<div class="shop-listing-layout">
 		<aside class="shop-filters" use:reveal>
 			<div class="shop-filter-group">
@@ -120,7 +135,7 @@
 		<div class="shop-listing-main">
 			<div class="shop-listing-head">
 				<div>
-					<h1 class="shop-section-title" style="margin-bottom:4px;">Blog</h1>
+					<p class="shop-section-title" style="margin-bottom:4px;">Articles</p>
 					<p class="shop-result-count">
 						{data.total} article{data.total > 1 ? 's' : ''}
 					</p>
@@ -172,3 +187,5 @@
 		</div>
 	</div>
 </main>
+
+<PageDivider />

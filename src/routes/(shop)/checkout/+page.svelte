@@ -6,7 +6,8 @@
 	import * as Card from '$shadcn/card/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import SmoothScrollBar from '$lib/components/smoothScrollBar/SmoothScrollBar.svelte';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
 	import AddressSelector from '$lib/components/checkout/AddressSelector.svelte';
 	import ShippingOptions from '$lib/components/checkout/ShippingOptions.svelte';
 	import ServicePointMap from '$lib/components/checkout/ServicePointMap.svelte';
@@ -32,6 +33,9 @@
 	import type { ShippingOptionDTO, ServicePointDTO } from '$lib/sendcloud/checkoutTypes';
 
 	let { data } = $props();
+
+	// Bandeau : nombre total d'articles dans le panier.
+	let cartQuantity = $derived($cartStore.items.reduce((acc, item) => acc + item.quantity, 0));
 
 	// Calculer le total des quantités pour les commandes non-personnalisées
 	let totalNonCustomQuantity = $derived(
@@ -553,56 +557,74 @@
 <!-- Page transactionnelle, jamais de valeur SEO -->
 <SEO pageKey="checkout" noindex nofollow />
 
-<nav class="shop-breadcrumb">
-	<a href="/">Accueil</a> / <a href="/products">Boutique</a> / Paiement
-</nav>
+<PageBanner
+	word="Panier"
+	num="02"
+	crumbs={[{ label: 'Boutique', href: '/products' }, { label: 'Paiement' }]}
+	eyebrow="Commande — paiement sécurisé"
+	title="Votre"
+	accent="panier"
+	lead="Vérifiez vos articles, choisissez la livraison puis réglez en toute sécurité."
+	chips={[
+		{
+			label: `${cartQuantity} article${cartQuantity > 1 ? 's' : ''}`,
+			hot: true
+		},
+		{ label: 'Code promo' }
+	]}
+	tapes={[
+		['Retours sous 14 jours', 'Paiement sécurisé'],
+		['Livraison offerte dès 50 €', 'AS7 Park']
+	]}
+/>
 
-<!-- SHOP-DESIGN : reskin léger — pas de maquette source pour cette page (AS7park
-	n'a pas de tunnel de paiement). On réutilise le thème sombre déjà construit
+<!-- SHOP-DESIGN : le bandeau reprend la maquette `panier.html` ; le tunnel lui-même
+	n'a pas de maquette source (AS7park n'a pas de tunnel de paiement). On réutilise le thème sombre déjà construit
 	et testé pour tout le site (classe `dark`, voir app.css) plutôt que d'inventer
 	des couleurs, pour rester cohérent avec la vitrine sans toucher à la
 	structure ni à la logique du tunnel (Stripe, Sendcloud, promo, carte cadeau). -->
-<div class="min-h-screen w-[100vw] dark">
-	<SmoothScrollBar>
-		<div class="container mx-auto px-4 py-8 max-w-7xl">
-			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-[100px]">
-				<!-- Section Adresse -->
-				<div class="space-y-6">
-					<AddressSelector
-						addresses={data?.addresses || []}
-						{selectedAddressId}
-						onAddressSelect={selectAddress}
-					/>
+<div class="dark">
+	<div class="container mx-auto px-4 py-8 max-w-7xl">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-[100px]">
+			<!-- Section Adresse -->
+			<div class="space-y-6">
+				<AddressSelector
+					addresses={data?.addresses || []}
+					{selectedAddressId}
+					onAddressSelect={selectAddress}
+				/>
 
-					<div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-4">
-						<label class="flex items-center gap-2 cursor-pointer select-none">
-							<input type="checkbox" class="h-4 w-4" bind:checked={billingSameAsShipping} />
-							<span class="text-sm font-medium"
-								>Adresse de facturation identique à l'adresse de livraison</span
-							>
-						</label>
+				<div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-4">
+					<label class="flex items-center gap-2 cursor-pointer select-none">
+						<input type="checkbox" class="h-4 w-4" bind:checked={billingSameAsShipping} />
+						<span class="text-sm font-medium"
+							>Adresse de facturation identique à l'adresse de livraison</span
+						>
+					</label>
 
-						{#if !billingSameAsShipping}
-							<AddressSelector
-								addresses={data?.addresses || []}
-								selectedAddressId={selectedBillingAddressId}
-								onAddressSelect={selectBillingAddress}
-								title="Adresse de facturation"
-								target="billing"
-							/>
-						{/if}
-					</div>
-
-					<ShippingOptions
-						{shippingOptions}
-						{selectedShippingOption}
-						onShippingOptionSelect={chooseShippingOption}
-						{hasCustomItems}
-					/>
+					{#if !billingSameAsShipping}
+						<AddressSelector
+							addresses={data?.addresses || []}
+							selectedAddressId={selectedBillingAddressId}
+							onAddressSelect={selectBillingAddress}
+							title="Adresse de facturation"
+							target="billing"
+						/>
+					{/if}
 				</div>
 
-				<!-- Colonne de droite - Panier et Paiement -->
-				<div class="space-y-6">
+				<ShippingOptions
+					{shippingOptions}
+					{selectedShippingOption}
+					onShippingOptionSelect={chooseShippingOption}
+					{hasCustomItems}
+				/>
+			</div>
+
+			<!-- Colonne de droite - Panier et Paiement -->
+			<div class="space-y-6">
+				<!-- La carte garde la molette (zoom) : pas de smooth scroll dessus. -->
+				<div data-lenis-prevent>
 					<ServicePointMap
 						{showMap}
 						{isLoadingServicePoints}
@@ -613,163 +635,165 @@
 						{offsets}
 						onMarkerClick={handleMarkerClick}
 					/>
-					<CartSummary
-						items={$cartStore.items}
-						subtotal={$cartStore.subtotal}
-						tax={$cartStore.tax}
-						{hasCustomItems}
-						{shippingCost}
-						{selectedShippingOption}
-						{totalNonCustomQuantity}
-						{discountAmount}
-						{promoCode}
-						onRemoveFromCart={handleRemoveFromCart}
-						onChangeQuantity={changeQuantity}
-					/>
-					{#if $cartStore.items.length > 0 && referralDiscountAmount > 0}
-						<div
-							class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-						>
-							🎉 Remise de bienvenue parrainage appliquée automatiquement : -{referralDiscountAmount.toFixed(
-								2
-							)}€
-						</div>
-					{/if}
-					{#if $cartStore.items.length > 0 && bundleDiscountAmount > 0}
-						<div
-							class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-						>
-							🎁 Remise « Souvent achetés ensemble » appliquée automatiquement : -{bundleDiscountAmount.toFixed(
-								2
-							)}€
-						</div>
-					{/if}
-					{#if $cartStore.items.length > 0}
-						<!-- PROMO-PLUGIN -->
-						<PromoCodeInput
-							{productTotalTTC}
-							appliedCode={promoCode}
-							{discountAmount}
-							onApplied={handlePromoApplied}
-							onRemoved={resetPromo}
-						/>
-					{/if}
-					{#if $cartStore.items.length > 0 && data.giftCardsEnabled}
-						<GiftCardInput
-							maxApplicable={giftCardMaxApplicable}
-							appliedCode={giftCardCode}
-							appliedAmount={giftCardAmount}
-							onApplied={handleGiftCardApplied}
-							onRemoved={resetGiftCard}
-						/>
-					{/if}
-					<!-- Formulaire de paiement -->
-					{#if $cartStore.items.length > 0}
-						<Card.Root>
-							<div class="p-6">
-								<form
-									method="POST"
-									action="?/checkout"
-									use:createPaymentEnhance
-									onsubmit={handleCheckout}
-								>
-									<input type="hidden" name="orderId" bind:value={$createPaymentData.orderId} />
-									<input
-										type="hidden"
-										name="shippingAddressId"
-										bind:value={$createPaymentData.shippingAddressId}
-									/>
-									<input
-										type="hidden"
-										name="billingAddressId"
-										bind:value={$createPaymentData.billingAddressId}
-									/>
-									<input
-										type="hidden"
-										name="shippingOption"
-										bind:value={$createPaymentData.shippingOption}
-									/>
-									<input
-										type="hidden"
-										name="shippingCost"
-										bind:value={$createPaymentData.shippingCost}
-									/>
-
-									<input type="hidden" name="promoCode" bind:value={$createPaymentData.promoCode} />
-									<input
-										type="hidden"
-										name="discountAmount"
-										bind:value={$createPaymentData.discountAmount}
-									/>
-									<input
-										type="hidden"
-										name="giftCardCode"
-										bind:value={$createPaymentData.giftCardCode}
-									/>
-
-									<input
-										type="hidden"
-										name="servicePointId"
-										bind:value={$createPaymentData.servicePointId}
-									/>
-									<input
-										type="hidden"
-										name="servicePointPostNumber"
-										bind:value={$createPaymentData.servicePointPostNumber}
-									/>
-									<input
-										type="hidden"
-										name="servicePointLatitude"
-										bind:value={$createPaymentData.servicePointLatitude}
-									/>
-									<input
-										type="hidden"
-										name="servicePointLongitude"
-										bind:value={$createPaymentData.servicePointLongitude}
-									/>
-									<input
-										type="hidden"
-										name="servicePointType"
-										bind:value={$createPaymentData.servicePointType}
-									/>
-									<input
-										type="hidden"
-										name="servicePointExtraRefCab"
-										bind:value={$createPaymentData.servicePointExtraRefCab}
-									/>
-									<input
-										type="hidden"
-										name="servicePointExtraShopRef"
-										bind:value={$createPaymentData.servicePointExtraShopRef}
-									/>
-									<input type="hidden" name="cgvAccepted" value={cgvAccepted ? 'on' : 'off'} />
-
-									{#if data.deliveryEstimate}
-										<p class="text-sm text-muted-foreground mb-4">
-											Livraison estimée sous {data.deliveryEstimate.minDays}
-											à {data.deliveryEstimate.maxDays} jours ouvrés après expédition.
-										</p>
-									{/if}
-
-									<div class="flex items-start gap-2 mb-4">
-										<Checkbox id="cgvAccepted" bind:checked={cgvAccepted} class="mt-0.5" />
-										<Label for="cgvAccepted" class="font-normal text-sm">
-											J'ai lu et j'accepte les <a href="/cgv" target="_blank" class="underline"
-												>conditions générales de vente</a
-											>.
-										</Label>
-									</div>
-
-									<Button type="submit" class="w-full" size="lg">
-										<CreditCard class="w-4 h-4 mr-2" />
-										Payer {totalTTC.toFixed(2)}€
-									</Button>
-								</form>
-							</div>
-						</Card.Root>
-					{/if}
 				</div>
+				<CartSummary
+					items={$cartStore.items}
+					subtotal={$cartStore.subtotal}
+					tax={$cartStore.tax}
+					{hasCustomItems}
+					{shippingCost}
+					{selectedShippingOption}
+					{totalNonCustomQuantity}
+					{discountAmount}
+					{promoCode}
+					onRemoveFromCart={handleRemoveFromCart}
+					onChangeQuantity={changeQuantity}
+				/>
+				{#if $cartStore.items.length > 0 && referralDiscountAmount > 0}
+					<div
+						class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+					>
+						🎉 Remise de bienvenue parrainage appliquée automatiquement : -{referralDiscountAmount.toFixed(
+							2
+						)}€
+					</div>
+				{/if}
+				{#if $cartStore.items.length > 0 && bundleDiscountAmount > 0}
+					<div
+						class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+					>
+						🎁 Remise « Souvent achetés ensemble » appliquée automatiquement : -{bundleDiscountAmount.toFixed(
+							2
+						)}€
+					</div>
+				{/if}
+				{#if $cartStore.items.length > 0}
+					<!-- PROMO-PLUGIN -->
+					<PromoCodeInput
+						{productTotalTTC}
+						appliedCode={promoCode}
+						{discountAmount}
+						onApplied={handlePromoApplied}
+						onRemoved={resetPromo}
+					/>
+				{/if}
+				{#if $cartStore.items.length > 0 && data.giftCardsEnabled}
+					<GiftCardInput
+						maxApplicable={giftCardMaxApplicable}
+						appliedCode={giftCardCode}
+						appliedAmount={giftCardAmount}
+						onApplied={handleGiftCardApplied}
+						onRemoved={resetGiftCard}
+					/>
+				{/if}
+				<!-- Formulaire de paiement -->
+				{#if $cartStore.items.length > 0}
+					<Card.Root>
+						<div class="p-6">
+							<form
+								method="POST"
+								action="?/checkout"
+								use:createPaymentEnhance
+								onsubmit={handleCheckout}
+							>
+								<input type="hidden" name="orderId" bind:value={$createPaymentData.orderId} />
+								<input
+									type="hidden"
+									name="shippingAddressId"
+									bind:value={$createPaymentData.shippingAddressId}
+								/>
+								<input
+									type="hidden"
+									name="billingAddressId"
+									bind:value={$createPaymentData.billingAddressId}
+								/>
+								<input
+									type="hidden"
+									name="shippingOption"
+									bind:value={$createPaymentData.shippingOption}
+								/>
+								<input
+									type="hidden"
+									name="shippingCost"
+									bind:value={$createPaymentData.shippingCost}
+								/>
+
+								<input type="hidden" name="promoCode" bind:value={$createPaymentData.promoCode} />
+								<input
+									type="hidden"
+									name="discountAmount"
+									bind:value={$createPaymentData.discountAmount}
+								/>
+								<input
+									type="hidden"
+									name="giftCardCode"
+									bind:value={$createPaymentData.giftCardCode}
+								/>
+
+								<input
+									type="hidden"
+									name="servicePointId"
+									bind:value={$createPaymentData.servicePointId}
+								/>
+								<input
+									type="hidden"
+									name="servicePointPostNumber"
+									bind:value={$createPaymentData.servicePointPostNumber}
+								/>
+								<input
+									type="hidden"
+									name="servicePointLatitude"
+									bind:value={$createPaymentData.servicePointLatitude}
+								/>
+								<input
+									type="hidden"
+									name="servicePointLongitude"
+									bind:value={$createPaymentData.servicePointLongitude}
+								/>
+								<input
+									type="hidden"
+									name="servicePointType"
+									bind:value={$createPaymentData.servicePointType}
+								/>
+								<input
+									type="hidden"
+									name="servicePointExtraRefCab"
+									bind:value={$createPaymentData.servicePointExtraRefCab}
+								/>
+								<input
+									type="hidden"
+									name="servicePointExtraShopRef"
+									bind:value={$createPaymentData.servicePointExtraShopRef}
+								/>
+								<input type="hidden" name="cgvAccepted" value={cgvAccepted ? 'on' : 'off'} />
+
+								{#if data.deliveryEstimate}
+									<p class="text-sm text-muted-foreground mb-4">
+										Livraison estimée sous {data.deliveryEstimate.minDays}
+										à {data.deliveryEstimate.maxDays} jours ouvrés après expédition.
+									</p>
+								{/if}
+
+								<div class="flex items-start gap-2 mb-4">
+									<Checkbox id="cgvAccepted" bind:checked={cgvAccepted} class="mt-0.5" />
+									<Label for="cgvAccepted" class="font-normal text-sm">
+										J'ai lu et j'accepte les <a href="/cgv" target="_blank" class="underline"
+											>conditions générales de vente</a
+										>.
+									</Label>
+								</div>
+
+								<Button type="submit" class="w-full" size="lg">
+									<CreditCard class="w-4 h-4 mr-2" />
+									Payer {totalTTC.toFixed(2)}€
+								</Button>
+							</form>
+						</div>
+					</Card.Root>
+				{/if}
 			</div>
 		</div>
-	</SmoothScrollBar>
+	</div>
 </div>
+
+<PageDivider />

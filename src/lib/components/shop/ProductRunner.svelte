@@ -4,7 +4,9 @@
 	   plaques de course : halftone, ombres dures, dossards,
 	   éclaboussures de boue au clic. Porté depuis _as7-runner.scss.
 	   ========================================================= */
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { gsap, onWindow, prefersReducedMotion } from '$lib/shop/fx';
 	import { formatMoney } from '$lib/utils/formatMoney';
 	import { page } from '$app/state';
 	import { toTTC } from '$lib/utils/price';
@@ -97,6 +99,38 @@
 		setTimeout(() => card.classList.remove('impact'), 340);
 	}
 
+	/* ---------- Entrée des plaques depuis la droite + dérive des speedlines ---------- */
+	let stageEl: HTMLElement;
+
+	onMount(() => {
+		if (prefersReducedMotion()) return;
+		const ctx = gsap.context(() => {
+			gsap.fromTo(
+				runnerEl.querySelectorAll('.card'),
+				{ '--rx': '260px', opacity: 0 },
+				{
+					'--rx': '0px',
+					opacity: 1,
+					duration: 1.05,
+					ease: 'power3.out',
+					stagger: 0.09,
+					scrollTrigger: onWindow({ trigger: runnerEl, start: 'top 86%' })
+				}
+			);
+			gsap.to(stageEl.querySelector('.speedlines'), {
+				xPercent: -8,
+				ease: 'none',
+				scrollTrigger: onWindow({
+					trigger: stageEl,
+					start: 'top bottom',
+					end: 'bottom top',
+					scrub: true
+				})
+			});
+		}, stageEl);
+		return () => ctx.revert();
+	});
+
 	function handleCardClick(e: MouseEvent, href: string) {
 		if (moved) {
 			e.preventDefault();
@@ -109,7 +143,7 @@
 	}
 </script>
 
-<section class="stage">
+<section class="stage" bind:this={stageEl}>
 	<div class="grain"></div>
 	<div class="speedlines"></div>
 
@@ -220,7 +254,10 @@
 		--rust: #{$rust};
 
 		position: relative;
-		padding: 6.5rem 0 5rem;
+		// Section plein écran, contenu centré (maquette) : titre en haut,
+		// runner au milieu, rail en bas.
+		min-height: max(100vh, 760px);
+		padding: 0;
 		background:
 			radial-gradient(ellipse 900px 500px at 12% -10%, rgba(255, 178, 0, 0.14), transparent 60%),
 			var(--ink);
@@ -267,10 +304,13 @@
 	}
 
 	header.head {
-		position: relative;
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: max(6vh, 48px);
 		z-index: 2;
 		max-width: 1180px;
-		margin: 0 auto 3.4rem;
+		margin: 0 auto;
 		padding: 0 2.5rem;
 		display: flex;
 		justify-content: space-between;
@@ -338,7 +378,11 @@
 	}
 
 	.runner-wrap {
-		position: relative;
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
 		z-index: 2;
 		-webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4%, #000 96%, transparent 100%);
 		mask-image: linear-gradient(90deg, transparent 0, #000 4%, #000 96%, transparent 100%);
@@ -379,6 +423,10 @@
 	}
 
 	.card {
+		// Décalage d'entrée piloté par GSAP via `translate` (indépendant de
+		// `transform` : les rotations / hover CSS restent intacts).
+		--rx: 0px;
+		translate: var(--rx) 0;
 		display: block;
 		position: relative;
 		flex: 0 0 auto;
@@ -656,7 +704,10 @@
 	}
 
 	.rail {
-		position: relative;
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 5vh;
 		z-index: 2;
 		max-width: 1180px;
 		margin: 0 auto;

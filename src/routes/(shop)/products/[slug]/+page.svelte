@@ -18,6 +18,9 @@
 	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
 	import ProductCard from '$lib/components/shop/ProductCard.svelte';
 	import { reveal } from '$lib/actions/reveal';
+	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
+	import { gridParallax, sectionBg } from '$lib/shop/fx';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -42,6 +45,14 @@
 			image: product.images[0] ?? null
 		});
 		recentlyViewed = readRecentlyViewed().filter((item) => item.id !== product.id);
+	});
+
+	// Bandeau : le dernier mot du nom passe en couleur d'accent (maquette).
+	let bannerTitle = $derived.by(() => {
+		const words = product.name.trim().split(/\s+/);
+		return words.length > 1
+			? { text: words.slice(0, -1).join(' '), accent: words[words.length - 1] }
+			: { text: product.name, accent: '' };
 	});
 
 	let categoryNames = $derived(
@@ -258,11 +269,22 @@
 />
 <StructuredData type="BreadcrumbList" data={breadcrumbData} />
 
-<nav class="shop-breadcrumb">
-	<a href="/">Accueil</a> / <a href="/products">Boutique</a> / {product.name}
-</nav>
+<PageBanner
+	slim
+	word="Modèle"
+	num="04"
+	crumbs={[{ label: 'Boutique', href: '/products' }, { label: product.name }]}
+	eyebrow={product.sku ? `Fiche produit — réf. ${product.sku}` : 'Fiche produit'}
+	title={bannerTitle.text}
+	accent={bannerTitle.accent}
+	titleTag="p"
+	tapes={[
+		['Livraison offerte dès 50 €', 'Paiement sécurisé'],
+		['Retours sous 14 jours', 'AS7 Park']
+	]}
+/>
 
-<main class="shop-container">
+<main class="shop-container" use:sectionBg={'#12160c'}>
 	<div class="shop-product-layout">
 		<div class="shop-product-gallery" use:reveal>
 			<div class="shop-ph shop-ph-portrait">
@@ -442,7 +464,7 @@
 			<div class="shop-section-head" use:reveal>
 				<h2 class="shop-section-title">Vous aimerez aussi</h2>
 			</div>
-			<div class="shop-grid shop-grid-4">
+			<div class="shop-grid shop-grid-4" use:gridParallax={data.relatedProducts}>
 				{#each data.relatedProducts as related, i (related.id)}
 					<ProductCard product={related} index={i} />
 				{/each}
@@ -455,7 +477,7 @@
 			<div class="shop-section-head" use:reveal>
 				<h2 class="shop-section-title">Récemment consultés</h2>
 			</div>
-			<div class="shop-grid shop-grid-4">
+			<div class="shop-grid shop-grid-4" use:gridParallax={recentlyViewed}>
 				{#each recentlyViewed as viewed, i (viewed.id)}
 					<ProductCard
 						product={{ ...viewed, images: viewed.image ? [viewed.image] : [] }}
@@ -572,6 +594,8 @@
 		</section>
 	{/if}
 </main>
+
+<PageDivider />
 
 <style>
 	.shop-badge {

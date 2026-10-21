@@ -1,9 +1,12 @@
 <script lang="ts">
 	import HeroDark from '$lib/components/shop/HeroDark.svelte';
 	import ProductRunner from '$lib/components/shop/ProductRunner.svelte';
+	import CubeBand from '$lib/components/shop/fx/CubeBand.svelte';
+	import HorizontalGallery from '$lib/components/shop/fx/HorizontalGallery.svelte';
 	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	import { splatCard } from '$lib/actions/splatCard';
+	import { gridParallax, sectionBg } from '$lib/shop/fx';
 	import { Truck, RotateCcw, ShieldCheck, Headset } from 'lucide-svelte';
 
 	let { data } = $props();
@@ -14,32 +17,64 @@
 		{ icon: ShieldCheck, text: 'Paiement sécurisé par Stripe' },
 		{ icon: Headset, text: 'Service client réactif' }
 	];
+
+	const pad = (n: number) => String(n).padStart(2, '0');
+	let heroStats = $derived([
+		{ value: pad(data.stats.products), label: data.stats.products > 1 ? 'Produits' : 'Produit' },
+		{
+			value: pad(data.stats.categories),
+			label: data.stats.categories > 1 ? 'Catégories' : 'Catégorie'
+		},
+		{ value: '14 J', label: 'Pour changer d’avis' }
+	]);
 </script>
 
 <SEO pageKey="home" />
 
 <main>
-	<HeroDark>
-		<p class="shop-eyebrow shop-eyebrow-light">Cross · Enduro · Route</p>
-		<h1 class="shop-hero-title-light">Équipez-vous pour rouler.</h1>
-		<p class="shop-hero-text-light">
-			Équipement pilote, pièces et accessoires moto sélectionnés par des passionnés, pour la piste
-			comme pour la route.
-		</p>
-		<div class="shop-hero-ctas">
+	<HeroDark
+		eyebrow="Cross · Enduro · Route"
+		title="Équipez-vous"
+		accent="pour rouler."
+		text="Équipement pilote, pièces et accessoires moto sélectionnés par des passionnés, pour la piste comme pour la route."
+		stats={heroStats}
+		plates={data.featuredProducts}
+		bgWord="AS7 PARK"
+		hud={['N°01 — Collection', String(new Date().getFullYear())]}
+		tapes={[
+			['Nouveautés', 'Livraison offerte dès 50 €'],
+			['Cross', 'Enduro', 'Route']
+		]}
+	>
+		{#snippet ctas()}
 			<a href="/products" class="shop-btn shop-btn-light">Découvrir la boutique</a>
 			<a href="/contact" class="shop-btn shop-btn-outline-light">Nous contacter</a>
-		</div>
+		{/snippet}
 	</HeroDark>
 
-	<div class="shop-container">
+	<CubeBand
+		pinned
+		bgText="Collection"
+		rowItems={['AS7 Park', 'Équipez-vous pour rouler']}
+		hudLabel="AS7 Park — Équipement moto"
+		captions={[
+			{ title: 'Livraison 5 à 7 jours', text: 'Expédié rapidement, offerte dès 50 € d’achat.' },
+			{
+				title: 'Retours 14 jours',
+				text: 'Pas la bonne taille ? Vous avez 14 jours pour changer d’avis.'
+			},
+			{ title: 'Paiement sécurisé', text: 'Réglez en toute confiance, paiement géré par Stripe.' }
+		]}
+	/>
+
+	<div class="shop-container" use:sectionBg={'#14120F'}>
 		<section class="shop-section">
 			<div class="shop-section-head" use:reveal>
 				<h2 class="shop-section-title">Catégories</h2>
 				<a href="/products" class="shop-link">Voir tout</a>
 			</div>
 			{#if data.categories.length > 0}
-				<div class="shop-grid shop-grid-4">
+				<div class="shop-grid shop-grid-4" use:gridParallax>
 					{#each data.categories as category, i (category.id)}
 						<a
 							class="shop-card"
@@ -67,7 +102,17 @@
 		/>
 	{/if}
 
-	<div class="shop-container">
+	{#if data.selectionProducts.length > 0}
+		<HorizontalGallery
+			products={data.selectionProducts}
+			eyebrow="Le choix de l’atelier"
+			title="Sélection du moment"
+			bgText="Sélection"
+			flashSaleEnabled={data.flashSaleEnabled}
+		/>
+	{/if}
+
+	<div class="shop-container" use:sectionBg={'#171b0d'}>
 		<section class="shop-section">
 			<div class="shop-value-props">
 				{#each valueProps as prop, i (prop.text)}
