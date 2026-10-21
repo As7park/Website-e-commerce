@@ -17,8 +17,10 @@ const config = {
 		// Sendcloud peuvent dépasser la durée par défaut d'une fonction Vercel.
 		// `maxDuration` reste soumis au plafond du plan Vercel du projet — à
 		// ajuster si le plan ne l'autorise pas.
+		// `runtime` : Vercel refuse désormais nodejs20.x (déploiement en erreur
+		// « runtime discontinued ») — aligné sur la version Node du projet Vercel.
 		adapter: adapter({
-			runtime: 'nodejs20.x',
+			runtime: 'nodejs24.x',
 			memory: 1024,
 			maxDuration: 30
 		}),
