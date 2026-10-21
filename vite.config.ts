@@ -22,6 +22,15 @@ export default defineConfig({
 		exclude: ['@node-rs/argon2', '@node-rs/bcrypt']
 	},
 
+	// gsap publie ses plugins en ESM dans un paquet sans `"type": "module"` :
+	// laissés externes, Node (runtime Vercel) les charge comme du CommonJS et
+	// `import { ScrollTrigger } from 'gsap/ScrollTrigger'` plante au démarrage
+	// (« does not provide an export named 'ScrollTrigger' »). Vite les intègre
+	// donc au bundle serveur, comme Lenis.
+	ssr: {
+		noExternal: ['gsap', 'lenis']
+	},
+
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		coverage: {
