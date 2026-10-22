@@ -18,6 +18,25 @@ s'affiche sur la vitrine (`/products` et la fiche produit) que si le module
 est actif ET que la date est dans le futur — indépendant de `compareAtPrice`
 mais généralement combiné avec lui pour le prix barré.
 
+`Product.price`/`ProductVariant.price`/`compareAtPrice` sont stockés **HT**
+en base (le panier calcule la TVA séparément, voir
+[docs/commerce](../commerce/README.md#contrat-serveur)). La vitrine
+(catalogue, fiche produit, ventes croisées, récemment consultés, liste
+d'envies) affiche systématiquement le prix **TTC**
+(`toTTC(price, vatRate)`, `$lib/utils/price.ts`, taux configurable depuis
+`/admin/tva`) — conversion à l'affichage uniquement, jamais réécrite en
+base ni transmise telle quelle au panier (Arrêté du 3 déc. 1987 : le prix
+annoncé au consommateur doit être TTC).
+
+Ces champs sont des `Prisma.Decimal` côté schéma (`@db.Decimal(10,2)`), pas
+des `number` natifs — le client Prisma les renvoie comme tels à toute
+lecture directe. Toute nouvelle requête Prisma sur `price`/`compareAtPrice`
+doit passer par `mapProductPrice`/`mapVariantPrice`
+(`src/lib/prisma/products/mapProduct.ts`, conversion via `toNumber()`,
+`src/lib/server/decimal.ts`) **au point de lecture**, jamais plus loin — un
+`Decimal` non converti casse la sérialisation SvelteKit et les comparaisons
+natives (`===`, `toBe()`).
+
 Il est conçu pour être retirable d'un bloc. La procédure complète est dans
 [retrait.md](./retrait.md) ; ce document décrit son fonctionnement.
 
@@ -182,9 +201,9 @@ plafonnés par variante, pas par produit. Le prix d'une ligne est toujours
 revalidé serveur (`updateOrderItems`, `src/lib/prisma/order/prendingOrder.ts`)
 contre `ProductVariant.price`, jamais celui envoyé par le client — même
 garde que pour `Product.price`. Comme pour un produit sans variante, le
-panier ne décrémente jamais le stock en base à la vente (voir
-[docs/commerce](../commerce/README.md) : le stock reste un nombre géré par
-l'admin, pas un compteur temps réel).
+stock de la ligne est décrémenté à la vente (webhook Stripe, voir
+[docs/commerce](../commerce/README.md)), jamais réservé avant paiement : une
+vente concurrente sur le dernier exemplaire peut faire passer le stock sous 0.
 
 ### Récemment consultés
 
@@ -266,6 +285,15 @@ si la date de fin de vente flash a changé — un ré-enregistrement identique
 (retry QStash, ou sauvegarde admin sans changement réel) ne renvoie jamais
 rien, mais une nouvelle baisse ou une nouvelle vente flash redéclenche
 normalement une alerte.
+
+L'e-mail part avant le marquage : un échec de `sendMail` ne marque rien (un
+futur passage retentera normalement), mais un échec du marquage APRÈS un
+envoi réussi (timeout DB) est traité différemment — `persistWishlistNotification`
+retente l'écriture 3 fois (backoff `200ms*tentative`, même patron que le
+marqueur Sendcloud du job post-paiement), puis abandonne en dead-letter (log
+`ERROR` + `Sentry.captureException`) sans faire échouer le reste de la
+boucle, plutôt que de laisser silencieusement l'item se refaire notifier au
+prochain passage.
 
 ### Souvent achetés ensemble
 
@@ -387,6 +415,11 @@ sont créés en Prisma (`createCatalogProduct`), le reste passe par l'UI.
 | 5   | Renommage de la valeur                | Save changes                  | valeur mise à jour                                      |
 | 6   | Suppression de la taxonomie : cascade | dialogue Continue             | taxonomie et valeur absentes, produit sans cette valeur |
 
+Test à part, même fichier : « suppression explicite d'une valeur
+(`?/deleteTaxonomyValue`) » — isole la suppression d'une seule valeur de la
+suppression en cascade (#6 ci-dessus) : la taxonomie et ses autres valeurs
+survivent (commit `ee3a2bc`).
+
 À part : CLIENT POST `?/createTaxonomy` — aucune taxonomie créée.
 
 ### Avis produit — `e2e/products/reviews.spec.ts`
@@ -448,6 +481,7 @@ prix admin ne déclenche aucun e-mail, `lastNotifiedPrice` reste inchangé.
 | 4   | Le panier affiche la variante distinctement              | GET `/checkout`              | étiquette de variante + prix dans le récapitulatif |
 
 Administration (même spec) : liste des variantes, édition du stock,
+**création via le formulaire admin (`?/createVariant`, commit `6a5c25c`)**,
 suppression d'une variante libre acceptée, suppression d'une variante déjà
 commandée refusée (`VariantInUseError`). À part : CLIENT POST
 `?/deleteVariant` — la variante reste.

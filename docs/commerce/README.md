@@ -10,28 +10,28 @@ de latence/erreur et scripts de charge : [slo.md](./slo.md).
 
 ## Frontière du module
 
-| Emplacement                                                                                      | Contenu                                                                                           |
+| Emplacement | Contenu |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | --- | ------------------------- | -------------------------------------------- |
-| `src/lib/commerce/`                                                                              | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
-| `src/lib/prisma/order/` et `src/lib/prisma/transaction/`                                         | DAO Prisma                                                                                        |
-| `src/lib/store/Data/cartStore.ts` + `cartSync.ts`                                                | panier client                                                                                     |
-| `src/routes/api/save-cart/`                                                                      | persistance panier                                                                                |
-| `src/routes/checkout/`                                                                           | tunnel + succès                                                                                   |
-| `src/routes/api/webhooks/`                                                                       | Stripe `checkout.session.completed`                                                               |
-| `src/lib/server/jobs/post-payment.ts`                                                            | facture + Sendcloud, hors du webhook (voir plus bas)                                              |
-| `src/routes/api/jobs/post-payment/`                                                              | endpoint appelé par la queue (QStash)                                                             |
-| `src/routes/admin/sales/`                                                                        | liste, facture, bordereau (double marqueur ADMIN)                                                 |     | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
-| `src/routes/auth/settings/returns/`                                                              | demande de retour côté compte                                                                     |
-| `src/routes/admin/returns/`                                                                      | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN)                 |
-| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts`                              | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe)                   |
-| `src/routes/auth/settings/saved-payments/`                                                       | ajout/suppression/défaut côté compte (Stripe Elements)                                            |
-| `src/lib/prisma/giftCards/`                                                                      | DAO cartes cadeaux (solde décroissant)                                                            |
-| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/`                            | émission/gestion admin, validation côté checkout                                                  |
-| `src/lib/sendcloud/returnLabel.ts`                                                               | étiquette de retour Sendcloud (best-effort, posée à l'approbation)                                |
-| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/`    | suivi de commande sans compte (n° facture + email)                                                |
-| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/`                      | relance panier abandonné (scan périodique, voir plus bas)                                         |
-| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/`                  | relance avis produit post-livraison (scan périodique, voir plus bas)                              |
-| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas)                |
+| `src/lib/commerce/` | gardes panier / checkout, session Stripe (`checkout.ts`), chemins, panier invité (`guestCart.ts`) |
+| `src/lib/prisma/order/` et `src/lib/prisma/transaction/` | DAO Prisma |
+| `src/lib/store/Data/cartStore.ts` + `cartSync.ts` | panier client |
+| `src/routes/api/save-cart/` | persistance panier |
+| `src/routes/checkout/` | tunnel + succès |
+| `src/routes/api/webhooks/` | Stripe `checkout.session.completed` |
+| `src/lib/server/jobs/post-payment.ts` | facture + Sendcloud, hors du webhook (voir plus bas) |
+| `src/routes/api/jobs/post-payment/` | endpoint appelé par la queue (QStash) |
+| `src/routes/admin/sales/` | liste, facture, bordereau (double marqueur ADMIN) | | `src/lib/prisma/returns/` | DAO des demandes de retour (`ReturnRequest`) |
+| `src/routes/auth/settings/returns/` | demande de retour côté compte |
+| `src/routes/admin/returns/` | approbation/refus + remboursement Stripe ou crédit compte (double marqueur ADMIN) |
+| `src/lib/prisma/savedPayments/`, `src/lib/server/stripeCustomer.ts` | moyens de paiement enregistrés (DAO + création paresseuse du `Customer` Stripe) |
+| `src/routes/auth/settings/saved-payments/` | ajout/suppression/défaut côté compte (Stripe Elements) |
+| `src/lib/prisma/giftCards/` | DAO cartes cadeaux (solde décroissant) |
+| `src/routes/admin/gift-cards/`, `src/routes/api/gift-cards/validate/` | émission/gestion admin, validation côté checkout |
+| `src/lib/sendcloud/returnLabel.ts` | étiquette de retour Sendcloud (best-effort, posée à l'approbation) |
+| `src/lib/prisma/transaction/getTransactionByInvoiceAndEmail.ts`, `src/routes/suivi-commande/` | suivi de commande sans compte (n° facture + email) |
+| `src/lib/server/jobs/cartRecovery.ts`, `src/routes/api/jobs/cart-recovery/` | relance panier abandonné (scan périodique, voir plus bas) |
+| `src/lib/server/jobs/reviewReminder.ts`, `src/routes/api/jobs/review-reminder/` | relance avis produit post-livraison (scan périodique, voir plus bas) |
+| `src/lib/server/jobs/recentlyViewedReminder.ts`, `src/routes/api/jobs/recently-viewed-reminder/` | relance produits consultés jamais achetés, digest (scan périodique, voir plus bas) |
 
 Le point d'accroche est le hook `pendingOrderHandle` dans `src/hooks.server.ts`
 (après `authHandle` / `adminHandle`). Sans lui, plus de commande PENDING par
@@ -67,6 +67,26 @@ Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
 - Prix des lignes = `Product.price` (ou `ProductVariant.price` si une
   variante est sélectionnée — voir [docs/products](../products/README.md#variantes-produit)),
   jamais le JSON client ni le panier invité.
+- Tous les montants (`Order`, `OrderItem.price`, `Transaction`, `GiftCard`,
+  `PromoCode.value`/`minAmount`) sont des `Prisma.Decimal` côté schéma
+  (`@db.Decimal(10,2)`), pas des `number` natifs. Convertis en `number` via
+  `toNumber()` (`src/lib/server/decimal.ts`) par des mappers dédiés
+  (`mapOrder.ts`, `mapTransaction.ts`, `mapGiftCard`/`mapPromoCode` internes
+  à leurs DAO) **au point de lecture Prisma**, jamais plus loin — convention
+  à respecter pour toute nouvelle requête sur ces champs, y compris dans les
+  helpers de test (`e2e/support/db.ts` ne l'a pas respectée après la
+  migration du 08/10, cassant plusieurs specs jusqu'au 12/10).
+- Taux de TVA = `StoreSettings.vatRate` (`getVatRate()`, configurable depuis
+  `/admin/tva`), propagé côté client via `data.vatRate` (chargé par
+  `+layout.server.ts`). Le libellé « TVA (x %) » du tiroir panier
+  (`Cart.svelte`) et du récapitulatif checkout (`CartSummary.svelte`,
+  reçoit `vatRate` en prop depuis `checkout/+page.svelte`) reflète ce taux
+  dynamiquement — il n'y a plus de pourcentage figé dans le markup.
+- Délai de livraison estimé (`StoreSettings.estimatedDelivery{Min,Max}Days`,
+  configurable depuis `/admin/livraison`, `null` par défaut) : affiché au
+  checkout avant validation de commande une fois renseigné — conformité
+  Code conso. L216-1 (délai de livraison engagé), même principe que le taux
+  de TVA (rien affiché tant que l'admin n'a pas saisi une vraie estimation).
 - Invité : `localStorage` seulement ; fusion au compte à signup / login
   (même `productId` **et** même `variantId` → quantités additionnées,
   plafonnées au stock de la ligne ; deux variantes du même produit ne
@@ -77,10 +97,14 @@ Les projets sur-mesure (`Custom`, `no_shipping`) restent de la dette atelier.
   reste à payer une fois la remise promo déduite (voir « Cartes cadeaux »
   plus bas).
 - Webhook : sous verrou (`stripe:checkout:<session id>`, `src/lib/server/lock.ts`)
-  pour tolérer une double livraison Stripe, crée la `Transaction` et passe
-  l'`Order` en `PAID`. Facture et Sendcloud partent ensuite chacun dans leur
-  propre job asynchrone (voir ci-dessous), pas dans la requête webhook. Un
-  nouveau panier PENDING peut naître ensuite (c'est voulu).
+  pour tolérer une double livraison Stripe, crée la `Transaction`, décrémente
+  le stock vendu (`Product.stock` ou `ProductVariant.stock` si une variante
+  est sélectionnée, écriture atomique `decrement`) et passe l'`Order` en
+  `PAID`. Facture et Sendcloud partent ensuite chacun dans leur propre job
+  asynchrone (voir ci-dessous), pas dans la requête webhook. Un nouveau
+  panier PENDING peut naître ensuite (c'est voulu). Pas de réservation de
+  stock avant paiement : une vente concurrente sur le dernier exemplaire peut
+  faire passer le stock sous 0.
 
 ## Jobs post-paiement (facture, Sendcloud)
 
@@ -109,6 +133,15 @@ verrou (`invoice-email:<transaction id>`). `runPostPaymentJob`
 `sendcloudOrderCreatedAt` / `sendcloudParcelId` sont déjà posés : une
 commande ou une étiquette Sendcloud a un coût réel, un retry ne doit jamais
 en recréer une seconde.
+
+L'écriture de ces deux marqueurs suit toujours un appel réseau Sendcloud
+déjà réussi : un simple timeout DB à cet instant précis ne doit pas se
+traduire par un retry QStash qui referait l'appel réseau. `persistSendcloudMarker`
+(`$lib/server/sendcloud-marker.ts`) retente l'écriture (3 tentatives, léger
+backoff) ; si elle échoue quand même, le job s'arrête sans relancer
+(`SendcloudMarkerPersistError`, journalisé en `ERROR` + Sentry
+`deadLetter: 'sendcloud-marker'`) plutôt que de laisser QStash retenter et
+recréer la commande/étiquette.
 
 ### Résilience Sendcloud (disjoncteur + dead-letter)
 
@@ -298,8 +331,19 @@ Module activable depuis `/admin/settings` (`StoreSettings.returnsEnabled`, voir
 Une commande payée (`Transaction`) peut faire l'objet d'une seule demande de
 retour (`ReturnRequest`, `transactionId` unique) : le compte la crée depuis
 `/auth/settings/returns` (liste ses factures) puis
-`/auth/settings/returns/[transactionId]` (motif libre). Ces deux routes
-répondent 404 si le module est désactivé, comme les autres modules optionnels.
+`/auth/settings/returns/[transactionId]`. Ces deux routes répondent 404 si
+le module est désactivé, comme les autres modules optionnels.
+
+`ReturnRequest.kind` distingue deux motifs juridiquement différents
+(`ReturnKind` : `WITHDRAWAL`/`WARRANTY`) : la **rétractation légale** (Code
+conso. L221-18 à L221-28, 14 jours, sans motif requis) et le **SAV/garantie**
+(motif obligatoire). L'option rétractation est masquée côté client et
+revérifiée côté serveur si `Transaction.shippingOption === 'no_shipping'`
+(biens personnalisés/sur-mesure, exclus légalement du droit de rétractation,
+Code conso. L221-28 3°). Les deux types partagent le même workflow
+d'approbation ci-dessous — la distinction ne change que le formulaire client
+et l'affichage admin (badge du type sur `/admin/returns`), pas le traitement
+du remboursement.
 
 Côté admin, `/admin/returns` liste les demandes (page dédiée, pas le
 composant `Table.svelte` générique — son dialogue de confirmation est câblé
@@ -361,6 +405,23 @@ mais une capacité de retour qui semble ne jamais avoir été activée au niveau
 du compte/contrat transporteur : **à vérifier et activer côté panneau
 Sendcloud avant qu'un retour (v2 ou v3) puisse fonctionner en production**,
 indépendamment de la suspension pour fraude mentionnée ci-dessus.
+
+## Litiges Stripe (chargebacks)
+
+Le webhook (`src/routes/api/webhooks/+server.ts`) écoute aussi
+`charge.dispute.created`/`.closed` — pas d'interrupteur `StoreSettings`,
+toujours actif dès que Stripe est configuré. À l'ouverture, la `Transaction`
+correspondante (`findTransactionForDispute`) est mise à jour
+(`disputeId`, `disputeStatus`, `disputeReason`, `disputeAmount`,
+`disputeOpenedAt`) et un e-mail part à `DISPUTE_ALERT_EMAIL`
+(`src/lib/server/disputeAlert.ts`) — jamais bloquant : un email non envoyé
+(variable absente, échec SMTP) n'empêche pas la mise à jour de la
+`Transaction`, seulement un `WARN` en log. À la clôture
+(`charge.dispute.closed`), `disputeStatus`/`disputeClosedAt` sont posés et
+une seconde alerte part. Idempotent par construction : un retry du même
+événement webhook (Stripe relivre parfois deux fois) est détecté via
+`transaction.disputeId`/`disputeClosedAt` déjà renseignés, pas de double
+alerte ni de double écriture.
 
 ## Détection de fraude
 
@@ -429,12 +490,12 @@ Un code se cumule avec un éventuel code promo (`PromoCodeInput`,
 la remise promo, puis plafonne le montant de la carte cadeau par ce qu'il
 reste à payer (`validateGiftCard(code, productTotalTTC - promoDiscount)`) —
 jamais l'un sans l'autre, jamais un montant envoyé par le client. Le solde
-est décrémenté **au même moment que `PromoCode.usageCount`** : à la création
-de la session Stripe, pas à la confirmation du paiement — une session Stripe
-abandonnée consomme donc le solde de la carte, exactement comme un code
-promo abandonné consomme son compteur d'usage. Décision assumée pour rester
-cohérent avec le comportement déjà en place plutôt que d'introduire un
-second modèle de décompte au moment du webhook.
+est décrémenté **au même moment que `PromoCode.usageCount`** : dans le
+webhook `checkout.session.completed`, après confirmation du paiement (comme
+le stock produit) — une session Stripe abandonnée ou un paiement refusé ne
+coûte donc plus rien au client. `Order.promoCode`/`giftCardCode`/
+`giftCardAmount` sont écrits dès la création de la session (`createCheckoutSession`)
+et relus par le webhook pour appliquer le débit réel.
 
 Édition admin (`/admin/gift-cards/[id]`) : statut, destinataire, note,
 expiration. La valeur d'émission et le solde ne se modifient jamais par ce
@@ -707,9 +768,10 @@ Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre.
 
 ### Cartes cadeaux — `e2e/gift-cards/validate.spec.ts`, `e2e/gift-cards/admin.spec.ts`
 
-Stripe n'est pas appelé : `decrementGiftCardBalance` suit
-`stripe.checkout.sessions.create`, hors de portée de ces specs (même
-convention que `incrementUsage` pour les codes promo).
+Stripe n'est pas appelé : `decrementGiftCardBalance` suit la confirmation
+du paiement (webhook `checkout.session.completed`), hors de portée de ces
+specs (même convention que `incrementUsage` pour les codes promo, vérifié
+côté paiement dans `e2e/commerce/stripe.spec.ts`).
 
 | #   | Étape                                                         | Geste                             | Preuve                                               |
 | --- | ------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------- |

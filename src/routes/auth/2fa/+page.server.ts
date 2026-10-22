@@ -10,7 +10,7 @@ import { totpBucket } from '$lib/lucia/2fa';
 import { fail, redirect } from '@sveltejs/kit';
 import { getUserTOTPKey, upgradeTotpKeyEncryption } from '$lib/lucia/user';
 import { verifyTOTP } from '@oslojs/otp';
-import { setSessionAs2FAVerified } from '$lib/lucia/session';
+import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
 import { auth } from '$lib/lucia';
 
 import type { Actions, RequestEvent } from './$types';
@@ -103,13 +103,19 @@ export const actions: Actions = {
 		}
 
 		await totpBucket.reset(locals.user.id);
-		await setSessionAs2FAVerified(locals.session.id);
 
 		// Invalider la session actuelle de Lucia
 		await auth.invalidateSession(locals.session.id);
 
 		// Créer une nouvelle session pour l'utilisateur avec twoFactorVerified à true
-		const newSession = await auth.createSession(locals.user.id, { twoFactorVerified: true });
+		const newSession = await auth.createSession(locals.user.id, {
+			twoFactorVerified: true,
+			// Reprend le fournisseur de la session qu'on remplace : sans ça,
+			// `oauthProvider` retombait toujours à `null` à la réémission, même
+			// pour un compte connecté via Google.
+			oauthProvider: locals.session.oauthProvider,
+			...getSessionDeviceContext(request)
+		});
 
 		// Définir le nouveau cookie de session
 		const newSessionCookie = auth.createSessionCookie(newSession.id);

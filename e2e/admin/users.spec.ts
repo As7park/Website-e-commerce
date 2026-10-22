@@ -2,7 +2,9 @@ import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import {
+	countSessions,
 	createCatalogProduct,
+	createRawSession,
 	deleteCatalogProduct,
 	deleteUser,
 	getOrderById,
@@ -31,7 +33,7 @@ test.describe('Administration — utilisateurs', () => {
 		const victim = await requireUser(victimEmail);
 		// La suppression admin (étape 5) anonymise désormais au lieu de
 		// supprimer physiquement (voir $lib/prisma/user/anonymizeUser.ts,
-		// CONFORMITE_ECOMMERCE.md) : une commande payée doit survivre à la
+		// RESTE_A_FAIRE.md) : une commande payée doit survivre à la
 		// suppression du compte, obligation comptable.
 		const created = await createCatalogProduct();
 		const { product } = created;
@@ -59,6 +61,18 @@ test.describe('Administration — utilisateurs', () => {
 				expect(html).not.toContain('totpKey');
 				expect(html).not.toContain('recoveryCode');
 				expect(html).not.toContain('passwordHash');
+			});
+
+			await test.step('1b. Colonne "Nom" non triable, "Email"/"Role" triables (§3.3 audit)', async () => {
+				await expect(
+					page.getByRole('columnheader', { name: 'Nom', exact: true }).getByRole('button')
+				).toHaveCount(0);
+				await expect(
+					page.getByRole('columnheader', { name: 'Email', exact: true }).getByRole('button')
+				).toHaveCount(1);
+				await expect(
+					page.getByRole('columnheader', { name: 'Role', exact: true }).getByRole('button')
+				).toHaveCount(1);
 			});
 
 			await test.step('2. Promotion CLIENT → ADMIN (crayon)', async () => {
@@ -92,7 +106,13 @@ test.describe('Administration — utilisateurs', () => {
 				expect((await requireUser(victimEmail)).role).toBe('CLIENT');
 			});
 
-			await test.step('4. La MFA se bascule depuis la fiche', async () => {
+			await test.step('4. La MFA se bascule depuis la fiche, et révoque les sessions de la cible', async () => {
+				// Une session active existante sur le compte visé : si un admin
+				// bascule la MFA (ou change le mot de passe) sans révoquer les
+				// sessions, un attaquant avec un cookie volé garderait la main.
+				await createRawSession(victim.id);
+				expect(await countSessions(victimEmail)).toBe(1);
+
 				await page.goto(`/admin/users/${victim.id}`);
 				await expect(
 					page.getByRole('heading', { name: 'Update User and Addresses' })
@@ -101,6 +121,10 @@ test.describe('Administration — utilisateurs', () => {
 				await page.getByRole('button', { name: 'Save changes' }).click();
 				await waitForPath(page, '/admin/users');
 				expect((await requireUser(victimEmail)).isMfaEnabled).toBe(true);
+
+				// §4.1 de l'audit fonctionnel : changer la MFA/le mot de passe
+				// d'un compte depuis l'admin doit déconnecter ce compte partout.
+				expect(await countSessions(victimEmail)).toBe(0);
 			});
 
 			await test.step('5. Suppression d’un CLIENT', async () => {
@@ -114,7 +138,7 @@ test.describe('Administration — utilisateurs', () => {
 						(response) =>
 							response.url().includes('deleteUser') && response.request().method() === 'POST'
 					),
-					page.getByRole('alertdialog').getByRole('button', { name: 'Continue' }).click()
+					page.getByRole('alertdialog').getByRole('button', { name: 'Supprimer' }).click()
 				]);
 				await expect(page.getByRole('cell', { name: victimEmail })).toHaveCount(0, {
 					timeout: 15_000

@@ -7,8 +7,11 @@
  * vit dans la route admin, pas ici : ce fichier ne fait que la persistance.
  */
 import { prisma } from '$lib/server';
+import type { Prisma } from '@prisma/client';
 import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
 import { nextCreditNoteNumber } from '$lib/server/creditNote/number';
+import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { toNumber } from '$lib/server/decimal';
 
 export async function getReturnRequestByTransactionId(transactionId: string) {
 	return prisma.returnRequest.findUnique({ where: { transactionId } });
@@ -47,14 +50,61 @@ export const getAllReturnRequests = async (params: ListParams = {}) => {
 		prisma.returnRequest.count()
 	]);
 
-	return { items, total, page, perPage, sort, dir };
+	return {
+		items: items.map((item) => ({
+			...item,
+			transaction: { ...item.transaction, amount: toNumber(item.transaction.amount) }
+		})),
+		total,
+		page,
+		perPage,
+		sort,
+		dir
+	};
 };
 
 export async function getReturnRequestById(id: string) {
-	return prisma.returnRequest.findUnique({
+	const request = await prisma.returnRequest.findUnique({
 		include: { transaction: true, user: { select: { email: true } } },
 		where: { id }
 	});
+	return request ? { ...request, transaction: mapTransaction(request.transaction) } : null;
+}
+
+/**
+ * Remet en stock les articles d'un retour accepté.
+ *
+ * Miroir exact du décrément posé par le webhook `checkout.session.completed` :
+ * variante si une variante a été commandée, sinon produit, jamais les deux.
+ * No-op si la commande d'origine n'est plus rattachée à la transaction
+ * (`Transaction.orderId` est nullable, `onDelete: SetNull`).
+ */
+async function restockReturnedItems(tx: Prisma.TransactionClient, returnRequestId: string) {
+	const request = await tx.returnRequest.findUnique({
+		where: { id: returnRequestId },
+		select: { transaction: { select: { orderId: true } } }
+	});
+	const orderId = request?.transaction.orderId;
+	if (!orderId) return;
+
+	const items = await tx.orderItem.findMany({
+		where: { orderId },
+		select: { productId: true, variantId: true, quantity: true }
+	});
+
+	for (const item of items) {
+		if (item.variantId) {
+			await tx.productVariant.update({
+				where: { id: item.variantId },
+				data: { stock: { increment: item.quantity } }
+			});
+		} else {
+			await tx.product.update({
+				where: { id: item.productId },
+				data: { stock: { increment: item.quantity } }
+			});
+		}
+	}
 }
 
 export async function markReturnApproved(id: string, stripeRefundId: string) {
@@ -63,6 +113,7 @@ export async function markReturnApproved(id: string, stripeRefundId: string) {
 	// n'est alloué qu'une seule fois par retour (idempotence structurelle).
 	return prisma.$transaction(async (tx) => {
 		const creditNoteNumber = await nextCreditNoteNumber(tx);
+		await restockReturnedItems(tx, id);
 		return tx.returnRequest.update({
 			where: { id },
 			data: { status: 'REFUNDED', stripeRefundId, creditNoteNumber }
@@ -74,6 +125,7 @@ export async function markReturnApproved(id: string, stripeRefundId: string) {
 export async function markReturnCredited(id: string, giftCardId: string) {
 	return prisma.$transaction(async (tx) => {
 		const creditNoteNumber = await nextCreditNoteNumber(tx);
+		await restockReturnedItems(tx, id);
 		return tx.returnRequest.update({
 			where: { id },
 			data: { status: 'CREDITED', giftCardId, creditNoteNumber }

@@ -6,6 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { vatRateSchema } from '$lib/schema/settings/vatSchema';
 
 	let { data } = $props();
@@ -14,7 +15,8 @@
 		untrack(() => data.vatForm),
 		{
 			validators: zodClient(vatRateSchema),
-			id: 'vatRate'
+			id: 'vatRate',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const { form: vatFormData, enhance: vatEnhance, message: vatMessage } = vatForm;
@@ -33,7 +35,7 @@
 		<h1 class="text-2xl font-semibold">Taux de TVA</h1>
 		<p class="text-sm text-muted-foreground">
 			Appliqué à tout le catalogue (prix TTC, factures). Vérifiez le taux applicable à vos produits
-			avant de le modifier — voir <code>CONFORMITE_ECOMMERCE.md</code>.
+			avant de le modifier — voir <code>RESTE_A_FAIRE.md</code>.
 		</p>
 	</div>
 

@@ -6,6 +6,7 @@
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
 
 	let { data } = $props();
@@ -14,7 +15,8 @@
 		untrack(() => data.deliveryForm),
 		{
 			validators: zodClient(deliveryEstimateSchema),
-			id: 'deliveryEstimate'
+			id: 'deliveryEstimate',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const {
@@ -37,7 +39,7 @@
 		<h1 class="text-2xl font-semibold">Délai de livraison annoncé</h1>
 		<p class="text-sm text-muted-foreground">
 			Affiché au client avant validation de commande (Code conso. art. L216-1). Laissez les deux
-			champs vides pour ne rien afficher — voir <code>CONFORMITE_ECOMMERCE.md</code>.
+			champs vides pour ne rien afficher — voir <code>RESTE_A_FAIRE.md</code>.
 		</p>
 	</div>
 

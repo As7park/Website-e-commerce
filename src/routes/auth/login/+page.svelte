@@ -6,6 +6,7 @@
 	import { Button } from '$shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { loginSchema } from '$lib/schema/auth/loginSchema';
 	import { toast } from 'svelte-sonner';
 
@@ -18,7 +19,8 @@
 		untrack(() => data?.loginForm ?? {}),
 		{
 			validators: zodClient(loginSchema),
-			id: 'loginForm'
+			id: 'loginForm',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 

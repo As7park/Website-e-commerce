@@ -28,9 +28,7 @@
 		| 'recentlyViewedReminderEnabled';
 
 	type ModuleCategory =
-		| 'Produits & découverte'
-		| 'Paiement & après-vente'
-		| 'Marketing & fidélisation';
+		'Produits & découverte' | 'Paiement & après-vente' | 'Marketing & fidélisation';
 
 	const CATEGORY_ORDER: ModuleCategory[] = [
 		'Produits & découverte',

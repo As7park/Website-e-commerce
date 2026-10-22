@@ -87,7 +87,11 @@
 			{/if}
 
 			<div class="shop-prose">
-				<!-- Contenu saisi par un administrateur (TinyMCE). -->
+				<!-- Contenu saisi par un administrateur (TinyMCE), déjà assaini à
+					     l'écriture (`sanitizeBlogHtml`, DOMPurify — voir
+					     `$lib/prisma/blogPost/blogPost.ts`) : jamais de HTML brut non
+					     filtré en base, ce `{@html}` ne fait que rendre le résultat déjà
+					     nettoyé. -->
 				{@html post.content}
 			</div>
 		</div>

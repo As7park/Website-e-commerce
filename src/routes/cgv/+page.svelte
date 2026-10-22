@@ -16,7 +16,7 @@
 	<div class="shop-prose">
 		<p class="text-sm text-muted-foreground">
 			⚠️ Modèle à faire valider par un avocat/expert-comptable avant mise en production — voir
-			<code>CONFORMITE_ECOMMERCE.md</code> à la racine du projet.
+			<code>RESTE_A_FAIRE.md</code> à la racine du projet.
 		</p>
 
 		<section>
@@ -64,10 +64,10 @@
 			<h2>5. Droit de rétractation</h2>
 			<p>
 				Conformément aux articles L221-18 et suivants du Code de la consommation, le client
-				consommateur dispose d'un délai de <strong>14 jours</strong> à compter de la réception de sa
-				commande pour exercer son droit de rétractation, sans avoir à justifier de motif ni à supporter
-				d'autres frais que ceux de retour du produit. Le remboursement, incluant les frais de livraison
-				standard, est effectué dans un délai de 14 jours suivant la réception du produit retourné.
+				consommateur dispose d'un délai de <strong>14 jours</strong> à compter de la réception de sa commande
+				pour exercer son droit de rétractation, sans avoir à justifier de motif ni à supporter d'autres
+				frais que ceux de retour du produit. Le remboursement, incluant les frais de livraison standard,
+				est effectué dans un délai de 14 jours suivant la réception du produit retourné.
 			</p>
 			<p>
 				Conformément à l'article L221-28, 3° du Code de la consommation, le droit de rétractation

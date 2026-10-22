@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
+import { expectNoA11yViolations } from '../support/a11y';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import {
 	createCatalogProduct,
@@ -46,6 +47,7 @@ test.describe('Commerce — panier', () => {
 				await page.locator('.cartButton button').first().click();
 				await expect(page.getByRole('heading', { name: 'Votre panier' })).toBeVisible();
 				await expect(page.getByText(product.name).first()).toBeVisible();
+				await expectNoA11yViolations(page);
 
 				const user = await requireUser(account.email);
 				const pending = await getPendingOrder(user.id);

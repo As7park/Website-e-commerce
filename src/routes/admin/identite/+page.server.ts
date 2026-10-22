@@ -7,13 +7,14 @@ import { getCompanyIdentity, updateCompanyIdentity } from '$lib/server/companyId
 import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
 import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
 import cloudinary from '$lib/server/cloudinary';
+import { validateImageUpload } from '$lib/server/imageUpload';
 import { log } from '$lib/server/log';
 
 const LOGO_FOLDER = 'identite';
 
 /**
  * Identité de l'entreprise (`StoreSettings.company*`) — voir
- * CONFORMITE_ECOMMERCE.md : alimente `/mentions-legales`, le JSON-LD
+ * RESTE_A_FAIRE.md : alimente `/mentions-legales`, le JSON-LD
  * `Organization` (`SEO.svelte`) et les factures/avoirs (texte + logo),
  * remplace les `[À COMPLÉTER]` et les variables d'environnement
  * `INVOICE_COMPANY_*`. Un champ vide reste `null` (pas de valeur inventée).
@@ -63,6 +64,10 @@ export const actions: Actions = {
 		const removeLogo = formData.get('removeLogo') === 'on';
 
 		if (logoFile instanceof File && logoFile.size > 0) {
+			const invalid = validateImageUpload(logoFile);
+			if (invalid) {
+				return fail(400, { companyForm: form, message: invalid });
+			}
 			try {
 				const buffer = await logoFile.arrayBuffer();
 				const base64String = Buffer.from(buffer).toString('base64');

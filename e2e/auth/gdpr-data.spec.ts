@@ -70,6 +70,11 @@ test.describe('RGPD — mes données', () => {
 				expect(body.profil.email).toBe(account.email);
 				expect(body.adresses.some((a: { id: string }) => a.id === address.id)).toBe(true);
 				expect(body.commandes.some((o: { id: string }) => o.id === linked.order.id)).toBe(true);
+				// Historique des connexions (LoginEvent) inclus dans l'export — au moins
+				// l'inscription elle-même, déjà survenue via `signUpAndVerify` ci-dessus.
+				expect(
+					body.historique_connexions.some((e: { methode: string }) => e.methode === 'signup')
+				).toBe(true);
 			});
 
 			await test.step('2. Mauvais mot de passe : suppression refusée', async () => {
@@ -95,7 +100,7 @@ test.describe('RGPD — mes données', () => {
 				expect(anonymized).toBeNull(); // e-mail changé : plus trouvable par l'ancien
 
 				// La commande/transaction existent toujours — l'historique
-				// comptable n'est jamais perdu (voir CONFORMITE_ECOMMERCE.md).
+				// comptable n'est jamais perdu (voir RESTE_A_FAIRE.md).
 				const kept = await requireUser(anonymizedEmail!);
 				expect(kept.id).toBe(user.id);
 				expect(kept.passwordHash).toBeNull();

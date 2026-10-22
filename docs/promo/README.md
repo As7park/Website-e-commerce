@@ -38,9 +38,10 @@ un pourcentage du total ; `FIXED` est plafonnée à ce total. Les frais de port
 ne sont pas remisés.
 
 Le checkout relit le code côté serveur (`?/checkout`) : un `discountAmount`
-posté par le client n'est jamais crédité. `incrementUsage` est appelé après
-la création de la session Stripe, donc **pas** pendant le paiement simulé
-Prisma des e2e commerce.
+posté par le client n'est jamais crédité. `incrementUsage` est appelé dans
+le webhook Stripe (`checkout.session.completed`), après confirmation du
+paiement — pas à la création de la session, pour qu'un panier abandonné ou
+un paiement refusé ne consomme jamais le compteur d'usage.
 
 ## Admin
 
@@ -72,6 +73,30 @@ création/édition existant) : dès qu'un compte atteint ce nombre de commandes
 Laisser `loyaltyThreshold` vide désactive la fidélité pour ce code
 spécifique, indépendamment de l'interrupteur global.
 
+## Parrainage
+
+Module activable depuis `/admin/settings` (`StoreSettings.referralEnabled`,
+voir [docs/admin](../admin/README.md#modules-e-commerce-optionnels---adminsettings)).
+Contrairement à la fidélité, ce n'est pas un `PromoCode` mais un lien direct
+sur `User` : `referralCode` (généré, unique, alphabet sans caractères
+ambigus) et `referredById`, capturé à l'inscription via `?ref=<code>`
+(`/auth/signup?ref=XXXXXXXX`) — voir `src/lib/prisma/referral/referral.ts`.
+Le compte consulte et partage son propre code depuis
+`/auth/settings/referral`.
+
+- **Filleul** : remise automatique de 10 %
+  (`REFERRAL_REFEREE_DISCOUNT_PERCENT`) sur sa première commande payée,
+  appliquée au checkout (`src/routes/checkout/+page.server.ts`) — montant
+  fixe, pas de configuration admin.
+- **Parrain** : à la toute première commande payée du filleul (et une seule
+  fois, `ReferralReward.referredId` unique), une carte cadeau de 10 €
+  (`REFERRAL_REWARD_AMOUNT`, module Gift Cards réutilisé tel quel) est créée
+  et envoyée par e-mail — job `runReferralRewardJob`
+  (`src/lib/server/jobs/referral.ts`, même mécanique QStash/repli direct
+  que la fidélité, appelé depuis le webhook Stripe). Carte cadeau et
+  `ReferralReward` sont créées dans une même transaction (une écriture
+  orpheline sans l'autre serait un vrai coût, pas juste un bug d'affichage).
+
 ## Ce qui n'est pas le promo
 
 L'authentification, le back-office dans son ensemble, le panier et Stripe.
@@ -88,15 +113,20 @@ par l'API et l'UI, pas par `incrementUsage`.
 
 ### Admin — `e2e/promo/admin.spec.ts`
 
-La création passe par Prisma (les champs numériques du formulaire Superforms
-sont fragiles en e2e). L'édition de la valeur et la suppression passent par
-l'UI.
+Liste, édition et suppression passent par l'UI ; la création aussi, via le
+formulaire admin (`?/createPromo`, commit `7662986` — a révélé que `active`
+restait toujours `false` à la création malgré le défaut annoncé, corrigé au
+passage).
 
 | #   | Étape                            | Geste                         | Preuve              |
 | --- | -------------------------------- | ----------------------------- | ------------------- |
 | 1   | La liste admin affiche les codes | GET `/admin/promo`, recherche | ligne du tableau    |
 | 2   | Édition de la valeur             | fiche → 15 → Enregistrer      | `value` en base     |
 | 3   | Suppression                      | dialogue Continue             | code absent en base |
+
+Test à part, même fichier : « création via le formulaire admin » — remplit
+le formulaire `/admin/promo/create`, vérifie le code créé en base avec
+`active: true` par défaut.
 
 À part : un CLIENT POST `?/deletePromo` — le code reste.
 
@@ -123,6 +153,16 @@ en e2e).
 | 2   | Première commande payée : pas encore de récompense | webhook signé    | `LoyaltyAward` absent                    |
 | 3   | Seuil atteint : récompense créée et e-mail envoyé  | 2e webhook signé | `LoyaltyAward` créé, e-mail avec le code |
 | 4   | Une commande de plus ne double pas la récompense   | 3e webhook signé | même `orderCountAtAward`                 |
+
+### Parrainage — `e2e/promo/referral.spec.ts`
+
+Signe le webhook Stripe comme `loyalty.spec.ts` (fallback synchrone sans
+QStash en e2e).
+
+| #   | Étape                                             | Geste                            | Preuve                                            |
+| --- | ------------------------------------------------- | -------------------------------- | ------------------------------------------------- |
+| 1   | Module désactivé : ni lien capturé ni récompense  | `?ref=<code>` puis webhook signé | `referredById` non posé, `ReferralReward` absent  |
+| 2   | Filleul remisé, parrain récompensé une seule fois | webhook signé, puis 2e commande  | remise 10 % appliquée, une seule `ReferralReward` |
 
 ```bash
 npm run test:e2e

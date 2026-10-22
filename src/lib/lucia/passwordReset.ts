@@ -34,8 +34,7 @@ export interface PasswordResetSession {
 }
 
 export type PasswordResetSessionValidationResult =
-	| { session: PasswordResetSession; user: User }
-	| { session: null; user: null };
+	{ session: PasswordResetSession; user: User } | { session: null; user: null };
 
 // Crée une session de réinitialisation de mot de passe
 export async function createPasswordResetSession(

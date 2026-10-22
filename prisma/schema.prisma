@@ -130,6 +130,7 @@ model User {
   sessions                  Session[]
   emailVerificationRequests EmailVerificationRequest[] @relation("UserEmailVerificationRequests")
   passwordResetSessions     PasswordResetSession[]     @relation("UserPasswordResetSessions")
+  loginEvents               LoginEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,10 +151,85 @@ model Session {
   /// Fournisseur OAuth à l'origine de la session (« google »), sinon nul.
   oauthProvider     String?
   createdAt         DateTime @default(now())
+  /// User-Agent brut envoyé à la création de la session, jamais reparsé après
+  /// coup — l'étiquette lisible (« Chrome sur Windows ») est dérivée à
+  /// l'affichage par `$lib/lucia/deviceLabel.ts`, voir
+  /// `/auth/settings/sessions`. Absent pour une session créée hors requête
+  /// HTTP (aucune, à ce jour).
+  userAgent         String?
+  /// IP à l'origine de la connexion — donnée personnelle (voir
+  /// RESTE_A_FAIRE.md). Sa durée de vie est bornée à celle de la
+  /// session elle-même : purgée avec elle par `$lib/server/jobs/cleanup.ts`,
+  /// jamais conservée au-delà.
+  ipAddress         String?
+  /// Ville/pays approximatifs dérivés de l'IP à la connexion, lus depuis les
+  /// en-têtes de géolocalisation que Vercel ajoute lui-même
+  /// (`x-vercel-ip-city`/`x-vercel-ip-country`) — aucun service tiers, aucun
+  /// appel réseau supplémentaire. Absents en local/hors Vercel.
+  city              String?
+  country           String?
+  /// Dernière requête authentifiée servie par cette session — voir
+  /// `touchSessionActivity`, appelée depuis `$lib/lucia/hooks.ts` sur le
+  /// chemin non caché de la résolution de session (donc déjà bornée par le
+  /// cache Redis de 8s, pas une écriture à chaque requête).
+  lastActiveAt      DateTime @default(now())
 
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+/// Historique des connexions — distinct de `Session` : survit à l'expiration
+/// ou à la révocation de la session qu'il documente (jamais de clé étrangère
+/// vers elle), pour qu'« il y a 2 mois, connexion depuis un iPhone à Lyon »
+/// reste consultable bien après que cette session-là a disparu. Une ligne par
+/// authentification réelle seulement — pas à chaque réémission de session
+/// (validation 2FA, changement de mot de passe) : voir `recordLoginEvent`,
+/// seul point d'écriture (`$lib/prisma/loginEvent/loginEvent.ts`).
+model LoginEvent {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  /// Mêmes colonnes et même origine que `Session.userAgent`/`ipAddress`/
+  /// `city`/`country` — capturées une seule fois, jamais recalculées.
+  userAgent String?
+  ipAddress String?
+  city      String?
+  country   String?
+  /// 'password' | 'google' | 'password-reset' — jamais 'signup' pour l'alerte
+  /// (voir `isNewDevice`), toujours pour l'historique.
+  method    String
+  /// Vrai si `recordLoginEvent` n'a trouvé aucune connexion antérieure avec
+  /// ce même `userAgent` pour ce compte — a déclenché l'e-mail « nouvelle
+  /// connexion » (`$lib/server/newDeviceAlert.ts`), jamais recalculé après
+  /// coup : ce champ documente ce qui a été décidé au moment de la
+  /// connexion, pas un état dérivable a posteriori.
+  isNewDevice Boolean @default(false)
+
+  @@index([userId, createdAt])
+  @@map("login_events")
+}
+
+/// Jeton à usage unique porté par le lien « Ce n'était pas moi » de l'alerte
+/// nouvel appareil (`$lib/server/newDeviceAlert.ts`) — permet de révoquer UNE
+/// session précise sans être connecté. Jamais le `Session.id` lui-même dans
+/// l'e-mail : c'est un identifiant porteur (équivalent au cookie de session),
+/// le divulguer permettrait d'usurper la session, pas seulement de la
+/// révoquer. `sessionId` n'est pas une clé étrangère vers `Session` : la
+/// session peut déjà avoir expiré au moment où le jeton est utilisé, sans
+/// que ce soit une erreur (`consumeSessionRevokeToken` traite l'absence de
+/// session comme un succès silencieux — il n'y a de toute façon plus rien à
+/// révoquer).
+model SessionRevokeToken {
+  /// Le jeton lui-même (`generateSecureToken`, même génération que `Session.id`).
+  id        String   @id
+  userId    String
+  sessionId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("session_revoke_tokens")
 }
 
 /// Code à 8 caractères envoyé par email, à la création du compte comme au
@@ -236,18 +312,18 @@ model Order {
   // défaut au checkout).
   shippingAddressId   String?
   billingAddressId    String?
-  subtotal            Float       @default(0)
-  tax                 Float       @default(0)
-  total               Float       @default(0)
+  subtotal            Decimal     @default(0) @db.Decimal(10, 2)
+  tax                 Decimal     @default(0) @db.Decimal(10, 2)
+  total               Decimal     @default(0) @db.Decimal(10, 2)
   status              OrderStatus @default(PENDING)
   promoCode           String?
-  discountAmount      Float       @default(0)
+  discountAmount      Decimal     @default(0) @db.Decimal(10, 2)
   /// Carte cadeau appliquée : `giftCardAmount` est déjà inclus dans
   /// `discountAmount` ci-dessus (qui reste la remise totale utilisée par le
   /// calcul de facture) — ces deux champs ne servent qu'à l'affichage /
   /// l'audit du détail de la remise.
   giftCardCode        String?
-  giftCardAmount      Float       @default(0)
+  giftCardAmount      Decimal     @default(0) @db.Decimal(10, 2)
   /// Relance panier abandonné (`StoreSettings.cartRecoveryEnabled`,
   /// `$lib/server/jobs/cartRecovery.ts`) : horodatage de chaque email envoyé,
   /// pour ne jamais relancer deux fois le même palier sur la même commande.
@@ -271,7 +347,7 @@ model Order {
   items               OrderItem[]
 
   shippingOption String?
-  shippingCost   Float?
+  shippingCost   Decimal? @db.Decimal(10, 2)
 
   // Champs plats pour les informations du point relais
   servicePointId           String?
@@ -315,7 +391,7 @@ model OrderItem {
   /// `null` pour un produit sans variante — comportement inchangé.
   variantId String?
   quantity  Int
-  price     Float
+  price     Decimal  @db.Decimal(10, 2)
   custom    Custom[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -345,7 +421,7 @@ model ProductVariant {
   label     String
   sku       String?  @unique
   /// `null` = utilise `Product.price` tel quel.
-  price     Float?
+  price     Decimal? @db.Decimal(10, 2)
   stock     Int      @default(0)
   position  Int      @default(0)
   createdAt DateTime @default(now())
@@ -375,7 +451,7 @@ model Product {
   id              String                 @id @default(cuid())
   name            String
   description     String
-  price           Float
+  price           Decimal                @db.Decimal(10, 2)
   stock           Int
   images          String[]
   slug            String                 @unique
@@ -385,7 +461,7 @@ model Product {
   sku             String?                @unique
   /// Prix barré affiché à côté de `price` quand renseigné (`price` reste le
   /// prix réellement facturé — pas de logique de remise appliquée ici).
-  compareAtPrice  Float?
+  compareAtPrice  Decimal?               @db.Decimal(10, 2)
   /// Fin de vente flash : bandeau + compte à rebours vitrine tant que cette
   /// date est dans le futur. Se combine avec `compareAtPrice` pour le prix
   /// barré, mais fonctionne aussi seul (juste l'urgence du minuteur).
@@ -583,7 +659,7 @@ model Transaction {
   /// Nullable : la transaction est l'écriture permanente, la commande est transitoire.
   orderId         String?
   userId          String?
-  amount          Float
+  amount          Decimal @db.Decimal(10, 2)
   currency        String
 
   /// PaymentIntent Stripe de la session (`session.payment_intent`, déjà
@@ -600,7 +676,7 @@ model Transaction {
   disputeId       String?   @unique
   disputeStatus   String?
   disputeReason   String?
-  disputeAmount   Float?
+  disputeAmount   Decimal?  @db.Decimal(10, 2)
   disputeOpenedAt DateTime?
   disputeClosedAt DateTime?
 
@@ -613,7 +689,7 @@ model Transaction {
   updatedAt DateTime @updatedAt
 
   shippingOption String
-  shippingCost   Float
+  shippingCost   Decimal @db.Decimal(10, 2)
 
   // Informations sur le mode d'expédition
   shippingMethodId   Int
@@ -698,11 +774,11 @@ model Transaction {
   products Json
 
   /// Instantané fiscal figé au paiement (lot 2).
-  invoiceNumber  String? @unique
-  subtotalHt     Float   @default(0)
-  taxRate        Float   @default(5.5)
-  taxAmount      Float   @default(0)
-  discountAmount Float   @default(0)
+  invoiceNumber  String?  @unique
+  subtotalHt     Decimal  @default(0) @db.Decimal(10, 2)
+  taxRate        Float    @default(5.5)
+  taxAmount      Decimal  @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal  @default(0) @db.Decimal(10, 2)
   promoCode      String?
 
   user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -775,8 +851,8 @@ model PromoCode {
   id               String    @id @default(cuid())
   code             String    @unique
   type             PromoType
-  value            Float
-  minAmount        Float?
+  value            Decimal   @db.Decimal(10, 2)
+  minAmount        Decimal?  @db.Decimal(10, 2)
   usageLimit       Int?
   usageCount       Int       @default(0)
   expiresAt        DateTime?
@@ -1102,12 +1178,12 @@ model ReferralReward {
 model GiftCard {
   id             String    @id @default(cuid())
   code           String    @unique
-  initialValue   Float
+  initialValue   Decimal   @db.Decimal(10, 2)
   /// Solde restant, décrémenté à chaque utilisation en caisse (voir
-  /// PROMO-PLUGIN : même moment que `PromoCode.usageCount`, c'est-à-dire à la
-  /// création de la session Stripe, pas à la confirmation du paiement — un
-  /// panier Stripe abandonné consomme donc le solde, comme pour un code promo).
-  balance        Float
+  /// PROMO-PLUGIN : même moment que `PromoCode.usageCount`, c'est-à-dire dans
+  /// le webhook Stripe après confirmation du paiement, pas à la création de
+  /// la session — un panier Stripe abandonné ne consomme donc pas le solde).
+  balance        Decimal   @db.Decimal(10, 2)
   active         Boolean   @default(true)
   expiresAt      DateTime?
   recipientEmail String?
@@ -1132,7 +1208,7 @@ model WishlistItem {
   /// `$lib/server/jobs/wishlistPriceAlert.ts` : une nouvelle alerte n'est
   /// envoyée que si le prix courant repasse strictement sous cette valeur,
   /// jamais deux fois pour la même baisse.
-  lastNotifiedPrice           Float?
+  lastNotifiedPrice           Decimal?  @db.Decimal(10, 2)
   /// Même principe pour la vente flash en cours : une nouvelle date (nouvelle
   /// vente flash) redéclenche une alerte, la même jamais deux fois.
   lastNotifiedFlashSaleEndsAt DateTime?

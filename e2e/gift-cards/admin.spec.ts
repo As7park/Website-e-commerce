@@ -2,7 +2,13 @@ import { test, expect } from '../support/fixtures';
 import { waitForPath } from '../support/flows';
 import { pageOrigin, signUpAndVerify } from '../support/admin';
 import { giftCardAdminRow } from '../support/giftCards';
-import { createGiftCard, db, deleteGiftCard, getGiftCardById, promoteToAdmin } from '../support/db';
+import {
+	createGiftCard,
+	deleteGiftCard,
+	getGiftCardByCode,
+	getGiftCardById,
+	promoteToAdmin
+} from '../support/db';
 
 /**
  * CRUD admin des cartes cadeaux : liste, création (code généré), édition du
@@ -64,7 +70,7 @@ test.describe('Administration — cartes cadeaux', () => {
 						(response) =>
 							response.url().includes('deleteGiftCard') && response.request().method() === 'POST'
 					),
-					page.getByRole('alertdialog').getByRole('button', { name: 'Continue' }).click()
+					page.getByRole('alertdialog').getByRole('button', { name: 'Supprimer' }).click()
 				]);
 				expect(await getGiftCardById(removable.id)).toBeNull();
 			});
@@ -90,7 +96,7 @@ test.describe('Administration — cartes cadeaux', () => {
 			const code = (await codeLocator.textContent())?.trim();
 			expect(code).toMatch(/^GIFT-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
 
-			const created = await db.giftCard.findUnique({ where: { code } });
+			const created = await getGiftCardByCode(code ?? '');
 			createdId = created?.id;
 			expect(created?.initialValue).toBeCloseTo(75, 2);
 			expect(created?.balance).toBeCloseTo(75, 2);

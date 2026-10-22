@@ -8,6 +8,7 @@
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
 
 	let { data } = $props();
@@ -16,7 +17,8 @@
 		untrack(() => data.companyForm),
 		{
 			validators: zodClient(companyIdentitySchema),
-			id: 'companyIdentity'
+			id: 'companyIdentity',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 	const { form: companyFormData, enhance: companyEnhance, message: companyMessage } = companyForm;
@@ -60,7 +62,7 @@
 		<p class="text-sm text-muted-foreground">
 			Alimente les mentions légales (<code>/mentions-legales</code>) et les factures/avoirs PDF. Un
 			champ laissé vide reste « [À COMPLÉTER] » sur le site — voir
-			<code>CONFORMITE_ECOMMERCE.md</code>.
+			<code>RESTE_A_FAIRE.md</code>.
 		</p>
 	</div>
 

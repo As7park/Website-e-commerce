@@ -35,6 +35,7 @@
 				label: 'Parrainage',
 				show: data.accountNav.isClient && data.accountNav.referralEnabled
 			},
+			{ href: '/auth/settings/sessions', label: 'Sessions actives', show: true },
 			{ href: '/auth/settings/donnees', label: 'Mes données', show: data.accountNav.isClient }
 		].filter((item) => item.show)
 	);

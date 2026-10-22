@@ -10,6 +10,8 @@
 		key: string;
 		label: string;
 		formatter?: (value: unknown) => unknown;
+		/** §3.3 audit fonctionnel : `false` masque le bouton de tri (colonne absente du `*_SORTABLE` serveur). Défaut `true`. */
+		sortable?: boolean;
 	};
 
 	// `icon` reste en `any` : les icônes viennent soit de `lucide-svelte`
@@ -171,13 +173,17 @@
 	// Recherche : debounce avant de recharger depuis le serveur. Le garde
 	// `query === server.search` évite de redéclencher une navigation quand ce
 	// même effet vient de resynchroniser `searchQuery` depuis un `server` frais.
+	// `q`, pas `search` : c'est la clé lue par tous les `load()` admin en mode
+	// serveur (products/blog/users/promo/...) — un mismatch ici rendait la
+	// recherche inopérante (toujours réinitialisée par l'effet de sync
+	// ci-dessus) et déclenchait des `invalidateAll()` parasites en boucle.
 	let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
 		const query = searchQuery;
 		if (!server) return;
 		if (query === server.search) return;
 		clearTimeout(searchDebounce);
-		searchDebounce = setTimeout(() => updateServerUrl({ search: query || null, page: 1 }), 400);
+		searchDebounce = setTimeout(() => updateServerUrl({ q: query || null, page: 1 }), 400);
 		return () => clearTimeout(searchDebounce);
 	});
 
@@ -518,6 +524,7 @@
 					>
 						<AlertDialog.Trigger
 							class={cn(buttonVariants({ variant: 'outline' }), 'm-1 p-1 text-xs')}
+							aria-label={action.name}
 						>
 							{#if action.icon}
 								<action.icon class="h-4 w-4 inline" />
@@ -526,19 +533,20 @@
 
 						<AlertDialog.Content>
 							<AlertDialog.Header>
-								<AlertDialog.Title>Are you absolutely sure?</AlertDialog.Title>
+								<AlertDialog.Title>Confirmer la suppression</AlertDialog.Title>
 								<AlertDialog.Description>
-									This action cannot be undone. This will permanently delete the item.
+									Cette action est définitive : l'élément sera supprimé sans possibilité de retour.
 								</AlertDialog.Description>
 							</AlertDialog.Header>
 							<AlertDialog.Footer>
-								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}>Cancel</AlertDialog.Cancel
+								<AlertDialog.Cancel onclick={() => (dialogOpenId = null)}
+									>Annuler</AlertDialog.Cancel
 								>
 
 								<form method="POST" action={action.url} use:action.enhanceAction>
 									<input type="hidden" name="id" value={item.id} />
 									<AlertDialog.Action type="submit" onclick={() => deleteItem(item.id)}>
-										Continue
+										Supprimer
 									</AlertDialog.Action>
 								</form>
 							</AlertDialog.Footer>
@@ -595,9 +603,11 @@
 										<Table.Head class="border-r border-r-gray-800 pr-2">
 											<div class="rcb">
 												{column.label}
-												<button onclick={() => sortItems(column.key)}>
-													<ChevronDown class="cursor-pointer" />
-												</button>
+												{#if column.sortable !== false}
+													<button onclick={() => sortItems(column.key)}>
+														<ChevronDown class="cursor-pointer" />
+													</button>
+												{/if}
 											</div>
 										</Table.Head>
 									{/each}
@@ -619,18 +629,14 @@
 											<td class="border border-border p-2">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}
@@ -682,18 +688,14 @@
 											<dd class="text-sm text-right break-words">
 												{#if column.key === 'images'}
 													{@const image = item[column.key] as
-														| { src: string; alt: string }
-														| undefined}
+														{ src: string; alt: string } | undefined}
 													{#if image}
 														<img class="ml-auto h-20 w-20" src={image.src} alt={image.alt} />
 													{/if}
 												{:else if column.key === 'riskLevel'}
 													{@const label = item.riskLabel as string | null}
 													{@const variant = item.riskBadgeVariant as
-														| 'destructive'
-														| 'outline'
-														| 'secondary'
-														| undefined}
+														'destructive' | 'outline' | 'secondary' | undefined}
 													{#if label}
 														<Badge variant={variant ?? 'secondary'}>{label}</Badge>
 													{:else}

@@ -8,6 +8,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
 	import { createPromoSchema } from '$lib/schema/promo/promoSchema.js';
 	import { goto } from '$app/navigation';
 
@@ -17,7 +18,8 @@
 		untrack(() => data?.createPromoForm ?? {}),
 		{
 			validators: zodClient(createPromoSchema),
-			id: 'createPromo'
+			id: 'createPromo',
+			...RETRY_FRIENDLY_FORM
 		}
 	);
 
@@ -26,11 +28,6 @@
 		enhance: createPromoEnhance,
 		message: createPromoMessage
 	} = createPromo;
-
-	// Un nouveau code promo est actif par défaut
-	if ($createPromoData.active === undefined) {
-		$createPromoData.active = true;
-	}
 
 	$effect(() => {
 		if ($createPromoMessage === 'Code promo créé avec succès') {
