@@ -4,8 +4,11 @@ updates:
   # ~200 dépendances. Les mises à jour de
   # sécurité passent en dehors de ce planning (Dependabot les ouvre dès
   # qu'une alerte est détectée, indépendamment du `schedule` ci-dessous).
+  # Les PR visent `dev` (branche de travail), jamais `main` directement :
+  # elles passent par une preview Vercel avant d'être fusionnées dans `main`.
   - package-ecosystem: 'npm'
     directory: '/'
+    target-branch: 'dev'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
@@ -25,5 +28,11 @@ updates:
 
   - package-ecosystem: 'github-actions'
     directory: '/'
+    target-branch: 'dev'
     schedule:
       interval: 'weekly'
+    # Une seule PR pour toutes les actions (checkout, setup-node...) au lieu
+    # d'une par action.
+    groups:
+      github-actions:
+        patterns: ['*']
