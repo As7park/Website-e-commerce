@@ -18,7 +18,8 @@ const config = {
 		// `maxDuration` reste soumis au plafond du plan Vercel du projet — à
 		// ajuster si le plan ne l'autorise pas.
 		adapter: adapter({
-			runtime: 'nodejs20.x',
+			// nodejs20.x est retiré par Vercel (déploiement refusé) : LTS actuelle.
+			runtime: 'nodejs24.x',
 			memory: 1024,
 			maxDuration: 30
 		}),
