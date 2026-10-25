@@ -2,37 +2,17 @@
 <html lang="fr">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		
-		<!-- Métadonnées SEO de base -->
-		<meta name="description" content="XPLICITDRINK® - Boissons énergisantes premium nées à Toulouse en 2007. Recettes gourmandes avec plus de jus, moins de sucre et des ingrédients de qualité." />
-		<meta name="keywords" content="boisson énergisante, taurine, caféine, vitamines, Toulouse, premium, gourmand, moins de sucre, XPLICITDRINK" />
-		<meta name="author" content="XPLICITDRINK®" />
-		<meta name="robots" content="index, follow" />
-		
-		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="website" />
-		<meta property="og:title" content="XPLICITDRINK®" />
-		<meta property="og:description" content="Boissons énergisantes premium nées à Toulouse en 2007. Recettes gourmandes avec plus de jus, moins de sucre et des ingrédients de qualité." />
-		<meta property="og:image" content="%sveltekit.assets%/og-image.jpg" />
-		<meta property="og:url" content="https://xplicitdrink.com" />
-		<meta property="og:site_name" content="XPLICITDRINK®" />
-		
-		<!-- Twitter -->
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content="XPLICITDRINK®" />
-		<meta name="twitter:description" content="Boissons énergisantes premium nées à Toulouse en 2007. Recettes gourmandes avec plus de jus, moins de sucre et des ingrédients de qualité." />
-		<meta name="twitter:image" content="%sveltekit.assets%/og-image.jpg" />
-		
-		<!-- Canonical -->
-		<link rel="canonical" href="https://xplicitdrink.com" />
-		
+		<link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
+		<link rel="icon" type="image/png" sizes="32x32" href="%sveltekit.assets%/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="%sveltekit.assets%/favicon-16x16.png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+		<meta name="theme-color" content="#000000" />
+		<!-- Page d'attente : ne pas indexer tant que la boutique n'est pas ouverte. -->
+		<meta name="robots" content="noindex, follow" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<main id="sveltekit-body-wrapper">
-			%sveltekit.body%
-		</main>
+		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
