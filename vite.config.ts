@@ -22,6 +22,15 @@ export default defineConfig({
 		exclude: ['@node-rs/argon2', '@node-rs/bcrypt']
 	},
 
+	// GSAP publie ses plugins (`gsap/ScrollTrigger`) en ESM dans des `.js`
+	// sans `"type": "module"` : Node local les détecte comme ESM, le runtime
+	// Vercel les charge en CommonJS et l'import nommé échoue au rendu SSR
+	// (« does not provide an export named 'ScrollTrigger' »). Embarqué dans
+	// le bundle serveur, GSAP n'est plus résolu par Node à l'exécution.
+	ssr: {
+		noExternal: ['gsap']
+	},
+
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		coverage: {
