@@ -20,7 +20,7 @@ import { isDummySecret } from '#lib/server/dummy-secrets';
 import { BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$app/env/private';
 
 export const auth = betterAuth({
-	appName: 'MadeInDiamonds',
+	appName: 'AS7 Park',
 	secret: BETTER_AUTH_SECRET,
 	// Résolu PAR REQUÊTE (hôte demandé, voir `allowedHosts`), jamais une
 	// chaîne figée au démarrage : `svelteKitHandler` (`src/hooks.server.ts`)
@@ -34,8 +34,8 @@ export const auth = betterAuth({
 		allowedHosts: [
 			'localhost:*',
 			'127.0.0.1:*',
-			'madeindiamonds.com',
-			'*.madeindiamonds.com',
+			'as7park.com',
+			'*.as7park.com',
 			'*.vercel.app'
 		],
 		fallback: resolveAppUrl() ?? undefined
@@ -116,7 +116,7 @@ export const auth = betterAuth({
 
 	plugins: [
 		twoFactor({
-			issuer: 'MadeInDiamonds',
+			issuer: 'AS7 Park',
 			// Un seul code de secours, jamais régénérable sans reconfigurer la
 			// 2FA — même sémantique que l'ancien `User.recoveryCode` (Lucia).
 			// `length: 15` donne un code affiché de 16 caractères

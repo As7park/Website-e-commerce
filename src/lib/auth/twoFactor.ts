@@ -31,7 +31,7 @@ import { encodeBase32NoPadding } from '@oslojs/encoding';
 import { prisma } from '#lib/server';
 import { BETTER_AUTH_SECRET } from '$app/env/private';
 
-const TOTP_ISSUER = 'MadeInDiamonds';
+const TOTP_ISSUER = 'AS7 Park';
 /** Même valeur que `backupCodeOptions.amount` dans `#lib/auth/index.ts`. */
 const RECOVERY_CODE_LENGTH = 15;
 
