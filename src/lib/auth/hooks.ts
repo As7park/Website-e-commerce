@@ -15,6 +15,7 @@
 
 import { redirect, type Handle } from '@sveltejs/kit';
 import { auth } from '#lib/auth';
+import { readAuthCookie, SESSION_COOKIE } from '#lib/auth/cookies';
 import { toLocalsUser, type User } from '#lib/auth/user';
 import { toLocalsSession, sessionIdentityCacheKey, type Session } from '#lib/auth/session';
 import { isRedisConfigured, getRedis } from '#lib/server/redis';
@@ -30,7 +31,7 @@ export const SESSION_IDENTITY_CACHE_TTL_SECONDS = 8;
 type ResolvedIdentity = { session: Session | null; user: User | null };
 
 async function resolveIdentity(event: Parameters<Handle>[0]['event']): Promise<ResolvedIdentity> {
-	const cookieValue = event.cookies.get('better-auth.session_token');
+	const cookieValue = readAuthCookie(event.cookies, SESSION_COOKIE);
 	if (!cookieValue) {
 		log('aucun cookie de session');
 		return { session: null, user: null };

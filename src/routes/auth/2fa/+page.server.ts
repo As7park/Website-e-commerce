@@ -10,7 +10,7 @@
 import { redirect } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { auth } from '#lib/auth';
-import { applyAuthCookies, TWO_FACTOR_PENDING_COOKIE } from '#lib/auth/cookies';
+import { applyAuthCookies, readAuthCookie, TWO_FACTOR_PENDING_COOKIE } from '#lib/auth/cookies';
 import { finalizeLogin } from '#lib/auth/finalizeLogin';
 import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 
@@ -36,7 +36,7 @@ export const load = async (event: RequestEvent) => {
 	}
 	// Ni session ni défi 2FA en attente : visiteur anonyme, jamais passé par
 	// `/auth/login` — rien à faire ici.
-	if (!event.cookies.get(TWO_FACTOR_PENDING_COOKIE)) {
+	if (!readAuthCookie(event.cookies, TWO_FACTOR_PENDING_COOKIE)) {
 		return redirect(302, '/auth/login');
 	}
 	const totpForm = await superValidate(event, zod(totpCodeSchema));

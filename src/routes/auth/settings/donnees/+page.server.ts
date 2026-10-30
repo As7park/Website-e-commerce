@@ -14,6 +14,7 @@
  * texte exact à saisir — même patron que la purge admin
  * (`/admin/exports/[kind]/purge`).
  */
+import { deleteAuthCookie, SESSION_COOKIE } from '#lib/auth/cookies';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getCredentialPasswordHash, verifyPasswordHash } from '#lib/auth/password';
@@ -57,7 +58,7 @@ export const actions: Actions = {
 
 		// `anonymizeUser` a déjà révoqué toutes les sessions en base — il ne
 		// reste qu'à effacer le cookie du navigateur.
-		event.cookies.delete('better-auth.session_token', { path: '/' });
+		deleteAuthCookie(event.cookies, SESSION_COOKIE);
 		redirect(303, '/');
 	}
 };

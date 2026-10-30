@@ -21,6 +21,26 @@ import type { RequestEvent } from '@sveltejs/kit';
  */
 export const TWO_FACTOR_PENDING_COOKIE = 'better-auth.two_factor';
 
+export const SESSION_COOKIE = 'better-auth.session_token';
+
+/**
+ * En HTTPS (Vercel), Better Auth préfixe ses cookies par `__Secure-` ; en
+ * http://localhost, non. Lire le seul nom de base marche donc en local et
+ * voit tout visiteur connecté comme anonyme en ligne.
+ */
+const SECURE_PREFIX = '__Secure-';
+
+type CookieJar = Pick<RequestEvent['cookies'], 'get' | 'delete'>;
+
+export function readAuthCookie(cookies: CookieJar, name: string): string | undefined {
+	return cookies.get(`${SECURE_PREFIX}${name}`) ?? cookies.get(name);
+}
+
+export function deleteAuthCookie(cookies: CookieJar, name: string): void {
+	cookies.delete(`${SECURE_PREFIX}${name}`, { path: '/' });
+	cookies.delete(name, { path: '/' });
+}
+
 const ATTRIBUTE_KEYS = new Set([
 	'expires',
 	'max-age',
