@@ -27,6 +27,11 @@ console.log(`Branche              : ${process.env.VERCEL_GIT_COMMIT_REF ?? '(inc
 for (const name of REQUIRED) {
 	console.log(`${isSet(name) ? '✔' : '✘'} ${name}`);
 }
+// Hôte uniquement : identifie la base visée sans exposer le mot de passe.
+for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
+	const host = process.env[name]?.match(/@([^/:?]+)/)?.[1];
+	console.log(`${name} → ${host ?? '(illisible)'}`);
+}
 console.log('──────────────────────────────────────────────────');
 
 if (!isSet('DIRECT_URL') && isSet('DATABASE_URL')) {
