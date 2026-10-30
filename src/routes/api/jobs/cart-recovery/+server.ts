@@ -1,10 +1,10 @@
 import { json, error } from '@sveltejs/kit';
-import { runCartRecoveryJob } from '$lib/server/jobs/cartRecovery';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { matchesCronSecret } from '$lib/server/cronAuth';
+import { runCartRecoveryJob } from '#lib/server/jobs/cartRecovery';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { matchesCronSecret } from '#lib/server/cronAuth';
 
 /**
- * Relance des paniers abandonnés — voir `$lib/server/jobs/cartRecovery.ts`.
+ * Relance des paniers abandonnés — voir `#lib/server/jobs/cartRecovery.ts`.
  * Même garde double-auth que `/api/jobs/cleanup` (QStash Schedule signé, ou
  * repli Vercel Cron avec `Authorization: Bearer $CRON_SECRET`).
  */

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Raison sociale saisie depuis `/admin/identite` (`$lib/server/companyIdentity.ts`)
+	// Raison sociale saisie depuis `/admin/identite` (`#lib/server/companyIdentity.ts`)
 	// — nom de marque en dur tant qu'elle n'est pas renseignée, pour ne rien
 	// changer avant que l'entreprise n'ait complété son identité.
 	let { companyName = null }: { companyName?: string | null } = $props();

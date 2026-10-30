@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BordereauPreview from '$lib/components/invoice/BordereauPreview.svelte';
+	import BordereauPreview from '#lib/components/invoice/BordereauPreview.svelte';
 
 	let { data } = $props();
 </script>

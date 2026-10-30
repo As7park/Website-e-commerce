@@ -1,7 +1,7 @@
 import { cart, type CartState } from './cartStore';
 import { get } from 'svelte/store';
 import { toast } from 'svelte-sonner';
-import { storeItemsToGuest, writeGuestCart } from '$lib/commerce/guestCart';
+import { storeItemsToGuest, writeGuestCart } from '#lib/commerce/guestCart';
 
 // Diffuse le panier synchronisé aux autres onglets du même navigateur/origine,
 // pour qu'ils adoptent le dernier état au lieu d'écraser plus tard avec une

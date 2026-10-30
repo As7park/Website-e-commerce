@@ -7,8 +7,8 @@
 // appeler `saveCartForUser` depuis `/api/save-cart`.
 // -----------------------------------------------------------------------------
 
-import { prisma } from '$lib/server';
-import { updateOrderItems, type IncomingOrderItem } from '$lib/prisma/order/prendingOrder';
+import { prisma } from '#lib/server';
+import { updateOrderItems, type IncomingOrderItem } from '#lib/prisma/order/prendingOrder';
 import { CartForbiddenError } from './errors';
 
 export type PublicCartItem = {

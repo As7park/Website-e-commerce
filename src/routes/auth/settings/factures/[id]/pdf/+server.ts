@@ -1,10 +1,10 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getTransactionByIdForUser } from '$lib/prisma/transaction/getTransactionById';
-import { pdfDownloadResponse } from '$lib/server/invoice/http';
-import { renderInvoicePdf } from '$lib/server/invoice/pdf';
-import { buildInvoiceView } from '$lib/server/invoice/view';
-import { getInvoiceCompany } from '$lib/server/invoice/company';
+import { getTransactionByIdForUser } from '#lib/prisma/transaction/getTransactionById';
+import { pdfDownloadResponse } from '#lib/server/invoice/http';
+import { renderInvoicePdf } from '#lib/server/invoice/pdf';
+import { buildInvoiceView } from '#lib/server/invoice/view';
+import { getInvoiceCompany } from '#lib/server/invoice/company';
 
 /**
  * Téléchargement PDF — facture du visiteur connecté.

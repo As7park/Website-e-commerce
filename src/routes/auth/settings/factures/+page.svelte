@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Table from '$components/Table.svelte';
-	import type { TableItem } from '$components/Table.svelte';
-	import { formatDate } from '$lib/utils/formatDate';
-	import { formatMoney } from '$lib/utils/formatMoney';
-	import { formatOrderStatus } from '$lib/utils/formatOrderStatus';
+	import Table from '#components/Table.svelte';
+	import type { TableItem } from '#components/Table.svelte';
+	import { formatDate } from '#lib/utils/formatDate';
+	import { formatMoney } from '#lib/utils/formatMoney';
+	import { formatOrderStatus } from '#lib/utils/formatOrderStatus';
 	import Receipt from 'lucide-svelte/icons/receipt';
 	import Undo2 from 'lucide-svelte/icons/undo-2';
 

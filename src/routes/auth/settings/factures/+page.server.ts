@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { getTransactionsByUserId } from '$lib/prisma/transaction/getTransactionsByUserId';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { getTransactionsByUserId } from '#lib/prisma/transaction/getTransactionsByUserId';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const load = (async ({ locals, url }) => {
 	const userId = locals.user?.id;

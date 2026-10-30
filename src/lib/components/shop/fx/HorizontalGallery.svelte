@@ -8,8 +8,8 @@
 	   Porté depuis le bloc "GALERIE HORIZONTALE" de la maquette.
 	   ========================================================= */
 	import { onMount, type ComponentProps } from 'svelte';
-	import ProductCard from '$lib/components/shop/ProductCard.svelte';
-	import { ScrollTrigger, gsap, onWindow, prefersReducedMotion, sectionBg } from '$lib/shop/fx';
+	import ProductCard from '#lib/components/shop/ProductCard.svelte';
+	import { ScrollTrigger, gsap, onWindow, prefersReducedMotion, sectionBg } from '#lib/shop/fx';
 
 	let {
 		products,

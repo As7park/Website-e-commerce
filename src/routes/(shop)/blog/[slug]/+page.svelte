@@ -1,12 +1,12 @@
 <script lang="ts">
-	import SEO from '$lib/components/SEO.svelte';
-	import StructuredData from '$lib/components/StructuredData.svelte';
-	import { seoConfig } from '$lib/seo.config';
-	import { reveal } from '$lib/actions/reveal';
-	import { splatCard } from '$lib/actions/splatCard';
-	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
-	import { sectionBg } from '$lib/shop/fx';
+	import SEO from '#lib/components/SEO.svelte';
+	import StructuredData from '#lib/components/StructuredData.svelte';
+	import { seoConfig } from '#lib/seo.config';
+	import { reveal } from '#lib/actions/reveal';
+	import { splatCard } from '#lib/actions/splatCard';
+	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '#lib/shop/fx';
 
 	let { data } = $props();
 	let post = $derived(data.post);
@@ -89,7 +89,7 @@
 			<div class="shop-prose">
 				<!-- Contenu saisi par un administrateur (TinyMCE), déjà assaini à
 					     l'écriture (`sanitizeBlogHtml`, DOMPurify — voir
-					     `$lib/prisma/blogPost/blogPost.ts`) : jamais de HTML brut non
+					     `#lib/prisma/blogPost/blogPost.ts`) : jamais de HTML brut non
 					     filtré en base, ce `{@html}` ne fait que rendre le résultat déjà
 					     nettoyé. -->
 				{@html post.content}

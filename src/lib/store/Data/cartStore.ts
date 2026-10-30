@@ -5,7 +5,7 @@ import { toast } from 'svelte-sonner';
 import { writable } from 'svelte/store';
 
 // Taux de TVA courant — valeur de repli avant la première hydratation
-// depuis `+layout.server.ts` (`StoreSettings.vatRate`, `$lib/server/vat.ts`).
+// depuis `+layout.server.ts` (`StoreSettings.vatRate`, `#lib/server/vat.ts`).
 // Ce store n'a pas d'accès Prisma direct (code client) : `setVatRate` est
 // appelée depuis `+layout.svelte` dès que `data.vatRate` est disponible.
 let currentVatRate = 0.055;

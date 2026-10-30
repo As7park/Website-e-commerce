@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Button } from '$shadcn/button';
+	import { Button } from '#shadcn/button';
 	import { AlertCircle } from 'lucide-svelte';
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 
 	let { data } = $props();
 </script>

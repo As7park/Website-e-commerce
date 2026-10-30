@@ -8,9 +8,9 @@ import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import type { PageServerLoad } from './$types';
-import { contactSchema } from '$lib/schema/contact/contactSchema';
-import { createContactSubmission } from '$lib/prisma/contact/contact';
-import { contactFormLimiter, getClientIP } from '$lib/server/rate-limit';
+import { contactSchema } from '#lib/schema/contact/contactSchema';
+import { createContactSubmission } from '#lib/prisma/contact/contact';
+import { contactFormLimiter, getClientIP } from '#lib/server/rate-limit';
 
 export const load = (async () => {
 	const form = await superValidate(zod(contactSchema));

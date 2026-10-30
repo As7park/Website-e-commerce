@@ -4,8 +4,8 @@
  * `maxApplicable` = reste à payer une fois le code promo éventuel déduit.
  */
 import { json } from '@sveltejs/kit';
-import { validateGiftCard } from '$lib/prisma/giftCards/giftCards';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { validateGiftCard } from '#lib/prisma/giftCards/giftCards';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const POST = async ({ request }) => {
 	try {

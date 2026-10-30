@@ -1,6 +1,6 @@
 /**
  * Totaux facture — même taux que le checkout, lu depuis
- * `StoreSettings.vatRate` (`$lib/server/vat.ts`) par l'appelant et transmis
+ * `StoreSettings.vatRate` (`#lib/server/vat.ts`) par l'appelant et transmis
  * ici en pourcentage (`vatRatePercent`) : ce module reste une fonction pure
  * synchrone, sans accès Prisma direct.
  *

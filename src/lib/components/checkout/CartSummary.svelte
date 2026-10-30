@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Card from '$shadcn/card/index.js';
+	import * as Card from '#shadcn/card/index.js';
 	import { ShoppingCart, Trash } from 'lucide-svelte';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
-	import QuantityInput from '$lib/components/QuantityInput.svelte';
-	import { getCustomCanPrice, type OrderItem } from '$lib/store/Data/cartStore';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
+	import QuantityInput from '#lib/components/QuantityInput.svelte';
+	import { getCustomCanPrice, type OrderItem } from '#lib/store/Data/cartStore';
 
 	interface Props {
 		items: OrderItem[];

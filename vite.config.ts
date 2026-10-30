@@ -3,7 +3,8 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
-import { dropStalePwa } from './vite-plugin-drop-stale-pwa';
+import { dropStalePwa } from './vite-plugin-drop-stale-pwa.ts';
+import svelteKitConfig from './sveltekit.config.ts';
 
 export default defineConfig({
 	// `sentrySvelteKit()` doit précéder `sveltekit()` : instrumentation auto
@@ -15,7 +16,7 @@ export default defineConfig({
 		sentrySvelteKit({ autoUploadSourceMaps: false }),
 		dropStalePwa(),
 		tailwindcss(),
-		sveltekit()
+		sveltekit(svelteKitConfig)
 	],
 
 	optimizeDeps: {
@@ -27,8 +28,14 @@ export default defineConfig({
 	// Vercel les charge en CommonJS et l'import nommé échoue au rendu SSR
 	// (« does not provide an export named 'ScrollTrigger' »). Embarqué dans
 	// le bundle serveur, GSAP n'est plus résolu par Node à l'exécution.
+	//
+	// Better Auth expose un point d'entrée Svelte : il est donc embarqué lui
+	// aussi, mais il dépend de zod 4 (privé) alors que le projet est en zod 3.
+	// Laissé externe, son `import 'zod'` retomberait sur zod 3 à l'exécution
+	// (« sessionSchema.loose is not a function ») : embarquer zod garde la
+	// bonne version pour chaque importeur.
 	ssr: {
-		noExternal: ['gsap']
+		noExternal: ['gsap', 'zod']
 	},
 
 	test: {
@@ -68,9 +75,6 @@ export default defineConfig({
 		// Dev uniquement : `vite dev` ne tourne jamais en production.
 		allowedHosts: ['.loca.lt']
 	},
-
-	// `preprocess` retiré : redondant avec svelte.config.js (vitePreprocess()
-	// y est déjà déclaré, seul endroit pertinent pour cette option).
 
 	clearScreen: false
 });

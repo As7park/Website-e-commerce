@@ -1,9 +1,9 @@
 /** COMMERCE-PLUGIN : liste paginée pour `/admin/sales`. */
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { formatDisputeStatus } from '$lib/server/dispute';
-import { formatRiskLevel } from '$lib/server/fraud';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { formatDisputeStatus } from '#lib/server/dispute';
+import { formatRiskLevel } from '#lib/server/fraud';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 
 const TRANSACTION_SORTABLE = ['amount', 'createdAt', 'status'] as const;
 

@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { sitemapConfig } from '$lib/sitemap.config';
-import { prisma } from '$lib/server';
+import { sitemapConfig } from '#lib/sitemap.config';
+import { prisma } from '#lib/server';
 
 // Importer toutes les pages Svelte automatiquement
 const pages = import.meta.glob('../**/+page.svelte', { eager: true });

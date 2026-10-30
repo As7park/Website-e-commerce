@@ -10,7 +10,7 @@
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
-	import { gsap, getScrollDelta, onWindow, prefersReducedMotion } from '$lib/shop/fx';
+	import { gsap, getScrollDelta, onWindow, prefersReducedMotion } from '#lib/shop/fx';
 
 	let {
 		pinned = false,

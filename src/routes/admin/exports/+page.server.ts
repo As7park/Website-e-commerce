@@ -1,4 +1,4 @@
-import { assertAdmin } from '$lib/admin/guards';
+import { assertAdmin } from '#lib/admin/guards';
 
 import type { PageServerLoad } from './$types';
 

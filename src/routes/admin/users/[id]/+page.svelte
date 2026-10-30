@@ -3,17 +3,17 @@
 	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateUserAndAddressSchema } from '$lib/schema/addresses/updateUserAndAddressSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateUserAndAddressSchema } from '#lib/schema/addresses/updateUserAndAddressSchema.js';
 	// Importation des composants nécessaires de Shadcn
-	import * as Form from '$shadcn/form';
-	import * as DropdownMenu from '$shadcn/dropdown-menu';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import * as DropdownMenu from '#shadcn/dropdown-menu';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
-	import type { AddressSuggestion } from '$lib/addresses/types';
+	import AddressAutocomplete from '#lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '#lib/addresses/types';
 
 	let { data } = $props();
 
@@ -64,45 +64,51 @@
 		<form method="POST" action="?/updateUserAndAddresses" use:enhance class="space-y-4">
 			<Form.Field name="role" form={updateUserAndAddresses}>
 				<Form.Control>
-					<Form.Label>Role</Form.Label>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							<Button variant="outline">
-								{$form.role ? $form.role : 'Select Role'}
-							</Button>
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content class="w-56">
-							<DropdownMenu.Label>Role</DropdownMenu.Label>
-							<DropdownMenu.Separator />
-							{#each roleOptions as option (option)}
-								<DropdownMenu.Item onclick={() => ($form.role = option)}>
-									{option}
-								</DropdownMenu.Item>
-							{/each}
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
+					{#snippet children({ props })}
+						<Form.Label>Role</Form.Label>
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger {...props}>
+								<Button variant="outline">
+									{$form.role ? $form.role : 'Select Role'}
+								</Button>
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content class="w-56">
+								<DropdownMenu.Label>Role</DropdownMenu.Label>
+								<DropdownMenu.Separator />
+								{#each roleOptions as option (option)}
+									<DropdownMenu.Item onclick={() => ($form.role = option)}>
+										{option}
+									</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="isMfaEnabled" form={updateUserAndAddresses}>
 				<Form.Control>
-					<Form.Label>2FA Activé</Form.Label>
-					<input type="checkbox" bind:checked={$form.isMfaEnabled} />
+					{#snippet children({ props })}
+						<Form.Label>2FA Activé</Form.Label>
+						<input {...props} type="checkbox" bind:checked={$form.isMfaEnabled} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="passwordHash" form={updateUserAndAddresses} class="w-[300px]">
 				<Form.Control>
-					<Form.Label
-						>Mot de passe:<br />
-						<span style="color: red"
-							>Attention, il faut minimum 8 caractères, majuscule, minuscule, chiffre et caractère
-							special, exemple: Password0</span
-						>
-					</Form.Label>
-					<Input type="password" bind:value={$form.passwordHash} />
+					{#snippet children({ props })}
+						<Form.Label
+							>Mot de passe:<br />
+							<span style="color: red"
+								>Attention, il faut minimum 8 caractères, majuscule, minuscule, chiffre et caractère
+								special, exemple: Password0</span
+							>
+						</Form.Label>
+						<Input {...props} type="password" bind:value={$form.passwordHash} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -120,8 +126,10 @@
 						<!-- Prénom -->
 						<Form.Field name="addresses[{index}].first_name" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Prénom</Form.Label>
-								<Input name="first_name" type="text" bind:value={address.first_name} />
+								{#snippet children({ props })}
+									<Form.Label>Prénom</Form.Label>
+									<Input {...props} name="first_name" type="text" bind:value={address.first_name} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -129,8 +137,10 @@
 						<!-- Nom -->
 						<Form.Field name="addresses[{index}].last_name" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Nom</Form.Label>
-								<Input name="last_name" type="text" bind:value={address.last_name} />
+								{#snippet children({ props })}
+									<Form.Label>Nom</Form.Label>
+									<Input {...props} name="last_name" type="text" bind:value={address.last_name} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -138,8 +148,10 @@
 						<!-- Téléphone -->
 						<Form.Field name="addresses[{index}].phone" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Téléphone</Form.Label>
-								<Input name="phone" type="tel" bind:value={address.phone} />
+								{#snippet children({ props })}
+									<Form.Label>Téléphone</Form.Label>
+									<Input {...props} name="phone" type="tel" bind:value={address.phone} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -147,8 +159,10 @@
 						<!-- Entreprise -->
 						<Form.Field name="addresses[{index}].company" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Entreprise</Form.Label>
-								<Input name="company" type="text" bind:value={address.company} />
+								{#snippet children({ props })}
+									<Form.Label>Entreprise</Form.Label>
+									<Input {...props} name="company" type="text" bind:value={address.company} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -156,8 +170,15 @@
 						<!-- Numéro de rue -->
 						<Form.Field name="addresses[{index}].street_number" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Numéro</Form.Label>
-								<Input name="street_number" type="text" bind:value={address.street_number} />
+								{#snippet children({ props })}
+									<Form.Label>Numéro</Form.Label>
+									<Input
+										{...props}
+										name="street_number"
+										type="text"
+										bind:value={address.street_number}
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -165,8 +186,10 @@
 						<!-- Rue -->
 						<Form.Field name="addresses[{index}].street" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Rue</Form.Label>
-								<Input name="street" type="text" bind:value={address.street} />
+								{#snippet children({ props })}
+									<Form.Label>Rue</Form.Label>
+									<Input {...props} name="street" type="text" bind:value={address.street} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -174,8 +197,10 @@
 						<!-- Ville -->
 						<Form.Field name="addresses[{index}].city" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Ville</Form.Label>
-								<Input name="city" type="text" bind:value={address.city} />
+								{#snippet children({ props })}
+									<Form.Label>Ville</Form.Label>
+									<Input {...props} name="city" type="text" bind:value={address.city} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -183,8 +208,10 @@
 						<!-- Code postal -->
 						<Form.Field name="addresses[{index}].zip" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Code Postal</Form.Label>
-								<Input name="zip" type="text" bind:value={address.zip} />
+								{#snippet children({ props })}
+									<Form.Label>Code Postal</Form.Label>
+									<Input {...props} name="zip" type="text" bind:value={address.zip} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -192,8 +219,10 @@
 						<!-- Pays -->
 						<Form.Field name="addresses[{index}].country" form={updateUserAndAddresses}>
 							<Form.Control>
-								<Form.Label>Pays</Form.Label>
-								<Input name="country" type="text" bind:value={address.country} />
+								{#snippet children({ props })}
+									<Form.Label>Pays</Form.Label>
+									<Input {...props} name="country" type="text" bind:value={address.country} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -245,7 +274,11 @@
 									{[session.city, session.country].filter(Boolean).join(', ') || '—'}
 								</td>
 								<td class="py-2 pr-4">{session.ipAddress ?? '—'}</td>
-								<td class="py-2 pr-4">{new Date(session.lastActiveAt).toLocaleString('fr-FR')}</td>
+								<td class="py-2 pr-4"
+									>{session.lastActiveAt
+										? new Date(session.lastActiveAt).toLocaleString('fr-FR')
+										: '—'}</td
+								>
 								<td class="py-2">{new Date(session.createdAt).toLocaleString('fr-FR')}</td>
 							</tr>
 						{/each}

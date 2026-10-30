@@ -1,4 +1,4 @@
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 export const createEmailVerificationRequestPrisma = async (data: {
 	id: string;

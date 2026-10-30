@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { splatCard } from '$lib/actions/splatCard';
-	import { reveal } from '$lib/actions/reveal';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import { splatCard } from '#lib/actions/splatCard';
+	import { reveal } from '#lib/actions/reveal';
+	import { formatMoney } from '#lib/utils/formatMoney';
 	import { page } from '$app/state';
-	import { toTTC } from '$lib/utils/price';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
-	import FlashSaleCountdown from '$lib/components/products/FlashSaleCountdown.svelte';
+	import { toTTC } from '#lib/utils/price';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
+	import FlashSaleCountdown from '#lib/components/products/FlashSaleCountdown.svelte';
 
 	let {
 		product,

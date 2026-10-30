@@ -1,5 +1,5 @@
 <script lang="ts">
-	import InvoicePreview from '$lib/components/invoice/InvoicePreview.svelte';
+	import InvoicePreview from '#lib/components/invoice/InvoicePreview.svelte';
 
 	let { data } = $props();
 </script>

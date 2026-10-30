@@ -4,11 +4,11 @@
  * COMMERCE-PLUGIN : un échec SMTP ne doit jamais empêcher le webhook de
  * répondre 200 — la facture existe déjà en base.
  */
-import { isDummySecret } from '$lib/server/dummy-secrets';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { formatMoney } from '$lib/utils/formatMoney';
+import { isDummySecret } from '#lib/server/dummy-secrets';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { formatMoney } from '#lib/utils/formatMoney';
 import { renderInvoicePdf } from './pdf';
 import { buildInvoiceView, type InvoiceSource } from './view';
 import { getInvoiceCompany } from './company';
@@ -34,7 +34,7 @@ export async function sendInvoiceEmail(source: InvoiceSource): Promise<boolean> 
 	const total = formatMoney(invoice.totalTtc, invoice.currency);
 	// Repli localhost:2000 (port de `npm run dev`) uniquement pour ne jamais
 	// envoyer de lien cassé sans APP_URL/VERCEL_URL configurée ; en prod ces
-	// variables sont attendues (voir aussi $lib/server/qstash.ts).
+	// variables sont attendues (voir aussi #lib/server/qstash.ts).
 	const invoiceUrl = `${resolveAppUrlOrDefault()}/auth/settings/factures/${source.id}`;
 
 	await sendMail({

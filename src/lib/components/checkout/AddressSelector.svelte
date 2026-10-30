@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Popover from '$shadcn/popover/index.js';
-	import * as Command from '$shadcn/command/index.js';
-	import Button from '$shadcn/button/button.svelte';
+	import * as Popover from '#shadcn/popover/index.js';
+	import * as Command from '#shadcn/command/index.js';
+	import Button from '#shadcn/button/button.svelte';
 	import { MapPin, Check, ChevronsUpDown } from 'lucide-svelte';
 	import { tick } from 'svelte';
 	import type { Address } from '@prisma/client';

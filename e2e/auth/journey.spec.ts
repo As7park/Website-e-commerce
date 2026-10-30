@@ -322,8 +322,14 @@ test.describe('Parcours complet', () => {
 			await fillStable(passwordField, THIRD_PASSWORD);
 			await page.getByRole('button', { name: 'Réinitialiser le mot de passe' }).click();
 
-			await waitForPath(page, '/auth');
-			expect(await countSessions(currentEmail)).toBe(1);
+			// Contrairement à un changement de mot de passe depuis `/auth/settings`
+			// (qui réémet la session en cours), une réinitialisation ne rouvre
+			// jamais de session automatiquement : aucune session Better Auth
+			// n'existe à ce stade du parcours pour en réémettre une sans
+			// redemander un facteur déjà prouvé par ce même formulaire — voir
+			// `/auth/reset-password/+page.server.ts` et MIGRATION_BETTER_AUTH.md.
+			await waitForPath(page, '/auth/login');
+			expect(await countSessions(currentEmail)).toBe(0);
 		});
 
 		await test.step('14. 2FA : un code de configuration invalide n’enregistre rien', async () => {
@@ -331,7 +337,11 @@ test.describe('Parcours complet', () => {
 			// pas de chemin par l'interface, le drapeau est donc posé en base.
 			await enableMfa(currentEmail);
 
-			await page.goto('/auth/');
+			// Plus de session depuis la réinitialisation (étape 13) : reconnexion
+			// explicite avec le nouveau mot de passe avant de poursuivre. La MFA
+			// vient d'être activée (ci-dessus) mais pas encore configurée : la
+			// connexion redirige donc directement vers sa configuration.
+			await logIn(page, currentEmail, THIRD_PASSWORD);
 			await waitForPath(page, '/auth/2fa/setup');
 
 			await submitCode(page, '123', 'Valider');
@@ -361,11 +371,17 @@ test.describe('Parcours complet', () => {
 			await submitCode(page, WRONG_TOTP_CODE, 'Vérifier');
 			await expectMessage(page, 'Invalid TOTP code');
 
-			// Tant que le second facteur n'est pas validé, les pages du compte
-			// renvoient vers la vérification.
+			// Tant que le second facteur n'est pas validé, il n'existe aucune
+			// session Better Auth (voir MIGRATION_BETTER_AUTH.md §12) : les pages
+			// du compte renvoient donc vers la connexion, pas vers la
+			// vérification — indiscernable d'un visiteur jamais connecté, ce qui
+			// évite même de laisser fuiter qu'une 2FA est en attente sur ce
+			// cookie. Le cookie « two_factor » reste valide : y retourner
+			// explicitement suffit à reprendre la vérification.
 			await page.goto('/auth/settings');
-			await waitForPath(page, '/auth/2fa');
+			await waitForPath(page, '/auth/login');
 
+			await page.goto('/auth/2fa');
 			await submitCode(page, await currentTotpCode(currentEmail), 'Vérifier');
 			await waitForPath(page, '/auth');
 		});
@@ -387,8 +403,10 @@ test.describe('Parcours complet', () => {
 
 			await submitCode(page, recoveryCode);
 
-			// La 2FA est retirée : une nouvelle configuration est exigée et le code de
-			// secours est remplacé.
+			// La 2FA est retirée : une nouvelle configuration est exigée, et le
+			// code de secours déjà remplacé — `/auth/2fa/setup` en génère un
+			// nouveau dès son chargement (voir `#lib/auth/twoFactor.ts`,
+			// `enableTwoFactorDirect`), avant même qu'une saisie ait eu lieu.
 			await waitForPath(page, '/auth/2fa/setup');
 			expect((await requireUser(currentEmail)).totpKey).toBeNull();
 			expect(await getRecoveryCode(currentEmail)).not.toBe(recoveryCode);

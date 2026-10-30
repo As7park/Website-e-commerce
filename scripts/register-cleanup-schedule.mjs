@@ -5,7 +5,7 @@ dotenv.config();
 
 /**
  * Enregistre (une seule fois) le QStash Schedule qui déclenche la purge
- * (`/api/jobs/cleanup`, voir `$lib/server/jobs/cleanup.ts`). Contrairement à
+ * (`/api/jobs/cleanup`, voir `#lib/server/jobs/cleanup.ts`). Contrairement à
  * `enqueuePostPaymentJob`, un schedule est une ressource persistante côté
  * QStash : le recréer à chaque déploiement dupliquerait les appels. Ce script
  * vérifie donc d'abord qu'aucun schedule n'existe déjà pour cette destination

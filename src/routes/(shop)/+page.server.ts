@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
-import { getTaxonomyBySlug } from '$lib/prisma/taxonomies/taxonomies';
-import { listProducts } from '$lib/products/catalog';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { getTaxonomyBySlug } from '#lib/prisma/taxonomies/taxonomies';
+import { listProducts } from '#lib/products/catalog';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 /**
  * Accueil boutique.

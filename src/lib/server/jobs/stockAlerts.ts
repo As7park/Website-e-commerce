@@ -10,16 +10,16 @@
  * `StoreSettings.stockAlertsEnabled` est vérifié par l'appelant avant
  * d'enfiler ce job, pas ici.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
 import {
 	listPendingStockAlerts,
 	markStockAlertsNotified
-} from '$lib/prisma/stockAlerts/stockAlerts';
+} from '#lib/prisma/stockAlerts/stockAlerts';
 
 export async function runStockAlertsJob(productId: string): Promise<void> {
 	await withDuration('job.stock-alerts', () =>

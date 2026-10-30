@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { formatDate } from '$lib/utils/formatDate';
-	import * as Avatar from '$shadcn/avatar/index.js';
-	import * as Card from '$shadcn/card/index.js';
+	import { formatDate } from '#lib/utils/formatDate';
+	import * as Avatar from '#shadcn/avatar/index.js';
+	import * as Card from '#shadcn/card/index.js';
 
 	let { users } = $props();
 </script>

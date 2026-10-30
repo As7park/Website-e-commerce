@@ -1,5 +1,5 @@
-import type { UpdateAddressSchema } from '$lib/schema/addresses/addressSchema';
-import { prisma } from '$lib/server';
+import type { UpdateAddressSchema } from '#lib/schema/addresses/addressSchema';
+import { prisma } from '#lib/server';
 
 // ✅ Récupérer toutes les adresses d'un utilisateur
 export const getUserAddresses = async (userId: string) => {

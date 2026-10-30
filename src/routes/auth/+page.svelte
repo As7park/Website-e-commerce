@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '$shadcn/button';
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import { Button } from '#shadcn/button';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	let { data } = $props();
 </script>
 

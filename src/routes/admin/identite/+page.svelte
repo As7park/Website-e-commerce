@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import * as Form from '$shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
+	import * as Form from '#shadcn/form';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { companyIdentitySchema } from '#lib/schema/settings/companyIdentitySchema';
 
 	let { data } = $props();
 
@@ -29,11 +29,8 @@
 
 	// Aperçu local avant envoi — le fichier lui-même part avec le reste du
 	// formulaire (`enctype="multipart/form-data"`), jamais uploadé à part.
-	// `readAsDataURL` plutôt que `URL.createObjectURL` : une URL `blob:`
-	// viole la CSP `img-src` (seuls `'self'`, `data:` et Cloudinary sont
-	// autorisés, voir svelte.config.js) — encore en Report-Only, mais
-	// autant ne pas ajouter de violation à confirmer avant de la rendre
-	// bloquante.
+	// `readAsDataURL` évite de créer et révoquer une URL temporaire ; la CSP
+	// `img-src` autorise les données locales (voir sveltekit.config.ts).
 	let logoPreview = $state<string | null>(null);
 	let removeLogo = $state(false);
 
@@ -108,83 +105,115 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			<Form.Field name="name" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Raison sociale</Form.Label>
-					<Input name="name" bind:value={$companyFormData.name} />
+					{#snippet children({ props })}
+						<Form.Label>Raison sociale</Form.Label>
+						<Input {...props} name="name" bind:value={$companyFormData.name} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="legalForm" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Forme juridique</Form.Label>
-					<Input
-						name="legalForm"
-						placeholder="SASU, SARL..."
-						bind:value={$companyFormData.legalForm}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Forme juridique</Form.Label>
+						<Input
+							{...props}
+							name="legalForm"
+							placeholder="SASU, SARL..."
+							bind:value={$companyFormData.legalForm}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="shareCapital" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Capital social</Form.Label>
-					<Input
-						name="shareCapital"
-						placeholder="10 000 €"
-						bind:value={$companyFormData.shareCapital}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Capital social</Form.Label>
+						<Input
+							{...props}
+							name="shareCapital"
+							placeholder="10 000 €"
+							bind:value={$companyFormData.shareCapital}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="publicationDirector" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Directeur de la publication</Form.Label>
-					<Input name="publicationDirector" bind:value={$companyFormData.publicationDirector} />
+					{#snippet children({ props })}
+						<Form.Label>Directeur de la publication</Form.Label>
+						<Input
+							{...props}
+							name="publicationDirector"
+							bind:value={$companyFormData.publicationDirector}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="address" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Adresse du siège</Form.Label>
-					<Input
-						name="address"
-						placeholder="123 Rue des Affaires"
-						bind:value={$companyFormData.address}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Adresse du siège</Form.Label>
+						<Input
+							{...props}
+							name="address"
+							placeholder="123 Rue des Affaires"
+							bind:value={$companyFormData.address}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="city" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Code postal et ville</Form.Label>
-					<Input name="city" placeholder="75000 Paris, France" bind:value={$companyFormData.city} />
+					{#snippet children({ props })}
+						<Form.Label>Code postal et ville</Form.Label>
+						<Input
+							{...props}
+							name="city"
+							placeholder="75000 Paris, France"
+							bind:value={$companyFormData.city}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="siret" form={companyForm}>
 				<Form.Control>
-					<Form.Label>SIRET</Form.Label>
-					<Input name="siret" bind:value={$companyFormData.siret} />
+					{#snippet children({ props })}
+						<Form.Label>SIRET</Form.Label>
+						<Input {...props} name="siret" bind:value={$companyFormData.siret} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="vatNumber" form={companyForm}>
 				<Form.Control>
-					<Form.Label>N° de TVA intracommunautaire</Form.Label>
-					<Input name="vatNumber" bind:value={$companyFormData.vatNumber} />
+					{#snippet children({ props })}
+						<Form.Label>N° de TVA intracommunautaire</Form.Label>
+						<Input {...props} name="vatNumber" bind:value={$companyFormData.vatNumber} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="phone" form={companyForm}>
 				<Form.Control>
-					<Form.Label>Téléphone</Form.Label>
-					<Input name="phone" bind:value={$companyFormData.phone} />
+					{#snippet children({ props })}
+						<Form.Label>Téléphone</Form.Label>
+						<Input {...props} name="phone" bind:value={$companyFormData.phone} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field name="email" form={companyForm}>
 				<Form.Control>
-					<Form.Label>E-mail de contact</Form.Label>
-					<Input name="email" type="email" bind:value={$companyFormData.email} />
+					{#snippet children({ props })}
+						<Form.Label>E-mail de contact</Form.Label>
+						<Input {...props} name="email" type="email" bind:value={$companyFormData.email} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

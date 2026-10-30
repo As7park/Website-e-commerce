@@ -1,14 +1,14 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { resetPasswordSchema } from '$lib/schema/auth/resetPasswordSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { resetPasswordSchema } from '#lib/schema/auth/resetPasswordSchema';
 
 	let { data } = $props();
 
@@ -48,15 +48,18 @@
 		<form method="POST" action="?/resetPassword" use:resetPasswordEnhance class="space-y-6">
 			<Form.Field name="password" form={resetPasswordForm}>
 				<Form.Control>
-					<Form.Label>Nouveau mot de passe</Form.Label>
-					<Input
-						type="password"
-						name="password"
-						bind:value={$resetPasswordData.password}
-						placeholder="Entrez votre nouveau mot de passe"
-						autocomplete="new-password"
-						required
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Nouveau mot de passe</Form.Label>
+						<Input
+							{...props}
+							type="password"
+							name="password"
+							bind:value={$resetPasswordData.password}
+							placeholder="Entrez votre nouveau mot de passe"
+							autocomplete="new-password"
+							required
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

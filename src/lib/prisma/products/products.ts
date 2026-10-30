@@ -1,11 +1,11 @@
-import { prisma } from '$lib/server';
-import { bumpCacheVersion } from '$lib/server/cache';
-import { reportIfRepeated } from '$lib/server/alerting';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { enqueueStockAlertsJob, enqueueWishlistPriceAlertJob } from '$lib/server/qstash';
-import { mapProductPrice } from '$lib/prisma/products/mapProduct';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import { bumpCacheVersion } from '#lib/server/cache';
+import { reportIfRepeated } from '#lib/server/alerting';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { enqueueStockAlertsJob, enqueueWishlistPriceAlertJob } from '#lib/server/qstash';
+import { mapProductPrice } from '#lib/prisma/products/mapProduct';
+import { toNumber } from '#lib/server/decimal';
 
 const PRODUCT_SORTABLE = ['name', 'price', 'stock', 'createdAt'] as const;
 
@@ -42,7 +42,7 @@ const taxonomyValuesInclude = {
  * du panier (`updateOrderItems`).
  *
  * `bumpCacheVersion('catalog')` invalide le cache de lecture publique
- * (`$lib/products/catalog`) après chaque écriture — voir `src/lib/server/cache.ts`.
+ * (`#lib/products/catalog`) après chaque écriture — voir `src/lib/server/cache.ts`.
  */
 
 /** Un produit déjà commandé ne peut pas être effacé : l'historique de vente reste. */
@@ -251,7 +251,7 @@ export const updateProductById = async (
 	}
 
 	// WISHLIST_PRICE_ALERT-PLUGIN : converge Wishlist et Vente flash, voir
-	// `$lib/server/jobs/wishlistPriceAlert.ts`. Le job lui-même recalcule,
+	// `#lib/server/jobs/wishlistPriceAlert.ts`. Le job lui-même recalcule,
 	// par compte, si c'est vraiment nouveau pour lui (baseline
 	// `WishlistItem.lastNotifiedPrice`/`lastNotifiedFlashSaleEndsAt`) — ici
 	// on ne fait que détecter qu'*un* changement pertinent a eu lieu sur le

@@ -3,12 +3,12 @@
  * l'inscription via `?ref=<code>` -> `User.referredById`). La récompense du
  * parrain (une carte cadeau, module Gift Cards) est versée une seule fois par
  * filleul, à sa toute première commande payée — voir
- * `$lib/server/jobs/referral.ts`, appelé depuis le webhook Stripe au même
+ * `#lib/server/jobs/referral.ts`, appelé depuis le webhook Stripe au même
  * titre que la fidélité (PROMO-PLUGIN). Activable/désactivable via
  * `StoreSettings.referralEnabled`.
  */
 import { randomBytes } from 'crypto';
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans caractères ambigus (0/O, 1/I/L)
 const CODE_LENGTH = 8;

@@ -3,7 +3,7 @@
  * supprimer physiquement. `Order.user` est `onDelete: Restrict` : un
  * `prisma.user.delete()` est de toute façon impossible tant que le compte a
  * des commandes, sans les supprimer d'abord — ce que faisait l'ancienne
- * implémentation de `deleteUser` (`$lib/prisma/user/user.ts`), détruisant au
+ * implémentation de `deleteUser` (`#lib/prisma/user/user.ts`), détruisant au
  * passage l'historique comptable que `Order.user` est justement censé
  * protéger (obligation de conservation 10 ans, Code de commerce L123-22).
  *
@@ -18,9 +18,9 @@
  * et par le flux self-service (`/auth/settings/donnees`) — un seul chemin
  * correct, pas deux implémentations qui pourraient diverger.
  */
-import { prisma } from '$lib/server';
-import { stripe } from '$lib/server/stripe';
-import { invalidateUserSessions } from '$lib/lucia/session';
+import { prisma } from '#lib/server';
+import { stripe } from '#lib/server/stripe';
+import { invalidateUserSessions } from '#lib/auth/session';
 
 export async function anonymizeUser(userId: string): Promise<void> {
 	const savedPaymentMethods = await prisma.savedPaymentMethod.findMany({
@@ -47,9 +47,6 @@ export async function anonymizeUser(userId: string): Promise<void> {
 				username: null,
 				name: null,
 				picture: null,
-				passwordHash: null,
-				recoveryCode: null,
-				totpKey: null,
 				googleId: null,
 				stripeCustomerId: null,
 				isMfaEnabled: false,
@@ -63,7 +60,11 @@ export async function anonymizeUser(userId: string): Promise<void> {
 		prisma.stockAlert.deleteMany({ where: { userId } }),
 		prisma.productView.deleteMany({ where: { userId } }),
 		prisma.emailVerificationRequest.deleteMany({ where: { userId } }),
-		prisma.passwordResetSession.deleteMany({ where: { userId } })
+		prisma.passwordResetSession.deleteMany({ where: { userId } }),
+		// Identifiants Better Auth (mot de passe, lien Google, 2FA) — mêmes
+		// garanties de conservation que ci-dessus : jamais `Order`/`Transaction`/…
+		prisma.authAccount.deleteMany({ where: { userId } }),
+		prisma.twoFactor.deleteMany({ where: { userId } })
 	]);
 
 	// Même mécanisme que la déconnexion/le changement de mot de passe — pas

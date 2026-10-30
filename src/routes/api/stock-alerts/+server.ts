@@ -8,8 +8,8 @@
  */
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { toggleStockAlertSubscription } from '$lib/prisma/stockAlerts/stockAlerts';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { toggleStockAlertSubscription } from '#lib/prisma/stockAlerts/stockAlerts';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const userId = locals.user?.id;

@@ -1,10 +1,10 @@
 import { json, error } from '@sveltejs/kit';
-import { runReviewReminderJob } from '$lib/server/jobs/reviewReminder';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { matchesCronSecret } from '$lib/server/cronAuth';
+import { runReviewReminderJob } from '#lib/server/jobs/reviewReminder';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { matchesCronSecret } from '#lib/server/cronAuth';
 
 /**
- * Relance avis produit post-livraison — voir `$lib/server/jobs/reviewReminder.ts`.
+ * Relance avis produit post-livraison — voir `#lib/server/jobs/reviewReminder.ts`.
  * Même garde double-auth que `/api/jobs/cart-recovery` (QStash Schedule
  * signé, ou repli Vercel Cron avec `Authorization: Bearer $CRON_SECRET`).
  */

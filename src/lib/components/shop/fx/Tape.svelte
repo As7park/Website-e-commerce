@@ -5,7 +5,7 @@
 	   s'emballe avec le scroll, comme dans la maquette.
 	   ========================================================= */
 	import { onMount } from 'svelte';
-	import { gsap, getScrollDelta, prefersReducedMotion } from '$lib/shop/fx';
+	import { gsap, getScrollDelta, prefersReducedMotion } from '#lib/shop/fx';
 
 	let {
 		items,

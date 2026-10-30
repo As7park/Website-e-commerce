@@ -3,13 +3,13 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { contactSchema } from '$lib/schema/contact/contactSchema';
-	import { reveal } from '$lib/actions/reveal';
-	import SEO from '$lib/components/SEO.svelte';
-	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
-	import { sectionBg } from '$lib/shop/fx';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { contactSchema } from '#lib/schema/contact/contactSchema';
+	import { reveal } from '#lib/actions/reveal';
+	import SEO from '#lib/components/SEO.svelte';
+	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '#lib/shop/fx';
 
 	let { data } = $props();
 

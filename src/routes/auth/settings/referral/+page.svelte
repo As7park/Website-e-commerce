@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Card from '#shadcn/card';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { Copy, Gift, Users } from 'lucide-svelte';
 

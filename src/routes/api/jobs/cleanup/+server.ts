@@ -1,11 +1,11 @@
 import { json, error } from '@sveltejs/kit';
-import { runCleanupJob } from '$lib/server/jobs/cleanup';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { matchesCronSecret } from '$lib/server/cronAuth';
+import { runCleanupJob } from '#lib/server/jobs/cleanup';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { matchesCronSecret } from '#lib/server/cronAuth';
 
 /**
  * Purge programmée (`sessions`/codes expirés, paniers PENDING abandonnés) —
- * voir `$lib/server/jobs/cleanup.ts`. Deux déclencheurs possibles, jamais un
+ * voir `#lib/server/jobs/cleanup.ts`. Deux déclencheurs possibles, jamais un
  * client direct :
  * - QStash Schedule (`scripts/register-cleanup-schedule.mjs`) : POST signé
  *   `upstash-signature`, avec retry/backoff gérés par QStash si l'exécution

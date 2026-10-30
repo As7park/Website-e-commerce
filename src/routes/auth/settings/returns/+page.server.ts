@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { redirect, error } from '@sveltejs/kit';
-import { getTransactionsByUserId } from '$lib/prisma/transaction/getTransactionsByUserId';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { prisma } from '$lib/server';
+import { getTransactionsByUserId } from '#lib/prisma/transaction/getTransactionsByUserId';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { prisma } from '#lib/server';
 
 /**
  * Liste des commandes payées de l'utilisateur, avec le statut de retour

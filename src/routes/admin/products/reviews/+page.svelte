@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import Table from '$components/Table.svelte';
-	import type { TableItem } from '$components/Table.svelte';
-	import { formatDate } from '$lib/utils/formatDate';
+	import Table from '#components/Table.svelte';
+	import type { TableItem } from '#components/Table.svelte';
+	import { formatDate } from '#lib/utils/formatDate';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import { toast } from 'svelte-sonner';
-	import { deleteReviewSchema } from '$lib/schema/products/reviewSchema';
+	import { deleteReviewSchema } from '#lib/schema/products/reviewSchema';
 	import Trash from 'lucide-svelte/icons/trash';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 

@@ -1,14 +1,14 @@
 /**
  * Instantané d'affichage d'un avoir — construit à partir de la même
- * `InvoiceSource` que la facture d'origine (`$lib/server/invoice/view.ts`),
+ * `InvoiceSource` que la facture d'origine (`#lib/server/invoice/view.ts`),
  * jamais un modèle séparé : l'avoir annule/complète la facture, il en
  * reprend les lignes et le montant.
  *
  * COMMERCE-PLUGIN
  */
 import { buildInvoiceView, type InvoiceSource } from '../invoice/view';
-import type { InvoiceCompany } from '$lib/invoice/types';
-import type { CreditNoteReason, CreditNoteView } from '$lib/creditNote/types';
+import type { InvoiceCompany } from '#lib/invoice/types';
+import type { CreditNoteReason, CreditNoteView } from '#lib/creditNote/types';
 
 const REASON_LABELS: Record<CreditNoteReason, string> = {
 	REFUND: 'Remboursement Stripe',

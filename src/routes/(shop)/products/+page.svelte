@@ -3,13 +3,13 @@
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
-	import ProductCard from '$lib/components/shop/ProductCard.svelte';
-	import SEO from '$lib/components/SEO.svelte';
-	import { reveal } from '$lib/actions/reveal';
-	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
-	import CubeBand from '$lib/components/shop/fx/CubeBand.svelte';
-	import { gridParallax, sectionBg } from '$lib/shop/fx';
+	import ProductCard from '#lib/components/shop/ProductCard.svelte';
+	import SEO from '#lib/components/SEO.svelte';
+	import { reveal } from '#lib/actions/reveal';
+	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
+	import CubeBand from '#lib/components/shop/fx/CubeBand.svelte';
+	import { gridParallax, sectionBg } from '#lib/shop/fx';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 

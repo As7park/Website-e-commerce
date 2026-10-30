@@ -3,12 +3,12 @@
 	import { page as appPage } from '$app/state';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
-	import SEO from '$lib/components/SEO.svelte';
-	import { reveal } from '$lib/actions/reveal';
-	import { splatCard } from '$lib/actions/splatCard';
-	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
-	import { sectionBg } from '$lib/shop/fx';
+	import SEO from '#lib/components/SEO.svelte';
+	import { reveal } from '#lib/actions/reveal';
+	import { splatCard } from '#lib/actions/splatCard';
+	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
+	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
+	import { sectionBg } from '#lib/shop/fx';
 
 	let { data } = $props();
 

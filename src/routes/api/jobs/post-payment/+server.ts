@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { getQStashReceiver } from '$lib/server/qstash';
-import { runPostPaymentJob } from '$lib/server/jobs/post-payment';
+import { getQStashReceiver } from '#lib/server/qstash';
+import { runPostPaymentJob } from '#lib/server/jobs/post-payment';
 
 /**
- * Appelé par QStash (`$lib/server/qstash.ts` → `enqueuePostPaymentJob`),
+ * Appelé par QStash (`#lib/server/qstash.ts` → `enqueuePostPaymentJob`),
  * jamais directement par un client. La signature est vérifiée avant tout
  * traitement : sans ça, n'importe qui pourrait déclencher le job en POSTant
  * ici.

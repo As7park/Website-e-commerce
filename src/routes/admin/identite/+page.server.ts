@@ -2,13 +2,13 @@ import { fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { getCompanyIdentity, updateCompanyIdentity } from '$lib/server/companyIdentity';
-import { companyIdentitySchema } from '$lib/schema/settings/companyIdentitySchema';
-import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
-import cloudinary from '$lib/server/cloudinary';
-import { validateImageUpload } from '$lib/server/imageUpload';
-import { log } from '$lib/server/log';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { getCompanyIdentity, updateCompanyIdentity } from '#lib/server/companyIdentity';
+import { companyIdentitySchema } from '#lib/schema/settings/companyIdentitySchema';
+import { getPublicIdFromUrl } from '#lib/prisma/getPublicIdFromUrl';
+import cloudinary from '#lib/server/cloudinary';
+import { validateImageUpload } from '#lib/server/imageUpload';
+import { log } from '#lib/server/log';
 
 const LOGO_FOLDER = 'identite';
 

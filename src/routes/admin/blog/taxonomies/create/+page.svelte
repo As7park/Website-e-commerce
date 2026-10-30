@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 
@@ -64,13 +64,16 @@
 				<div class="w-[100%]">
 					<Form.Field name="name" form={createBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Nom</Form.Label>
-							<Input
-								name="name"
-								type="text"
-								bind:value={$createBlogTaxonomyData.name}
-								oninput={onNameInput}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Nom</Form.Label>
+								<Input
+									{...props}
+									name="name"
+									type="text"
+									bind:value={$createBlogTaxonomyData.name}
+									oninput={onNameInput}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -78,13 +81,16 @@
 				<div class="w-[100%]">
 					<Form.Field name="slug" form={createBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Slug</Form.Label>
-							<Input
-								name="slug"
-								type="text"
-								bind:value={$createBlogTaxonomyData.slug}
-								oninput={() => (slugTouched = true)}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Slug</Form.Label>
+								<Input
+									{...props}
+									name="slug"
+									type="text"
+									bind:value={$createBlogTaxonomyData.slug}
+									oninput={() => (slugTouched = true)}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

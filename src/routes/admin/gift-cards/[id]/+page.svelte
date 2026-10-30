@@ -1,20 +1,19 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import * as Card from '$shadcn/card';
-	import { Input } from '$shadcn/input';
-	import { Textarea } from '$shadcn/textarea/index.js';
-	import { Button } from '$shadcn/button';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Label } from '$shadcn/label/index.js';
+	import * as Form from '#shadcn/form';
+	import * as Card from '#shadcn/card';
+	import { Input } from '#shadcn/input';
+	import { Textarea } from '#shadcn/textarea/index.js';
+	import { Button } from '#shadcn/button';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import {
 		updateGiftCardSchema,
 		adjustGiftCardBalanceSchema
-	} from '$lib/schema/giftCards/giftCardSchema.js';
+	} from '#lib/schema/giftCards/giftCardSchema.js';
 
 	let { data } = $props();
 
@@ -70,42 +69,56 @@
 
 			<Form.Field name="recipientEmail" form={updateGiftCardForm}>
 				<Form.Control>
-					<Form.Label>Email du destinataire (optionnel)</Form.Label>
-					<Input
-						name="recipientEmail"
-						type="email"
-						bind:value={$updateGiftCardData.recipientEmail}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Email du destinataire (optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="recipientEmail"
+							type="email"
+							bind:value={$updateGiftCardData.recipientEmail}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="note" form={updateGiftCardForm}>
 				<Form.Control>
-					<Form.Label>Note interne (optionnel)</Form.Label>
-					<Textarea name="note" bind:value={$updateGiftCardData.note} />
+					{#snippet children({ props })}
+						<Form.Label>Note interne (optionnel)</Form.Label>
+						<Textarea {...props} name="note" bind:value={$updateGiftCardData.note} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="expiresAt" form={updateGiftCardForm}>
 				<Form.Control>
-					<Form.Label>Date d'expiration (optionnel)</Form.Label>
-					<Input name="expiresAt" type="date" bind:value={$updateGiftCardData.expiresAt} />
+					{#snippet children({ props })}
+						<Form.Label>Date d'expiration (optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="expiresAt"
+							type="date"
+							bind:value={$updateGiftCardData.expiresAt}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="active" form={updateGiftCardForm} class="rcc">
 				<Form.Control>
-					<div class="flex items-center space-x-2">
-						<Checkbox
-							id="active"
-							name="active"
-							bind:checked={$updateGiftCardData.active as boolean | undefined}
-						/>
-						<Label for="active" class="text-sm font-medium leading-none">Carte active</Label>
-					</div>
+					{#snippet children({ props })}
+						<div class="flex items-center space-x-2">
+							<Checkbox
+								{...props}
+								name="active"
+								bind:checked={$updateGiftCardData.active as boolean | undefined}
+							/>
+							<Form.Label class="text-sm font-medium leading-none">Carte active</Form.Label>
+						</div>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -131,14 +144,17 @@
 					<input type="hidden" name="id" value={data.giftCard.id} />
 					<Form.Field name="balance" form={adjustBalanceForm} class="flex-grow">
 						<Form.Control>
-							<Form.Label>Nouveau solde (€)</Form.Label>
-							<Input
-								name="balance"
-								type="number"
-								step="0.01"
-								min="0"
-								bind:value={$adjustBalanceData.balance}
-							/>
+							{#snippet children({ props })}
+								<Form.Label>Nouveau solde (€)</Form.Label>
+								<Input
+									{...props}
+									name="balance"
+									type="number"
+									step="0.01"
+									min="0"
+									bind:value={$adjustBalanceData.balance}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

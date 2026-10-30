@@ -3,9 +3,9 @@ import { fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { createTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
-import { createTaxonomy } from '$lib/prisma/taxonomies/taxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+import { createTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema';
+import { createTaxonomy } from '#lib/prisma/taxonomies/taxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async () => {
 	const IcreateTaxonomySchema = await superValidate({ multiple: true }, zod(createTaxonomySchema));

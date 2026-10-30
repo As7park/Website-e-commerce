@@ -1,12 +1,12 @@
 <script lang="ts">
-	import HeroDark from '$lib/components/shop/HeroDark.svelte';
-	import ProductRunner from '$lib/components/shop/ProductRunner.svelte';
-	import CubeBand from '$lib/components/shop/fx/CubeBand.svelte';
-	import HorizontalGallery from '$lib/components/shop/fx/HorizontalGallery.svelte';
-	import SEO from '$lib/components/SEO.svelte';
-	import { reveal } from '$lib/actions/reveal';
-	import { splatCard } from '$lib/actions/splatCard';
-	import { gridParallax, sectionBg } from '$lib/shop/fx';
+	import HeroDark from '#lib/components/shop/HeroDark.svelte';
+	import ProductRunner from '#lib/components/shop/ProductRunner.svelte';
+	import CubeBand from '#lib/components/shop/fx/CubeBand.svelte';
+	import HorizontalGallery from '#lib/components/shop/fx/HorizontalGallery.svelte';
+	import SEO from '#lib/components/SEO.svelte';
+	import { reveal } from '#lib/actions/reveal';
+	import { splatCard } from '#lib/actions/splatCard';
+	import { gridParallax, sectionBg } from '#lib/shop/fx';
 	import { Truck, RotateCcw, ShieldCheck, Headset } from 'lucide-svelte';
 
 	let { data } = $props();

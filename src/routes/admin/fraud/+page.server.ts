@@ -1,10 +1,10 @@
-import { assertAdmin } from '$lib/admin/guards';
-import { getFraudBlocks } from '$lib/prisma/fraud/getFraudBlocks';
+import { assertAdmin } from '#lib/admin/guards';
+import { getFraudBlocks } from '#lib/prisma/fraud/getFraudBlocks';
 import type { PageServerLoad } from './$types';
 
 /**
  * Commandes bloquées par la détection de fraude
- * (`StoreSettings.fraudBlockingEnabled`, `$lib/server/fraud.ts`) — jamais de
+ * (`StoreSettings.fraudBlockingEnabled`, `#lib/server/fraud.ts`) — jamais de
  * `Transaction`/`Order` payée pour elles, donc invisibles depuis
  * `/admin/sales` sans cette page : le support doit pouvoir retrouver un
  * client bloqué à tort (compte, score, facteurs déclenchés).

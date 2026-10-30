@@ -6,7 +6,7 @@
  * la console à chaque page (vu sur `/auth/settings` en production) — ce
  * contrôle l'évite en amont plutôt que de subir l'avertissement du SDK.
  *
- * Ni `$lib/server/*` ni `$lib/server/dummy-secrets.ts` : utilisé à la fois
+ * Ni `#lib/server/*` ni `#lib/server/dummy-secrets.ts` : utilisé à la fois
  * côté client (`src/hooks.client.ts`) et serveur (`src/hooks.server.ts`),
  * doit rester importable des deux côtés.
  */

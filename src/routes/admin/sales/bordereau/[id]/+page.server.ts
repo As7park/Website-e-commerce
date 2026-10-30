@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { getTransactionById } from '$lib/prisma/transaction/getTransactionById';
-import { buildBordereauView } from '$lib/server/invoice/bordereau';
+import { getTransactionById } from '#lib/prisma/transaction/getTransactionById';
+import { buildBordereauView } from '#lib/server/invoice/bordereau';
 
 /**
  * Bordereau admin.

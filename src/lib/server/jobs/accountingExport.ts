@@ -18,13 +18,13 @@
  * rapprochement comptable mensuel, pas comme substitut d'un vrai logiciel de
  * comptabilité.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { toCsv } from '$lib/server/export/csv';
-import { EXPORT_MAX_ROWS } from '$lib/server/jobs/export';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { toCsv } from '#lib/server/export/csv';
+import { EXPORT_MAX_ROWS } from '#lib/server/jobs/export';
 
 export const ACCOUNTING_EXPORT_COLUMNS = [
 	{ key: 'JournalCode', header: 'JournalCode' },

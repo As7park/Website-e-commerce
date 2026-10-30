@@ -5,7 +5,7 @@
  */
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { buildUserDataExport } from '$lib/server/gdpr/exportUserData';
+import { buildUserDataExport } from '#lib/server/gdpr/exportUserData';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	const userId = locals.user?.id;

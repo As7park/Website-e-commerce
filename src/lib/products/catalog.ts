@@ -7,18 +7,18 @@
 // appeler ces lecteurs depuis les routes `/products`.
 //
 // Les filtres (« Catégorie », « Matière », ...) sont tous portés par le
-// système générique de taxonomies (`$lib/prisma/taxonomies`) : chaque
+// système générique de taxonomies (`#lib/prisma/taxonomies`) : chaque
 // `Taxonomy.slug` devient un paramètre d'URL (`?categorie=`, `?matiere=`...),
 // et ses `TaxonomyValue.value` les valeurs sélectionnables. Sélectionner un
 // parent inclut ses descendants (hiérarchie).
 // -----------------------------------------------------------------------------
 
 import type { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { cached, getCacheVersion } from '$lib/server/cache';
-import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
-import { resolveDescendantIds } from '$lib/prisma/taxonomies/taxonomyValues';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import { cached, getCacheVersion } from '#lib/server/cache';
+import { getAllTaxonomiesWithValues } from '#lib/prisma/taxonomies/taxonomies';
+import { resolveDescendantIds } from '#lib/prisma/taxonomies/taxonomyValues';
+import { toNumber } from '#lib/server/decimal';
 
 const publicProductInclude = {
 	categories: {
@@ -50,7 +50,7 @@ export type PublicProduct = Awaited<ReturnType<typeof listProducts>>['products']
 // Lectures publiques fréquentes, écritures rares : mises en cache Redis 60 s
 // (TTL court pour limiter le risque de données périmées). Un seul numéro de
 // version pour tout le catalogue — bumpé par les DAO d'écriture de
-// `$lib/prisma/products` et `$lib/prisma/taxonomies` — invalide en une seule
+// `#lib/prisma/products` et `#lib/prisma/taxonomies` — invalide en une seule
 // opération produits et taxonomies, sans avoir à énumérer chaque clé filtrée.
 const CACHE_NAMESPACE = 'catalog';
 const CACHE_TTL_SECONDS = 60;

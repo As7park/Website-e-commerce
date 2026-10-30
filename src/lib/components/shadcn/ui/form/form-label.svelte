@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as FormPrimitive from 'formsnap';
-	import { Label } from '$lib/components/shadcn/ui/label/index.js';
-	import { cn, type WithoutChild } from '$lib/components/shadcn/utils.js';
+	import { Label } from '#lib/components/shadcn/ui/label/index.js';
+	import { cn, type WithoutChild } from '#lib/components/shadcn/utils.js';
 
 	let {
 		ref = $bindable(null),

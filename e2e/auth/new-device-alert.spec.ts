@@ -7,7 +7,7 @@ import { countSessions, deleteUser, getLoginEvents } from '../support/db';
 
 /**
  * Historique des connexions (`LoginEvent`) + alerte « nouvelle connexion
- * détectée » (`$lib/server/newDeviceAlert.ts`) : un second appareil (User-
+ * détectée » (`#lib/server/newDeviceAlert.ts`) : un second appareil (User-
  * Agent jamais vu pour ce compte) déclenche l'e-mail, un appareil déjà connu
  * n'en déclenche jamais. La création du compte (signup) n'alerte jamais,
  * même si c'est techniquement le tout premier « appareil » du compte — voir

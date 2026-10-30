@@ -1,16 +1,16 @@
 /**
  * Accès Prisma au système générique de taxonomies (Matière, Catégorie, Couleur...).
  *
- * PRODUCT-PLUGIN : remplace à terme `$lib/prisma/materials` et
- * `$lib/prisma/categories/categories.ts` — une `Taxonomy` est le type
+ * PRODUCT-PLUGIN : remplace à terme `#lib/prisma/materials` et
+ * `#lib/prisma/categories/categories.ts` — une `Taxonomy` est le type
  * (« Matière »), ses `TaxonomyValue` sont les valeurs possibles (voir
  * `./taxonomyValues.ts`).
  *
  * `bumpCacheVersion('catalog')` invalide le cache de lecture publique
- * (`$lib/products/catalog`) après chaque écriture — voir `src/lib/server/cache.ts`.
+ * (`#lib/products/catalog`) après chaque écriture — voir `src/lib/server/cache.ts`.
  */
-import { prisma } from '$lib/server';
-import { bumpCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { bumpCacheVersion } from '#lib/server/cache';
 import type { TaxonomyType } from '@prisma/client';
 
 export const getAllTaxonomies = async () => {

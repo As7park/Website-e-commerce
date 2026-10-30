@@ -1,4 +1,4 @@
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 // Fonction pour vérifier la disponibilité de l'email dans la base de données
 export async function checkEmailAvailability(email: string): Promise<boolean> {

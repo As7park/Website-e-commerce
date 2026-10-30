@@ -3,7 +3,7 @@
  * relu au `?/checkout`, un `discountAmount` client n'est jamais crédité.
  */
 import { json } from '@sveltejs/kit';
-import { validatePromo } from '$lib/prisma/promo/promo';
+import { validatePromo } from '#lib/prisma/promo/promo';
 
 export const POST = async ({ request }) => {
 	try {

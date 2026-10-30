@@ -1,35 +1,35 @@
 import { json } from '@sveltejs/kit';
 import Stripe from 'stripe';
-import { prisma } from '$lib/server/index';
+import { prisma } from '#lib/server/index';
 import dotenv from 'dotenv';
-import { getUserIdByOrderId } from '$lib/prisma/order/prendingOrder';
-import { incrementUsage } from '$lib/prisma/promo/promo';
-import { decrementGiftCardBalance } from '$lib/prisma/giftCards/giftCards';
-import { nextInvoiceNumber } from '$lib/server/invoice/number';
-import { snapshotInvoiceTotals } from '$lib/server/invoice/totals';
-import { getVatRate } from '$lib/server/vat';
-import { withLock } from '$lib/server/lock';
+import { getUserIdByOrderId } from '#lib/prisma/order/prendingOrder';
+import { incrementUsage } from '#lib/prisma/promo/promo';
+import { decrementGiftCardBalance } from '#lib/prisma/giftCards/giftCards';
+import { nextInvoiceNumber } from '#lib/server/invoice/number';
+import { snapshotInvoiceTotals } from '#lib/server/invoice/totals';
+import { getVatRate } from '#lib/server/vat';
+import { withLock } from '#lib/server/lock';
 import {
 	enqueuePostPaymentJob,
 	enqueueInvoiceEmailJob,
 	enqueueLoyaltyCheckJob,
 	enqueueReferralRewardJob
-} from '$lib/server/qstash';
-import { derivePackageEstimate, fallbackShippingMethod } from '$lib/server/jobs/post-payment';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { log } from '$lib/server/log';
-import { notifyDispute } from '$lib/server/disputeAlert';
-import { bumpCacheVersion } from '$lib/server/cache';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
-import { mapOrderFields, mapOrderItemWithProduct } from '$lib/prisma/order/mapOrder';
+} from '#lib/server/qstash';
+import { derivePackageEstimate, fallbackShippingMethod } from '#lib/server/jobs/post-payment';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { log } from '#lib/server/log';
+import { notifyDispute } from '#lib/server/disputeAlert';
+import { bumpCacheVersion } from '#lib/server/cache';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
+import { mapOrderFields, mapOrderItemWithProduct } from '#lib/prisma/order/mapOrder';
 
 /**
  * Webhook Stripe.
  *
  * COMMERCE-PLUGIN : crée la `Transaction` et passe la commande en `PAID`.
  * Facture (SMTP) et SENDCLOUD (commande + étiquette) partent chacun dans leur
- * propre job asynchrone après la transaction (`$lib/server/qstash.ts` →
- * `$lib/server/jobs/invoice-email.ts` / `jobs/post-payment.ts`), pour ne
+ * propre job asynchrone après la transaction (`#lib/server/qstash.ts` →
+ * `#lib/server/jobs/invoice-email.ts` / `jobs/post-payment.ts`), pour ne
  * jamais faire traîner la réponse à Stripe derrière un appel externe lent, et
  * pour qu'un ralentissement de l'un n'affecte pas l'autre.
  * Le store panier client n'est pas réinitialisé ici (no-op hors navigateur) :
@@ -458,7 +458,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 	// Facture et Sendcloud partent en deux jobs asynchrones indépendants
 	// (QStash si configuré, sinon exécution directe équivalente en dev) : un
 	// pic SMTP ou un ralentissement Sendcloud ne doit pas bloquer l'autre.
-	// Voir $lib/server/jobs/invoice-email.ts et $lib/server/jobs/post-payment.ts.
+	// Voir #lib/server/jobs/invoice-email.ts et #lib/server/jobs/post-payment.ts.
 	// `allSettled`, pas `all` : la transaction est déjà commitée à ce stade,
 	// un rejet d'un job (ex. repli direct en dev sans QStash, débit SMTP
 	// atteint) ne doit jamais faire échouer la réponse au webhook Stripe — un
@@ -477,7 +477,7 @@ async function handleCheckoutSession(session: Stripe.Checkout.Session) {
 		}
 
 		// Parrainage : même garde, récompense du parrain sortie du chemin
-		// synchrone (module Gift Cards, voir $lib/server/jobs/referral.ts).
+		// synchrone (module Gift Cards, voir #lib/server/jobs/referral.ts).
 		if (flags.referralEnabled && orderId) {
 			jobs.push(enqueueReferralRewardJob(orderId));
 		}

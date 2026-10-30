@@ -7,12 +7,12 @@
  */
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { saveCartForUser } from '$lib/commerce/cart';
+import { saveCartForUser } from '#lib/commerce/cart';
 import {
 	CartForbiddenError,
 	InvalidCustomizationError,
 	UnknownProductError
-} from '$lib/commerce/errors';
+} from '#lib/commerce/errors';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const userId = locals.user?.id;

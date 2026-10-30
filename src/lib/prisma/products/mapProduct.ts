@@ -3,7 +3,7 @@
  * tout code qui lit ces modèles via Prisma (cf. RESTE_A_FAIRE.md §A.2.1).
  */
 import type { Prisma } from '@prisma/client';
-import { toNumber } from '$lib/server/decimal';
+import { toNumber } from '#lib/server/decimal';
 
 export function mapProductPrice<
 	T extends { price: Prisma.Decimal; compareAtPrice: Prisma.Decimal | null }

@@ -5,7 +5,7 @@ import { countSessions, createExpiredSession, deleteUser, requireUser } from '..
 const CRON_HEADERS = { authorization: `Bearer ${process.env.CRON_SECRET}` };
 
 /**
- * Purge programmée (`$lib/server/jobs/cleanup.ts`, route
+ * Purge programmée (`#lib/server/jobs/cleanup.ts`, route
  * `/api/jobs/cleanup`) : même patron d'authentification directe que
  * `cart-recovery.spec.ts` (`CRON_SECRET` en repli sans QStash — voir
  * `assertAuthorized`, identique dans les deux routes). Se limite à

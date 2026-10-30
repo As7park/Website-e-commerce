@@ -16,7 +16,7 @@ import {
 /**
  * RGPD self-service (`/auth/settings/donnees`) : export (portabilité, art.
  * 20) et suppression par anonymisation (effacement, art. 17) — voir
- * `$lib/prisma/user/anonymizeUser.ts`. La ligne `User` n'est jamais
+ * `#lib/prisma/user/anonymizeUser.ts`. La ligne `User` n'est jamais
  * supprimée physiquement, seuls ses champs identifiants sont scrubés :
  * `Order`/`Transaction` doivent rester intacts après suppression
  * (obligation comptable), c'est le point le plus important à vérifier ici.

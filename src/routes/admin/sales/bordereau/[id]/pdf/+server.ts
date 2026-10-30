@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getTransactionById } from '$lib/prisma/transaction/getTransactionById';
-import { buildBordereauView, renderBordereauPdf } from '$lib/server/invoice/bordereau';
-import { pdfDownloadResponse } from '$lib/server/invoice/http';
+import { getTransactionById } from '#lib/prisma/transaction/getTransactionById';
+import { buildBordereauView, renderBordereauPdf } from '#lib/server/invoice/bordereau';
+import { pdfDownloadResponse } from '#lib/server/invoice/http';
 
 /**
  * Téléchargement PDF — bordereau admin.

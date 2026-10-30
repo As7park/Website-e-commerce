@@ -2,12 +2,12 @@
  * Accès Prisma aux cartes enregistrées (`SavedPaymentMethod`).
  *
  * COMMERCE-PLUGIN : module activable, voir `StoreSettings.savedPaymentsEnabled`
- * (`$lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
+ * (`#lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
  * flag avant d'arriver ici. Ce fichier ne fait que la persistance locale
  * (affichage/suppression) : la source de vérité (carte utilisable) reste le
- * `PaymentMethod` Stripe, voir `$lib/server/stripeCustomer.ts`.
+ * `PaymentMethod` Stripe, voir `#lib/server/stripeCustomer.ts`.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 export async function listSavedPaymentMethods(userId: string) {
 	return prisma.savedPaymentMethod.findMany({

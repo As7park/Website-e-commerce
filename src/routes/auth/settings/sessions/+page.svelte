@@ -1,11 +1,11 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button, buttonVariants } from '$shadcn/button';
-	import * as AlertDialog from '$shadcn/alert-dialog/index.js';
+	import * as Card from '#shadcn/card';
+	import { Button, buttonVariants } from '#shadcn/button';
+	import * as AlertDialog from '#shadcn/alert-dialog/index.js';
 	import { Monitor, History, ShieldAlert } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
-	import { cn } from '$lib/components/shadcn/utils.js';
+	import { cn } from '#lib/components/shadcn/utils.js';
 
 	let { data, form } = $props();
 
@@ -122,7 +122,9 @@
 								{:else if session.device}
 									Localisation non disponible ·
 								{/if}
-								Dernière activité : {new Date(session.lastActiveAt).toLocaleString('fr-FR')}
+								Dernière activité : {session.lastActiveAt
+									? new Date(session.lastActiveAt).toLocaleString('fr-FR')
+									: 'inconnue'}
 							</p>
 						</div>
 					</div>

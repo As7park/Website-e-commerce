@@ -1,8 +1,8 @@
 /**
  * « Ce n'était pas moi » — révoque une session précise sans être connecté,
- * depuis le lien de l'alerte nouvel appareil (`$lib/server/newDeviceAlert.ts`).
+ * depuis le lien de l'alerte nouvel appareil (`#lib/server/newDeviceAlert.ts`).
  * Page publique, volontairement en dehors de `/auth/settings` (fermé aux
- * visiteurs anonymes par `authHandle`, voir `$lib/lucia/hooks.ts`).
+ * visiteurs anonymes par `authHandle`, voir `#lib/auth/hooks.ts`).
  *
  * Le chargement (`load`) ne consomme jamais le jeton : un simple GET —
  * y compris déclenché par un scanner de liens automatique dans un client
@@ -14,11 +14,11 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	consumeSessionRevokeToken,
 	peekSessionRevokeToken
-} from '$lib/prisma/sessionRevokeToken/sessionRevokeToken';
-import { findSessionDeviceInfo } from '$lib/prisma/session/sessions';
-import { invalidateSession, sessionPublicId } from '$lib/lucia/session';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
-import { log } from '$lib/server/log';
+} from '#lib/prisma/sessionRevokeToken/sessionRevokeToken';
+import { findSessionDeviceInfo } from '#lib/prisma/session/sessions';
+import { invalidateSession, sessionPublicId } from '#lib/auth/session';
+import { describeUserAgent } from '#lib/server/deviceLabel';
+import { log } from '#lib/server/log';
 
 export const load = (async ({ params }) => {
 	const target = await peekSessionRevokeToken(params.token);

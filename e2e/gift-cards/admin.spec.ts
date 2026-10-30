@@ -40,7 +40,7 @@ test.describe('Administration — cartes cadeaux', () => {
 			await test.step('2. Désactivation depuis la fiche', async () => {
 				await page.goto(`/admin/gift-cards/${editable.id}`);
 				await expect(page.getByRole('heading', { name: editable.code })).toBeVisible();
-				await page.locator('#active').click();
+				await page.getByRole('checkbox', { name: 'Carte active' }).click();
 				await page.getByRole('button', { name: 'Enregistrer' }).click();
 				await expect(page.getByText('Carte cadeau mise à jour avec succès')).toBeVisible();
 

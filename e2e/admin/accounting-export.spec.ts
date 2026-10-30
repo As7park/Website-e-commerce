@@ -18,7 +18,7 @@ const RECIPIENT = process.env.ACCOUNTING_EXPORT_EMAIL!;
 
 /**
  * Export comptable mensuel : scan périodique
- * (`$lib/server/jobs/accountingExport.ts`, route
+ * (`#lib/server/jobs/accountingExport.ts`, route
  * `/api/jobs/accounting-export`), pas un job déclenché par une action
  * utilisateur — on appelle donc directement la route, même en-tête
  * `CRON_SECRET` que Vercel Cron en repli sans QStash (voir

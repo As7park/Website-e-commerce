@@ -10,9 +10,9 @@
 // `Transaction.shippingOption`, voir la chaîne complète dans le plan de
 // migration) : pas de second appel réseau pour le résoudre, contrairement à
 // l'ancien code v2.
-import { prisma } from '$lib/server';
-import { log } from '$lib/server/log';
-import { persistSendcloudMarker } from '$lib/server/sendcloud-marker';
+import { prisma } from '#lib/server';
+import { log } from '#lib/server/log';
+import { persistSendcloudMarker } from '#lib/server/sendcloud-marker';
 
 type TransactionForLabel = {
 	id: string;
@@ -129,7 +129,7 @@ function extractTrackingUrl(data: SendcloudAnnounceResponse): string | null {
  * Crée une étiquette d'expédition Sendcloud (v3, synchrone) pour une
  * transaction payée. Lève une exception sur tout échec (jamais un `return`
  * silencieux) : c'est ce qui permet au disjoncteur/dead-letter du job
- * appelant (`$lib/server/jobs/post-payment.ts`) de réellement protéger cette
+ * appelant (`#lib/server/jobs/post-payment.ts`) de réellement protéger cette
  * étape — un échec avalé en silence laissait autrefois une transaction payée
  * sans étiquette, pour toujours, sans aucune alerte.
  */

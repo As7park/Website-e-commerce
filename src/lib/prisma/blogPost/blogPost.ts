@@ -1,6 +1,6 @@
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { sanitizeBlogHtml } from '$lib/server/sanitizeHtml';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { sanitizeBlogHtml } from '#lib/server/sanitizeHtml';
 
 /**
  * BLOG-PLUGIN : DAO Prisma des articles, catégories et tags. Les lectures

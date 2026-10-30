@@ -1,13 +1,13 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
+	import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
 
 	let { data } = $props();
 
@@ -48,14 +48,17 @@
 			<div>
 				<Form.Field name="code" form={recoveryCodeForm}>
 					<Form.Control>
-						<Form.Label>Code de récupération</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$recoveryCodeData.code}
-							placeholder="Entrez votre code de récupération"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de récupération</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$recoveryCodeData.code}
+								placeholder="Entrez votre code de récupération"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

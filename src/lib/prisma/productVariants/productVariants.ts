@@ -5,9 +5,9 @@
  * `schema.prisma` pour la décision de rester sur des étiquettes plutôt que
  * des axes combinatoires (taxonomie taille × couleur, etc.).
  */
-import { prisma } from '$lib/server';
-import { bumpCacheVersion } from '$lib/server/cache';
-import { mapVariantPrice } from '$lib/prisma/products/mapProduct';
+import { prisma } from '#lib/server';
+import { bumpCacheVersion } from '#lib/server/cache';
+import { mapVariantPrice } from '#lib/prisma/products/mapProduct';
 
 export class VariantInUseError extends Error {
 	constructor(variantId: string) {

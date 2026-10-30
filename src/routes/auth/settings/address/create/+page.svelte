@@ -2,15 +2,15 @@
 	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createAddressSchema } from '$lib/schema/addresses/addressSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createAddressSchema } from '#lib/schema/addresses/addressSchema.js';
 
-	import * as Form from '$shadcn/form';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
+	import * as Form from '#shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
 	import { toast } from 'svelte-sonner';
-	import AddressAutocomplete from '$lib/components/addresses/AddressAutocomplete.svelte';
-	import type { AddressSuggestion } from '$lib/addresses/types';
+	import AddressAutocomplete from '#lib/components/addresses/AddressAutocomplete.svelte';
+	import type { AddressSuggestion } from '#lib/addresses/types';
 
 	import { goto } from '$app/navigation';
 
@@ -81,8 +81,15 @@
 			<!-- Prénom -->
 			<Form.Field name="first_name" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Prénom</Form.Label>
-					<Input name="first_name" type="text" bind:value={$createAddressData.first_name} />
+					{#snippet children({ props })}
+						<Form.Label>Prénom</Form.Label>
+						<Input
+							{...props}
+							name="first_name"
+							type="text"
+							bind:value={$createAddressData.first_name}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -90,8 +97,15 @@
 			<!-- Nom -->
 			<Form.Field name="last_name" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Nom</Form.Label>
-					<Input name="last_name" type="text" bind:value={$createAddressData.last_name} />
+					{#snippet children({ props })}
+						<Form.Label>Nom</Form.Label>
+						<Input
+							{...props}
+							name="last_name"
+							type="text"
+							bind:value={$createAddressData.last_name}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -99,8 +113,10 @@
 			<!-- Téléphone -->
 			<Form.Field name="phone" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Téléphone</Form.Label>
-					<Input name="phone" type="tel" bind:value={$createAddressData.phone} />
+					{#snippet children({ props })}
+						<Form.Label>Téléphone</Form.Label>
+						<Input {...props} name="phone" type="tel" bind:value={$createAddressData.phone} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -108,8 +124,10 @@
 			<!-- Entreprise -->
 			<Form.Field name="company" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Entreprise</Form.Label>
-					<Input name="company" type="text" bind:value={$createAddressData.company} />
+					{#snippet children({ props })}
+						<Form.Label>Entreprise</Form.Label>
+						<Input {...props} name="company" type="text" bind:value={$createAddressData.company} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -117,8 +135,15 @@
 			<!-- Numéro de rue -->
 			<Form.Field name="street_number" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Numéro</Form.Label>
-					<Input name="street_number" type="text" bind:value={$createAddressData.street_number} />
+					{#snippet children({ props })}
+						<Form.Label>Numéro</Form.Label>
+						<Input
+							{...props}
+							name="street_number"
+							type="text"
+							bind:value={$createAddressData.street_number}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -126,8 +151,10 @@
 			<!-- Rue -->
 			<Form.Field name="street" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Rue</Form.Label>
-					<Input name="street" type="text" bind:value={$createAddressData.street} />
+					{#snippet children({ props })}
+						<Form.Label>Rue</Form.Label>
+						<Input {...props} name="street" type="text" bind:value={$createAddressData.street} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -135,8 +162,10 @@
 			<!-- Ville -->
 			<Form.Field name="city" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Ville</Form.Label>
-					<Input name="city" type="text" bind:value={$createAddressData.city} />
+					{#snippet children({ props })}
+						<Form.Label>Ville</Form.Label>
+						<Input {...props} name="city" type="text" bind:value={$createAddressData.city} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -144,8 +173,10 @@
 			<!-- Code postal -->
 			<Form.Field name="zip" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Code Postal</Form.Label>
-					<Input name="zip" type="text" bind:value={$createAddressData.zip} />
+					{#snippet children({ props })}
+						<Form.Label>Code Postal</Form.Label>
+						<Input {...props} name="zip" type="text" bind:value={$createAddressData.zip} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -153,8 +184,10 @@
 			<!-- Pays -->
 			<Form.Field name="country" form={createAddress}>
 				<Form.Control>
-					<Form.Label>Pays</Form.Label>
-					<Input name="country" type="text" bind:value={$createAddressData.country} />
+					{#snippet children({ props })}
+						<Form.Label>Pays</Form.Label>
+						<Input {...props} name="country" type="text" bind:value={$createAddressData.country} />
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

@@ -6,10 +6,10 @@
  */
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { SECRET_ADDRESS_SEARCH_MODE } from '$env/static/private';
-import { E2E_ADDRESS_SUGGESTIONS } from '$lib/addresses/address-search-e2e';
-import { isDummySecret } from '$lib/server/dummy-secrets';
-import type { AddressSuggestion } from '$lib/addresses/types';
+import { SECRET_ADDRESS_SEARCH_MODE } from '$app/env/private';
+import { E2E_ADDRESS_SUGGESTIONS } from '#lib/addresses/address-search-e2e';
+import { isDummySecret } from '#lib/server/dummy-secrets';
+import type { AddressSuggestion } from '#lib/addresses/types';
 
 interface BanFeature {
 	properties: {

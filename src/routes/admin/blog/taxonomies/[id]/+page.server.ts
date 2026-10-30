@@ -7,11 +7,11 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
-import { deleteBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
-import { getBlogTaxonomyById, updateBlogTaxonomy } from '$lib/prisma/blogPost/blogTaxonomies';
-import { deleteBlogTaxonomyValueById } from '$lib/prisma/blogPost/blogTaxonomies';
-import { requireAdmin } from '$lib/admin/guards';
+import { updateBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
+import { deleteBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
+import { getBlogTaxonomyById, updateBlogTaxonomy } from '#lib/prisma/blogPost/blogTaxonomies';
+import { deleteBlogTaxonomyValueById } from '#lib/prisma/blogPost/blogTaxonomies';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const taxonomy = await getBlogTaxonomyById(params.id);

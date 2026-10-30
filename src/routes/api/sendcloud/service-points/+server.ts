@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { withCircuitBreaker, CircuitOpenError } from '$lib/server/circuit-breaker';
-import { log } from '$lib/server/log';
+import { withCircuitBreaker, CircuitOpenError } from '#lib/server/circuit-breaker';
+import { log } from '#lib/server/log';
 
 const requestSchema = z.object({
 	to_country_code: z.string(), // ex: "FR"

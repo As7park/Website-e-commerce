@@ -19,17 +19,17 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '#lib/server/emailVerification';
 
-import { invalidateUserPasswordResetSessions } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { updateUserEmailAndSetEmailAsVerified } from '$lib/lucia/user';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { invalidateUserPasswordResetSessions } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { updateUserEmailAndSetEmailAsVerified } from '#lib/prisma/user/user';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 
 import type { Actions, RequestEvent } from './$types';
-import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
+import { verifyCodeSchema } from '#lib/schema/auth/verifyCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
-import { getUserByEmailPrisma } from '$lib/prisma/user/user';
+import { getUserByEmailPrisma } from '#lib/prisma/user/user';
 
 // La clé est l'identifiant utilisateur, devenu un cuid avec PostgreSQL.
 const bucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'verify-email-code');
@@ -106,14 +106,9 @@ async function verifyCode(event: RequestEvent) {
 		return message(form, 'Not authenticated', { status: 401 });
 	}
 
-	if (
-		event.locals.user.isMfaEnabled &&
-		event.locals.user.registered2FA &&
-		!event.locals.session.twoFactorVerified
-	) {
-		log('MFA enabled but not verified');
-		return message(form, 'Forbidden', { status: 403 });
-	}
+	// Sous Better Auth, une session n'existe que si la 2FA (quand exigée) a
+	// déjà été validée — plus d'état « connecté mais 2FA en attente » à
+	// contrôler ici (voir MIGRATION_BETTER_AUTH.md).
 
 	if (!(await bucket.check(event.locals.user.id, 1))) {
 		log('Rate limit pre-check failed');
@@ -183,11 +178,6 @@ async function resendEmail(event: RequestEvent) {
 	if (event.locals.session === null || event.locals.user === null) {
 		log('No session/user');
 		return fail(401, { resend: { message: 'Not authenticated' } });
-	}
-
-	if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-		log('2FA required but not verified');
-		return fail(403, { resend: { message: 'Forbidden' } });
 	}
 
 	if (!(await sendVerificationEmailBucket.check(event.locals.user.id, 1))) {

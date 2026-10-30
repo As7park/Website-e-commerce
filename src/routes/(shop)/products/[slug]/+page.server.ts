@@ -2,25 +2,25 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
-import { getProductBySlug, getRelatedProducts } from '$lib/products/catalog';
-import { reviewSchema } from '$lib/schema/products/reviewSchema';
+import { getProductBySlug, getRelatedProducts } from '#lib/products/catalog';
+import { reviewSchema } from '#lib/schema/products/reviewSchema';
 import {
 	AlreadyReviewedError,
 	createReview,
 	getReviewSummary,
 	getUserReviewForProduct,
 	listReviewsForProduct
-} from '$lib/prisma/reviews/reviews';
-import { isInWishlist } from '$lib/prisma/wishlist/wishlist';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { askQuestionSchema } from '$lib/schema/products/questionSchema';
+} from '#lib/prisma/reviews/reviews';
+import { isInWishlist } from '#lib/prisma/wishlist/wishlist';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { askQuestionSchema } from '#lib/schema/products/questionSchema';
 import {
 	askQuestion,
 	listPublicQuestionsForProduct
-} from '$lib/prisma/productQuestions/productQuestions';
-import { isPendingStockAlert } from '$lib/prisma/stockAlerts/stockAlerts';
-import { recordProductView } from '$lib/prisma/products/productViews';
-import { getVatRate } from '$lib/server/vat';
+} from '#lib/prisma/productQuestions/productQuestions';
+import { isPendingStockAlert } from '#lib/prisma/stockAlerts/stockAlerts';
+import { recordProductView } from '#lib/prisma/products/productViews';
+import { getVatRate } from '#lib/server/vat';
 
 /**
  * Fiche produit publique.

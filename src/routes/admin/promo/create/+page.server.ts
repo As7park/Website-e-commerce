@@ -2,10 +2,10 @@ import type { Actions, PageServerLoad } from './$types';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { createPromoSchema } from '$lib/schema/promo/promoSchema';
-import { createPromoCode, getPromoCodeByCode } from '$lib/prisma/promo/promo';
-import { requireAdmin } from '$lib/admin/guards';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { createPromoSchema } from '#lib/schema/promo/promoSchema';
+import { createPromoCode, getPromoCodeByCode } from '#lib/prisma/promo/promo';
+import { requireAdmin } from '#lib/admin/guards';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const load: PageServerLoad = async () => {
 	const createPromoForm = await superValidate(zod(createPromoSchema));

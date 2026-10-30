@@ -1,12 +1,12 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import Input from '$shadcn/input/input.svelte';
-	import Button from '$shadcn/button/button.svelte';
+	import * as Form from '#shadcn/form';
+	import Input from '#shadcn/input/input.svelte';
+	import Button from '#shadcn/button/button.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { totpSchema } from '$lib/schema/auth/totpSchema';
+	import { totpSchema } from '#lib/schema/auth/totpSchema';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -54,16 +54,18 @@
 				<!-- Champ de code TOTP -->
 				<Form.Field name="code" form={twoFactorForm}>
 					<Form.Control>
-						<Form.Label>Code de vérification</Form.Label>
-						<Input
-							id="form-totp-code"
-							name="code"
-							type="text"
-							placeholder="Entrez le code"
-							bind:value={$twoFactorData.code}
-							required
-							class="mt-1 block w-full"
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de vérification</Form.Label>
+							<Input
+								{...props}
+								name="code"
+								type="text"
+								placeholder="Entrez le code"
+								bind:value={$twoFactorData.code}
+								required
+								class="mt-1 block w-full"
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

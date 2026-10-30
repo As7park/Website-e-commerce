@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const transactionCount = vi.fn();
 const addressFindUnique = vi.fn();
 
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: {
 		transaction: { count: transactionCount },
 		address: { findUnique: addressFindUnique }

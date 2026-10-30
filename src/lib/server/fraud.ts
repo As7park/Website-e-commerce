@@ -11,8 +11,8 @@
  * convention que `ABANDONED_ORDER_DAYS`/`REVIEW_REMINDER_DELAY_DAYS`
  * ailleurs dans ce projet).
  */
-import { prisma } from '$lib/server';
-import { isDisposableEmailDomain } from '$lib/server/fraud/disposableEmailDomains';
+import { prisma } from '#lib/server';
+import { isDisposableEmailDomain } from '#lib/server/fraud/disposableEmailDomains';
 
 export const VELOCITY_WINDOW_HOURS = 24;
 export const VELOCITY_THRESHOLD = 3;

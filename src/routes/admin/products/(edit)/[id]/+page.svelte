@@ -3,17 +3,17 @@
 	import { goto } from '$app/navigation';
 	import { filesFieldProxy, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 
-	import * as Form from '$shadcn/form';
-	import { Label } from '$shadcn/label';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Textarea } from '$shadcn/textarea';
+	import * as Form from '#shadcn/form';
+	import { Label } from '#shadcn/label';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Textarea } from '#shadcn/textarea';
 
-	import { updateProductSchema } from '$lib/schema/products/productSchema.js';
+	import { updateProductSchema } from '#lib/schema/products/productSchema.js';
 	import { toast } from 'svelte-sonner';
-	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
+	import TaxonomyValuePicker from '#components/TaxonomyValuePicker.svelte';
 
 	let { data } = $props();
 
@@ -113,8 +113,10 @@
 					<div class="w-[100%]">
 						<Form.Field name="name" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Name</Form.Label>
-								<Input name="name" type="text" bind:value={$updateProductData.name} />
+								{#snippet children({ props })}
+									<Form.Label>Name</Form.Label>
+									<Input {...props} name="name" type="text" bind:value={$updateProductData.name} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -123,8 +125,17 @@
 					<div class="w-[100%]">
 						<Form.Field name="price" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Price</Form.Label>
-								<Input name="price" type="number" bind:value={DataPrice} step="0.01" min="0.01" />
+								{#snippet children({ props })}
+									<Form.Label>Price</Form.Label>
+									<Input
+										{...props}
+										name="price"
+										type="number"
+										bind:value={DataPrice}
+										step="0.01"
+										min="0.01"
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -132,8 +143,10 @@
 					<div class="w-[100%]">
 						<Form.Field name="stock" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Stock</Form.Label>
-								<Input name="stock" type="number" bind:value={DataStock} />
+								{#snippet children({ props })}
+									<Form.Label>Stock</Form.Label>
+									<Input {...props} name="stock" type="number" bind:value={DataStock} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -141,8 +154,14 @@
 					<div class="w-[100%]">
 						<Form.Field name="description" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Description</Form.Label>
-								<Textarea name="description" bind:value={$updateProductData.description} />
+								{#snippet children({ props })}
+									<Form.Label>Description</Form.Label>
+									<Textarea
+										{...props}
+										name="description"
+										bind:value={$updateProductData.description}
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -151,13 +170,16 @@
 					<div class="w-[100%]">
 						<Form.Field name="colorProduct" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Color</Form.Label>
-								<Input
-									name="colorProduct"
-									type="color"
-									bind:value={$updateProductData.colorProduct}
-									class="w-16 h-10 p-0 border border-gray-300 rounded"
-								/>
+								{#snippet children({ props })}
+									<Form.Label>Color</Form.Label>
+									<Input
+										{...props}
+										name="colorProduct"
+										type="color"
+										bind:value={$updateProductData.colorProduct}
+										class="w-16 h-10 p-0 border border-gray-300 rounded"
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -166,8 +188,10 @@
 					<div class="w-[100%]">
 						<Form.Field name="sku" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Référence (SKU)</Form.Label>
-								<Input name="sku" type="text" bind:value={$updateProductData.sku} />
+								{#snippet children({ props })}
+									<Form.Label>Référence (SKU)</Form.Label>
+									<Input {...props} name="sku" type="text" bind:value={$updateProductData.sku} />
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -176,14 +200,17 @@
 					<div class="w-[100%]">
 						<Form.Field name="compareAtPrice" form={updateProduct}>
 							<Form.Control>
-								<Form.Label>Prix barré (facultatif)</Form.Label>
-								<Input
-									name="compareAtPrice"
-									type="number"
-									bind:value={DataCompareAtPrice}
-									step="0.01"
-									min="0.01"
-								/>
+								{#snippet children({ props })}
+									<Form.Label>Prix barré (facultatif)</Form.Label>
+									<Input
+										{...props}
+										name="compareAtPrice"
+										type="number"
+										bind:value={DataCompareAtPrice}
+										step="0.01"
+										min="0.01"
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
@@ -194,35 +221,65 @@
 						<div class="rtb" style="gap: 0.5rem;">
 							<Form.Field name="weight" form={updateProduct}>
 								<Form.Control>
-									<Form.Label>Poids (kg)</Form.Label>
-									<Input
-										name="weight"
-										type="number"
-										bind:value={DataWeight}
-										step="0.001"
-										min="0.001"
-									/>
+									{#snippet children({ props })}
+										<Form.Label>Poids (kg)</Form.Label>
+										<Input
+											{...props}
+											name="weight"
+											type="number"
+											bind:value={DataWeight}
+											step="0.001"
+											min="0.001"
+										/>
+									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
 							</Form.Field>
 							<Form.Field name="length" form={updateProduct}>
 								<Form.Control>
-									<Form.Label>Longueur (cm)</Form.Label>
-									<Input name="length" type="number" bind:value={DataLength} step="0.1" min="0.1" />
+									{#snippet children({ props })}
+										<Form.Label>Longueur (cm)</Form.Label>
+										<Input
+											{...props}
+											name="length"
+											type="number"
+											bind:value={DataLength}
+											step="0.1"
+											min="0.1"
+										/>
+									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
 							</Form.Field>
 							<Form.Field name="width" form={updateProduct}>
 								<Form.Control>
-									<Form.Label>Largeur (cm)</Form.Label>
-									<Input name="width" type="number" bind:value={DataWidth} step="0.1" min="0.1" />
+									{#snippet children({ props })}
+										<Form.Label>Largeur (cm)</Form.Label>
+										<Input
+											{...props}
+											name="width"
+											type="number"
+											bind:value={DataWidth}
+											step="0.1"
+											min="0.1"
+										/>
+									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
 							</Form.Field>
 							<Form.Field name="height" form={updateProduct}>
 								<Form.Control>
-									<Form.Label>Hauteur (cm)</Form.Label>
-									<Input name="height" type="number" bind:value={DataHeight} step="0.1" min="0.1" />
+									{#snippet children({ props })}
+										<Form.Label>Hauteur (cm)</Form.Label>
+										<Input
+											{...props}
+											name="height"
+											type="number"
+											bind:value={DataHeight}
+											step="0.1"
+											min="0.1"
+										/>
+									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
 							</Form.Field>
@@ -233,12 +290,15 @@
 						<div class="w-[100%]">
 							<Form.Field name="flashSaleEndsAt" form={updateProduct}>
 								<Form.Control>
-									<Form.Label>Fin de vente flash (facultatif)</Form.Label>
-									<Input
-										name="flashSaleEndsAt"
-										type="datetime-local"
-										bind:value={$updateProductData.flashSaleEndsAt}
-									/>
+									{#snippet children({ props })}
+										<Form.Label>Fin de vente flash (facultatif)</Form.Label>
+										<Input
+											{...props}
+											name="flashSaleEndsAt"
+											type="datetime-local"
+											bind:value={$updateProductData.flashSaleEndsAt}
+										/>
+									{/snippet}
 								</Form.Control>
 								<Form.FieldErrors />
 							</Form.Field>

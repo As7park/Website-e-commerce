@@ -7,7 +7,7 @@
  */
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
-import { getCompanyIdentity } from '$lib/server/companyIdentity';
+import { getCompanyIdentity } from '#lib/server/companyIdentity';
 
 export function createSmtpTransport() {
 	return nodemailer.createTransport({

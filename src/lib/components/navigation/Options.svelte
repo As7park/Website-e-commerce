@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { MoonIcon, SunIcon, Minimize2Icon, Maximize2Icon } from 'lucide-svelte';
 	import { toggleMode } from 'mode-watcher';
-	import { Switch } from '$shadcn/switch/index.js';
+	import { Switch } from '#shadcn/switch/index.js';
 
 	const DARK_MODE_KEY = 'mode-watcher-mode';
 	let darkMod = $state(false);

@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
-	import * as Select from '$shadcn/select';
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn, TableItem } from '$components/Table.svelte';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
+	import * as Select from '#shadcn/select';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn, TableItem } from '#components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
-	import { deleteTaxonomyValueSchema } from '$lib/schema/taxonomies/taxonomyValueSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema';
+	import { deleteTaxonomyValueSchema } from '#lib/schema/taxonomies/taxonomyValueSchema';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
@@ -115,8 +115,10 @@
 				<div class="w-[100%]">
 					<Form.Field name="name" form={updateTaxonomy}>
 						<Form.Control>
-							<Form.Label>Nom</Form.Label>
-							<Input name="name" type="text" bind:value={$updateTaxonomyData.name} />
+							{#snippet children({ props })}
+								<Form.Label>Nom</Form.Label>
+								<Input {...props} name="name" type="text" bind:value={$updateTaxonomyData.name} />
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -124,8 +126,10 @@
 				<div class="w-[100%]">
 					<Form.Field name="slug" form={updateTaxonomy}>
 						<Form.Control>
-							<Form.Label>Slug</Form.Label>
-							<Input name="slug" type="text" bind:value={$updateTaxonomyData.slug} />
+							{#snippet children({ props })}
+								<Form.Label>Slug</Form.Label>
+								<Input {...props} name="slug" type="text" bind:value={$updateTaxonomyData.slug} />
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -133,22 +137,24 @@
 				<div class="w-[100%]">
 					<Form.Field name="type" form={updateTaxonomy}>
 						<Form.Control>
-							<Form.Label>Type de valeur</Form.Label>
-							<input type="hidden" name="type" value={typeValue} />
-							<Select.Root
-								type="single"
-								value={typeValue}
-								onValueChange={(v) => setTypeValue(v as keyof typeof typeLabels)}
-							>
-								<Select.Trigger class="w-full">
-									<span>{typeLabels[typeValue] ?? typeValue}</span>
-								</Select.Trigger>
-								<Select.Content>
-									{#each Object.entries(typeLabels) as [value, label] (value)}
-										<Select.Item {value}>{label}</Select.Item>
-									{/each}
-								</Select.Content>
-							</Select.Root>
+							{#snippet children({ props })}
+								<Form.Label>Type de valeur</Form.Label>
+								<input type="hidden" name="type" value={typeValue} />
+								<Select.Root
+									type="single"
+									value={typeValue}
+									onValueChange={(v) => setTypeValue(v as keyof typeof typeLabels)}
+								>
+									<Select.Trigger {...props} class="w-full">
+										<span>{typeLabels[typeValue] ?? typeValue}</span>
+									</Select.Trigger>
+									<Select.Content>
+										{#each Object.entries(typeLabels) as [value, label] (value)}
+											<Select.Item {value}>{label}</Select.Item>
+										{/each}
+									</Select.Content>
+								</Select.Root>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -158,22 +164,43 @@
 					<div class="w-[100%] flex gap-2">
 						<Form.Field name="numberMin" form={updateTaxonomy}>
 							<Form.Control>
-								<Form.Label>Min</Form.Label>
-								<Input name="numberMin" type="number" bind:value={$updateTaxonomyData.numberMin} />
+								{#snippet children({ props })}
+									<Form.Label>Min</Form.Label>
+									<Input
+										{...props}
+										name="numberMin"
+										type="number"
+										bind:value={$updateTaxonomyData.numberMin}
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
 						<Form.Field name="numberMax" form={updateTaxonomy}>
 							<Form.Control>
-								<Form.Label>Max</Form.Label>
-								<Input name="numberMax" type="number" bind:value={$updateTaxonomyData.numberMax} />
+								{#snippet children({ props })}
+									<Form.Label>Max</Form.Label>
+									<Input
+										{...props}
+										name="numberMax"
+										type="number"
+										bind:value={$updateTaxonomyData.numberMax}
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>
 						<Form.Field name="numberUnit" form={updateTaxonomy}>
 							<Form.Control>
-								<Form.Label>Unité</Form.Label>
-								<Input name="numberUnit" type="text" bind:value={$updateTaxonomyData.numberUnit} />
+								{#snippet children({ props })}
+									<Form.Label>Unité</Form.Label>
+									<Input
+										{...props}
+										name="numberUnit"
+										type="text"
+										bind:value={$updateTaxonomyData.numberUnit}
+									/>
+								{/snippet}
 							</Form.Control>
 							<Form.FieldErrors />
 						</Form.Field>

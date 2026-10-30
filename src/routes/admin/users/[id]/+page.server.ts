@@ -2,16 +2,16 @@ import type { PageServerLoad } from './$types';
 import { error, type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import { updateUserAndAddressSchema } from '$lib/schema/addresses/updateUserAndAddressSchema';
-import { getUsersById, updateUserMFA, updateUserRole } from '$lib/prisma/user/user';
-import { getUserAddresses, updateAddress } from '$lib/prisma/addresses/addresses';
-import { serializeData } from '$lib/utils/serializeData';
-import { updateUserSecurity } from '$lib/prisma/user/updateUserSecurity';
-import { invalidateUserSessions, sessionPublicId } from '$lib/lucia/session';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { logAdminAction } from '$lib/server/audit-log';
-import { findSessionsForUser } from '$lib/prisma/session/sessions';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
+import { updateUserAndAddressSchema } from '#lib/schema/addresses/updateUserAndAddressSchema';
+import { getUsersById, updateUserMFA, updateUserRole } from '#lib/prisma/user/user';
+import { getUserAddresses, updateAddress } from '#lib/prisma/addresses/addresses';
+import { serializeData } from '#lib/utils/serializeData';
+import { updateUserSecurity } from '#lib/prisma/user/updateUserSecurity';
+import { invalidateUserSessions, sessionPublicId } from '#lib/auth/session';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { logAdminAction } from '#lib/server/audit-log';
+import { findSessionsForUser } from '#lib/prisma/session/sessions';
+import { describeUserAgent } from '#lib/server/deviceLabel';
 
 /**
  * Fiche d'un utilisateur : rôle, 2FA, mot de passe, adresses.

@@ -1,14 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
-import { createCipheriv, randomBytes } from 'crypto';
-import { decodeBase64 } from '@oslojs/encoding';
+import { randomBytes } from 'crypto';
+import { symmetricEncrypt } from 'better-auth/crypto';
 import dotenv from 'dotenv';
 import { blog } from './seed-data/blog.js'; // BLOG-PLUGIN
 
 dotenv.config();
 
-if (!process.env.ENCRYPTION_KEY) {
-	throw new Error('ENCRYPTION_KEY is not defined in the environment variables.');
+if (!process.env.BETTER_AUTH_SECRET) {
+	throw new Error('BETTER_AUTH_SECRET is not defined in the environment variables.');
 }
 
 // Ce script insère un jeu de données de démonstration : comptes avec un mot
@@ -24,7 +24,7 @@ if (process.env.VERCEL_ENV === 'production' && process.env.FORCE_SEED !== '1') {
 	);
 }
 
-const key = decodeBase64(process.env.ENCRYPTION_KEY);
+const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET;
 const prisma = new PrismaClient();
 
 /**
@@ -40,15 +40,6 @@ const ARGON2 = {
 	timeCost: 2,
 	outputLen: 32,
 	parallelism: 1
-};
-
-// AES-256-GCM (`encryptionVersion` 2) — même schéma que `$lib/lucia/encryption.ts`.
-const encrypt = (data) => {
-	const iv = randomBytes(16);
-	const cipher = createCipheriv('aes-256-gcm', key, iv);
-	const ciphertext = Buffer.concat([cipher.update(data), cipher.final()]);
-	const tag = cipher.getAuthTag();
-	return Buffer.concat([iv, ciphertext, tag]);
 };
 
 const generateRecoveryCode = () => Math.floor(10000000 + Math.random() * 90000000).toString();
@@ -287,13 +278,24 @@ async function truncate() {
 		prisma.contactSubmission.deleteMany(), // CONTACT-PLUGIN
 		prisma.adminAuditLog.deleteMany(), // ADMIN-PLUGIN
 		prisma.storeSettings.deleteMany(), // ADMIN-PLUGIN
-		prisma.session.deleteMany(),
+		prisma.authSession.deleteMany(),
+		prisma.authAccount.deleteMany(),
+		prisma.twoFactor.deleteMany(),
+		prisma.authVerification.deleteMany(),
 		prisma.emailVerificationRequest.deleteMany(),
 		prisma.passwordResetSession.deleteMany(),
 		prisma.user.deleteMany()
 	]);
 }
 
+/**
+ * Crée un compte de démonstration — identifiants dans `AuthAccount`
+ * (Better Auth), jamais sur `User` (voir MIGRATION_BETTER_AUTH.md). Un
+ * compte `isMfaEnabled` reçoit aussi une ligne `TwoFactor` « configurée »
+ * (secret/code de secours arbitraires, chiffrés comme Better Auth le
+ * ferait) : suffisant pour apparaître comme tel dans l'admin, jamais prévu
+ * pour qu'on se connecte réellement avec un vrai code TOTP.
+ */
 async function createDemoUser({
 	email,
 	username,
@@ -306,8 +308,7 @@ async function createDemoUser({
 	createdAt,
 	passwordHash
 }) {
-	const recoveryCode = generateRecoveryCode();
-	return prisma.user.create({
+	const user = await prisma.user.create({
 		data: {
 			email,
 			username,
@@ -317,14 +318,45 @@ async function createDemoUser({
 			isMfaEnabled: Boolean(isMfaEnabled),
 			googleId: googleId ?? null,
 			picture: picture ?? null,
-			passwordHash: googleId ? null : passwordHash,
-			totpKey: Buffer.from(encrypt(randomBytes(32))),
-			recoveryCode: encrypt(Buffer.from(recoveryCode, 'utf-8')).toString('base64'),
-			encryptionVersion: 2,
 			referralCode: generateReferralCode(),
 			createdAt
 		}
 	});
+
+	if (googleId) {
+		await prisma.authAccount.create({
+			data: { userId: user.id, providerId: 'google', accountId: googleId }
+		});
+	} else {
+		await prisma.authAccount.create({
+			data: {
+				userId: user.id,
+				providerId: 'credential',
+				accountId: user.id,
+				password: passwordHash
+			}
+		});
+	}
+
+	if (isMfaEnabled) {
+		const secret = randomBytes(16).toString('hex');
+		const recoveryCode = generateRecoveryCode();
+		const [encryptedSecret, encryptedBackupCodes] = await Promise.all([
+			symmetricEncrypt({ key: BETTER_AUTH_SECRET, data: secret }),
+			symmetricEncrypt({ key: BETTER_AUTH_SECRET, data: JSON.stringify([recoveryCode]) })
+		]);
+		await prisma.twoFactor.create({
+			data: {
+				userId: user.id,
+				secret: encryptedSecret,
+				backupCodes: encryptedBackupCodes,
+				verified: true
+			}
+		});
+		await prisma.user.update({ where: { id: user.id }, data: { twoFactorEnabled: true } });
+	}
+
+	return user;
 }
 
 function snapshotProducts(items) {

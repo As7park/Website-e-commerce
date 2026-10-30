@@ -3,9 +3,9 @@
  *
  * CONTACT-PLUGIN : DAO Prisma du formulaire public et de la lecture admin.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { ContactSubmission } from '@prisma/client';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
 
 type CreateContactSubmissionData = Omit<ContactSubmission, 'id' | 'createdAt' | 'updatedAt'>;
 

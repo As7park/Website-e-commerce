@@ -23,7 +23,7 @@ en base (le panier calcule la TVA séparément, voir
 [docs/commerce](../commerce/README.md#contrat-serveur)). La vitrine
 (catalogue, fiche produit, ventes croisées, récemment consultés, liste
 d'envies) affiche systématiquement le prix **TTC**
-(`toTTC(price, vatRate)`, `$lib/utils/price.ts`, taux configurable depuis
+(`toTTC(price, vatRate)`, `#lib/utils/price.ts`, taux configurable depuis
 `/admin/tva`) — conversion à l'affichage uniquement, jamais réécrite en
 base ni transmise telle quelle au panier (Arrêté du 3 déc. 1987 : le prix
 annoncé au consommateur doit être TTC).
@@ -207,7 +207,7 @@ vente concurrente sur le dernier exemplaire peut faire passer le stock sous 0.
 
 ### Récemment consultés
 
-`$lib/store/recentlyViewed.ts` est un historique 100 % client
+`#lib/store/recentlyViewed.ts` est un historique 100 % client
 (`localStorage`, clé `recently-viewed-products`, 8 entrées max) : aucune
 route serveur, aucune table Prisma. Chaque visite d'une fiche produit
 enregistre un instantané (id/slug/nom/prix/image au moment de la visite) et
@@ -223,16 +223,16 @@ encadrées d'un `try/catch` (navigation privée, quota dépassé) : une panne de
 sans rapport avec l'affichage ci-dessus, qui reste inchangé et fonctionne
 pour tout visiteur, y compris anonyme. La relance, elle, ne concerne que les
 comptes connectés : ce projet n'a aucune identité visiteur anonyme côté
-serveur (le panier invité, `$lib/commerce/guestCart.ts`, est lui aussi
+serveur (le panier invité, `#lib/commerce/guestCart.ts`, est lui aussi
 délibérément 100 % `localStorage`, fusionné en base seulement à
 l'inscription/connexion) — impossible de relancer par e-mail quelqu'un dont
 le serveur ne connaît pas encore l'adresse.
 
 Chaque visite d'une fiche produit par un compte connecté pose/actualise une
 ligne `ProductView` (`userId`, `productId`, `viewedAt`,
-`$lib/prisma/products/productViews.ts`, appelé depuis le `load()` de
+`#lib/prisma/products/productViews.ts`, appelé depuis le `load()` de
 `/products/[slug]`, indépendamment du flag). Le job périodique
-`$lib/server/jobs/recentlyViewedReminder.ts` (route
+`#lib/server/jobs/recentlyViewedReminder.ts` (route
 `/api/jobs/recently-viewed-reminder`, même double authentification QStash/
 `CRON_SECRET` que les autres jobs) sélectionne les consultations d'au moins
 24h sans achat depuis (vérifié via `OrderItem`/`Order.status IN (PAID,
@@ -273,7 +273,7 @@ ne se parlaient pas jusqu'ici, sans introduire de nouveau concept.
 d'écriture de `Product.price`/`flashSaleEndsAt` dans ce dépôt : dès qu'une
 sauvegarde admin fait baisser le prix, ou active une nouvelle vente flash
 (nouvelle date de `flashSaleEndsAt`), le job
-`$lib/server/jobs/wishlistPriceAlert.ts` est enfilé pour ce produit — même
+`#lib/server/jobs/wishlistPriceAlert.ts` est enfilé pour ce produit — même
 mécanique event-triggered que les alertes réassort (`stockAlerts.ts`), pas de
 scan périodique. Chaque compte ayant le produit dans sa liste d'envies reçoit
 alors un e-mail, mais l'idempotence se fait **par valeur**, pas par booléen :
@@ -332,7 +332,7 @@ voir `RefillingTokenBucket`), pensé pour qu'un visiteur qui feuillette des
 fiches produit ne le remarque jamais, mais qu'un crawler qui aspire tout le
 catalogue en boucle le déclenche vite. S'y ajoute un rejet heuristique des
 `User-Agent` de clients HTTP scriptés (curl, wget, bibliothèques
-Python/Go/Java, scrapers headless — `$lib/server/anti-scraping.ts`),
+Python/Go/Java, scrapers headless — `#lib/server/anti-scraping.ts`),
 volontairement SANS bloquer les crawlers de moteurs de recherche connus
 (casserait le référencement). Les deux rejets sont comptabilisés dans
 `/admin/metrics` (`anti-scraping.rate-limited`, `anti-scraping.blocked-ua`).
@@ -343,7 +343,7 @@ Cette heuristique reste un filet applicatif simple, pas une garantie : un
 
 Les images uploadées via l'admin (`cloudinary.uploader.upload`) sont stockées
 en base sous forme d'URL Cloudinary complète (`Product.images`), sans
-transformation. `$lib/utils/cloudinaryUrl.ts` (`optimizedImageUrl(url,
+transformation. `#lib/utils/cloudinaryUrl.ts` (`optimizedImageUrl(url,
 width?)`) insère `f_auto,q_auto[,w_<width>]` dans l'URL au moment de
 l'affichage — Cloudinary sert alors le format le plus compact supporté par le
 navigateur (AVIF/WebP) et une largeur adaptée, sans ré-upload ni migration.

@@ -2,20 +2,20 @@ import type { PageServerLoad } from './$types';
 import { error, type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message, withFiles } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import cloudinary from '$lib/server/cloudinary';
+import cloudinary from '#lib/server/cloudinary';
 import {
 	connectProductToTaxonomyValues,
 	deleteProductTaxonomyValues,
 	getProductById,
 	updateProductById
-} from '$lib/prisma/products/products';
-import { updateProductSchema } from '$lib/schema/products/productSchema';
-import { getPublicIdFromUrl } from '$lib/prisma/getPublicIdFromUrl';
-import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
-import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
-import { requireAdmin } from '$lib/admin/guards';
-import { validateImageUpload } from '$lib/server/imageUpload';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+} from '#lib/prisma/products/products';
+import { updateProductSchema } from '#lib/schema/products/productSchema';
+import { getPublicIdFromUrl } from '#lib/prisma/getPublicIdFromUrl';
+import { getAllTaxonomiesWithValues } from '#lib/prisma/taxonomies/taxonomies';
+import { getTaxonomyValuesByIds } from '#lib/prisma/taxonomies/taxonomyValues';
+import { requireAdmin } from '#lib/admin/guards';
+import { validateImageUpload } from '#lib/server/imageUpload';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const product = await getProductById(params.id);

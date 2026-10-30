@@ -58,7 +58,7 @@ export async function enqueuePostPaymentJob(transactionId: string): Promise<void
 /**
  * Enfile l'envoi de la facture, indépendamment du job Sendcloud : une file
  * séparée pour ne pas coupler les limites de débit SMTP à Sendcloud (voir
- * `$lib/server/jobs/invoice-email.ts`).
+ * `#lib/server/jobs/invoice-email.ts`).
  */
 export async function enqueueInvoiceEmailJob(transactionId: string): Promise<void> {
 	if (!isQStashConfigured()) {
@@ -73,7 +73,7 @@ export async function enqueueInvoiceEmailJob(transactionId: string): Promise<voi
 }
 
 /**
- * Enfile la vérification de fidélité (`$lib/server/jobs/loyalty.ts`), sortie
+ * Enfile la vérification de fidélité (`#lib/server/jobs/loyalty.ts`), sortie
  * du chemin synchrone du webhook au même titre que facture/Sendcloud —
  * n'est appelée par le webhook que si `StoreSettings.loyaltyEnabled`.
  */
@@ -90,7 +90,7 @@ export async function enqueueLoyaltyCheckJob(orderId: string): Promise<void> {
 }
 
 /**
- * Enfile la récompense de parrainage (`$lib/server/jobs/referral.ts`), sortie
+ * Enfile la récompense de parrainage (`#lib/server/jobs/referral.ts`), sortie
  * du chemin synchrone du webhook au même titre que la fidélité — n'est
  * appelée par le webhook que si `StoreSettings.referralEnabled`.
  */
@@ -107,7 +107,7 @@ export async function enqueueReferralRewardJob(orderId: string): Promise<void> {
 }
 
 /**
- * Enfile la notification de réassort (`$lib/server/jobs/stockAlerts.ts`),
+ * Enfile la notification de réassort (`#lib/server/jobs/stockAlerts.ts`),
  * appelée par `updateProductById` dès qu'un produit repasse au-dessus de 0
  * en stock — n'est appelée que si `StoreSettings.stockAlertsEnabled`.
  */
@@ -124,7 +124,7 @@ export async function enqueueStockAlertsJob(productId: string): Promise<void> {
 }
 
 /**
- * Enfile l'alerte wishlist (`$lib/server/jobs/wishlistPriceAlert.ts`),
+ * Enfile l'alerte wishlist (`#lib/server/jobs/wishlistPriceAlert.ts`),
  * appelée par `updateProductById` dès qu'une baisse de prix ou une nouvelle
  * vente flash est constatée — n'est appelée que si
  * `StoreSettings.wishlistPriceAlertEnabled`.

@@ -3,8 +3,8 @@
  * du modèle `SessionRevokeToken` dans `schema.prisma` pour la raison d'être
  * (jamais le `Session.id` lui-même dans un e-mail).
  */
-import { prisma } from '$lib/server';
-import { generateSecureToken } from '$lib/lucia/ids';
+import { prisma } from '#lib/server';
+import { generateSecureToken } from '#lib/server/ids';
 
 const TTL_DAYS = 7;
 

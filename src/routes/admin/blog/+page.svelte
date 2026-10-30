@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn } from '$components/Table.svelte';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn } from '#components/Table.svelte';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
-	import { deleteBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema.js';
-	import { deleteBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema.js';
+	import { deleteBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema.js';
+	import { deleteBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema.js';
 
 	// Props
 	let { data } = $props();

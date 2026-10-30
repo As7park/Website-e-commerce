@@ -1,11 +1,11 @@
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad, Actions } from './$types';
 import { message, superValidate } from 'sveltekit-superforms';
-import { deleteUserSchema } from '$lib/schema/users/userSchema';
-import { deleteUser, getAllUsers } from '$lib/prisma/user/user';
-import { serializeData } from '$lib/utils/serializeData';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { logAdminAction } from '$lib/server/audit-log';
+import { deleteUserSchema } from '#lib/schema/users/userSchema';
+import { deleteUser, getAllUsers } from '#lib/prisma/user/user';
+import { serializeData } from '#lib/utils/serializeData';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { logAdminAction } from '#lib/server/audit-log';
 
 /**
  * Liste des comptes et suppression.

@@ -3,9 +3,9 @@ import { type Actions, fail } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { deleteGiftCardSchema } from '$lib/schema/giftCards/giftCardSchema';
-import { getAllGiftCards, getGiftCardById, deleteGiftCard } from '$lib/prisma/giftCards/giftCards';
-import { requireAdmin } from '$lib/admin/guards';
+import { deleteGiftCardSchema } from '#lib/schema/giftCards/giftCardSchema';
+import { getAllGiftCards, getGiftCardById, deleteGiftCard } from '#lib/prisma/giftCards/giftCards';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const { items, total, page, perPage, search, sort, dir } = await getAllGiftCards({

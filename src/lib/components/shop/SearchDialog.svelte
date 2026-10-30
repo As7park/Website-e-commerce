@@ -6,16 +6,16 @@
 	   tapant (debounce 250 ms, requête précédente annulée).
 	   Raccourci clavier Cmd/Ctrl+K en plus du clic sur l'icône.
 	   ========================================================= */
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
 	import Search from 'lucide-svelte/icons/search';
 	import LoaderCircle from 'lucide-svelte/icons/loader-circle';
-	import * as Command from '$shadcn/command/index.js';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import * as Command from '#shadcn/command/index.js';
+	import { formatMoney } from '#lib/utils/formatMoney';
 	import { page } from '$app/state';
-	import { toTTC } from '$lib/utils/price';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import { toTTC } from '#lib/utils/price';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
 
 	type ProductResult = {
 		id: string;

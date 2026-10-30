@@ -2,12 +2,12 @@
  * Accès Prisma à la liste d'envies.
  *
  * PRODUCT-PLUGIN : module activable, voir `StoreSettings.wishlistEnabled`
- * (`$lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
+ * (`#lib/server/storeSettings.ts`) — chaque route appelante vérifie déjà le
  * flag avant d'arriver ici ; ce fichier ne le revérifie pas lui-même.
  */
-import { prisma } from '$lib/server';
-import { toNumber } from '$lib/server/decimal';
-import { mapProductPrice } from '$lib/prisma/order/mapOrder';
+import { prisma } from '#lib/server';
+import { toNumber } from '#lib/server/decimal';
+import { mapProductPrice } from '#lib/prisma/order/mapOrder';
 
 export async function isInWishlist(userId: string, productId: string): Promise<boolean> {
 	const item = await prisma.wishlistItem.findUnique({
@@ -29,7 +29,7 @@ export async function toggleWishlistItem(userId: string, productId: string): Pro
 		return false;
 	}
 
-	// Baseline pour `$lib/server/jobs/wishlistPriceAlert.ts` : le prix/l'état
+	// Baseline pour `#lib/server/jobs/wishlistPriceAlert.ts` : le prix/l'état
 	// vente flash au moment de l'ajout, pour ne détecter que ce qui change
 	// *après* — pas de fausse alerte sur l'état déjà visible en s'inscrivant.
 	const product = await prisma.product.findUnique({
@@ -58,7 +58,7 @@ export async function listWishlistForUser(userId: string) {
 
 /**
  * Wishlists contenant ce produit — lues par le job d'alerte prix/vente
- * flash (`$lib/server/jobs/wishlistPriceAlert.ts`), jamais par la vitrine.
+ * flash (`#lib/server/jobs/wishlistPriceAlert.ts`), jamais par la vitrine.
  */
 export async function listWishlistItemsForProduct(productId: string) {
 	const items = await prisma.wishlistItem.findMany({

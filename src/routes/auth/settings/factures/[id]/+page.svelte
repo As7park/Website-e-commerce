@@ -1,6 +1,6 @@
 <script lang="ts">
-	import InvoicePreview from '$lib/components/invoice/InvoicePreview.svelte';
-	import OrderTrackingPanel from '$lib/components/invoice/OrderTrackingPanel.svelte';
+	import InvoicePreview from '#lib/components/invoice/InvoicePreview.svelte';
+	import OrderTrackingPanel from '#lib/components/invoice/OrderTrackingPanel.svelte';
 
 	let { data } = $props();
 </script>

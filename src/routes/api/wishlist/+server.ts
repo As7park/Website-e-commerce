@@ -7,8 +7,8 @@
  */
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { toggleWishlistItem } from '$lib/prisma/wishlist/wishlist';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { toggleWishlistItem } from '#lib/prisma/wishlist/wishlist';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const userId = locals.user?.id;

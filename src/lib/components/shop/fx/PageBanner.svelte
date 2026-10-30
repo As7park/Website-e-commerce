@@ -7,7 +7,7 @@
 	   le bloc "PAGE BANNER FX" de la maquette.
 	   ========================================================= */
 	import { onMount } from 'svelte';
-	import { gsap, onWindow, prefersReducedMotion, sectionBg } from '$lib/shop/fx';
+	import { gsap, onWindow, prefersReducedMotion, sectionBg } from '#lib/shop/fx';
 	import SplitTitle from './SplitTitle.svelte';
 	import Tape from './Tape.svelte';
 

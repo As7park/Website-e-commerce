@@ -1,17 +1,17 @@
 /**
  * Alerte « nouvelle connexion détectée » — envoyée uniquement quand
- * `recordLoginEvent` (`$lib/prisma/loginEvent/loginEvent.ts`) signale un
+ * `recordLoginEvent` (`#lib/prisma/loginEvent/loginEvent.ts`) signale un
  * appareil jamais vu pour ce compte. Jamais bloquant pour la connexion : un
  * échec d'envoi est seulement loggé, même patron que `notifyDispute`
- * (`$lib/server/disputeAlert.ts`) — un e-mail de sécurité qui échoue ne doit
+ * (`#lib/server/disputeAlert.ts`) — un e-mail de sécurité qui échoue ne doit
  * pas empêcher l'utilisateur de se connecter.
  */
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
-import { createSessionRevokeToken } from '$lib/prisma/sessionRevokeToken/sessionRevokeToken';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
+import { describeUserAgent } from '#lib/server/deviceLabel';
+import { createSessionRevokeToken } from '#lib/prisma/sessionRevokeToken/sessionRevokeToken';
+import type { SessionDeviceContext } from '#lib/server/deviceContext';
 
 export async function notifyNewDeviceLogin(
 	email: string,

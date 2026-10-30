@@ -1,14 +1,14 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { forgotPasswordSchema } from '$lib/schema/auth/forgotPasswordSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { forgotPasswordSchema } from '#lib/schema/auth/forgotPasswordSchema';
 
 	let { data } = $props();
 
@@ -42,14 +42,17 @@
 			<div>
 				<Form.Field name="email" form={forgotForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input
-							type="email"
-							name="email"
-							bind:value={$forgotData.email}
-							placeholder="Entrez votre adresse email"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input
+								{...props}
+								type="email"
+								name="email"
+								bind:value={$forgotData.email}
+								placeholder="Entrez votre adresse email"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

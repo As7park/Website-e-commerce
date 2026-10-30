@@ -1,12 +1,12 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { totpCodeSchema } from '$lib/schema/auth/totpCodeSchema';
+	import { totpCodeSchema } from '#lib/schema/auth/totpCodeSchema';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -43,15 +43,18 @@
 			<div>
 				<Form.Field name="code" form={totpForm}>
 					<Form.Control>
-						<Form.Label>Code d’authentification</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$totpData.code}
-							placeholder="123456"
-							autocomplete="one-time-code"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code d’authentification</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$totpData.code}
+								placeholder="123456"
+								autocomplete="one-time-code"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

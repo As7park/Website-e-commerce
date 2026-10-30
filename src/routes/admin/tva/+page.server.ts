@@ -2,10 +2,10 @@ import { fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { getVatRate, updateVatRate } from '$lib/server/vat';
-import { vatRateSchema } from '$lib/schema/settings/vatSchema';
-import { log } from '$lib/server/log';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { getVatRate, updateVatRate } from '#lib/server/vat';
+import { vatRateSchema } from '#lib/schema/settings/vatSchema';
+import { log } from '#lib/server/log';
 
 /**
  * Taux de TVA (`StoreSettings.vatRate`) — voir `CONFORMITE_ECOMMERCE.md` :

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
-	import '$lib/styles/shop.css';
-	import { page } from '$app/stores';
+	import '#lib/styles/shop.css';
+	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import { fade } from 'svelte/transition';
-	import ShopHeader from '$lib/components/shop/ShopHeader.svelte';
-	import ShopFooter from '$lib/components/shop/ShopFooter.svelte';
-	import WheelCursor from '$lib/components/shop/WheelCursor.svelte';
-	import CookieNotice from '$lib/components/CookieNotice.svelte';
-	import { startShopScroll, syncShopScroll } from '$lib/shop/fx';
+	import ShopHeader from '#lib/components/shop/ShopHeader.svelte';
+	import ShopFooter from '#lib/components/shop/ShopFooter.svelte';
+	import WheelCursor from '#lib/components/shop/WheelCursor.svelte';
+	import CookieNotice from '#lib/components/CookieNotice.svelte';
+	import { startShopScroll, syncShopScroll } from '#lib/shop/fx';
 
 	/**
 	 * Habillage commun à tout le site public (tout sauf `/admin`) : header,
@@ -37,7 +37,7 @@
 	<div class="shop-scroll-progress" bind:this={progressEl} aria-hidden="true"></div>
 	<a href="#main-content" class="shop-skip-link">Aller au contenu</a>
 	<ShopHeader {data} />
-	{#key $page.url.pathname}
+	{#key page.url.pathname}
 		<div id="main-content" class="shop-page-body" in:fade={{ duration: 280, delay: 60 }}>
 			{@render children()}
 		</div>

@@ -2,9 +2,9 @@ import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { deleteReviewSchema } from '$lib/schema/products/reviewSchema';
-import { deleteReviewById, getAllReviews } from '$lib/prisma/reviews/reviews';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { deleteReviewSchema } from '#lib/schema/products/reviewSchema';
+import { deleteReviewById, getAllReviews } from '#lib/prisma/reviews/reviews';
 
 /**
  * Modération des avis produit.

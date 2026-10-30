@@ -415,7 +415,7 @@ Test à part : IDOR — un compte ne peut pas supprimer la carte d'un autre
 
 ### Commerce relance panier abandonné — `e2e/commerce/cart-recovery.spec.ts`
 
-Scan périodique (`$lib/server/jobs/cartRecovery.ts`), pas un job déclenché
+Scan périodique (`#lib/server/jobs/cartRecovery.ts`), pas un job déclenché
 par une action utilisateur : le job est appelé directement via
 `POST /api/jobs/cart-recovery` (en-tête `CRON_SECRET`, comme Vercel Cron en
 repli sans QStash). `Order.updatedAt` est reculé via une écriture SQL directe
@@ -430,7 +430,7 @@ repli sans QStash). `Order.updatedAt` est reculé via une écriture SQL directe
 
 ### Relance avis produit — `e2e/products/review-reminder.spec.ts`
 
-Même principe : scan périodique (`$lib/server/jobs/reviewReminder.ts`), job
+Même principe : scan périodique (`#lib/server/jobs/reviewReminder.ts`), job
 appelé directement via `POST /api/jobs/review-reminder` (même en-tête
 `CRON_SECRET`), `Order.updatedAt` reculé via `backdateOrder` pour simuler une
 commande `SHIPPED` de plus ou moins de 7 jours.
@@ -532,7 +532,7 @@ d'étiquette).
 - **`db.ts`** — client Prisma branché explicitement sur l'URL de `.env.test`, et
   lectures d'état (`requireUser`, `countSessions`, `getRecoveryCode`,
   `getTotpKey`). Les secrets chiffrés sont déchiffrés ici : le module applicatif
-  `src/lib/lucia/encryption.ts` dépend de `$env/static/private` et n'est pas
+  `src/lib/lucia/encryption.ts` dépend de `$app/env/private` et n'est pas
   importable hors du bundle SvelteKit. Chaque lecture passe par `resilient()`,
   qui rejoue la requête si Neon sort de veille, pour qu'une coupure réseau ne se
   lise pas comme une régression.

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { buttonVariants } from '$shadcn/button';
-	import * as AlertDialog from '$shadcn/alert-dialog/index.js';
-	import { Badge } from '$shadcn/badge';
+	import * as Card from '#shadcn/card';
+	import { buttonVariants } from '#shadcn/button';
+	import * as AlertDialog from '#shadcn/alert-dialog/index.js';
+	import { Badge } from '#shadcn/badge';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
-	import { cn } from '$lib/components/shadcn/utils.js';
-	import { formatDate } from '$lib/utils/formatDate';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import { cn } from '#lib/components/shadcn/utils.js';
+	import { formatDate } from '#lib/utils/formatDate';
+	import { formatMoney } from '#lib/utils/formatMoney';
 
 	let { data } = $props();
 

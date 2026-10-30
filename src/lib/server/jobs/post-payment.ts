@@ -1,16 +1,16 @@
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { createSendcloudOrder } from '$lib/sendcloud/order';
-import { createSendcloudLabel } from '$lib/sendcloud/label';
-import { log } from '$lib/server/log';
-import { withCircuitBreaker } from '$lib/server/circuit-breaker';
-import { recordJobAttempt, resetJobAttempts } from '$lib/server/job-attempts';
-import { withDuration } from '$lib/server/metrics';
-import { persistSendcloudMarker, SendcloudMarkerPersistError } from '$lib/server/sendcloud-marker';
-import { mapTransaction } from '$lib/prisma/transaction/mapTransaction';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { createSendcloudOrder } from '#lib/sendcloud/order';
+import { createSendcloudLabel } from '#lib/sendcloud/label';
+import { log } from '#lib/server/log';
+import { withCircuitBreaker } from '#lib/server/circuit-breaker';
+import { recordJobAttempt, resetJobAttempts } from '#lib/server/job-attempts';
+import { withDuration } from '#lib/server/metrics';
+import { persistSendcloudMarker, SendcloudMarkerPersistError } from '#lib/server/sendcloud-marker';
+import { mapTransaction } from '#lib/prisma/transaction/mapTransaction';
 import * as Sentry from '@sentry/sveltekit';
 import { Prisma } from '@prisma/client';
-import { estimatePackage, type PackageEstimate } from '$lib/commerce/packageEstimate';
+import { estimatePackage, type PackageEstimate } from '#lib/commerce/packageEstimate';
 
 /** Au-delà, on arrête de retenter cette transaction (dead-letter) : voir `runPostPaymentJob`. */
 const MAX_SENDCLOUD_ATTEMPTS = 5;
@@ -18,9 +18,9 @@ const MAX_SENDCLOUD_ATTEMPTS = 5;
 /**
  * Travail post-paiement : Sendcloud (commande + étiquette), sorti du chemin
  * synchrone du webhook Stripe (`src/routes/api/webhooks/+server.ts`). La
- * facture part dans son propre job (`$lib/server/jobs/invoice-email.ts`) —
+ * facture part dans son propre job (`#lib/server/jobs/invoice-email.ts`) —
  * les deux sont enqueue en parallèle, sans dépendance de l'un vers l'autre.
- * Appelé soit directement (repli sans QStash, `$lib/server/qstash.ts`), soit
+ * Appelé soit directement (repli sans QStash, `#lib/server/qstash.ts`), soit
  * depuis `src/routes/api/jobs/post-payment/+server.ts` via QStash — d'où le
  * rechargement de tout depuis la base par id : un job ne doit pas fermer sur
  * des objets en mémoire d'une requête HTTP déjà terminée.
@@ -86,7 +86,7 @@ export function derivePackageEstimate(order: OrderForPackageEstimate | null): Pa
  * Avant la migration v3, cette fonction appelait `GET /api/v2/shipping_methods`
  * pour résoudre un ID numérique de méthode d'expédition, avec correspondance
  * approximative par sous-chaîne de nom de transporteur (fragile). En v3,
- * `createSendcloudLabel` (`$lib/sendcloud/label.ts`) envoie directement le
+ * `createSendcloudLabel` (`#lib/sendcloud/label.ts`) envoie directement le
  * `shipping_option_code` choisi par le client au checkout
  * (`Transaction.shippingOption`) — plus besoin de résoudre quoi que ce soit
  * ici, ni d'appel réseau supplémentaire. Ne reste que l'estimation locale du
@@ -210,7 +210,7 @@ export async function runPostPaymentJob(transactionId: string): Promise<void> {
 					return;
 				}
 
-				// Le disjoncteur (`$lib/server/circuit-breaker.ts`) protège Sendcloud
+				// Le disjoncteur (`#lib/server/circuit-breaker.ts`) protège Sendcloud
 				// pendant une panne ; ce compteur protège QStash contre un retry sans
 				// fin sur LA MÊME transaction une fois le disjoncteur refermé.
 				const { attempt, exhausted } = await recordJobAttempt(

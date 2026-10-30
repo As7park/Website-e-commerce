@@ -6,11 +6,11 @@
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { gsap, onWindow, prefersReducedMotion } from '$lib/shop/fx';
-	import { formatMoney } from '$lib/utils/formatMoney';
+	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
+	import { formatMoney } from '#lib/utils/formatMoney';
 	import { page } from '$app/state';
-	import { toTTC } from '$lib/utils/price';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
+	import { toTTC } from '#lib/utils/price';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
 
 	type Product = {
 		id: string;

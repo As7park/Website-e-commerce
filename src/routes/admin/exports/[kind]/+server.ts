@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { assertAdmin } from '$lib/admin/guards';
-import { buildExportCsv, EXPORT_KINDS, type ExportKind } from '$lib/server/jobs/export';
+import { assertAdmin } from '#lib/admin/guards';
+import { buildExportCsv, EXPORT_KINDS, type ExportKind } from '#lib/server/jobs/export';
 import type { RequestHandler } from './$types';
 
 /**

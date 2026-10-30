@@ -9,11 +9,11 @@
  * par e-mail. `StoreSettings.loyaltyEnabled` est vérifié par l'appelant
  * (webhook) avant d'enfiler ce job, pas ici.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
 
 /**
  * Recherche, pour la commande donnée, si son compte vient d'atteindre un

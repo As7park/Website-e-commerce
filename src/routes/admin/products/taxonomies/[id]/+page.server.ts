@@ -3,11 +3,11 @@ import { error, fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { updateTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
-import { deleteTaxonomyValueSchema } from '$lib/schema/taxonomies/taxonomyValueSchema';
-import { getTaxonomyById, updateTaxonomy } from '$lib/prisma/taxonomies/taxonomies';
-import { deleteTaxonomyValueById } from '$lib/prisma/taxonomies/taxonomyValues';
-import { requireAdmin } from '$lib/admin/guards';
+import { updateTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema';
+import { deleteTaxonomyValueSchema } from '#lib/schema/taxonomies/taxonomyValueSchema';
+import { getTaxonomyById, updateTaxonomy } from '#lib/prisma/taxonomies/taxonomies';
+import { deleteTaxonomyValueById } from '#lib/prisma/taxonomies/taxonomyValues';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const taxonomy = await getTaxonomyById(params.id);

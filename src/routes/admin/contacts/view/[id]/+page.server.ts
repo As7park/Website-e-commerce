@@ -1,4 +1,4 @@
-import { getContactSubmissionById } from '$lib/prisma/contact/contact';
+import { getContactSubmissionById } from '#lib/prisma/contact/contact';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

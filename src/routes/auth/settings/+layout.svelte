@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { enhance } from '$app/forms';
 	import type { SubmitFunction } from '@sveltejs/kit';
-	import { resetCart } from '$lib/store/Data/cartStore';
+	import { resetCart } from '#lib/store/Data/cartStore';
 
 	let { data, children } = $props();
 
@@ -53,7 +53,7 @@
 	};
 
 	let current = $derived(
-		items.find((item) => item.href !== '/auth/settings' && isActive(item.href, $page.url.pathname))
+		items.find((item) => item.href !== '/auth/settings' && isActive(item.href, page.url.pathname))
 	);
 </script>
 
@@ -74,8 +74,8 @@
 					<li>
 						<a
 							href={item.href}
-							class:shop-active={isActive(item.href, $page.url.pathname)}
-							aria-current={isActive(item.href, $page.url.pathname) ? 'page' : undefined}
+							class:shop-active={isActive(item.href, page.url.pathname)}
+							aria-current={isActive(item.href, page.url.pathname) ? 'page' : undefined}
 							>{item.label}</a
 						>
 					</li>

@@ -1,17 +1,22 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms/client';
-	import { signupSchema } from '$lib/schema/auth/signupSchema';
+	import { signupSchema } from '#lib/schema/auth/signupSchema';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { authClient } from '#lib/auth/client';
 
 	let { data } = $props();
+
+	async function signInWithGoogle() {
+		await authClient.signIn.social({ provider: 'google', callbackURL: '/auth' });
+	}
 
 	const signupForm = superForm(
 		untrack(() => data.form),
@@ -45,8 +50,16 @@
 			<div class="mb-4">
 				<Form.Field name="username" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Nom d'utilisateur</Form.Label>
-						<Input name="username" type="text" bind:value={$signupData.username} required />
+						{#snippet children({ props })}
+							<Form.Label>Nom d'utilisateur</Form.Label>
+							<Input
+								{...props}
+								name="username"
+								type="text"
+								bind:value={$signupData.username}
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -55,8 +68,10 @@
 			<div class="mb-4">
 				<Form.Field name="email" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input name="email" type="email" bind:value={$signupData.email} required />
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input {...props} name="email" type="email" bind:value={$signupData.email} required />
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -65,8 +80,16 @@
 			<div class="mb-4">
 				<Form.Field name="password" form={signupForm}>
 					<Form.Control>
-						<Form.Label>Mot de passe</Form.Label>
-						<Input name="password" type="password" bind:value={$signupData.password} required />
+						{#snippet children({ props })}
+							<Form.Label>Mot de passe</Form.Label>
+							<Input
+								{...props}
+								name="password"
+								type="password"
+								bind:value={$signupData.password}
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -78,8 +101,9 @@
 		</form>
 
 		<p class="shop-divider">ou</p>
-		<Button href="/auth/login/google" variant="outline" class="w-full">Continuer avec Google</Button
-		>
+		<Button type="button" variant="outline" class="w-full" onclick={signInWithGoogle}>
+			Continuer avec Google
+		</Button>
 
 		<div class="shop-links-row">
 			<span class="shop-muted">Déjà un compte ?</span>

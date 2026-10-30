@@ -100,7 +100,17 @@ test.describe('Réinitialisation de mot de passe — compte 2FA actif', () => {
 			const passwordField = page.locator('input[name="password"]');
 			await fillStable(passwordField, 'NouveauMotDePasse!2026');
 			await page.getByRole('button', { name: 'Réinitialiser le mot de passe' }).click();
-			await waitForPath(page, '/auth');
+
+			// Aucune session n'est réémise automatiquement par une
+			// réinitialisation (voir journey.spec.ts, étape 13) : la preuve que
+			// le mot de passe a bien changé est qu'on peut désormais se
+			// reconnecter avec — et, la 2FA étant toujours active, qu'on
+			// retombe directement sur sa vérification.
+			await waitForPath(page, '/auth/login');
+			await fillStable(page.locator('input[name="email"]'), account.email);
+			await fillStable(page.locator('input[name="password"]'), 'NouveauMotDePasse!2026');
+			await page.getByRole('button', { name: 'Continuer' }).click();
+			await waitForPath(page, '/auth/2fa');
 		} finally {
 			await deleteUser(account.email);
 		}
@@ -124,11 +134,17 @@ test.describe('Réinitialisation de mot de passe — compte 2FA actif', () => {
 			await fillStable(passwordField, 'NouveauMotDePasse!2026');
 			await page.getByRole('button', { name: 'Réinitialiser le mot de passe' }).click();
 
-			// `resetUser2FAWithRecoveryCode` retire `totpKey` mais laisse
-			// `isMfaEnabled` intact (même comportement que `/auth/2fa/reset`,
-			// voir docs/auth/README.md) : la 2FA reste exigée mais plus
-			// configurée, `authHandle` renvoie donc vers la reconfiguration au
-			// lieu de `/auth`.
+			// Aucune session n'est réémise automatiquement par une
+			// réinitialisation (voir journey.spec.ts, étape 13) — reconnexion
+			// explicite. `verifyAndConsumeRecoveryCodeDirect` retire `totpKey`
+			// mais laisse `isMfaEnabled` intact (même comportement que
+			// `/auth/2fa/reset`, voir docs/auth/README.md) : la 2FA reste exigée
+			// mais plus configurée, `authHandle` renvoie donc vers sa
+			// reconfiguration au lieu de `/auth`.
+			await waitForPath(page, '/auth/login');
+			await fillStable(page.locator('input[name="email"]'), account.email);
+			await fillStable(page.locator('input[name="password"]'), 'NouveauMotDePasse!2026');
+			await page.getByRole('button', { name: 'Continuer' }).click();
 			await waitForPath(page, '/auth/2fa/setup');
 		} finally {
 			await deleteUser(account.email);

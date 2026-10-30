@@ -8,23 +8,23 @@ import type { PageServerLoad } from './$types';
 import { type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import cloudinary from '$lib/server/cloudinary';
+import cloudinary from '#lib/server/cloudinary';
 
-import { deleteProductSchema } from '$lib/schema/products/productSchema';
-import { deleteTaxonomySchema } from '$lib/schema/taxonomies/taxonomySchema';
+import { deleteProductSchema } from '#lib/schema/products/productSchema';
+import { deleteTaxonomySchema } from '#lib/schema/taxonomies/taxonomySchema';
 
 import {
 	getAllTaxonomies,
 	deleteTaxonomyById,
 	getTaxonomyById
-} from '$lib/prisma/taxonomies/taxonomies';
+} from '#lib/prisma/taxonomies/taxonomies';
 import {
 	deleteProductById,
 	getAllProducts,
 	getProductImagesById,
 	ProductInUseError
-} from '$lib/prisma/products/products';
-import { requireAdmin } from '$lib/admin/guards';
+} from '#lib/prisma/products/products';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const IdeleteProductSchema = await superValidate(zod(deleteProductSchema));

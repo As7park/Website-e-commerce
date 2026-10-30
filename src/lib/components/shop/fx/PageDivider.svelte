@@ -5,7 +5,7 @@
 	   côtés quand elles arrivent dans l'écran.
 	   ========================================================= */
 	import { onMount } from 'svelte';
-	import { gsap, onWindow, prefersReducedMotion } from '$lib/shop/fx';
+	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
 	import Tape from './Tape.svelte';
 
 	let {

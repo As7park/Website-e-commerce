@@ -11,17 +11,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const sendMail = vi.fn().mockResolvedValue(undefined);
-vi.mock('$lib/server/smtp-mail', () => ({ sendMail }));
+vi.mock('#lib/server/smtp-mail', () => ({ sendMail }));
 
 const markWishlistItemNotified = vi.fn();
 const listWishlistItemsForProduct = vi.fn();
-vi.mock('$lib/prisma/wishlist/wishlist', () => ({
+vi.mock('#lib/prisma/wishlist/wishlist', () => ({
 	listWishlistItemsForProduct: (...args: unknown[]) => listWishlistItemsForProduct(...args),
 	markWishlistItemNotified: (...args: unknown[]) => markWishlistItemNotified(...args)
 }));
 
 const productFindUnique = vi.fn();
-vi.mock('$lib/server', () => ({
+vi.mock('#lib/server', () => ({
 	prisma: { product: { findUnique: productFindUnique } }
 }));
 

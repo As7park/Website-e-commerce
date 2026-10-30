@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { listBlogCategories, listBlogTags, listPublishedPosts } from '$lib/blog/catalog';
+import { listBlogCategories, listBlogTags, listPublishedPosts } from '#lib/blog/catalog';
 
 /**
  * Vitrine publique du blog.

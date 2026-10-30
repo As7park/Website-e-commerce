@@ -1,4 +1,4 @@
-import type { InvoiceCompany, InvoiceLine } from '$lib/invoice/types';
+import type { InvoiceCompany, InvoiceLine } from '#lib/invoice/types';
 
 export type CreditNoteReason = 'REFUND' | 'STORE_CREDIT';
 

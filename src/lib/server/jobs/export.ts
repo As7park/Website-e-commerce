@@ -1,5 +1,5 @@
-import { prisma } from '$lib/server';
-import { toCsv } from '$lib/server/export/csv';
+import { prisma } from '#lib/server';
+import { toCsv } from '#lib/server/export/csv';
 
 export type ExportKind = 'sales' | 'users' | 'products' | 'blog' | 'promo' | 'contacts';
 
@@ -15,13 +15,13 @@ export const EXPORT_KINDS: readonly ExportKind[] = [
 /** Fenêtre volontairement large pour un export (contrairement au dashboard,
  * borné à 12 mois) : un admin qui exporte veut typiquement l'historique
  * complet. Le plafond ci-dessous reste un filet contre un volume démesuré
- * — et le plafond appliqué en import (`$lib/server/jobs/import.ts`). */
+ * — et le plafond appliqué en import (`#lib/server/jobs/import.ts`). */
 export const EXPORT_MAX_ROWS = 20000;
 
 /**
  * Colonnes par kind : `key` sert à `toCsv` (lecture depuis l'objet Prisma
  * projeté), `header` est le libellé de colonne — source de vérité unique
- * partagée avec `parseCsv` à l'import (`$lib/server/jobs/import.ts`), pour
+ * partagée avec `parseCsv` à l'import (`#lib/server/jobs/import.ts`), pour
  * qu'export et import ne puissent jamais diverger sur les noms de colonnes.
  */
 export const EXPORT_COLUMNS = {

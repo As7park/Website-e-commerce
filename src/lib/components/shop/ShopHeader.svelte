@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { User } from 'lucide-svelte';
-	import Cart from '$lib/components/cart/Cart.svelte';
-	import SearchDialog from '$lib/components/shop/SearchDialog.svelte';
+	import Cart from '#lib/components/cart/Cart.svelte';
+	import SearchDialog from '#lib/components/shop/SearchDialog.svelte';
 
 	// AUTH-PLUGIN : lien compte adapté selon la session (login vs espace client).
 	let { data } = $props();
@@ -19,21 +19,21 @@
 		<nav class="shop-main-nav">
 			<ul>
 				<li>
-					<a href="/" class:shop-active={$page.url.pathname === '/'}>Accueil</a>
+					<a href="/" class:shop-active={page.url.pathname === '/'}>Accueil</a>
 				</li>
 				<li>
-					<a href="/products" class:shop-active={$page.url.pathname.startsWith('/products')}
+					<a href="/products" class:shop-active={page.url.pathname.startsWith('/products')}
 						>Boutique</a
 					>
 				</li>
 				<!-- BLOG-PLUGIN -->
 				<li>
-					<a href="/blog" class:shop-active={$page.url.pathname.startsWith('/blog')}>Blog</a>
+					<a href="/blog" class:shop-active={page.url.pathname.startsWith('/blog')}>Blog</a>
 				</li>
 				<!-- BLOG-PLUGIN -->
 				<!-- CONTACT-PLUGIN -->
 				<li>
-					<a href="/contact" class:shop-active={$page.url.pathname === '/contact'}>Contact</a>
+					<a href="/contact" class:shop-active={page.url.pathname === '/contact'}>Contact</a>
 				</li>
 				<!-- CONTACT-PLUGIN -->
 			</ul>

@@ -1,14 +1,14 @@
 /**
  * Cartes cadeaux — solde décroissant, même esprit que les codes promo
- * (PROMO-PLUGIN : `$lib/prisma/promo/promo.ts`) mais avec un solde qui
+ * (PROMO-PLUGIN : `#lib/prisma/promo/promo.ts`) mais avec un solde qui
  * survit à plusieurs utilisations partielles au lieu d'un compteur
  * d'utilisation. Activable/désactivable via `StoreSettings.giftCardsEnabled`.
  */
 import { randomBytes } from 'crypto';
 import type { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { toNumber } from '$lib/server/decimal';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { prisma } from '#lib/server';
+import { toNumber } from '#lib/server/decimal';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
 
 type CreateGiftCardInput = {
 	initialValue: number;
@@ -100,7 +100,7 @@ export const getGiftCardByCode = async (code: string) => {
 /**
  * `tx` optionnel (§2.3 de l'audit fonctionnel) : à passer quand la création
  * doit rester atomique avec une autre écriture liée (ex. `ReferralReward` —
- * voir `$lib/server/jobs/referral.ts`), pour qu'un échec de cette dernière
+ * voir `#lib/server/jobs/referral.ts`), pour qu'un échec de cette dernière
  * fasse aussi disparaître la carte cadeau au lieu de la laisser orpheline.
  */
 export const createGiftCard = async (

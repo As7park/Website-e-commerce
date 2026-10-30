@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import pino from 'pino';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 
 /** Passe à `true` pour tracer les logs DEBUG. */
 export const DEBUG = false;

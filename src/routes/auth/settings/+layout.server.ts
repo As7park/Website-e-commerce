@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 /**
  * Menu de l'espace client (voir `+layout.svelte`) : les entrées liées à un

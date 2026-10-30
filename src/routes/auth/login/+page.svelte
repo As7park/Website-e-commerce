@@ -1,16 +1,21 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { loginSchema } from '$lib/schema/auth/loginSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { loginSchema } from '#lib/schema/auth/loginSchema';
 	import { toast } from 'svelte-sonner';
+	import { authClient } from '#lib/auth/client';
 
 	let { data } = $props();
+
+	async function signInWithGoogle() {
+		await authClient.signIn.social({ provider: 'google', callbackURL: '/auth' });
+	}
 
 	//console.log(data);
 
@@ -39,14 +44,17 @@
 			<div>
 				<Form.Field name="email" form={loginForm}>
 					<Form.Control>
-						<Form.Label>Email</Form.Label>
-						<Input
-							type="email"
-							name="email"
-							bind:value={$loginData.email}
-							placeholder="Entrez votre email"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Email</Form.Label>
+							<Input
+								{...props}
+								type="email"
+								name="email"
+								bind:value={$loginData.email}
+								placeholder="Entrez votre email"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -55,14 +63,17 @@
 			<div>
 				<Form.Field name="password" form={loginForm}>
 					<Form.Control>
-						<Form.Label>Mot de passe</Form.Label>
-						<Input
-							type="password"
-							name="password"
-							bind:value={$loginData.password}
-							placeholder="Entrez votre mot de passe"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Mot de passe</Form.Label>
+							<Input
+								{...props}
+								type="password"
+								name="password"
+								bind:value={$loginData.password}
+								placeholder="Entrez votre mot de passe"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -73,8 +84,9 @@
 		</form>
 
 		<p class="shop-divider">ou</p>
-		<Button href="/auth/login/google" variant="outline" class="w-full">Continuer avec Google</Button
-		>
+		<Button type="button" variant="outline" class="w-full" onclick={signInWithGoogle}>
+			Continuer avec Google
+		</Button>
 
 		<div class="shop-links-row">
 			<a href="/auth/signup" class="shop-link">Créer un compte</a>

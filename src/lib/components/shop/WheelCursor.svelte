@@ -10,7 +10,7 @@
 	   ========================================================= */
 	import { onMount, onDestroy } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
 	let cursorEl: HTMLDivElement;
 	let visible = $state(false);

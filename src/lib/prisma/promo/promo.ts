@@ -3,10 +3,10 @@
  *
  * PROMO-PLUGIN : hors COMMERCE. `validatePromo` est encore appelé au checkout.
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 import type { Prisma, PromoType } from '@prisma/client';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
-import { toNumber } from '$lib/server/decimal';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
+import { toNumber } from '#lib/server/decimal';
 
 type PromoInput = {
 	code: string;

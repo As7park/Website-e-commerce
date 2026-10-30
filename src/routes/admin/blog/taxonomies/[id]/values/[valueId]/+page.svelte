@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -47,8 +47,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="value" form={updateBlogTaxonomyValue}>
 						<Form.Control>
-							<Form.Label>Valeur</Form.Label>
-							<Input name="value" type="text" bind:value={$updateBlogTaxonomyValueData.value} />
+							{#snippet children({ props })}
+								<Form.Label>Valeur</Form.Label>
+								<Input
+									{...props}
+									name="value"
+									type="text"
+									bind:value={$updateBlogTaxonomyValueData.value}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -56,8 +63,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="label" form={updateBlogTaxonomyValue}>
 						<Form.Control>
-							<Form.Label>Libellé affiché (facultatif)</Form.Label>
-							<Input name="label" type="text" bind:value={$updateBlogTaxonomyValueData.label} />
+							{#snippet children({ props })}
+								<Form.Label>Libellé affiché (facultatif)</Form.Label>
+								<Input
+									{...props}
+									name="label"
+									type="text"
+									bind:value={$updateBlogTaxonomyValueData.label}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

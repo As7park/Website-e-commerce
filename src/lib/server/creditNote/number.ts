@@ -3,8 +3,8 @@
  *
  * COMMERCE-PLUGIN : à appeler dans la même transaction Prisma que le
  * passage `ReturnRequest.status` en REFUNDED/CREDITED (voir
- * `$lib/prisma/returns/returns.ts`), pour éviter les trous / doublons —
- * même pattern que `$lib/server/invoice/number.ts`.
+ * `#lib/prisma/returns/returns.ts`), pour éviter les trous / doublons —
+ * même pattern que `#lib/server/invoice/number.ts`.
  */
 import type { Prisma } from '@prisma/client';
 

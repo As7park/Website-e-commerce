@@ -1,6 +1,6 @@
 /**
  * Taux de TVA du catalogue (`StoreSettings.vatRate`, ligne unique
- * `id = "singleton"`, même ligne que `$lib/server/storeSettings.ts`) —
+ * `id = "singleton"`, même ligne que `#lib/server/storeSettings.ts`) —
  * remplace l'ancienne constante `TVA_RATE` figée à 5,5 % (taux réduit,
  * incorrect pour des articles moto qui relèvent du taux normal en France,
  * voir `CONFORMITE_ECOMMERCE.md`). Fichier séparé de `storeSettings.ts`
@@ -9,8 +9,8 @@
  * Même cache courte durée que `getStoreFeatureFlags` : ce taux est lu sur
  * quasi toutes les pages vitrine (calcul TTC affiché).
  */
-import { prisma } from '$lib/server';
-import { cached, bumpCacheVersion, getCacheVersion } from '$lib/server/cache';
+import { prisma } from '#lib/server';
+import { cached, bumpCacheVersion, getCacheVersion } from '#lib/server/cache';
 
 const CACHE_NAMESPACE = 'settings';
 const CACHE_TTL_SECONDS = 30;

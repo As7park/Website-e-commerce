@@ -17,7 +17,7 @@ import {
  * constante figée à 5,5 %, incorrecte pour des articles moto (voir
  * CONFORMITE_ECOMMERCE.md). Vérifie le formulaire admin ET la propagation
  * réelle jusqu'au calcul serveur du panier (`updateOrderItems`,
- * `$lib/prisma/order/prendingOrder.ts`), pas seulement la valeur stockée.
+ * `#lib/prisma/order/prendingOrder.ts`), pas seulement la valeur stockée.
  */
 test.describe('Admin — taux de TVA', () => {
 	test.setTimeout(4 * 60_000);

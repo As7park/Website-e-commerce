@@ -13,23 +13,25 @@ import { redirect, fail } from '@sveltejs/kit';
 import { message, setError, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { signupSchema } from '$lib/schema/auth/signupSchema';
+import { signupSchema } from '#lib/schema/auth/signupSchema';
 
-import { checkEmailAvailability } from '$lib/prisma/email/email';
-import { createUser } from '$lib/lucia/user';
-import { verifyPasswordStrength } from '$lib/lucia/password';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import { checkEmailAvailability } from '#lib/prisma/email/email';
+import { verifyPasswordStrength } from '#lib/auth/password';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getUserByReferralCode } from '#lib/prisma/referral/referral';
+import { prisma } from '#lib/server';
 
 import {
 	createEmailVerificationRequest,
 	sendVerificationEmail,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '#lib/server/emailVerification';
 
-import { RefillingTokenBucket } from '$lib/server/rate-limit';
-import { auth } from '$lib/lucia'; // ⬅️  on récupère l’instance Lucia
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
-import { recordLoginEvent } from '$lib/prisma/loginEvent/loginEvent';
+import { RefillingTokenBucket } from '#lib/server/rate-limit';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
+import { recordLoginEvent } from '#lib/prisma/loginEvent/loginEvent';
 
 import type { PageServerLoad, Actions } from './$types';
 
@@ -60,10 +62,7 @@ export const load: PageServerLoad = async (event) => {
 		const u = event.locals.user;
 
 		if (!u.emailVerified) return redirect(302, '/auth/verify-email');
-		if (!u.googleId && u.isMfaEnabled) {
-			if (!u.registered2FA) return redirect(302, '/auth/2fa/setup');
-			if (!event.locals.session.twoFactorVerified) return redirect(302, '/auth/2fa');
-		}
+		if (!u.googleId && u.isMfaEnabled && !u.registered2FA) return redirect(302, '/auth/2fa/setup');
 		return redirect(302, '/auth/');
 	}
 
@@ -128,11 +127,39 @@ export const actions: Actions = {
 		/* Consommation réelle du token RL */
 		if (!(await ipBucket.consume(ip, 1))) return fail(429, { message: 'Too many requests' });
 
-		/* ---------- 4. Création de l’utilisateur --------------------------- */
+		/* ---------- 4. Création de l’utilisateur (+ session) --------------- */
+		// `referralCode` du NOUVEAU compte est généré par
+		// `databaseHooks.user.create.before` (#lib/auth/index.ts). Le parrain
+		// (`referredById`), lui, est résolu ici : `ctx.query`/`ctx.body` ne sont
+		// pas fiables depuis un appel serveur direct à `auth.api`.
+		const { headers: authHeaders, response } = await auth.api.signUpEmail({
+			body: { email, username, name: username, password },
+			headers: event.request.headers,
+			returnHeaders: true
+		});
+		const user = response.user;
+		applyAuthCookies(event, authHeaders);
+		log('✅  User created', { id: user.id, email: user.email });
+
+		// `city`/`country` (géolocalisation Vercel) ne viennent pas de Better
+		// Auth — posés nous-mêmes sur la session qu'il vient de créer, même
+		// principe que `Session.city`/`.country` avant la migration.
+		const device = getSessionDeviceContext(event.request);
+		if (response.token) {
+			await prisma.authSession.updateMany({
+				where: { token: response.token },
+				data: { city: device.city, country: device.country }
+			});
+		}
+
 		const { referralEnabled } = await getStoreFeatureFlags();
 		const referralCode = referralEnabled ? String(formData.get('ref') ?? '').trim() : '';
-		const user = await createUser(email, username, password, referralCode || null);
-		log('✅  User created', { id: user.id, email: user.email });
+		if (referralCode) {
+			const referrer = await getUserByReferralCode(referralCode);
+			if (referrer) {
+				await prisma.user.update({ where: { id: user.id }, data: { referredById: referrer.id } });
+			}
+		}
 
 		/* ---------- 5. Demande de vérification e-mail ---------------------- */
 		const evReq = await createEmailVerificationRequest(user.id, user.email);
@@ -143,20 +170,6 @@ export const actions: Actions = {
 			log('⚠️  FAILED to send verification e-mail', err);
 		}
 		setEmailVerificationRequestCookie(event, evReq);
-
-		/* ---------- 6. Création session + cookie Lucia --------------------- */
-		// 👉 on laisse Lucia s’en occuper
-		const device = getSessionDeviceContext(event.request);
-		const session = await auth.createSession(user.id, {
-			twoFactorVerified: false, // flags stockés dans la session
-			...device
-		});
-		const cookie = auth.createSessionCookie(session.id);
-
-		event.cookies.set(cookie.name, cookie.value, {
-			path: '/',
-			...cookie.attributes
-		});
 		log('✅  Session created', { userId: user.id });
 
 		// Enregistré pour l'historique (`/auth/settings/sessions`), mais jamais

@@ -2,7 +2,7 @@
  * Alerte « plusieurs tentatives de connexion échouées » — signale au
  * titulaire du compte une possible attaque par force brute/bourrage
  * d'identifiants ciblant spécifiquement son compte. Jamais à chaque échec
- * (bruyant, et le `Throttler` — `$lib/server/rate-limit.ts` — ralentit déjà
+ * (bruyant, et le `Throttler` — `#lib/server/rate-limit.ts` — ralentit déjà
  * l'attaquant) : une seule alerte par fenêtre, via `reportIfRepeated`
  * (même primitive que les alertes internes 5xx/contention de verrou, mais
  * ici doublée d'un e-mail au compte visé, pas seulement Sentry).
@@ -12,12 +12,12 @@
  * simple absence d'alerte, quelles adresses sont inscrites — même principe
  * que le message d'erreur générique déjà en place.
  */
-import { reportIfRepeated } from '$lib/server/alerting';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
+import { reportIfRepeated } from '#lib/server/alerting';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
+import { describeUserAgent } from '#lib/server/deviceLabel';
+import type { SessionDeviceContext } from '#lib/server/deviceContext';
 
 const THRESHOLD = 3;
 const WINDOW_SECONDS = 15 * 60;

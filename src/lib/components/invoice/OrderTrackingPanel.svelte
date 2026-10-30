@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Badge } from '$shadcn/badge';
-	import { Button } from '$shadcn/button';
-	import { formatOrderStatus } from '$lib/utils/formatOrderStatus';
+	import * as Card from '#shadcn/card';
+	import { Badge } from '#shadcn/badge';
+	import { Button } from '#shadcn/button';
+	import { formatOrderStatus } from '#lib/utils/formatOrderStatus';
 	import Truck from 'lucide-svelte/icons/truck';
 	import Package from 'lucide-svelte/icons/package';
 	import MapPin from 'lucide-svelte/icons/map-pin';

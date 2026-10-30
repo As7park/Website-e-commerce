@@ -1,9 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { prisma } from '$lib/server';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { createReturnRequest, getReturnRequestByTransactionId } from '$lib/prisma/returns/returns';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { createReturnRequest, getReturnRequestByTransactionId } from '#lib/prisma/returns/returns';
+import { toNumber } from '#lib/server/decimal';
 
 /**
  * Demande de retour sur une transaction payée.

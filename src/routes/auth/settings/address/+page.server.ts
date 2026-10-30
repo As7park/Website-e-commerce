@@ -1,5 +1,5 @@
-import { deleteAddress, getUserAddresses } from '$lib/prisma/addresses/addresses';
-import { deleteAddressSchema } from '$lib/schema/addresses/addressSchema';
+import { deleteAddress, getUserAddresses } from '#lib/prisma/addresses/addresses';
+import { deleteAddressSchema } from '#lib/schema/addresses/addressSchema';
 import { redirect, type Actions } from '@sveltejs/kit';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -9,11 +9,10 @@ export const load = async (event) => {
 		throw redirect(302, '/auth/login');
 	}
 
-	const { user, session } = event.locals;
+	const { user } = event.locals;
 
-	if (!user.googleId && user.isMfaEnabled && user.registered2FA && !session.twoFactorVerified) {
-		throw redirect(302, '/auth/2fa');
-	}
+	// Sous Better Auth, une session n'existe que si la 2FA (quand exigée) a
+	// déjà été validée — rien à revérifier ici (voir MIGRATION_BETTER_AUTH.md).
 
 	const address = await getUserAddresses(user.id);
 	// console.log(address, 'address');

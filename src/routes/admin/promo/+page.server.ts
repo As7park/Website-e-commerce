@@ -3,9 +3,9 @@ import { type Actions, fail } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 
-import { deletePromoSchema } from '$lib/schema/promo/promoSchema';
-import { getAllPromoCodes, getPromoCodeById, deletePromoCode } from '$lib/prisma/promo/promo';
-import { requireAdmin } from '$lib/admin/guards';
+import { deletePromoSchema } from '#lib/schema/promo/promoSchema';
+import { getAllPromoCodes, getPromoCodeById, deletePromoCode } from '#lib/prisma/promo/promo';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const { items, total, page, perPage, search, sort, dir } = await getAllPromoCodes({

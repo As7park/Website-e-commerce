@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
-	import { Input } from '$shadcn/input';
-	import { Label } from '$shadcn/label';
-	import { Button } from '$shadcn/button';
-	import OrderTrackingPanel from '$lib/components/invoice/OrderTrackingPanel.svelte';
-	import SEO from '$lib/components/SEO.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
+	import { Input } from '#shadcn/input';
+	import { Label } from '#shadcn/label';
+	import { Button } from '#shadcn/button';
+	import OrderTrackingPanel from '#lib/components/invoice/OrderTrackingPanel.svelte';
+	import SEO from '#lib/components/SEO.svelte';
 
 	let { form } = $props();
 	let submitting = $state(false);

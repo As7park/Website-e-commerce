@@ -5,20 +5,20 @@
  * lignes sont toujours relus depuis `Product` — jamais ceux du JSON client.
  */
 import { z } from 'zod';
-import { prisma } from '$lib/server';
-import cloudinary from '$lib/server/cloudinary';
-import { InvalidCustomizationError, UnknownProductError } from '$lib/commerce/errors';
-import { getVatRate } from '$lib/server/vat';
-import { toNumber } from '$lib/server/decimal';
+import { prisma } from '#lib/server';
+import cloudinary from '#lib/server/cloudinary';
+import { InvalidCustomizationError, UnknownProductError } from '#lib/commerce/errors';
+import { getVatRate } from '#lib/server/vat';
+import { toNumber } from '#lib/server/decimal';
 import {
 	mapOrderFields,
 	mapOrderItemWithProduct,
 	mapOrderItemWithProductAndVariant
-} from '$lib/prisma/order/mapOrder';
+} from '#lib/prisma/order/mapOrder';
 
 // Forme réelle d'une entrée `custom` à ce stade du pipeline : `image` est déjà
 // une URL (uploadée en amont), pas un `File` — `customSchema.ts`
-// (`$lib/schema/products/customSchema.ts`) valide un `File` et sert à un
+// (`#lib/schema/products/customSchema.ts`) valide un `File` et sert à un
 // futur formulaire d'upload, pas à cette écriture-ci.
 const CUSTOM_ENTRY_SCHEMA = z.object({
 	image: z.string().trim().min(1).max(2048),

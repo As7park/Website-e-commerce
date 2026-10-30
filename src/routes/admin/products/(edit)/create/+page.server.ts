@@ -3,15 +3,15 @@ import type { PageServerLoad } from './$types';
 import { type Actions } from '@sveltejs/kit';
 import { superValidate, fail, message, withFiles } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
-import cloudinary from '$lib/server/cloudinary';
-import { createProductSchema } from '$lib/schema/products/productSchema';
-import { slugify } from '$lib/prisma/slugify';
-import { connectProductToTaxonomyValues, createProduct } from '$lib/prisma/products/products';
-import { getAllTaxonomiesWithValues } from '$lib/prisma/taxonomies/taxonomies';
-import { getTaxonomyValuesByIds } from '$lib/prisma/taxonomies/taxonomyValues';
-import { requireAdmin } from '$lib/admin/guards';
-import { validateImageUpload } from '$lib/server/imageUpload';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
+import cloudinary from '#lib/server/cloudinary';
+import { createProductSchema } from '#lib/schema/products/productSchema';
+import { slugify } from '#lib/prisma/slugify';
+import { connectProductToTaxonomyValues, createProduct } from '#lib/prisma/products/products';
+import { getAllTaxonomiesWithValues } from '#lib/prisma/taxonomies/taxonomies';
+import { getTaxonomyValuesByIds } from '#lib/prisma/taxonomies/taxonomyValues';
+import { requireAdmin } from '#lib/admin/guards';
+import { validateImageUpload } from '#lib/server/imageUpload';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
 
 export const load: PageServerLoad = async () => {
 	const IcreateProductSchema = await superValidate(zod(createProductSchema));

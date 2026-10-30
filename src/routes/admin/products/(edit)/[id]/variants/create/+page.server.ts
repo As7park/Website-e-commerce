@@ -4,10 +4,10 @@ import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { Prisma } from '@prisma/client';
 
-import { createVariantSchema } from '$lib/schema/products/variantSchema';
-import { createVariant } from '$lib/prisma/productVariants/productVariants';
-import { getProductById } from '$lib/prisma/products/products';
-import { requireAdmin } from '$lib/admin/guards';
+import { createVariantSchema } from '#lib/schema/products/variantSchema';
+import { createVariant } from '#lib/prisma/productVariants/productVariants';
+import { getProductById } from '#lib/prisma/products/products';
+import { requireAdmin } from '#lib/admin/guards';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const product = await getProductById(params.id);

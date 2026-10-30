@@ -1,15 +1,15 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 
-	import { totpCodeSchema } from '$lib/schema/auth/totpCodeSchema';
-	import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
+	import { totpCodeSchema } from '#lib/schema/auth/totpCodeSchema';
+	import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
 
 	let { data } = $props();
 
@@ -61,15 +61,18 @@
 			<form method="POST" action="?/totp" use:totpEnhance class="space-y-6">
 				<Form.Field name="code" form={totpForm}>
 					<Form.Control>
-						<Form.Label>Code</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$totpData.code}
-							placeholder="Entrez votre code TOTP"
-							autocomplete="one-time-code"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$totpData.code}
+								placeholder="Entrez votre code TOTP"
+								autocomplete="one-time-code"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -88,14 +91,17 @@
 			<form method="POST" action="?/recovery_code" use:recoveryCodeEnhance class="space-y-6">
 				<Form.Field name="code" form={recoveryCodeForm}>
 					<Form.Control>
-						<Form.Label>Code de récupération</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$recoveryCodeData.code}
-							placeholder="Entrez votre code de récupération"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code de récupération</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$recoveryCodeData.code}
+								placeholder="Entrez votre code de récupération"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

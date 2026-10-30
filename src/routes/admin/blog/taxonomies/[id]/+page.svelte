@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import Checkbox from '$shadcn/checkbox/checkbox.svelte';
-	import { Label } from '$shadcn/label';
-	import Table from '$components/Table.svelte';
-	import type { TableAction, TableColumn, TableItem } from '$components/Table.svelte';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import Checkbox from '#shadcn/checkbox/checkbox.svelte';
+	import { Label } from '#shadcn/label';
+	import Table from '#components/Table.svelte';
+	import type { TableAction, TableColumn, TableItem } from '#components/Table.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateBlogTaxonomySchema } from '$lib/schema/BlogPost/blogTaxonomySchema';
-	import { deleteBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateBlogTaxonomySchema } from '#lib/schema/BlogPost/blogTaxonomySchema';
+	import { deleteBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
 	import { toast } from 'svelte-sonner';
 	import Pencil from 'lucide-svelte/icons/pencil';
 	import Trash from 'lucide-svelte/icons/trash';
@@ -100,8 +100,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="name" form={updateBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Nom</Form.Label>
-							<Input name="name" type="text" bind:value={$updateBlogTaxonomyData.name} />
+							{#snippet children({ props })}
+								<Form.Label>Nom</Form.Label>
+								<Input
+									{...props}
+									name="name"
+									type="text"
+									bind:value={$updateBlogTaxonomyData.name}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -109,8 +116,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="slug" form={updateBlogTaxonomy}>
 						<Form.Control>
-							<Form.Label>Slug</Form.Label>
-							<Input name="slug" type="text" bind:value={$updateBlogTaxonomyData.slug} />
+							{#snippet children({ props })}
+								<Form.Label>Slug</Form.Label>
+								<Input
+									{...props}
+									name="slug"
+									type="text"
+									bind:value={$updateBlogTaxonomyData.slug}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

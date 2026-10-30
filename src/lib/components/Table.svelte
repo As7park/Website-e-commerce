@@ -54,21 +54,21 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { Button, buttonVariants } from '$shadcn/button';
-	import { cn } from '$lib/components/shadcn/utils.js';
-	import * as Table from '$shadcn/table';
-	import TableRow from '$shadcn/table/table-row.svelte';
-	import TableCell from '$shadcn/table/table-cell.svelte';
-	import { Input } from '$shadcn/input';
-	import * as Popover from '$shadcn/popover/index.js';
-	import * as RadioGroup from '$shadcn/radio-group/index.js';
-	import * as DropdownMenu from '$shadcn/dropdown-menu/index.js';
-	import * as AlertDialog from '$shadcn/alert-dialog/index.js';
-	import * as Pagination from '$shadcn/pagination/index.js';
-	import { Label } from '$shadcn/label';
-	import * as Tooltip from '$shadcn/tooltip/index.js';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Badge } from '$shadcn/badge';
+	import { Button, buttonVariants } from '#shadcn/button';
+	import { cn } from '#lib/components/shadcn/utils.js';
+	import * as Table from '#shadcn/table';
+	import TableRow from '#shadcn/table/table-row.svelte';
+	import TableCell from '#shadcn/table/table-cell.svelte';
+	import { Input } from '#shadcn/input';
+	import * as Popover from '#shadcn/popover/index.js';
+	import * as RadioGroup from '#shadcn/radio-group/index.js';
+	import * as DropdownMenu from '#shadcn/dropdown-menu/index.js';
+	import * as AlertDialog from '#shadcn/alert-dialog/index.js';
+	import * as Pagination from '#shadcn/pagination/index.js';
+	import { Label } from '#shadcn/label';
+	import * as Tooltip from '#shadcn/tooltip/index.js';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
+	import { Badge } from '#shadcn/badge';
 
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { Plus, Search, X, SearchX, LoaderCircle, ChevronLeft, ChevronRight } from 'lucide-svelte';

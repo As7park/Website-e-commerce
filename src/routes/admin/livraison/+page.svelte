@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Button } from '$shadcn/button';
-	import { Input } from '$shadcn/input';
-	import * as Form from '$shadcn/form';
+	import { Button } from '#shadcn/button';
+	import { Input } from '#shadcn/input';
+	import * as Form from '#shadcn/form';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { deliveryEstimateSchema } from '#lib/schema/settings/deliverySchema';
 
 	let { data } = $props();
 
@@ -46,27 +46,33 @@
 	<form method="POST" use:deliveryEnhance class="flex items-end gap-3">
 		<Form.Field name="minDays" form={deliveryForm} class="flex-1">
 			<Form.Control>
-				<Form.Label>Min (jours)</Form.Label>
-				<Input
-					name="minDays"
-					type="number"
-					min="1"
-					max="60"
-					bind:value={$deliveryFormData.minDays}
-				/>
+				{#snippet children({ props })}
+					<Form.Label>Min (jours)</Form.Label>
+					<Input
+						{...props}
+						name="minDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.minDays}
+					/>
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<Form.Field name="maxDays" form={deliveryForm} class="flex-1">
 			<Form.Control>
-				<Form.Label>Max (jours)</Form.Label>
-				<Input
-					name="maxDays"
-					type="number"
-					min="1"
-					max="60"
-					bind:value={$deliveryFormData.maxDays}
-				/>
+				{#snippet children({ props })}
+					<Form.Label>Max (jours)</Form.Label>
+					<Input
+						{...props}
+						name="maxDays"
+						type="number"
+						min="1"
+						max="60"
+						bind:value={$deliveryFormData.maxDays}
+					/>
+				{/snippet}
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

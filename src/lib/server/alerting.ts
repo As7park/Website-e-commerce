@@ -22,7 +22,7 @@ const memoryWindows = new Map<string, { count: number; windowStart: number }>();
  * Renvoie `true` seulement pour l'appel qui fait franchir le seuil — permet
  * à un appelant de déclencher un effet de bord qui, comme l'alerte Sentry
  * elle-même, ne doit se produire qu'une fois par fenêtre (voir
- * `$lib/server/failedLoginAlert.ts`, qui en dépend pour l'e-mail « plusieurs
+ * `#lib/server/failedLoginAlert.ts`, qui en dépend pour l'e-mail « plusieurs
  * tentatives de connexion échouées »).
  */
 export async function reportIfRepeated(

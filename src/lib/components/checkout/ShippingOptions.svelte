@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card/index.js';
+	import * as Card from '#shadcn/card/index.js';
 	import { Package, Home, MapPin, CheckCircle, XCircle } from 'lucide-svelte';
-	import type { ShippingOptionDTO } from '$lib/sendcloud/checkoutTypes';
+	import type { ShippingOptionDTO } from '#lib/sendcloud/checkoutTypes';
 
 	interface Props {
 		shippingOptions: ShippingOptionDTO[];

@@ -12,12 +12,12 @@
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import * as THREE from 'three';
 	import { page } from '$app/state';
-	import { gsap, onWindow, prefersReducedMotion } from '$lib/shop/fx';
-	import { formatMoney } from '$lib/utils/formatMoney';
-	import { toTTC } from '$lib/utils/price';
-	import { optimizedImageUrl } from '$lib/utils/cloudinaryUrl';
-	import SplitTitle from '$lib/components/shop/fx/SplitTitle.svelte';
-	import Tape from '$lib/components/shop/fx/Tape.svelte';
+	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
+	import { formatMoney } from '#lib/utils/formatMoney';
+	import { toTTC } from '#lib/utils/price';
+	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
+	import SplitTitle from '#lib/components/shop/fx/SplitTitle.svelte';
+	import Tape from '#lib/components/shop/fx/Tape.svelte';
 
 	type PlateProduct = {
 		id: string;

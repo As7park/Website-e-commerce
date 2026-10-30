@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
-	import { Checkbox } from '$shadcn/checkbox/index.js';
-	import { Label } from '$shadcn/label/index.js';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
+	import { Checkbox } from '#shadcn/checkbox/index.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { toast } from 'svelte-sonner';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createPromoSchema } from '$lib/schema/promo/promoSchema.js';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createPromoSchema } from '#lib/schema/promo/promoSchema.js';
 	import { goto } from '$app/navigation';
 
 	let { data } = $props();
@@ -46,80 +45,102 @@
 		<form method="POST" action="?/createPromo" use:createPromoEnhance class="space-y-4">
 			<Form.Field name="code" form={createPromo}>
 				<Form.Control>
-					<Form.Label>Code</Form.Label>
-					<Input
-						name="code"
-						type="text"
-						placeholder="ex: BIENVENUE10"
-						bind:value={$createPromoData.code}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Code</Form.Label>
+						<Input
+							{...props}
+							name="code"
+							type="text"
+							placeholder="ex: BIENVENUE10"
+							bind:value={$createPromoData.code}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="type" form={createPromo}>
 				<Form.Control>
-					<Form.Label>Type de remise</Form.Label>
-					<select
-						name="type"
-						bind:value={$createPromoData.type}
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-					>
-						<option value="PERCENTAGE">Pourcentage (%)</option>
-						<option value="FIXED">Montant fixe (€)</option>
-					</select>
+					{#snippet children({ props })}
+						<Form.Label>Type de remise</Form.Label>
+						<select
+							{...props}
+							name="type"
+							bind:value={$createPromoData.type}
+							class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+						>
+							<option value="PERCENTAGE">Pourcentage (%)</option>
+							<option value="FIXED">Montant fixe (€)</option>
+						</select>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="value" form={createPromo}>
 				<Form.Control>
-					<Form.Label>
-						Valeur {$createPromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
-					</Form.Label>
-					<Input
-						name="value"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$createPromoData.value}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>
+							Valeur {$createPromoData.type === 'PERCENTAGE' ? '(en %)' : '(en €)'}
+						</Form.Label>
+						<Input
+							{...props}
+							name="value"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$createPromoData.value}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="minAmount" form={createPromo}>
 				<Form.Control>
-					<Form.Label>Montant minimum de commande (€, optionnel)</Form.Label>
-					<Input
-						name="minAmount"
-						type="number"
-						step="0.01"
-						min="0"
-						bind:value={$createPromoData.minAmount}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Montant minimum de commande (€, optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="minAmount"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={$createPromoData.minAmount}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="usageLimit" form={createPromo}>
 				<Form.Control>
-					<Form.Label>Limite d'utilisation (optionnel, vide = illimité)</Form.Label>
-					<Input
-						name="usageLimit"
-						type="number"
-						step="1"
-						min="0"
-						bind:value={$createPromoData.usageLimit}
-					/>
+					{#snippet children({ props })}
+						<Form.Label>Limite d'utilisation (optionnel, vide = illimité)</Form.Label>
+						<Input
+							{...props}
+							name="usageLimit"
+							type="number"
+							step="1"
+							min="0"
+							bind:value={$createPromoData.usageLimit}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
 
 			<Form.Field name="expiresAt" form={createPromo}>
 				<Form.Control>
-					<Form.Label>Date d'expiration (optionnel)</Form.Label>
-					<Input name="expiresAt" type="date" bind:value={$createPromoData.expiresAt} />
+					{#snippet children({ props })}
+						<Form.Label>Date d'expiration (optionnel)</Form.Label>
+						<Input
+							{...props}
+							name="expiresAt"
+							type="date"
+							bind:value={$createPromoData.expiresAt}
+						/>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>
@@ -127,19 +148,22 @@
 			{#if data.loyaltyEnabled}
 				<Form.Field name="loyaltyThreshold" form={createPromo}>
 					<Form.Control>
-						<Form.Label>Seuil fidélité (optionnel)</Form.Label>
-						<Input
-							name="loyaltyThreshold"
-							type="number"
-							step="1"
-							min="1"
-							placeholder="ex: 5"
-							bind:value={$createPromoData.loyaltyThreshold}
-						/>
-						<p class="text-sm text-muted-foreground">
-							Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
-							commandes payées.
-						</p>
+						{#snippet children({ props })}
+							<Form.Label>Seuil fidélité (optionnel)</Form.Label>
+							<Input
+								{...props}
+								name="loyaltyThreshold"
+								type="number"
+								step="1"
+								min="1"
+								placeholder="ex: 5"
+								bind:value={$createPromoData.loyaltyThreshold}
+							/>
+							<p class="text-sm text-muted-foreground">
+								Si renseigné, ce code est offert automatiquement au client qui atteint ce nombre de
+								commandes payées.
+							</p>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
@@ -153,10 +177,16 @@
 
 			<Form.Field name="active" form={createPromo} class="rcc">
 				<Form.Control>
-					<div class="flex items-center space-x-2">
-						<Checkbox name="active" bind:checked={$createPromoData.active as boolean | undefined} />
-						<Label for="active" class="text-sm font-medium leading-none">Code actif</Label>
-					</div>
+					{#snippet children({ props })}
+						<div class="flex items-center space-x-2">
+							<Checkbox
+								{...props}
+								name="active"
+								bind:checked={$createPromoData.active as boolean | undefined}
+							/>
+							<Form.Label class="text-sm font-medium leading-none">Code actif</Form.Label>
+						</div>
+					{/snippet}
 				</Form.Control>
 				<Form.FieldErrors />
 			</Form.Field>

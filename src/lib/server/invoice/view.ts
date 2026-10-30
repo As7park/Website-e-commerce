@@ -2,14 +2,14 @@
  * Instantané d'affichage d'une facture, partagé par l'aperçu HTML, le PDF
  * et l'e-mail. Les totaux figés au paiement (`Transaction.taxRate`, posé par
  * le webhook avec le taux réellement en vigueur à ce moment-là via
- * `$lib/server/vat.ts`) priment toujours ; à défaut d'un instantané (données
+ * `#lib/server/vat.ts`) priment toujours ; à défaut d'un instantané (données
  * anciennes/incomplètes), ce module recalcule avec le taux de repli de
  * `snapshotInvoiceTotals` — fonction pure synchrone, ne relit jamais le
  * taux courant en base ici.
  *
  * COMMERCE-PLUGIN
  */
-import type { InvoiceCompany, InvoiceLine, InvoiceView } from '$lib/invoice/types';
+import type { InvoiceCompany, InvoiceLine, InvoiceView } from '#lib/invoice/types';
 import { snapshotInvoiceTotals } from './totals';
 
 export type { InvoiceLine, InvoiceView };

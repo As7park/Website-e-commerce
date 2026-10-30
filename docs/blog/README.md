@@ -42,7 +42,7 @@ Le classement des articles utilise un système générique dédié au blog —
 unique (Catégorie) d'une sélection multiple (Tag). L'admin peut créer de
 nouvelles facettes sans migration (`/admin/blog/taxonomies`).
 
-Ce système est un mirroring volontaire de `$lib/prisma/taxonomies`
+Ce système est un mirroring volontaire de `#lib/prisma/taxonomies`
 (produits) mais sur des tables séparées : le blog ne dépend pas des tables
 PRODUCT-PLUGIN, ce qui garde les deux modules retirables indépendamment.
 

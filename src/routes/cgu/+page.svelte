@@ -1,6 +1,6 @@
 <script lang="ts">
-	import SEO from '$lib/components/SEO.svelte';
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import SEO from '#lib/components/SEO.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 </script>
 
 <SEO

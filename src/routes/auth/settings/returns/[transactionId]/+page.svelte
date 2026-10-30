@@ -1,13 +1,13 @@
 <script lang="ts">
-	import * as Card from '$shadcn/card';
-	import { Button } from '$shadcn/button';
-	import { Textarea } from '$shadcn/textarea';
-	import * as RadioGroup from '$shadcn/radio-group/index.js';
-	import { Label } from '$shadcn/label';
+	import * as Card from '#shadcn/card';
+	import { Button } from '#shadcn/button';
+	import { Textarea } from '#shadcn/textarea';
+	import * as RadioGroup from '#shadcn/radio-group/index.js';
+	import { Label } from '#shadcn/label';
 	import { toast } from 'svelte-sonner';
 	import { enhance } from '$app/forms';
-	import { formatMoney } from '$lib/utils/formatMoney';
-	import { formatDate } from '$lib/utils/formatDate';
+	import { formatMoney } from '#lib/utils/formatMoney';
+	import { formatDate } from '#lib/utils/formatDate';
 
 	let { data, form } = $props();
 

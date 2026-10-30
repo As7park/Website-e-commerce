@@ -1,5 +1,4 @@
 import { test, expect } from '../support/fixtures';
-import { createHash } from 'node:crypto';
 import { pageOrigin, signUpAndVerify, sveltekitActionHeaders } from '../support/admin';
 import { sessionCookie } from '../support/flows';
 import {
@@ -7,13 +6,14 @@ import {
 	createExtraSessionForUser,
 	deleteUser,
 	promoteToAdmin,
-	requireUser
+	requireUser,
+	sessionPublicIdFromCookieValue
 } from '../support/db';
 
 /**
  * Sessions actives (`/auth/settings/sessions`) : liste des sessions d'un
  * compte, avec appareil/localisation dérivés de `Session.userAgent`/`city`/
- * `country` (voir `$lib/lucia/deviceLabel.ts`), et deux actions — déconnecter
+ * `country` (voir `#lib/lucia/deviceLabel.ts`), et deux actions — déconnecter
  * une session précise, déconnecter toutes les autres. La session en cours
  * n'est jamais révocable par ce chemin (`?/revoke` la refuse explicitement),
  * seule `/auth/signout` la ferme.
@@ -29,17 +29,6 @@ async function expectFailure(response: import('@playwright/test').APIResponse, s
 	expect(body.type).toBe('failure');
 	expect(body.status).toBe(status);
 	return body.data;
-}
-
-/**
- * Empreinte publique d'une session, telle que la page l'expose.
- *
- * `Session.id` est le token du cookie : il n'est jamais envoyé au navigateur,
- * donc jamais rejoué tel quel dans un formulaire (voir `sessionPublicId`,
- * `$lib/lucia/session.ts`). Le test doit dériver la même empreinte.
- */
-function publicSessionId(token: string) {
-	return createHash('sha256').update(token).digest('hex');
 }
 
 test.describe('Auth — sessions actives', () => {
@@ -72,11 +61,11 @@ test.describe('Auth — sessions actives', () => {
 			});
 
 			await test.step('2. Refus : révoquer la session en cours', async () => {
-				const currentSessionId = (await sessionCookie(page))?.value;
-				expect(currentSessionId).toBeTruthy();
+				const currentSessionToken = (await sessionCookie(page))?.value;
+				expect(currentSessionToken).toBeTruthy();
 
 				const response = await page.request.post('/auth/settings/sessions?/revoke', {
-					form: { sessionId: publicSessionId(currentSessionId!) },
+					form: { sessionId: await sessionPublicIdFromCookieValue(currentSessionToken!) },
 					headers: sveltekitActionHeaders(origin)
 				});
 				await expectFailure(response, 400);

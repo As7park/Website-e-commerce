@@ -6,10 +6,10 @@
  * `/api/jobs/recently-viewed-reminder`), jamais event-triggered.
  *
  * Ne couvre que les comptes connectés : `ProductView` n'existe que pour un
- * visiteur identifié (voir `$lib/prisma/products/productViews.ts`), aucun
+ * visiteur identifié (voir `#lib/prisma/products/productViews.ts`), aucun
  * suivi anonyme dans ce projet (contrainte du panier invité,
- * `$lib/commerce/guestCart.ts`, 100 % localStorage). L'historique vitrine
- * « Récemment consultés » (`$lib/store/recentlyViewed.ts`) reste inchangé et
+ * `#lib/commerce/guestCart.ts`, 100 % localStorage). L'historique vitrine
+ * « Récemment consultés » (`#lib/store/recentlyViewed.ts`) reste inchangé et
  * indépendant de ce job.
  *
  * Un seul e-mail digest par relance (jusqu'à `DIGEST_MAX_PRODUCTS` produits),
@@ -18,13 +18,13 @@
  * `ProductView`, jamais réinitialisé — même logique que
  * `Order.reviewReminderSentAt`.
  */
-import { prisma } from '$lib/server';
-import { withLock } from '$lib/server/lock';
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { withDuration } from '$lib/server/metrics';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
+import { prisma } from '#lib/server';
+import { withLock } from '#lib/server/lock';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { withDuration } from '#lib/server/metrics';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
 
 const VIEW_REMINDER_DELAY_HOURS = 24;
 const DIGEST_MAX_PRODUCTS = 5;

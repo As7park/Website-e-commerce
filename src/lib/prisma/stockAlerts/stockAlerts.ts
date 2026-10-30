@@ -7,7 +7,7 @@
  * appelante vérifie déjà le flag avant d'arriver ici ; ce fichier ne le
  * revérifie pas lui-même (même convention que `wishlist.ts`).
  */
-import { prisma } from '$lib/server';
+import { prisma } from '#lib/server';
 
 /** Le compte a-t-il une inscription encore en attente sur ce produit ? */
 export async function isPendingStockAlert(userId: string, productId: string): Promise<boolean> {

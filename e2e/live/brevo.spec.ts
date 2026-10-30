@@ -51,7 +51,7 @@ test.describe('Live — Brevo SMTP', () => {
 		if (!hasLiveInbox()) return;
 
 		await test.step('2. sendVerificationEmail vers E2E_LIVE_INBOX', async () => {
-			// Import paresseux : `smtp-mail` tire `$lib/server` puis `$app/environment`,
+			// Import paresseux : `smtp-mail` tire `#lib/server` puis `$app/env`,
 			// module virtuel que seul Vite fournit. En tête de fichier, il fait échouer
 			// la collecte de TOUTE la suite Playwright, même quand ce test est ignoré.
 			const { sendVerificationEmail } = await import('../../src/lib/server/smtp-mail');

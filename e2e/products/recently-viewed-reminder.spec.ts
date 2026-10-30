@@ -16,7 +16,7 @@ const CRON_HEADERS = { authorization: `Bearer ${process.env.CRON_SECRET}` };
 
 /**
  * Relance « produits consultés, jamais achetés » : scan périodique
- * (`$lib/server/jobs/recentlyViewedReminder.ts`, route
+ * (`#lib/server/jobs/recentlyViewedReminder.ts`, route
  * `/api/jobs/recently-viewed-reminder`), même mécanique que
  * `review-reminder.spec.ts` — `ProductView.viewedAt` reculé via
  * `createProductView` pour simuler une consultation ancienne, sans attendre

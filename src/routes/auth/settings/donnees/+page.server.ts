@@ -4,7 +4,7 @@
  * que par un canal de contact.
  *
  * La suppression n'efface jamais physiquement le compte : elle l'anonymise
- * (`$lib/prisma/user/anonymizeUser.ts`) — `Order`/`Transaction` sont
+ * (`#lib/prisma/user/anonymizeUser.ts`) — `Order`/`Transaction` sont
  * légalement conservés (obligation comptable), seuls les champs
  * identifiants et les données de préférence disparaissent.
  *
@@ -16,11 +16,9 @@
  */
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getUserPasswordHash } from '$lib/lucia/user';
-import { verifyPasswordHash } from '$lib/lucia/password';
-import { deleteSessionTokenCookie } from '$lib/lucia/session';
-import { anonymizeUser } from '$lib/prisma/user/anonymizeUser';
-import { log } from '$lib/server/log';
+import { getCredentialPasswordHash, verifyPasswordHash } from '#lib/auth/password';
+import { anonymizeUser } from '#lib/prisma/user/anonymizeUser';
+import { log } from '#lib/server/log';
 
 const DELETE_CONFIRM_TEXT = 'SUPPRIMER';
 
@@ -28,7 +26,7 @@ export const load = (async ({ locals }) => {
 	if (!locals.user) {
 		redirect(302, '/auth/login');
 	}
-	const passwordHash = await getUserPasswordHash(locals.user.id);
+	const passwordHash = await getCredentialPasswordHash(locals.user.id);
 	return { hasPassword: passwordHash !== null };
 }) satisfies PageServerLoad;
 
@@ -40,7 +38,7 @@ export const actions: Actions = {
 		}
 
 		const formData = await event.request.formData();
-		const passwordHash = await getUserPasswordHash(userId);
+		const passwordHash = await getCredentialPasswordHash(userId);
 
 		if (passwordHash !== null) {
 			const password = String(formData.get('password') ?? '');
@@ -57,7 +55,9 @@ export const actions: Actions = {
 		await anonymizeUser(userId);
 		log('INFO', 'gdpr', 'Compte anonymisé (demande self-service)', { userId });
 
-		deleteSessionTokenCookie(event);
+		// `anonymizeUser` a déjà révoqué toutes les sessions en base — il ne
+		// reste qu'à effacer le cookie du navigateur.
+		event.cookies.delete('better-auth.session_token', { path: '/' });
 		redirect(303, '/');
 	}
 };

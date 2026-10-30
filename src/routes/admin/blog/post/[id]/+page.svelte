@@ -1,21 +1,20 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	// ----- Imports -----
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Checkbox } from '$shadcn/checkbox';
-	import { Label } from '$shadcn/label';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Checkbox } from '#shadcn/checkbox';
 	import Editor from '@tinymce/tinymce-svelte';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { Button } from '$shadcn/button';
-	import TaxonomyValuePicker from '$components/TaxonomyValuePicker.svelte';
+	import { Button } from '#shadcn/button';
+	import TaxonomyValuePicker from '#components/TaxonomyValuePicker.svelte';
 
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { updateBlogPostSchema } from '$lib/schema/BlogPost/BlogPostSchema.js';
-	import { PUBLIC_TINYMCE_API_KEY } from '$env/static/public';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { updateBlogPostSchema } from '#lib/schema/BlogPost/BlogPostSchema.js';
+	import { PUBLIC_TINYMCE_API_KEY } from '$app/env/public';
 
 	// ----- Props from the server -----
 	let { data } = $props();
@@ -70,8 +69,10 @@
 	<!-- Title -->
 	<Form.Field name="title" form={updateForm}>
 		<Form.Control>
-			<Form.Label>Title</Form.Label>
-			<Input name="title" type="text" bind:value={$updateData.title} />
+			{#snippet children({ props })}
+				<Form.Label>Title</Form.Label>
+				<Input {...props} name="title" type="text" bind:value={$updateData.title} />
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
@@ -79,10 +80,12 @@
 	<!-- Published -->
 	<Form.Field name="published" form={updateForm}>
 		<Form.Control>
-			<div class="flex items-center">
-				<Checkbox name="published" bind:checked={$updateData.published as boolean} />
-				<Label class="ml-2">Published</Label>
-			</div>
+			{#snippet children({ props })}
+				<div class="flex items-center">
+					<Checkbox {...props} name="published" bind:checked={$updateData.published as boolean} />
+					<Form.Label class="ml-2">Published</Form.Label>
+				</div>
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
@@ -97,13 +100,16 @@
 	<!-- Content -->
 	<Form.Field name="content" form={updateForm}>
 		<Form.Control>
-			<Form.Label>Content</Form.Label>
-			<Editor
-				conf={editorConfig}
-				scriptSrc="/tinymce/tinymce.min.js"
-				apiKey={PUBLIC_TINYMCE_API_KEY}
-				bind:value={$updateData.content}
-			/>
+			{#snippet children({ props })}
+				<Form.Label>Content</Form.Label>
+				<Editor
+					id={props.id}
+					conf={editorConfig}
+					scriptSrc="/tinymce/tinymce.min.js"
+					apiKey={PUBLIC_TINYMCE_API_KEY}
+					bind:value={$updateData.content}
+				/>
+			{/snippet}
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>

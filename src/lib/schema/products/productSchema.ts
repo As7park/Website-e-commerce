@@ -36,7 +36,7 @@ const createProductSchema = z.object({
 	// Vente flash : datetime-local (`YYYY-MM-DDTHH:mm`), vide = pas de vente flash.
 	flashSaleEndsAt: z.string().optional(),
 	// Poids (kg) / dimensions (cm) unitaires réelles, pour le colis Sendcloud
-	// (`$lib/commerce/packageEstimate.ts`). Vide = estimation par défaut.
+	// (`#lib/commerce/packageEstimate.ts`). Vide = estimation par défaut.
 	weight: z.coerce.number().positive().optional(),
 	length: z.coerce.number().positive().optional(),
 	width: z.coerce.number().positive().optional(),

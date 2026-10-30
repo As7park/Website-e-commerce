@@ -2,10 +2,10 @@ import { fail, type Actions } from '@sveltejs/kit';
 import { superValidate, message } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
-import { assertAdmin, requireAdmin } from '$lib/admin/guards';
-import { getDeliveryEstimate, updateDeliveryEstimate } from '$lib/server/delivery';
-import { deliveryEstimateSchema } from '$lib/schema/settings/deliverySchema';
-import { log } from '$lib/server/log';
+import { assertAdmin, requireAdmin } from '#lib/admin/guards';
+import { getDeliveryEstimate, updateDeliveryEstimate } from '#lib/server/delivery';
+import { deliveryEstimateSchema } from '#lib/schema/settings/deliverySchema';
+import { log } from '#lib/server/log';
 
 /**
  * Délai de livraison estimé (`StoreSettings.estimatedDelivery{Min,Max}Days`)

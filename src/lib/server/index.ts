@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 
 // Le rechargement à chaud de Vite réévalue ce module : sans ce cache global,
 // chaque itération ouvrirait un nouveau pool de connexions PostgreSQL.

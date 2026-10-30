@@ -14,8 +14,8 @@
 
 import { json, error, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod';
-import { withCircuitBreaker, CircuitOpenError } from '$lib/server/circuit-breaker';
-import { log } from '$lib/server/log';
+import { withCircuitBreaker, CircuitOpenError } from '#lib/server/circuit-breaker';
+import { log } from '#lib/server/log';
 
 // Constante pour activer/désactiver les logs de debug
 const DEBUG = process.env.SENDCLOUD_DEBUG === 'true' || false;
@@ -94,7 +94,7 @@ async function fetchWithTimeout(
 }
 
 /**
- * Appelle `/api/v3/shipping-options` sous disjoncteur (`$lib/server/circuit-breaker.ts`,
+ * Appelle `/api/v3/shipping-options` sous disjoncteur (`#lib/server/circuit-breaker.ts`,
  * même protection que `post-payment.ts`) et traduit chaque échec en une
  * réponse propre côté client — jamais le texte brut de Sendcloud (fuite
  * d'information potentielle), toujours loggé côté serveur pour investigation.

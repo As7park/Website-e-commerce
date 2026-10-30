@@ -8,7 +8,7 @@
  * (find, create, update), quel que soit le fichier.
  */
 import type { Prisma } from '@prisma/client';
-import { toNumber } from '$lib/server/decimal';
+import { toNumber } from '#lib/server/decimal';
 
 export function mapTransaction<
 	T extends {

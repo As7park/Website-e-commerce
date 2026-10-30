@@ -4,26 +4,34 @@
 // Deux issues possibles : un code TOTP, ou le code de secours si l'application
 // d'authentification est perdue. Ce dernier retire la 2FA du compte, ce qui rend
 // l'étape suivante accessible sans second facteur.
+//
+// Aucune session Better Auth n'existe à ce stade (l'utilisateur n'est pas
+// connecté, seulement en train de réinitialiser son mot de passe) : la
+// vérification se fait directement contre `TwoFactor` (voir
+// `#lib/auth/twoFactor.ts`), pas via `auth.api.verifyTOTP`/`verifyBackupCode`.
 // -----------------------------------------------------------------------------
 
-import { verifyTOTP } from '@oslojs/otp';
-import { getUserTOTPKey, upgradeTotpKeyEncryption } from '$lib/lucia/user';
-import { validatePasswordResetSessionRequest } from '$lib/lucia/passwordReset';
-import { setPasswordResetSessionAs2FAVerified } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { totpBucket } from '$lib/lucia/2fa';
-import { fail, redirect } from '@sveltejs/kit';
-import { resetUser2FAWithRecoveryCode } from '$lib/lucia/2fa';
-import { recoveryCodeBucket } from '$lib/lucia/2fa';
+import { validatePasswordResetSessionRequest } from '#lib/auth/passwordReset';
+import { setPasswordResetSessionAs2FAVerified } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { verifyAndConsumeRecoveryCodeDirect, verifyTotpCodeDirect } from '#lib/auth/twoFactor';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
+import { redirect } from '@sveltejs/kit';
 
 import type { Actions, RequestEvent } from './$types';
-import { recoveryCodeSchema } from '$lib/schema/auth/recoveryCodeSchema';
-import { totpCodeSchema } from '$lib/schema/auth/totpCodeSchema';
+import { recoveryCodeSchema } from '#lib/schema/auth/recoveryCodeSchema';
+import { totpCodeSchema } from '#lib/schema/auth/totpCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
 
+const totpBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'reset-password-2fa-totp');
+const recoveryCodeBucket = new ExpiringTokenBucket<string>(
+	3,
+	60 * 60,
+	'reset-password-2fa-recovery'
+);
+
 export const load = async (event: RequestEvent) => {
 	const { session, user } = await validatePasswordResetSessionRequest(event);
-	// console.log(session, user, 'iuhfrsdluifhgdirughrdiughdrui');
 
 	if (session === null) {
 		return redirect(302, '/auth/forgot-password');
@@ -75,27 +83,13 @@ async function totpAction(event: RequestEvent) {
 	if (code === '') {
 		return message(form, 'Please enter your code');
 	}
-	const totpKey = await getUserTOTPKey(session.userId);
-	if (totpKey === null) {
-		return message(form, 'Forbidden');
-	}
 	if (!(await totpBucket.consume(session.userId, 1))) {
 		return message(form, 'Too many requests');
 	}
 
-	try {
-		const isValid = verifyTOTP(totpKey.key, 30, 6, code);
-
-		if (!isValid) {
-			return message(form, 'Invalid TOTP code');
-		}
-	} catch {
-		return fail(500, { message: 'Internal server error', form });
-	}
-
-	// Ré-encodage AES-256 (jamais sur un code refusé, cf. ci-dessus).
-	if (totpKey.version === 1) {
-		await upgradeTotpKeyEncryption(session.userId, totpKey.key);
+	const isValid = await verifyTotpCodeDirect(session.userId, code);
+	if (!isValid) {
+		return message(form, 'Invalid TOTP code');
 	}
 
 	await totpBucket.reset(session.userId);
@@ -132,13 +126,14 @@ async function recoveryCodeAction(event: RequestEvent) {
 		return message(form, 'Too many requests');
 	}
 
-	const valid = await resetUser2FAWithRecoveryCode(session.userId, code);
+	const valid = await verifyAndConsumeRecoveryCodeDirect(session.userId, code);
 
 	if (!valid) {
 		return message(form, 'Invalid code');
 	}
 
 	await recoveryCodeBucket.reset(session.userId);
+	await setPasswordResetSessionAs2FAVerified(session.id);
 
 	redirect(302, '/auth/reset-password');
 }

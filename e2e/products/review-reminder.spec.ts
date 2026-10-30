@@ -16,7 +16,7 @@ const CRON_HEADERS = { authorization: `Bearer ${process.env.CRON_SECRET}` };
 
 /**
  * Relance avis produit post-livraison : scan périodique
- * (`$lib/server/jobs/reviewReminder.ts`, route `/api/jobs/review-reminder`),
+ * (`#lib/server/jobs/reviewReminder.ts`, route `/api/jobs/review-reminder`),
  * même mécanique que `cart-recovery.spec.ts` — `Order.updatedAt` reculé via
  * `backdateOrder` pour simuler une commande expédiée depuis plus de 7 jours,
  * sans attendre réellement.

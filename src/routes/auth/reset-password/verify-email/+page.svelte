@@ -1,14 +1,14 @@
 <script lang="ts">
-	import ShopPage from '$lib/components/shop/ShopPage.svelte';
+	import ShopPage from '#lib/components/shop/ShopPage.svelte';
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { toast } from 'svelte-sonner';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { verifyCodeSchema } from '#lib/schema/auth/verifyCodeSchema';
 
 	let { data } = $props();
 	//console.log(data);
@@ -48,14 +48,17 @@
 			<div>
 				<Form.Field name="code" form={verifyEmailForm}>
 					<Form.Control>
-						<Form.Label>Code</Form.Label>
-						<Input
-							type="text"
-							name="code"
-							bind:value={$verifyEmailData.code}
-							placeholder="Entrez votre code de vérification"
-							required
-						/>
+						{#snippet children({ props })}
+							<Form.Label>Code</Form.Label>
+							<Input
+								{...props}
+								type="text"
+								name="code"
+								bind:value={$verifyEmailData.code}
+								placeholder="Entrez votre code de vérification"
+								required
+							/>
+						{/snippet}
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>

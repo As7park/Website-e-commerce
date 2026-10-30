@@ -32,6 +32,13 @@ complet de chaque décision reste dans l'historique de commits et les
   (`nodemailer`, `jspdf` mis à jour, `tar`/`tinymce`/`vite` corrigés).
   Quelques vulnérabilités mineures restantes documentées et acceptées
   (composants dev-only ou nécessitant un test visuel avant bump majeur).
+  Re-vérifié : `maplibre-gl` est à `6.14.0` (la faille XSS critique historique
+  est corrigée). Restent 11 vulnérabilités `npm audit` : `cookie<0.7`
+  (transitif via `@sveltejs/kit`/`sveltekit-superforms`/`formsnap`/`bits-ui`,
+  aucun correctif non cassant disponible — le fix nécessiterait un bump majeur
+  de `@sveltejs/kit`/`bits-ui`) et `braces` (transitif via un outil CLI dev-only
+  `chokidar-cli`, sans impact en production). Acceptées en l'état, à
+  réévaluer lors de la prochaine mise à jour majeure de SvelteKit.
 - **Rotation des secrets documentée** (`docs/secrets-rotation.md`) : clé de
   chiffrement, Stripe/Sendcloud, QStash.
 - **Résilience Sendcloud** : disjoncteur (circuit breaker) + limite de

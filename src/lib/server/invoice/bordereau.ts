@@ -5,8 +5,8 @@
  */
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { BordereauView } from '$lib/invoice/types';
-import { formatMoney } from '$lib/utils/formatMoney';
+import type { BordereauView } from '#lib/invoice/types';
+import { formatMoney } from '#lib/utils/formatMoney';
 import { readCustomizations, type InvoiceSource } from './view';
 
 export type { BordereauView };

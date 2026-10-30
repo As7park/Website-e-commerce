@@ -5,8 +5,8 @@
  * Activable/désactivable via `StoreSettings.productQnaEnabled`.
  */
 import { Prisma } from '@prisma/client';
-import { prisma } from '$lib/server';
-import { normalizeListParams, type ListParams } from '$lib/prisma/pagination';
+import { prisma } from '#lib/server';
+import { normalizeListParams, type ListParams } from '#lib/prisma/pagination';
 
 const QUESTIONS_PER_PRODUCT = 20;
 

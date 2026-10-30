@@ -5,7 +5,8 @@
 //   - changer d'adresse n'écrit rien tout de suite ; l'adresse n'est remplacée
 //     qu'après validation du code envoyé à la nouvelle ;
 //   - changer de mot de passe exige le mot de passe courant et révoque les
-//     autres sessions, la session en cours étant réémise ;
+//     autres sessions (`auth.api.changePassword`), la session en cours étant
+//     conservée ;
 //   - activer la 2FA renvoie vers sa configuration, qui délivre le code de secours.
 // -----------------------------------------------------------------------------
 
@@ -14,34 +15,28 @@ import {
 	sendVerificationEmail,
 	sendVerificationEmailBucket,
 	setEmailVerificationRequestCookie
-} from '$lib/lucia/email-verification';
+} from '#lib/server/emailVerification';
 import { fail, redirect } from '@sveltejs/kit';
-import { checkEmailAvailability } from '$lib/prisma/email/email';
-import { verifyPasswordHash, verifyPasswordStrength } from '$lib/lucia/password';
-import { getUserPasswordHash, updateUserPassword } from '$lib/lucia/user';
-import {
-	createSession,
-	generateSessionToken,
-	invalidateUserSessions,
-	setSessionTokenCookie
-} from '$lib/lucia/session';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
+import { APIError } from 'better-auth/api';
+import { auth } from '#lib/auth';
+import { applyAuthCookies } from '#lib/auth/cookies';
+import { checkEmailAvailability } from '#lib/prisma/email/email';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
 import { message, setError, superValidate } from 'sveltekit-superforms';
-import { emailSchema, passwordSchema } from '$lib/schema/auth/settingsSchemas';
+import { emailSchema, passwordSchema } from '#lib/schema/auth/settingsSchemas';
 import { zod } from 'sveltekit-superforms/adapters';
 
 import type { Actions, RequestEvent } from './$types';
-import type { SessionFlags } from '$lib/lucia/session';
-import { isMfaEnabledSchema } from '$lib/schema/users/MfaEnabledSchema';
+import { isMfaEnabledSchema } from '#lib/schema/users/MfaEnabledSchema';
 import {
 	getMarketingEmailsOptIn,
 	getUserMFA,
 	updateMarketingEmailsOptIn,
 	updateUserMFA
-} from '$lib/prisma/user/user';
-import { getStoreFeatureFlags } from '$lib/server/storeSettings';
-import { getSessionDeviceContext } from '$lib/lucia/deviceContext';
-import { notifyPasswordChanged } from '$lib/server/passwordChangedAlert';
+} from '#lib/prisma/user/user';
+import { getStoreFeatureFlags } from '#lib/server/storeSettings';
+import { getSessionDeviceContext } from '#lib/server/deviceContext';
+import { notifyPasswordChanged } from '#lib/server/passwordChangedAlert';
 
 const passwordUpdateBucket = new ExpiringTokenBucket<string>(5, 60 * 30, 'settings-password');
 
@@ -53,17 +48,6 @@ export const load = async (event: RequestEvent) => {
 	if (!event.locals.user.emailVerified) {
 		return redirect(302, '/auth/verify-email');
 	}
-
-	if (!event.locals.user.googleId) {
-		if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-			if (event.locals.user.isMfaEnabled) {
-				return redirect(302, '/auth/2fa');
-			}
-		}
-	}
-	// Le code de récupération 2FA n'est pas chargé ici : la page ne l'affiche
-	// pas (il est montré une seule fois, sur /auth/recovery-code), et le
-	// déchiffrer à chaque visite l'enverrait au navigateur pour rien.
 
 	// Initialiser les formulaires Superform
 	const passwordForm = await superValidate(event, zod(passwordSchema));
@@ -99,11 +83,6 @@ export const actions: Actions = {
 		if (event.locals.session === null || event.locals.user === null) {
 			return message(form, 'Not authenticated', { status: 401 });
 		}
-		if (event.locals.user.isMfaEnabled) {
-			if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-				return message(form, 'Forbidden', { status: 403 });
-			}
-		}
 		if (!(await passwordUpdateBucket.check(event.locals.session.id, 1))) {
 			return message(form, 'Too many requests', { status: 429 });
 		}
@@ -114,44 +93,36 @@ export const actions: Actions = {
 
 		const { password, new_password } = form.data;
 
-		const passwordHash = await getUserPasswordHash(event.locals.user.id);
-		if (passwordHash === null) {
-			return message(form, 'Incorrect password', { status: 400 });
-		}
-		const validPassword = await verifyPasswordHash(passwordHash, password);
-		if (!validPassword) {
-			return message(form, 'Incorrect password', { status: 400 });
-		}
-		if (!(await verifyPasswordStrength(new_password))) {
-			setError(
-				form,
-				'new_password',
-				'Ce mot de passe est trop courant ou a fuité, choisissez-en un autre.'
-			);
-			return fail(400, { form });
-		}
-
 		await passwordUpdateBucket.reset(event.locals.session.id);
-		await invalidateUserSessions(event.locals.user.id);
-		await updateUserPassword(event.locals.user.id, new_password);
 
-		const device = getSessionDeviceContext(event.request);
-		const sessionToken = generateSessionToken();
-		const sessionFlags: SessionFlags = {
-			twoFactorVerified: event.locals.session.twoFactorVerified
-		};
-		const session = await createSession(
-			sessionToken,
-			event.locals.user.id,
-			sessionFlags,
-			null,
-			device
-		);
-		setSessionTokenCookie(event, sessionToken, session.expiresAt);
+		let authHeaders: Headers | undefined;
+		try {
+			const result = await auth.api.changePassword({
+				body: { currentPassword: password, newPassword: new_password, revokeOtherSessions: true },
+				headers: event.request.headers,
+				returnHeaders: true
+			});
+			authHeaders = result.headers;
+		} catch (error) {
+			if (error instanceof APIError) {
+				if (error.body?.code === 'INVALID_PASSWORD') {
+					return message(form, 'Incorrect password', { status: 400 });
+				}
+				// Robustesse (longueur/HaveIBeenPwned) refusée par Better Auth.
+				setError(
+					form,
+					'new_password',
+					'Ce mot de passe est trop courant ou a fuité, choisissez-en un autre.'
+				);
+				return fail(400, { form });
+			}
+			throw error;
+		}
+		applyAuthCookies(event, authHeaders);
 
 		// Jamais bloquant pour la réponse : un échec d'envoi ne doit pas empêcher
 		// la confirmation du changement de mot de passe (voir `notifyPasswordChanged`).
-		void notifyPasswordChanged(event.locals.user.email, device);
+		void notifyPasswordChanged(event.locals.user.email, getSessionDeviceContext(event.request));
 
 		return message(form, 'Password modified successfully');
 	},
@@ -161,11 +132,6 @@ export const actions: Actions = {
 
 		if (event.locals.session === null || event.locals.user === null) {
 			return message(form, 'Not authenticated', { status: 401 });
-		}
-		if (event.locals.user.isMfaEnabled) {
-			if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-				return message(form, 'Forbidden', { status: 403 });
-			}
 		}
 		if (!(await sendVerificationEmailBucket.check(event.locals.user.id, 1))) {
 			return message(form, 'Too many requests', { status: 429 });

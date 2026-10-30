@@ -3,7 +3,7 @@
 // obligatoire car la protection CSRF par défaut de SvelteKit
 // (`checkOrigin`, voir src/hooks.server.ts) rejette sinon la requête en 403.
 // Ne PAS ajouter `X-Forwarded-For` : ça déclencherait le quota par IP
-// (`$lib/server/rate-limit.ts`) bien plus vite que prévu pour un test de
+// (`#lib/server/rate-limit.ts`) bien plus vite que prévu pour un test de
 // charge multi-VU derrière une seule IP sortante.
 import http from 'k6/http';
 import { BASE_URL } from './config.js';

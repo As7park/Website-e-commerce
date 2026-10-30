@@ -6,8 +6,8 @@
  */
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { prisma } from '$lib/server';
-import { RefillingTokenBucket, getClientIP } from '$lib/server/rate-limit';
+import { prisma } from '#lib/server';
+import { RefillingTokenBucket, getClientIP } from '#lib/server/rate-limit';
 
 const RESULTS_PER_TYPE = 5;
 const MIN_QUERY_LENGTH = 2;

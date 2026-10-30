@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import * as Form from '$shadcn/form';
-	import { Input } from '$shadcn/input';
-	import { Button } from '$shadcn/button';
+	import * as Form from '#shadcn/form';
+	import { Input } from '#shadcn/input';
+	import { Button } from '#shadcn/button';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { RETRY_FRIENDLY_FORM } from '$lib/forms/superformOptions';
-	import { createBlogTaxonomyValueSchema } from '$lib/schema/BlogPost/blogTaxonomyValueSchema';
+	import { RETRY_FRIENDLY_FORM } from '#lib/forms/superformOptions';
+	import { createBlogTaxonomyValueSchema } from '#lib/schema/BlogPost/blogTaxonomyValueSchema';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 
@@ -47,8 +47,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="value" form={createBlogTaxonomyValue}>
 						<Form.Control>
-							<Form.Label>Valeur</Form.Label>
-							<Input name="value" type="text" bind:value={$createBlogTaxonomyValueData.value} />
+							{#snippet children({ props })}
+								<Form.Label>Valeur</Form.Label>
+								<Input
+									{...props}
+									name="value"
+									type="text"
+									bind:value={$createBlogTaxonomyValueData.value}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -56,8 +63,15 @@
 				<div class="w-[100%]">
 					<Form.Field name="label" form={createBlogTaxonomyValue}>
 						<Form.Control>
-							<Form.Label>Libellé affiché (facultatif)</Form.Label>
-							<Input name="label" type="text" bind:value={$createBlogTaxonomyValueData.label} />
+							{#snippet children({ props })}
+								<Form.Label>Libellé affiché (facultatif)</Form.Label>
+								<Input
+									{...props}
+									name="label"
+									type="text"
+									bind:value={$createBlogTaxonomyValueData.label}
+								/>
+							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>

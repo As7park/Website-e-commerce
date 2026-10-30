@@ -1,16 +1,17 @@
-import { prisma } from '$lib/server';
-import { recordDuration } from '$lib/server/metrics';
+import { prisma } from '#lib/server';
+import { recordDuration } from '#lib/server/metrics';
 
 /**
  * Purge périodique des lignes qui n'ont plus de valeur passé leur expiration.
  *
  * Ce qui est purgé (aucune obligation de conservation) :
- * - `sessions`, `email_verification_requests`, `password_reset_sessions`,
- *   `session_revoke_tokens` expirées : jusqu'ici supprimées seulement au coup
- *   par coup, à la prochaine lecture du même token (`validateSessionToken`,
- *   etc.) — une session jamais revisitée restait en base indéfiniment. Un
- *   jeton « Ce n'était pas moi » jamais cliqué (voir
- *   `$lib/prisma/sessionRevokeToken/sessionRevokeToken.ts`) suit la même
+ * - `auth_sessions`/`auth_verifications` (Better Auth),
+ *   `email_verification_requests`, `password_reset_sessions`,
+ *   `session_revoke_tokens` expirées : jusqu'ici supprimées seulement au
+ *   coup par coup, à la prochaine lecture du même token — une session jamais
+ *   revisitée restait en base indéfiniment. Un jeton « Ce n'était pas moi »
+ *   jamais cliqué (voir
+ *   `#lib/prisma/sessionRevokeToken/sessionRevokeToken.ts`) suit la même
  *   règle : 7 jours, puis supprimé, cliqué ou non.
  * - `orders` PENDING abandonnées depuis plus de `ABANDONED_ORDER_DAYS` : un
  *   panier jamais payé (`OrderItem`/`Custom` cascadent avec l'`Order`). Le
@@ -22,7 +23,7 @@ import { recordDuration } from '$lib/server/metrics';
  * voir `docs/commerce/README.md`) ni les `orders` déjà `PAID`/`SHIPPED`.
  *
  * `login_events` (historique des connexions, voir
- * `$lib/prisma/loginEvent/loginEvent.ts`) suit une règle différente : ce
+ * `#lib/prisma/loginEvent/loginEvent.ts`) suit une règle différente : ce
  * n'est pas une donnée expirée à nettoyer mais un journal de sécurité, purgé
  * seulement au bout de `LOGIN_EVENT_RETENTION_DAYS` — assez long pour que
  * « déjà vu cet appareil il y a quelques mois » reste une information utile,
@@ -38,6 +39,7 @@ const LOGIN_EVENT_RETENTION_DAYS = 90;
 
 export interface CleanupResult {
 	expiredSessions: number;
+	expiredAuthVerifications: number;
 	expiredEmailVerificationRequests: number;
 	expiredPasswordResetSessions: number;
 	expiredSessionRevokeTokens: number;
@@ -56,13 +58,17 @@ export async function runCleanupJob(): Promise<CleanupResult> {
 
 	try {
 		const [
-			expiredSessions,
+			expiredAuthSessions,
+			expiredAuthVerifications,
 			expiredEmailVerificationRequests,
 			expiredPasswordResetSessions,
 			expiredSessionRevokeTokens,
 			oldLoginEvents
 		] = await Promise.all([
-			prisma.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+			prisma.authSession.deleteMany({ where: { expiresAt: { lt: now } } }),
+			// Scaffolding interne Better Auth (jetons de vérification email/reset,
+			// cookie « two_factor » en attente — voir `prisma/schema.prisma`).
+			prisma.authVerification.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.emailVerificationRequest.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.passwordResetSession.deleteMany({ where: { expiresAt: { lt: now } } }),
 			prisma.sessionRevokeToken.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -76,7 +82,8 @@ export async function runCleanupJob(): Promise<CleanupResult> {
 		});
 
 		const result: CleanupResult = {
-			expiredSessions: expiredSessions.count,
+			expiredSessions: expiredAuthSessions.count,
+			expiredAuthVerifications: expiredAuthVerifications.count,
 			oldLoginEvents: oldLoginEvents.count,
 			expiredEmailVerificationRequests: expiredEmailVerificationRequests.count,
 			expiredPasswordResetSessions: expiredPasswordResetSessions.count,

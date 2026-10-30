@@ -6,14 +6,14 @@
 // est la preuve.
 // -----------------------------------------------------------------------------
 
-import { validatePasswordResetSessionRequest } from '$lib/lucia/passwordReset';
-import { setPasswordResetSessionAsEmailVerified } from '$lib/prisma/passwordResetSession/passwordResetSession';
-import { ExpiringTokenBucket } from '$lib/server/rate-limit';
-import { setUserAsEmailVerifiedIfEmailMatches } from '$lib/lucia/user';
+import { validatePasswordResetSessionRequest } from '#lib/auth/passwordReset';
+import { setPasswordResetSessionAsEmailVerified } from '#lib/prisma/passwordResetSession/passwordResetSession';
+import { ExpiringTokenBucket } from '#lib/server/rate-limit';
+import { setUserAsEmailVerifiedIfEmailMatches } from '#lib/prisma/user/user';
 import { redirect } from '@sveltejs/kit';
 
 import type { Actions, RequestEvent } from './$types';
-import { verifyCodeSchema } from '$lib/schema/auth/verifyCodeSchema';
+import { verifyCodeSchema } from '#lib/schema/auth/verifyCodeSchema';
 import { zod } from 'sveltekit-superforms/adapters';
 import { message, superValidate } from 'sveltekit-superforms';
 

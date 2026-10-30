@@ -2,7 +2,7 @@
  * Confirmation par e-mail à chaque changement de mot de passe —
  * `/auth/settings`, action `password`. Jamais bloquant : un échec d'envoi
  * est seulement loggé, même patron que `notifyNewDeviceLogin`
- * (`$lib/server/newDeviceAlert.ts`).
+ * (`#lib/server/newDeviceAlert.ts`).
  *
  * Contrairement à l'alerte nouvel appareil, le lien de secours pointe vers
  * la réinitialisation de mot de passe, pas vers `/auth/settings/sessions` :
@@ -10,11 +10,11 @@
  * passe et ne peut plus se connecter avec l'ancien — se réinitialiser est
  * le seul chemin qui lui reste pour reprendre la main sur le compte.
  */
-import { sendMail } from '$lib/server/smtp-mail';
-import { log } from '$lib/server/log';
-import { resolveAppUrlOrDefault } from '$lib/server/app-url';
-import { describeUserAgent } from '$lib/lucia/deviceLabel';
-import type { SessionDeviceContext } from '$lib/lucia/deviceContext';
+import { sendMail } from '#lib/server/smtp-mail';
+import { log } from '#lib/server/log';
+import { resolveAppUrlOrDefault } from '#lib/server/app-url';
+import { describeUserAgent } from '#lib/server/deviceLabel';
+import type { SessionDeviceContext } from '#lib/server/deviceContext';
 
 export async function notifyPasswordChanged(email: string, device: SessionDeviceContext) {
 	const deviceLabel = describeUserAgent(device.userAgent);
