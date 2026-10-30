@@ -13,8 +13,8 @@
 	/**
 	 * Habillage commun à tout le site public (tout sauf `/admin`) : header,
 	 * footer, curseur et thème sombre `shop.css`. Posé par le layout racine
-	 * plutôt que par un groupe de routes, pour couvrir aussi les pages hors
-	 * `(shop)` (auth, compte client, pages légales, suivi) et les erreurs 404.
+	 * plutôt que par un groupe de routes, pour couvrir toutes les pages
+	 * (auth, compte client, pages légales, suivi) et les erreurs 404.
 	 */
 	let { children, data }: { children: Snippet; data: Record<string, unknown> } = $props();
 

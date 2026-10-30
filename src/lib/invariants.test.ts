@@ -99,7 +99,7 @@ describe('Invariants du dépôt', () => {
 	 * voyait 125 €, Stripe encaissait 105,50 €, la facture enregistrait 125 €.
 	 */
 	it('calcule les montants du tunnel de paiement depuis OrderItem.price', () => {
-		const files = ['src/lib/commerce/checkout.ts', 'src/routes/(shop)/checkout/+page.server.ts'];
+		const files = ['src/lib/commerce/checkout.ts', 'src/routes/checkout/+page.server.ts'];
 
 		const violations: string[] = [];
 		for (const file of files) {
@@ -130,7 +130,7 @@ describe('Invariants du dépôt', () => {
 			'src/routes/auth/2fa/setup/+page.svelte': 'réémet la session',
 			'src/routes/auth/2fa/reset/+page.svelte': 'réémet la session',
 			'src/routes/auth/reset-password/2fa/+page.svelte': 'réémet la session',
-			'src/routes/(shop)/checkout/+page.svelte': 'ouvrirait deux sessions Stripe',
+			'src/routes/checkout/+page.svelte': 'ouvrirait deux sessions Stripe',
 			'src/routes/admin/gift-cards/create/+page.svelte':
 				'émettrait deux cartes valides (code généré unique à chaque appel)'
 		};
