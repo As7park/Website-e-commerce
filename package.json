@@ -124,8 +124,9 @@
 	},
 	"dependencies": {
 		"@faker-js/faker": "^10.6.0",
-		"@fontsource-variable/open-sans": "^5.3.0",
-		"@fontsource-variable/raleway": "^5.3.0",
+		"@fontsource-variable/source-sans-3": "^5.3.1",
+		"@fontsource/barlow-condensed": "^5.3.0",
+		"@fontsource/bebas-neue": "^5.3.0",
 		"@node-rs/argon2": "^2.2.1",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",

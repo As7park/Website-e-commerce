@@ -2,14 +2,13 @@
 	/* =========================================================
 	   BANDEAU DE PAGE (pages intérieures) — poussière canvas 2D
 	   qui tourbillonne autour de la souris, faisceau, mot géant
-	   en contour, numéro de page, HUD fil d'Ariane, rubans.
+	   en contour, numéro de page, HUD fil d'Ariane.
 	   Intro mot par mot + parallaxe souris/scroll. Porté depuis
 	   le bloc "PAGE BANNER FX" de la maquette.
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import { gsap, onWindow, prefersReducedMotion, sectionBg } from '#lib/shop/fx';
 	import SplitTitle from './SplitTitle.svelte';
-	import Tape from './Tape.svelte';
 
 	type Chip = { label: string; href?: string; hot?: boolean };
 
@@ -23,9 +22,8 @@
 		titleTag = 'h1',
 		lead,
 		chips = [],
-		tapes,
 		slim = false,
-		bg = '#14120F'
+		bg = '#000000'
 	}: {
 		/** Mot géant en contour, en fond. */
 		word: string;
@@ -40,8 +38,6 @@
 		titleTag?: 'h1' | 'p';
 		lead?: string;
 		chips?: Chip[];
-		/** Textes des deux rubans du bas (ambre puis acide). */
-		tapes: [string[], string[]];
 		slim?: boolean;
 		bg?: string;
 	} = $props();
@@ -146,7 +142,7 @@
 					if (p.y > H + 10 || p.x < -20 || p.x > W + 20) spawn(p, false);
 					const ld = Math.hypot(p.x - lx, p.y - ly) / (W * 0.8);
 					const a = Math.max(0.05, 0.62 - ld) * (0.35 + p.z * 0.65);
-					cx.fillStyle = `rgba(${(235 + p.z * 20) | 0},${(205 + p.z * 25) | 0},${(165 + p.z * 20) | 0},${a.toFixed(3)})`;
+					cx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
 					cx.beginPath();
 					cx.arc(p.x, p.y, p.r, 0, 6.2832);
 					cx.fill();
@@ -179,7 +175,6 @@
 					{ y: 26, opacity: 0, duration: 0.8, stagger: 0.08 },
 					0.7
 				)
-				.from(q('.shop-pb-tape .shop-tape'), { yPercent: 130, duration: 1, stagger: 0.12 }, 0.5)
 				.from(q('.shop-pb-num'), { yPercent: 40, opacity: 0, rotate: 18, duration: 1.2 }, 0.3)
 				.from(q('.shop-pb-hud'), { opacity: 0, duration: 1 }, 1);
 
@@ -264,9 +259,5 @@
 				{/each}
 			</div>
 		{/if}
-	</div>
-	<div class="shop-pb-tape">
-		<Tape items={tapes[0]} variant="a" />
-		<Tape items={tapes[1]} variant="b" reverse duration={36} />
 	</div>
 </section>

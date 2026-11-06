@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, type Snippet } from 'svelte';
+	import '@fontsource-variable/source-sans-3';
 	import '#lib/styles/shop.css';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
@@ -23,15 +24,6 @@
 	onMount(() => startShopScroll(progressEl));
 	afterNavigate(() => syncShopScroll());
 </script>
-
-<svelte:head>
-	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link
-		href="https://fonts.googleapis.com/css2?family=Staatliches&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-		rel="stylesheet"
-	/>
-</svelte:head>
 
 <div id="shop-scope" class="shop-scope">
 	<div class="shop-scroll-progress" bind:this={progressEl} aria-hidden="true"></div>

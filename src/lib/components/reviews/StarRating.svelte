@@ -21,7 +21,7 @@
 			<Star
 				class={cn(
 					size,
-					n <= Math.round(value) ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'
+					n <= Math.round(value) ? 'fill-[#ffae00] text-[#ffae00]' : 'text-muted-foreground'
 				)}
 			/>
 		{/each}
@@ -38,7 +38,7 @@
 				onclick={() => (value = n)}
 			>
 				<Star
-					class={cn(size, n <= value ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground')}
+					class={cn(size, n <= value ? 'fill-[#ffae00] text-[#ffae00]' : 'text-muted-foreground')}
 				/>
 			</button>
 		{/each}

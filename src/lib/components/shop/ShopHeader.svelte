@@ -12,9 +12,8 @@
 <header class="shop-site-header">
 	<div class="shop-announcement-bar">Livraison offerte dès 50€ d'achat</div>
 	<div class="shop-header-main">
-		<a href="/" class="shop-logo shop-logo-brand">
-			<img src="/logo.svg" alt="" width="28" height="28" />
-			AS7 PARK
+		<a href="/" class="shop-logo" aria-label="AS7 Park — Accueil">
+			<img src="/brand/wordmark-white.svg" alt="" width="151" height="34" />
 		</a>
 		<nav class="shop-main-nav">
 			<ul>

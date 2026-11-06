@@ -3,8 +3,7 @@
 	import Footer from '#lib/components/Footer.svelte';
 	import CookieNotice from '#lib/components/CookieNotice.svelte';
 	import ShopShell from '#lib/components/shop/ShopShell.svelte';
-	import '@fontsource-variable/open-sans';
-	import '@fontsource-variable/raleway';
+	import '@fontsource-variable/source-sans-3';
 	import '../app.css';
 
 	import { initializeLayoutState, isClient } from './layout.svelte';
@@ -205,7 +204,7 @@
 	<link rel="icon" href="/favicon.ico" />
 	<meta name="viewport" content="width=device-width" />
 	<link rel="manifest" href="/pwa/manifest.webmanifest" />
-	<meta name="theme-color" content="#4285f4" />
+	<meta name="theme-color" content="#000000" />
 </svelte:head>
 
 {#if isShopRoute}

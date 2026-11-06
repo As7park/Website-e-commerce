@@ -20,8 +20,7 @@
 	import ProductCard from '#lib/components/shop/ProductCard.svelte';
 	import { reveal } from '#lib/actions/reveal';
 	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
-	import { gridParallax, sectionBg } from '#lib/shop/fx';
+	import { gridParallax } from '#lib/shop/fx';
 
 	let { data } = $props();
 	let product = $derived(data.product);
@@ -281,324 +280,324 @@
 	title={bannerTitle.text}
 	accent={bannerTitle.accent}
 	titleTag="p"
-	tapes={[
-		['Livraison offerte dès 50 €', 'Paiement sécurisé'],
-		['Retours sous 14 jours', 'AS7 Park']
-	]}
 />
 
-<main class="shop-container" use:sectionBg={'#12160c'}>
-	<div class="shop-product-layout">
-		<div class="shop-product-gallery" use:reveal>
-			<div class="shop-ph shop-ph-portrait">
-				{#key mainImage}
-					<div style="width:100%; height:100%;" in:fade={{ duration: 280 }}>
-						{#if mainImage}
-							<img src={optimizedImageUrl(mainImage, 800)} alt={product.name} />
-						{:else}
-							Image produit
-						{/if}
+<div class="shop-light">
+	<main class="shop-container">
+		<div class="shop-product-layout">
+			<div class="shop-product-gallery" use:reveal>
+				<div class="shop-ph shop-ph-portrait">
+					{#key mainImage}
+						<div style="width:100%; height:100%;" in:fade={{ duration: 280 }}>
+							{#if mainImage}
+								<img src={optimizedImageUrl(mainImage, 800)} alt={product.name} />
+							{:else}
+								Image produit
+							{/if}
+						</div>
+					{/key}
+					{#if hasDiscount && !selectedVariant}
+						<span class="shop-badge shop-badge-discount">-{discountPercent}%</span>
+					{/if}
+				</div>
+				{#if product.images.length > 1}
+					<div class="shop-gallery-thumbs">
+						{#each product.images as image, i (image)}
+							<button
+								type="button"
+								class:shop-active={i === activeImageIndex}
+								onclick={() => (activeImageIndex = i)}
+								aria-label={`Vue ${i + 1}`}
+							>
+								<div class="shop-ph shop-ph-square">
+									<img src={optimizedImageUrl(image, 200)} alt="" />
+								</div>
+							</button>
+						{/each}
 					</div>
-				{/key}
-				{#if hasDiscount && !selectedVariant}
-					<span class="shop-badge shop-badge-discount">-{discountPercent}%</span>
 				{/if}
 			</div>
-			{#if product.images.length > 1}
-				<div class="shop-gallery-thumbs">
-					{#each product.images as image, i (image)}
+
+			<div class="shop-product-info" use:reveal={{ delay: 90 }}>
+				<div>
+					{#if categoryNames.length}
+						<p class="shop-eyebrow">{categoryNames.join(', ')}</p>
+					{/if}
+					{#if product.material}
+						<p class="shop-eyebrow">{product.material.name}</p>
+					{/if}
+					<h1 class="shop-product-title">{product.name}</h1>
+
+					<div style="display:flex; align-items:center; gap:8px; margin:8px 0;">
+						<StarRating value={data.reviewSummary.average} readonly size="size-4" />
+						{#if data.reviewSummary.count > 0}
+							<span style="font-size:13px; color:var(--shop-text-muted);">
+								{data.reviewSummary.average.toFixed(1)} · {data.reviewSummary.count} avis
+							</span>
+						{:else}
+							<span style="font-size:13px; color:var(--shop-text-muted);"
+								>Aucun avis pour le moment</span
+							>
+						{/if}
+					</div>
+
+					<p class="shop-product-price">
+						{#if hasDiscount && !selectedVariant?.price}
+							<span class="shop-old"
+								>{toTTC(product.compareAtPrice as number, data.vatRate).toFixed(2)} €</span
+							>
+						{/if}
+						{displayedPriceTTC.toFixed(2)} €
+					</p>
+				</div>
+
+				{#if product.flashSaleEndsAt && data.flashSaleEnabled}
+					<FlashSaleCountdown endsAt={product.flashSaleEndsAt} variant="full" />
+				{/if}
+
+				<p style="color:var(--shop-text-muted); max-width:48ch;">{product.description}</p>
+
+				<div class="shop-option-group">
+					<h4>Couleur</h4>
+					<div class="shop-swatches">
+						<div
+							class="shop-swatch"
+							style={`background:${product.colorProduct};`}
+							title={product.colorProduct}
+						></div>
+					</div>
+				</div>
+
+				{#if product.variants.length > 0}
+					<div class="shop-option-group">
+						<h4>Variante</h4>
+						<select
+							class="shop-sort-select"
+							value={selectedVariantId ?? ''}
+							onchange={(e) => (selectedVariantId = e.currentTarget.value || null)}
+						>
+							{#each product.variants as variant (variant.id)}
+								<option value={variant.id} disabled={variant.stock <= 0}>
+									{variant.label}{variant.stock <= 0 ? ' (rupture)' : ''}
+								</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
+
+				<div class="shop-option-group">
+					<h4>Quantité</h4>
+					<div class="shop-qty-stepper">
+						<button type="button" aria-label="Diminuer" onclick={decreaseQty}>−</button>
+						<input type="text" readonly value={quantity} aria-label="Quantité" />
+						<button type="button" aria-label="Augmenter" onclick={increaseQty}>+</button>
+					</div>
+				</div>
+
+				<div class="shop-product-actions">
+					<button
+						class="shop-btn shop-btn-block"
+						class:shop-btn-success={justAdded}
+						disabled={displayedStock <= 0}
+						onclick={handleAddToCart}
+					>
+						{#if justAdded}
+							Ajouté ✓
+						{:else}
+							{displayedStock > 0 ? 'Ajouter au panier' : 'Rupture de stock'}
+						{/if}
+					</button>
+					{#if data.stockAlertsEnabled && product.stock <= 0}
 						<button
 							type="button"
-							class:shop-active={i === activeImageIndex}
-							onclick={() => (activeImageIndex = i)}
-							aria-label={`Vue ${i + 1}`}
+							class="shop-btn shop-btn-outline"
+							disabled={stockAlertBusy}
+							onclick={toggleStockAlert}
 						>
-							<div class="shop-ph shop-ph-square">
-								<img src={optimizedImageUrl(image, 200)} alt="" />
-							</div>
+							{stockAlertSubscribed ? 'Vous serez prévenu' : 'Me prévenir'}
 						</button>
+					{/if}
+					{#if data.wishlistEnabled}
+						<button
+							type="button"
+							class="shop-icon-ph"
+							aria-label={inWishlist
+								? 'Retirer de la liste d’envies'
+								: 'Ajouter à la liste d’envies'}
+							disabled={wishlistBusy}
+							onclick={toggleWishlist}
+						>
+							<Heart size={13} fill={inWishlist ? 'currentColor' : 'none'} />
+						</button>
+					{/if}
+				</div>
+
+				<p style="font-size:12px; color:var(--shop-text-muted);">
+					{displayedStock > 0
+						? `${displayedStock} en stock — expédition sous 5 à 7 jours ouvrés.`
+						: 'Actuellement indisponible.'}
+				</p>
+
+				<div class="shop-accordion">
+					{#each accordionItems as item, i (item.title)}
+						<div class="shop-accordion-item">
+							<button
+								type="button"
+								class="shop-accordion-trigger"
+								aria-expanded={openPanels[i]}
+								onclick={() => togglePanel(i)}
+							>
+								{item.title} <span class="shop-accordion-icon">+</span>
+							</button>
+							{#if openPanels[i]}
+								<div class="shop-accordion-panel" transition:slide={{ duration: 250 }}>
+									<div class="shop-accordion-panel-inner">{item.content}</div>
+								</div>
+							{/if}
+						</div>
 					{/each}
 				</div>
-			{/if}
-		</div>
-
-		<div class="shop-product-info" use:reveal={{ delay: 90 }}>
-			<div>
-				{#if categoryNames.length}
-					<p class="shop-eyebrow">{categoryNames.join(', ')}</p>
-				{/if}
-				{#if product.material}
-					<p class="shop-eyebrow">{product.material.name}</p>
-				{/if}
-				<h1 class="shop-product-title">{product.name}</h1>
-
-				<div style="display:flex; align-items:center; gap:8px; margin:8px 0;">
-					<StarRating value={data.reviewSummary.average} readonly size="size-4" />
-					{#if data.reviewSummary.count > 0}
-						<span style="font-size:13px; color:var(--shop-text-muted);">
-							{data.reviewSummary.average.toFixed(1)} · {data.reviewSummary.count} avis
-						</span>
-					{:else}
-						<span style="font-size:13px; color:var(--shop-text-muted);"
-							>Aucun avis pour le moment</span
-						>
-					{/if}
-				</div>
-
-				<p class="shop-product-price">
-					{#if hasDiscount && !selectedVariant?.price}
-						<span class="shop-old"
-							>{toTTC(product.compareAtPrice as number, data.vatRate).toFixed(2)} €</span
-						>
-					{/if}
-					{displayedPriceTTC.toFixed(2)} €
-				</p>
-			</div>
-
-			{#if product.flashSaleEndsAt && data.flashSaleEnabled}
-				<FlashSaleCountdown endsAt={product.flashSaleEndsAt} variant="full" />
-			{/if}
-
-			<p style="color:var(--shop-text-muted); max-width:48ch;">{product.description}</p>
-
-			<div class="shop-option-group">
-				<h4>Couleur</h4>
-				<div class="shop-swatches">
-					<div
-						class="shop-swatch"
-						style={`background:${product.colorProduct};`}
-						title={product.colorProduct}
-					></div>
-				</div>
-			</div>
-
-			{#if product.variants.length > 0}
-				<div class="shop-option-group">
-					<h4>Variante</h4>
-					<select
-						class="shop-sort-select"
-						value={selectedVariantId ?? ''}
-						onchange={(e) => (selectedVariantId = e.currentTarget.value || null)}
-					>
-						{#each product.variants as variant (variant.id)}
-							<option value={variant.id} disabled={variant.stock <= 0}>
-								{variant.label}{variant.stock <= 0 ? ' (rupture)' : ''}
-							</option>
-						{/each}
-					</select>
-				</div>
-			{/if}
-
-			<div class="shop-option-group">
-				<h4>Quantité</h4>
-				<div class="shop-qty-stepper">
-					<button type="button" aria-label="Diminuer" onclick={decreaseQty}>−</button>
-					<input type="text" readonly value={quantity} aria-label="Quantité" />
-					<button type="button" aria-label="Augmenter" onclick={increaseQty}>+</button>
-				</div>
-			</div>
-
-			<div class="shop-product-actions">
-				<button
-					class="shop-btn shop-btn-block"
-					class:shop-btn-success={justAdded}
-					disabled={displayedStock <= 0}
-					onclick={handleAddToCart}
-				>
-					{#if justAdded}
-						Ajouté ✓
-					{:else}
-						{displayedStock > 0 ? 'Ajouter au panier' : 'Rupture de stock'}
-					{/if}
-				</button>
-				{#if data.stockAlertsEnabled && product.stock <= 0}
-					<button
-						type="button"
-						class="shop-btn shop-btn-outline"
-						disabled={stockAlertBusy}
-						onclick={toggleStockAlert}
-					>
-						{stockAlertSubscribed ? 'Vous serez prévenu' : 'Me prévenir'}
-					</button>
-				{/if}
-				{#if data.wishlistEnabled}
-					<button
-						type="button"
-						class="shop-icon-ph"
-						aria-label={inWishlist ? 'Retirer de la liste d’envies' : 'Ajouter à la liste d’envies'}
-						disabled={wishlistBusy}
-						onclick={toggleWishlist}
-					>
-						<Heart size={13} fill={inWishlist ? 'currentColor' : 'none'} />
-					</button>
-				{/if}
-			</div>
-
-			<p style="font-size:12px; color:var(--shop-text-muted);">
-				{displayedStock > 0
-					? `${displayedStock} en stock — expédition sous 5 à 7 jours ouvrés.`
-					: 'Actuellement indisponible.'}
-			</p>
-
-			<div class="shop-accordion">
-				{#each accordionItems as item, i (item.title)}
-					<div class="shop-accordion-item">
-						<button
-							type="button"
-							class="shop-accordion-trigger"
-							aria-expanded={openPanels[i]}
-							onclick={() => togglePanel(i)}
-						>
-							{item.title} <span class="shop-accordion-icon">+</span>
-						</button>
-						{#if openPanels[i]}
-							<div class="shop-accordion-panel" transition:slide={{ duration: 250 }}>
-								<div class="shop-accordion-panel-inner">{item.content}</div>
-							</div>
-						{/if}
-					</div>
-				{/each}
 			</div>
 		</div>
-	</div>
 
-	{#if data.relatedProducts.length > 0}
-		<section class="shop-section">
-			<div class="shop-section-head" use:reveal>
-				<h2 class="shop-section-title">Vous aimerez aussi</h2>
-			</div>
-			<div class="shop-grid shop-grid-4" use:gridParallax={data.relatedProducts}>
-				{#each data.relatedProducts as related, i (related.id)}
-					<ProductCard product={related} index={i} />
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if recentlyViewed.length > 0}
-		<section class="shop-section">
-			<div class="shop-section-head" use:reveal>
-				<h2 class="shop-section-title">Récemment consultés</h2>
-			</div>
-			<div class="shop-grid shop-grid-4" use:gridParallax={recentlyViewed}>
-				{#each recentlyViewed as viewed, i (viewed.id)}
-					<ProductCard
-						product={{ ...viewed, images: viewed.image ? [viewed.image] : [] }}
-						index={i}
-					/>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	<section class="shop-section" id="reviews">
-		<div class="shop-section-head" use:reveal>
-			<h2 class="shop-section-title">Avis</h2>
-		</div>
-
-		{#if data.user}
-			{#if data.hasReviewed}
-				<p style="color:var(--shop-text-muted); font-size:14px;">
-					Vous avez déjà noté ce produit — merci !
-				</p>
-			{:else}
-				<form
-					method="POST"
-					action="?/review"
-					use:reviewEnhance
-					class="shop-form-field"
-					style="max-width:420px;"
-				>
-					<label for="rating-input">Votre note</label>
-					<input type="hidden" name="rating" value={$reviewData.rating} />
-					<StarRating bind:value={$reviewData.rating} />
-
-					<label for="comment-input">Commentaire (facultatif)</label>
-					<textarea id="comment-input" name="comment" bind:value={$reviewData.comment} rows={3}
-					></textarea>
-
-					<button type="submit" class="shop-btn" style="margin-top:8px;">Publier l'avis</button>
-				</form>
-			{/if}
-		{:else}
-			<p style="color:var(--shop-text-muted); font-size:14px;">
-				<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour laisser un avis.
-			</p>
+		{#if data.relatedProducts.length > 0}
+			<section class="shop-section">
+				<div class="shop-section-head" use:reveal>
+					<h2 class="shop-section-title">Vous aimerez aussi</h2>
+				</div>
+				<div class="shop-grid shop-grid-4" use:gridParallax={data.relatedProducts}>
+					{#each data.relatedProducts as related, i (related.id)}
+						<ProductCard product={related} index={i} />
+					{/each}
+				</div>
+			</section>
 		{/if}
 
-		{#if data.reviews.length === 0}
-			<p style="color:var(--shop-text-muted); font-size:14px; margin-top:16px;">
-				Soyez le premier à donner votre avis.
-			</p>
-		{:else}
-			<ul style="margin-top:24px; display:flex; flex-direction:column; gap:20px;">
-				{#each data.reviews as review (review.id)}
-					<li style="border-top:1px solid var(--shop-border); padding-top:16px;">
-						<div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-							<StarRating value={review.rating} readonly size="size-3.5" />
-							<span style="font-size:13px; font-weight:600;">{review.authorName}</span>
-						</div>
-						{#if review.comment}
-							<p style="font-size:14px; line-height:1.5;">{review.comment}</p>
-						{/if}
-					</li>
-				{/each}
-			</ul>
+		{#if recentlyViewed.length > 0}
+			<section class="shop-section">
+				<div class="shop-section-head" use:reveal>
+					<h2 class="shop-section-title">Récemment consultés</h2>
+				</div>
+				<div class="shop-grid shop-grid-4" use:gridParallax={recentlyViewed}>
+					{#each recentlyViewed as viewed, i (viewed.id)}
+						<ProductCard
+							product={{ ...viewed, images: viewed.image ? [viewed.image] : [] }}
+							index={i}
+						/>
+					{/each}
+				</div>
+			</section>
 		{/if}
-	</section>
 
-	{#if data.productQnaEnabled}
-		<section class="shop-section">
+		<section class="shop-section" id="reviews">
 			<div class="shop-section-head" use:reveal>
-				<h2 class="shop-section-title">Questions & réponses</h2>
+				<h2 class="shop-section-title">Avis</h2>
 			</div>
 
 			{#if data.user}
-				<form
-					method="POST"
-					action="?/askQuestion"
-					use:askQuestionEnhance
-					class="shop-form-field"
-					style="max-width:420px;"
-				>
-					<label for="question-input">Votre question</label>
-					<textarea
-						id="question-input"
-						name="question"
-						bind:value={$askQuestionData.question}
-						rows={3}
-					></textarea>
-					<button type="submit" class="shop-btn" style="margin-top:8px;">Envoyer la question</button
+				{#if data.hasReviewed}
+					<p style="color:var(--shop-text-muted); font-size:14px;">
+						Vous avez déjà noté ce produit — merci !
+					</p>
+				{:else}
+					<form
+						method="POST"
+						action="?/review"
+						use:reviewEnhance
+						class="shop-form-field"
+						style="max-width:420px;"
 					>
-				</form>
+						<label for="rating-input">Votre note</label>
+						<input type="hidden" name="rating" value={$reviewData.rating} />
+						<StarRating bind:value={$reviewData.rating} />
+
+						<label for="comment-input">Commentaire (facultatif)</label>
+						<textarea id="comment-input" name="comment" bind:value={$reviewData.comment} rows={3}
+						></textarea>
+
+						<button type="submit" class="shop-btn" style="margin-top:8px;">Publier l'avis</button>
+					</form>
+				{/if}
 			{:else}
 				<p style="color:var(--shop-text-muted); font-size:14px;">
-					<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour poser une
-					question.
+					<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour laisser un
+					avis.
 				</p>
 			{/if}
 
-			{#if data.questions.length === 0}
+			{#if data.reviews.length === 0}
 				<p style="color:var(--shop-text-muted); font-size:14px; margin-top:16px;">
-					Aucune question répondue pour ce produit.
+					Soyez le premier à donner votre avis.
 				</p>
 			{:else}
 				<ul style="margin-top:24px; display:flex; flex-direction:column; gap:20px;">
-					{#each data.questions as qa (qa.id)}
+					{#each data.reviews as review (review.id)}
 						<li style="border-top:1px solid var(--shop-border); padding-top:16px;">
-							<p style="font-size:14px; font-weight:600;">Q : {qa.question}</p>
-							<p style="color:var(--shop-text-muted); font-size:14px; margin-top:4px;">
-								R : {qa.answer}
-							</p>
+							<div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+								<StarRating value={review.rating} readonly size="size-3.5" />
+								<span style="font-size:13px; font-weight:600;">{review.authorName}</span>
+							</div>
+							{#if review.comment}
+								<p style="font-size:14px; line-height:1.5;">{review.comment}</p>
+							{/if}
 						</li>
 					{/each}
 				</ul>
 			{/if}
 		</section>
-	{/if}
-</main>
 
-<PageDivider />
+		{#if data.productQnaEnabled}
+			<section class="shop-section">
+				<div class="shop-section-head" use:reveal>
+					<h2 class="shop-section-title">Questions & réponses</h2>
+				</div>
+
+				{#if data.user}
+					<form
+						method="POST"
+						action="?/askQuestion"
+						use:askQuestionEnhance
+						class="shop-form-field"
+						style="max-width:420px;"
+					>
+						<label for="question-input">Votre question</label>
+						<textarea
+							id="question-input"
+							name="question"
+							bind:value={$askQuestionData.question}
+							rows={3}
+						></textarea>
+						<button type="submit" class="shop-btn" style="margin-top:8px;"
+							>Envoyer la question</button
+						>
+					</form>
+				{:else}
+					<p style="color:var(--shop-text-muted); font-size:14px;">
+						<a href="/auth/login" style="text-decoration:underline;">Connectez-vous</a> pour poser une
+						question.
+					</p>
+				{/if}
+
+				{#if data.questions.length === 0}
+					<p style="color:var(--shop-text-muted); font-size:14px; margin-top:16px;">
+						Aucune question répondue pour ce produit.
+					</p>
+				{:else}
+					<ul style="margin-top:24px; display:flex; flex-direction:column; gap:20px;">
+						{#each data.questions as qa (qa.id)}
+							<li style="border-top:1px solid var(--shop-border); padding-top:16px;">
+								<p style="font-size:14px; font-weight:600;">Q : {qa.question}</p>
+								<p style="color:var(--shop-text-muted); font-size:14px; margin-top:4px;">
+									R : {qa.answer}
+								</p>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		{/if}
+	</main>
+</div>
 
 <style>
 	.shop-badge {

@@ -19,7 +19,7 @@
 		link = { label: 'Voir tout', href: '/products' },
 		endTitle = 'Toute la boutique',
 		endCta = { label: 'Voir tous les articles', href: '/products' },
-		bg = '#2a1c07',
+		bg = '#000000',
 		flashSaleEnabled = false
 	}: {
 		products: ComponentProps<typeof ProductCard>['product'][];

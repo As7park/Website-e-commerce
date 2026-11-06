@@ -7,7 +7,9 @@
 		"embla-carousel-svelte",
 		"paneforge",
 		"chokidar",
-		"pino-pretty"
+		"pino-pretty",
+		"@fontsource/barlow-condensed",
+		"@fontsource/bebas-neue"
 	],
 	"exclude": ["exports", "types", "enumMembers", "duplicates"]
 }

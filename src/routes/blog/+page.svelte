@@ -7,8 +7,6 @@
 	import { reveal } from '#lib/actions/reveal';
 	import { splatCard } from '#lib/actions/splatCard';
 	import PageBanner from '#lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '#lib/components/shop/fx/PageDivider.svelte';
-	import { sectionBg } from '#lib/shop/fx';
 
 	let { data } = $props();
 
@@ -65,127 +63,130 @@
 	title="Le"
 	accent="blog"
 	lead="Conseils d’équipement, entretien de la moto et actus du terrain, par l’équipe AS7 Park."
-	tapes={[
-		['Conseils', 'Entretien', 'Actus'],
-		['Cross', 'Enduro', 'Route']
-	]}
 />
 
-<main class="shop-container" use:sectionBg={'#14120F'}>
-	<div class="shop-listing-layout">
-		<aside class="shop-filters" use:reveal>
-			<div class="shop-filter-group">
-				<h4>Rechercher</h4>
-				<form onsubmit={submitSearch} class="shop-search-bar" style="margin:0; max-width:none;">
-					<input
-						type="search"
-						bind:value={searchInput}
-						placeholder="Rechercher un article…"
-						aria-label="Rechercher un article"
-					/>
-					<button type="submit" class="shop-btn" style="width:auto; height:auto; padding:8px 12px;">
-						<Search size={13} />
-					</button>
-				</form>
-			</div>
+<div class="shop-light">
+	<main class="shop-container">
+		<div class="shop-listing-layout">
+			<aside class="shop-filters" use:reveal>
+				<div class="shop-filter-group">
+					<h4>Rechercher</h4>
+					<form onsubmit={submitSearch} class="shop-search-bar" style="margin:0; max-width:none;">
+						<input
+							type="search"
+							bind:value={searchInput}
+							placeholder="Rechercher un article…"
+							aria-label="Rechercher un article"
+						/>
+						<button
+							type="submit"
+							class="shop-btn"
+							style="width:auto; height:auto; padding:8px 12px;"
+						>
+							<Search size={13} />
+						</button>
+					</form>
+				</div>
 
-			<div class="shop-filter-group">
-				<h4>Catégorie</h4>
-				<ul>
-					<li>
-						<a href={filterHref({ categorie: null })} class:shop-active-filter={!activeCategoryId}>
-							Toutes
-						</a>
-					</li>
-					{#each categories as category (category.id)}
+				<div class="shop-filter-group">
+					<h4>Catégorie</h4>
+					<ul>
 						<li>
 							<a
-								href={filterHref({ categorie: category.id })}
-								class:shop-active-filter={activeCategoryId === category.id}
+								href={filterHref({ categorie: null })}
+								class:shop-active-filter={!activeCategoryId}
 							>
-								{category.name}
+								Toutes
 							</a>
 						</li>
-					{/each}
-				</ul>
-			</div>
+						{#each categories as category (category.id)}
+							<li>
+								<a
+									href={filterHref({ categorie: category.id })}
+									class:shop-active-filter={activeCategoryId === category.id}
+								>
+									{category.name}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
 
-			{#if tags.length > 0}
-				<div class="shop-filter-group">
-					<h4>Tags</h4>
-					<div style="display:flex; flex-wrap:wrap; gap:8px;">
-						{#each tags as tag (tag.id)}
+				{#if tags.length > 0}
+					<div class="shop-filter-group">
+						<h4>Tags</h4>
+						<div style="display:flex; flex-wrap:wrap; gap:8px;">
+							{#each tags as tag (tag.id)}
+								<a
+									href={filterHref({ tag: activeTagId === tag.id ? null : tag.id })}
+									class="shop-tag"
+									class:shop-active-filter={activeTagId === tag.id}
+								>
+									#{tag.name}
+								</a>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				{#if hasActiveFilters}
+					<a href="/blog" class="shop-reset-filters"><X size={13} /> Effacer les filtres</a>
+				{/if}
+			</aside>
+
+			<div class="shop-listing-main">
+				<div class="shop-listing-head">
+					<div>
+						<p class="shop-section-title" style="margin-bottom:4px;">Articles</p>
+						<p class="shop-result-count">
+							{data.total} article{data.total > 1 ? 's' : ''}
+						</p>
+					</div>
+				</div>
+
+				{#if posts.length === 0}
+					<p class="shop-empty-results">
+						{#if data.search}
+							Aucun article ne correspond à « {data.search} ».
+						{:else}
+							Aucun article dans cette sélection.
+						{/if}
+					</p>
+				{:else}
+					<div class="shop-grid shop-grid-3">
+						{#each posts as post, i (post.id)}
 							<a
-								href={filterHref({ tag: activeTagId === tag.id ? null : tag.id })}
-								class="shop-tag"
-								class:shop-active-filter={activeTagId === tag.id}
+								class="shop-card"
+								href="/blog/{post.slug}"
+								data-wheel-nav
+								use:splatCard
+								use:reveal={{ delay: i * 60 }}
 							>
-								#{tag.name}
+								<div class="shop-ph shop-ph-landscape">Article</div>
+								{#if post.category}
+									<p class="shop-card-meta">{post.category.name}</p>
+								{/if}
+								<p class="shop-card-title">{post.title}</p>
+								<p class="shop-card-meta">
+									{post.author.name} · {new Date(post.createdAt).toLocaleDateString('fr-FR')}
+								</p>
 							</a>
 						{/each}
 					</div>
-				</div>
-			{/if}
 
-			{#if hasActiveFilters}
-				<a href="/blog" class="shop-reset-filters"><X size={13} /> Effacer les filtres</a>
-			{/if}
-		</aside>
-
-		<div class="shop-listing-main">
-			<div class="shop-listing-head">
-				<div>
-					<p class="shop-section-title" style="margin-bottom:4px;">Articles</p>
-					<p class="shop-result-count">
-						{data.total} article{data.total > 1 ? 's' : ''}
-					</p>
-				</div>
-			</div>
-
-			{#if posts.length === 0}
-				<p class="shop-empty-results">
-					{#if data.search}
-						Aucun article ne correspond à « {data.search} ».
-					{:else}
-						Aucun article dans cette sélection.
-					{/if}
-				</p>
-			{:else}
-				<div class="shop-grid shop-grid-3">
-					{#each posts as post, i (post.id)}
-						<a
-							class="shop-card"
-							href="/blog/{post.slug}"
-							data-wheel-nav
-							use:splatCard
-							use:reveal={{ delay: i * 60 }}
-						>
-							<div class="shop-ph shop-ph-landscape">Article</div>
-							{#if post.category}
-								<p class="shop-card-meta">{post.category.name}</p>
+					{#if totalPages > 1}
+						<nav class="shop-pagination shop-pagination-text" aria-label="Pagination">
+							{#if page > 1}
+								<a href={pageHref(page - 1)} class="shop-btn shop-btn-outline">Précédent</a>
 							{/if}
-							<p class="shop-card-title">{post.title}</p>
-							<p class="shop-card-meta">
-								{post.author.name} · {new Date(post.createdAt).toLocaleDateString('fr-FR')}
-							</p>
-						</a>
-					{/each}
-				</div>
-
-				{#if totalPages > 1}
-					<nav class="shop-pagination shop-pagination-text" aria-label="Pagination">
-						{#if page > 1}
-							<a href={pageHref(page - 1)} class="shop-btn shop-btn-outline">Précédent</a>
-						{/if}
-						<span class="shop-result-count">Page {page} / {totalPages}</span>
-						{#if page < totalPages}
-							<a href={pageHref(page + 1)} class="shop-btn shop-btn-outline">Suivant</a>
-						{/if}
-					</nav>
+							<span class="shop-result-count">Page {page} / {totalPages}</span>
+							{#if page < totalPages}
+								<a href={pageHref(page + 1)} class="shop-btn shop-btn-outline">Suivant</a>
+							{/if}
+						</nav>
+					{/if}
 				{/if}
-			{/if}
+			</div>
 		</div>
-	</div>
-</main>
-
-<PageDivider />
+	</main>
+</div>

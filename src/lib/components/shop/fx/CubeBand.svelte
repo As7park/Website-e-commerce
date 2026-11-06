@@ -1,55 +1,48 @@
 <script lang="ts">
 	/* =========================================================
-	   BANDEAU + CUBE 3D — un cube Three.js au centre d'un bandeau
-	   ambre. Pas encore de modèle : cube placeholder (faces
-	   numérotées, halftone) à remplacer plus tard par un .glb.
-	   - `pinned` (accueil) : section épinglée, cube / bandeau /
-	     légendes pilotés par le scroll, HUD + progression.
+	   CUBE 3D — un cube Three.js sur fond noir. Pas encore de
+	   modèle : cube placeholder (faces numérotées, halftone) à
+	   remplacer plus tard par un .glb.
+	   - `pinned` (accueil) : section épinglée, cube et légendes
+	     pilotés par le scroll, HUD + progression.
 	   - sinon (boutique) : version compacte, rotation au défilement.
-	   Porté depuis le bloc "BANDEAU CUBE 3D" de la maquette.
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
-	import { gsap, getScrollDelta, onWindow, prefersReducedMotion } from '#lib/shop/fx';
+	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
 
 	let {
 		pinned = false,
 		bgText,
-		rowItems,
 		captions = [],
 		hudLabel = ''
 	}: {
 		pinned?: boolean;
-		/** Gros texte en contour derrière le bandeau. */
+		/** Gros texte en contour derrière le cube. */
 		bgText: string;
-		/** Textes du bandeau, répétés sur deux lignes (pleine / contour). */
-		rowItems: string[];
 		/** Légendes qui apparaissent tour à tour (version épinglée). */
 		captions?: { title: string; text: string }[];
 		hudLabel?: string;
 	} = $props();
 
-	const REPEAT = 7;
-	let sequence = $derived(Array.from({ length: REPEAT }, () => rowItems).flat());
-
 	let stageEl: HTMLElement;
 	let canvasEl: HTMLCanvasElement;
 	let pct = $state('000');
 
-	// Couleurs de la charte (voir shop.css) — l'ambre AS7 remplace l'orange de la maquette.
-	const AMBER = '#FFB200';
-	const INK = '#14120F';
-	const PANEL = '#1D1A15';
-	const PAPER = '#F2EFE4';
+	// Couleurs de la charte (voir shop.css).
+	const ORANGE = '#ffae00';
+	const INK = '#000000';
+	const PANEL = '#1d1d1b';
+	const PAPER = '#ffffff';
 
 	function faceTexture(n: number, accent: boolean) {
 		const s = 512;
 		const c = document.createElement('canvas');
 		c.width = c.height = s;
 		const x = c.getContext('2d')!;
-		x.fillStyle = accent ? AMBER : PANEL;
+		x.fillStyle = accent ? ORANGE : PANEL;
 		x.fillRect(0, 0, s, s);
-		x.fillStyle = accent ? 'rgba(20,18,15,.22)' : 'rgba(242,239,228,.14)';
+		x.fillStyle = accent ? 'rgba(0, 0, 0,.22)' : 'rgba(255, 255, 255,.14)';
 		for (let i = 0; i < s; i += 16) {
 			for (let j = 0; j < s; j += 16) {
 				x.beginPath();
@@ -63,9 +56,9 @@
 		x.fillStyle = accent ? INK : PAPER;
 		x.textAlign = 'center';
 		x.textBaseline = 'middle';
-		x.font = '260px Staatliches, Impact, sans-serif';
+		x.font = "260px 'AS7 Label', Impact, sans-serif";
 		x.fillText(String(n).padStart(2, '0'), s / 2, s / 2 + 10);
-		x.font = '34px "Space Grotesk", Arial, sans-serif';
+		x.font = "46px 'AS7 Label', Arial, sans-serif";
 		x.fillText('AS7 PARK', s / 2, s - 70);
 		const t = new THREE.CanvasTexture(c);
 		t.colorSpace = THREE.SRGBColorSpace;
@@ -86,13 +79,13 @@
 
 		// Three ≥ r155 : éclairage physique, intensités ×π pour retrouver le rendu r128 de la maquette.
 		scene.add(new THREE.AmbientLight(0xffffff, 0.5 * Math.PI));
-		const key = new THREE.DirectionalLight(0xfff1dc, 1.35 * Math.PI);
+		const key = new THREE.DirectionalLight(0xffffff, 1.35 * Math.PI);
 		key.position.set(4, 5, 6);
 		scene.add(key);
-		const rim = new THREE.PointLight(0xffb200, 2.4 * Math.PI * 8, 30, 2);
+		const rim = new THREE.PointLight(0xffae00, 2.4 * Math.PI * 8, 30, 2);
 		rim.position.set(-6, -2, 3);
 		scene.add(rim);
-		const fill = new THREE.PointLight(0xc9f04d, 0.9 * Math.PI * 8, 30, 2);
+		const fill = new THREE.PointLight(0xffffff, 0.9 * Math.PI * 8, 30, 2);
 		fill.position.set(6, -4, -2);
 		scene.add(fill);
 
@@ -115,14 +108,14 @@
 			cube = new THREE.Mesh(box, mats);
 			group.add(cube);
 			const edgesGeo = new THREE.EdgesGeometry(box);
-			const edgesMat = new THREE.LineBasicMaterial({ color: 0xf2efe4 });
+			const edgesMat = new THREE.LineBasicMaterial({ color: 0xffffff });
 			const edges = new THREE.LineSegments(edgesGeo, edgesMat);
 			edges.scale.setScalar(1.002);
 			group.add(edges);
 			const haloBox = new THREE.BoxGeometry(3.3, 3.3, 3.3);
 			const haloGeo = new THREE.EdgesGeometry(haloBox);
 			const haloMat = new THREE.LineBasicMaterial({
-				color: 0xffb200,
+				color: 0xffae00,
 				transparent: true,
 				opacity: 0.7
 			});
@@ -130,9 +123,9 @@
 			group.add(halo);
 			disposables.push(box, edgesGeo, edgesMat, haloBox, haloGeo, haloMat);
 		}
-		// Les faces dessinent du Staatliches : on attend la police (1,5 s max).
+		// Les faces utilisent Bebas Neue : on attend la police (1,5 s max).
 		Promise.race([
-			document.fonts?.load('200px Staatliches') ?? Promise.resolve(),
+			document.fonts?.load("200px 'AS7 Label'") ?? Promise.resolve(),
 			new Promise((r) => setTimeout(r, 1500))
 		]).then(build, build);
 
@@ -185,7 +178,6 @@
 		rafId = requestAnimationFrame(loop);
 
 		/* ---------- pilotage au scroll ---------- */
-		let skewTick: (() => void) | null = null;
 		const ctx = reduce
 			? null
 			: gsap.context(() => {
@@ -221,21 +213,8 @@
 						},
 						0
 					);
-					tl.to(q('.shop-cube-row.is-solid'), { xPercent: -120, ease: 'none', duration: 1 }, 0);
-					tl.fromTo(
-						q('.shop-cube-row.is-outline'),
-						{ xPercent: -120 },
-						{ xPercent: 0, ease: 'none', duration: 1 },
-						0
-					);
 					tl.to(q('.shop-cube-bgtext'), { xPercent: -30, ease: 'none', duration: 1 }, 0);
 					if (pinned) {
-						tl.fromTo(
-							q('.shop-cube-band'),
-							{ clipPath: 'inset(48% 0% 48% 0%)' },
-							{ clipPath: 'inset(0% 0% 0% 0%)', ease: 'power3.out', duration: 0.12 },
-							0
-						);
 						tl.fromTo(
 							st,
 							{ scale: 0.55 },
@@ -257,21 +236,10 @@
 							).to(cap, { autoAlpha: 0, y: -60, duration: 0.08, ease: 'power2.in' }, s[1]);
 						});
 					}
-
-					// Inclinaison des textes selon la vitesse de scroll.
-					const setSkew = gsap.quickSetter(q('.shop-cube-track'), 'skewX', 'deg');
-					let skew = 0;
-					skewTick = () => {
-						if (!visible) return;
-						skew += (gsap.utils.clamp(-14, 14, -getScrollDelta() * 0.35) - skew) * 0.12;
-						setSkew(skew);
-					};
-					gsap.ticker.add(skewTick);
 				}, stageEl);
 
 		return () => {
 			destroyed = true;
-			if (skewTick) gsap.ticker.remove(skewTick);
 			ctx?.revert();
 			cancelAnimationFrame(rafId);
 			resizeObserver.disconnect();
@@ -286,20 +254,6 @@
 <section class="shop-cube-stage" class:is-compact={!pinned} bind:this={stageEl} aria-label={bgText}>
 	<div class="shop-cube-grain"></div>
 	<div class="shop-cube-bgtext" aria-hidden="true">{bgText}</div>
-	<div class="shop-cube-band" aria-hidden="true">
-		<!-- eslint-disable svelte/require-each-key -- répétitions décoratives -->
-		<div class="shop-cube-row is-solid">
-			<div class="shop-cube-track">
-				{#each sequence as item}<span>{item}</span><i>//</i>{/each}
-			</div>
-		</div>
-		<div class="shop-cube-row is-outline">
-			<div class="shop-cube-track">
-				{#each sequence as item}<span>{item}</span><i>//</i>{/each}
-			</div>
-		</div>
-		<!-- eslint-enable svelte/require-each-key -->
-	</div>
 	<canvas class="shop-cube-canvas" bind:this={canvasEl}></canvas>
 	{#if pinned}
 		{#each captions as caption, i (caption.title)}

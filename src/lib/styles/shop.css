@@ -5,28 +5,51 @@
    entrer en collision avec le reste de l'application.
    ========================================================= */
 
-.shop-scope {
-	--shop-ink: #14120f;
-	--shop-panel: #1d1a15;
-	--shop-paper: #f2efe4;
-	/* Accent de marque : ambre du logo AS7 (#ffb200). Le rouge-orangé reste
-	   réservé aux erreurs (--shop-danger) pour ne pas se confondre avec lui. */
-	--shop-orange: #ffb200;
-	--shop-danger: #ff5a1f;
-	--shop-acid: #c9f04d;
-	--shop-dust: #8a6f52;
-	--shop-rust: #7a2e12;
-	--shop-font-display: 'Staatliches', sans-serif;
-	--shop-font-body: 'Space Grotesk', sans-serif;
+/* Polices de titrage. Alias de famille : il suffit de changer `src` pour
+   brancher Avenir Next Condensed si le client fournit une licence web.
+   `font-weight: 100 900` évite le faux gras sur ces fontes à graisse unique. */
+@font-face {
+	font-family: 'AS7 Display';
+	src: url('@fontsource/barlow-condensed/files/barlow-condensed-latin-800-italic.woff2')
+		format('woff2');
+	font-weight: 100 900;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'AS7 Label';
+	src: url('@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2') format('woff2');
+	font-weight: 100 900;
+	font-display: swap;
+}
 
-	--shop-border: rgba(242, 239, 228, 0.22);
-	--shop-border-strong: rgba(242, 239, 228, 0.4);
+.shop-scope {
+	/* Charte AS7 Park (LOGOS & FONTS - AS7PARK A7 AIR-FLEX) : noir et blanc
+	   dominants, orange du logo (#ffae00) en seul accent. Le rouge reste
+	   réservé aux erreurs (--shop-danger). */
+	--shop-ink: #000000;
+	--shop-panel: #1d1d1b; /* noir de la charte, pour les surfaces */
+	--shop-paper: #ffffff;
+	--shop-orange: #ffae00;
+	/* Texte en accent : l'orange est illisible sur fond blanc (voir .shop-light). */
+	--shop-accent-text: var(--shop-orange);
+	--shop-danger: #ff5a1f;
+	--shop-grey: #a3a3a3;
+	--shop-steel: #4a4a48;
+	/* Polices de la charte : Bebas Neue est la vraie ; AS7 Display (Avenir Next
+	   Condensed) et AS7 Body (Myriad Pro), sous licence payante, ont un
+	   équivalent libre. Voir les @font-face en tête de fichier pour les changer. */
+	--shop-font-display: 'AS7 Display', 'Arial Narrow', sans-serif;
+	--shop-font-label: 'AS7 Label', 'Arial Narrow', sans-serif;
+	--shop-font-body: 'Source Sans 3 Variable', 'Myriad Pro', sans-serif;
+
+	--shop-border: rgba(255, 255, 255, 0.22);
+	--shop-border-strong: rgba(255, 255, 255, 0.4);
 	--shop-bg: var(--shop-ink);
 	--shop-bg-muted: var(--shop-panel);
-	--shop-placeholder-bg: #17140f;
-	--shop-placeholder-text: var(--shop-dust);
+	--shop-placeholder-bg: #141414;
+	--shop-placeholder-text: var(--shop-grey);
 	--shop-text: var(--shop-paper);
-	--shop-text-muted: var(--shop-dust);
+	--shop-text-muted: var(--shop-grey);
 	--shop-gap: 24px;
 	--shop-gap-sm: 12px;
 	--shop-radius: 0px;
@@ -50,8 +73,7 @@
 .shop-hero-title-light,
 .shop-hero-title,
 .shop-product-title,
-.shop-card-title,
-.shop-logo {
+.shop-card-title {
 	font-family: var(--shop-font-display);
 	font-weight: 400;
 	letter-spacing: 0.3px;
@@ -115,6 +137,46 @@
 }
 
 /* ---------- Sections utilitaires ---------- */
+/* Section blanche pleine largeur : mêmes composants, tokens inversés. */
+.shop-light {
+	--shop-ink: #ffffff;
+	--shop-panel: #f2f2f2;
+	--shop-paper: #000000;
+	--shop-grey: #5c5c5c;
+	--shop-border: rgba(0, 0, 0, 0.16);
+	--shop-border-strong: rgba(0, 0, 0, 0.4);
+	--shop-bg: #ffffff;
+	--shop-bg-muted: #f2f2f2;
+	--shop-placeholder-bg: #f2f2f2;
+	--shop-placeholder-text: #5c5c5c;
+	--shop-text: #000000;
+	--shop-text-muted: #5c5c5c;
+	--shop-accent-text: #000000;
+	--shop-danger: #b3261e;
+	/* Composants shadcn posés dans la section. */
+	--background: #ffffff;
+	--foreground: #000000;
+	--card: #ffffff;
+	--card-foreground: #000000;
+	--popover: #ffffff;
+	--popover-foreground: #000000;
+	--primary: #000000;
+	--primary-foreground: #ffffff;
+	--secondary: #f2f2f2;
+	--secondary-foreground: #000000;
+	--muted: #f2f2f2;
+	--muted-foreground: #5c5c5c;
+	--accent: #f2f2f2;
+	--accent-foreground: #000000;
+	--destructive: #b3261e;
+	--border: rgba(0, 0, 0, 0.16);
+	--input: rgba(0, 0, 0, 0.4);
+	color-scheme: light;
+	position: relative;
+	background: #ffffff;
+	color: #000000;
+}
+
 .shop-section {
 	padding: 48px 0;
 	border-top: 1px solid var(--shop-border);
@@ -166,11 +228,12 @@
 	margin: 0 auto;
 }
 .shop-logo {
-	font-size: 20px;
-	font-weight: 600;
-	letter-spacing: 0.02em;
-	border: 1px solid var(--shop-border-strong);
-	padding: 6px 14px;
+	display: inline-flex;
+	flex: none;
+}
+.shop-scope .shop-logo img {
+	width: 151px;
+	height: 34px;
 }
 .shop-main-nav ul {
 	display: flex;
@@ -197,15 +260,6 @@
 }
 .shop-logo {
 	transition: transform 0.2s ease;
-}
-.shop-logo-brand {
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
-}
-.shop-scope .shop-logo-brand img {
-	width: 28px;
-	height: 28px;
 }
 a.shop-logo:hover {
 	transform: scale(1.04);
@@ -309,7 +363,7 @@ a.shop-logo:hover {
 	position: relative;
 	min-height: 92vh;
 	overflow: hidden;
-	background: #030302;
+	background: #000000;
 	display: flex;
 	align-items: center;
 }
@@ -358,11 +412,15 @@ a.shop-logo:hover {
 	text-transform: uppercase;
 }
 .shop-hero-title-light {
-	color: #f5f5f5;
+	color: #ffffff;
 	font-size: clamp(36px, 6vw, 68px);
 	margin: 0;
 	line-height: 1.02;
 	letter-spacing: -0.01em;
+}
+.shop-scope .shop-hero-tagline {
+	width: min(260px, 70vw);
+	height: auto;
 }
 .shop-hero-text-light {
 	color: rgba(255, 255, 255, 0.62);
@@ -375,14 +433,14 @@ a.shop-logo:hover {
 	gap: 12px;
 	margin-top: 8px;
 }
-.shop-btn-light {
-	background: #f5f5f5;
-	color: #0a0a0a;
-	border: 1px solid #f5f5f5;
+.shop-btn.shop-btn-light {
+	background: var(--shop-orange);
+	color: #000000;
+	border: 1px solid var(--shop-orange);
 }
-.shop-btn-outline-light {
+.shop-btn.shop-btn-outline-light {
 	background: transparent;
-	color: #f5f5f5;
+	color: #ffffff;
 	border: 1px solid rgba(255, 255, 255, 0.4);
 }
 .shop-hero-scroll-cue {
@@ -444,6 +502,9 @@ a.shop-logo:hover {
 }
 .shop-btn:hover:not(:disabled) {
 	transform: translateY(-2px);
+	background: var(--shop-orange);
+	border-color: var(--shop-orange);
+	color: #000000;
 	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
 }
 .shop-btn:active:not(:disabled) {
@@ -457,14 +518,18 @@ a.shop-logo:hover {
 }
 .shop-btn-outline:hover:not(:disabled) {
 	background: var(--shop-text);
+	border-color: var(--shop-text);
 	color: var(--shop-bg);
 }
-.shop-btn-light:hover:not(:disabled) {
-	box-shadow: 0 10px 28px rgba(255, 255, 255, 0.25);
+.shop-btn.shop-btn-light:hover:not(:disabled) {
+	background: #ffffff;
+	border-color: #ffffff;
+	box-shadow: 0 10px 28px rgba(255, 174, 0, 0.3);
 }
-.shop-btn-outline-light:hover:not(:disabled) {
+.shop-btn.shop-btn-outline-light:hover:not(:disabled) {
 	background: rgba(255, 255, 255, 0.1);
-	border-color: #f5f5f5;
+	border-color: #ffffff;
+	color: #ffffff;
 }
 .shop-btn-block {
 	width: 100%;
@@ -514,10 +579,10 @@ a.shop-logo:hover {
 	counter-reset: shop-platenum;
 }
 .shop-card:nth-child(3n + 2) {
-	--shop-shadow-c: var(--shop-acid);
+	--shop-shadow-c: var(--shop-paper);
 }
 .shop-card:nth-child(3n) {
-	--shop-shadow-c: var(--shop-rust);
+	--shop-shadow-c: var(--shop-steel);
 }
 .shop-card::before {
 	counter-increment: shop-platenum;
@@ -531,7 +596,7 @@ a.shop-logo:hover {
 	border: 2px solid var(--shop-ink);
 	background: var(--shop-shadow-c, var(--shop-orange));
 	color: var(--shop-ink);
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 0.82rem;
 	display: flex;
 	align-items: center;
@@ -556,11 +621,23 @@ a.shop-card .shop-ph {
 	clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
 	box-shadow: 6px 6px 0 var(--shop-shadow-c, var(--shop-orange));
 	background:
-		radial-gradient(circle, rgba(242, 239, 228, 0.14) 1px, transparent 1.3px) 0 0 / 10px 10px,
-		#17140f;
+		radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1.3px) 0 0 / 10px 10px,
+		#141414;
 	transition:
 		transform 0.4s cubic-bezier(0.34, 1.2, 0.4, 1),
 		box-shadow 0.35s ease;
+}
+/* Pastille numérotée orange : le chiffre reste noir, y compris sur fond blanc. */
+.shop-light .shop-card:nth-child(3n + 1)::before,
+.shop-light .shop-grid > :nth-child(3n + 1) > .shop-card::before {
+	color: #000000;
+}
+.shop-light a.shop-card .shop-ph {
+	border: 1.5px solid #000000;
+	color: #000000;
+	background:
+		radial-gradient(circle, rgba(0, 0, 0, 0.14) 1px, transparent 1.3px) 0 0 / 10px 10px,
+		#f2f2f2;
 }
 a.shop-card:hover .shop-ph {
 	box-shadow: 10px 10px 0 var(--shop-shadow-c, var(--shop-orange));
@@ -592,7 +669,7 @@ a.shop-card:hover .shop-card-title {
 	bottom: var(--sy, 0%);
 	width: var(--sw, 8px);
 	height: var(--sh, 8px);
-	background: #15110c;
+	background: #141414;
 	opacity: 0;
 	transform: translate(-50%, 0) rotate(var(--srot, 0deg)) scale(0);
 	transition:
@@ -622,9 +699,9 @@ a.shop-card.shop-is-splatting .shop-splat-mark {
 	font-weight: 700;
 	margin: 0;
 	padding: 0.26rem 0.55rem 0.26rem 0.45rem;
-	border: 1.5px dashed var(--shop-dust);
+	border: 1.5px dashed var(--shop-grey);
 	border-radius: 3px;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 	transform: rotate(1.2deg);
 	width: fit-content;
 }
@@ -680,17 +757,59 @@ a.shop-card.shop-is-splatting .shop-splat-mark {
 
 /* ---------- Footer ---------- */
 .shop-site-footer {
-	border-top: 1px solid var(--shop-border);
-	padding: 48px 0 24px;
-	margin-top: 48px;
+	position: relative;
+	overflow: hidden;
+	border-top: 3px solid var(--shop-orange);
+	padding: 56px 0 24px;
+}
+.shop-site-footer .shop-container {
+	position: relative;
+}
+.shop-scope .shop-footer-wordmark {
+	width: 186px;
+	height: 42px;
+	margin-bottom: 14px;
+}
+.shop-scope .shop-footer-tagline {
+	width: 180px;
+	height: auto;
+	margin-bottom: 14px;
+}
+.shop-scope .shop-footer-roundel {
+	position: absolute;
+	top: 0;
+	right: var(--shop-gap);
+	width: 120px;
+	height: auto;
+	opacity: 0.9;
+}
+@media (max-width: 900px) {
+	.shop-footer-grid {
+		padding-right: 0;
+	}
+	.shop-scope .shop-footer-roundel {
+		position: static;
+		width: 96px;
+		margin-bottom: 24px;
+	}
+}
+.shop-footer-designed {
+	font-family: var(--shop-font-label);
+	font-size: 15px;
+	letter-spacing: 0.34em;
+	margin: 0;
 }
 .shop-footer-grid {
 	display: grid;
 	grid-template-columns: 1.4fr 1fr 1fr 1fr;
 	gap: var(--shop-gap);
+	padding-right: 150px;
 }
 .shop-footer-col h4 {
-	font-size: 13px;
+	font-family: var(--shop-font-label);
+	font-weight: 400;
+	font-size: 18px;
+	letter-spacing: 0.08em;
 	margin: 0 0 12px;
 }
 .shop-footer-col ul {
@@ -1061,7 +1180,7 @@ a.shop-card.shop-is-splatting .shop-splat-mark {
 .shop-price-range input:focus {
 	outline: none;
 	border-color: var(--shop-text);
-	box-shadow: 0 0 0 3px rgba(242, 239, 228, 0.18);
+	box-shadow: 0 0 0 3px var(--shop-border);
 }
 .shop-form-field textarea {
 	resize: vertical;
@@ -1277,7 +1396,7 @@ html.shop-is-loading * {
 	text-underline-offset: 2px;
 }
 .shop-prose a:hover {
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 }
 .shop-prose blockquote {
 	margin: 1.4em 0;
@@ -1310,30 +1429,30 @@ html.shop-is-loading * {
    couvrir aussi les éléments portés dans <body> (menus, dialogues,
    toasts) ; l'admin, sans `.shop-scope`, garde son thème. */
 :root:has(.shop-scope) {
-	--background: #14120f;
-	--foreground: #f2efe4;
-	--card: #1d1a15;
-	--card-foreground: #f2efe4;
-	--popover: #1d1a15;
-	--popover-foreground: #f2efe4;
-	--primary: #f2efe4;
-	--primary-foreground: #14120f;
-	--secondary: #2a251d;
-	--secondary-foreground: #f2efe4;
-	--muted: #2a251d;
-	--muted-foreground: #a8906f;
-	--accent: #2a251d;
-	--accent-foreground: #f2efe4;
+	--background: #000000;
+	--foreground: #ffffff;
+	--card: #1d1d1b;
+	--card-foreground: #ffffff;
+	--popover: #1d1d1b;
+	--popover-foreground: #ffffff;
+	--primary: #ffffff;
+	--primary-foreground: #000000;
+	--secondary: #2a2a2a;
+	--secondary-foreground: #ffffff;
+	--muted: #2a2a2a;
+	--muted-foreground: #a3a3a3;
+	--accent: #2a2a2a;
+	--accent-foreground: #ffffff;
 	--destructive: #ff5a1f;
-	--border: rgba(242, 239, 228, 0.22);
-	--input: rgba(242, 239, 228, 0.4);
-	--ring: #ffb200;
+	--border: rgba(255, 255, 255, 0.22);
+	--input: rgba(255, 255, 255, 0.4);
+	--ring: #ffae00;
 	--radius: 0px;
 	color-scheme: dark;
 }
 :root:has(.shop-scope) body {
-	background: #14120f;
-	color: #f2efe4;
+	background: #000000;
+	color: #ffffff;
 }
 
 .shop-scope {
@@ -1418,13 +1537,16 @@ html.shop-is-loading * {
 	text-underline-offset: 3px;
 }
 .shop-scope .shop-link:hover {
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 }
 /* `.shop-scope a { color: inherit }` est plus spécifique que `.shop-btn` :
    sans ceci, un <a class="shop-btn"> garde la couleur du texte courant et
    devient illisible sur son propre fond clair. */
 .shop-scope a.shop-btn {
 	color: var(--shop-bg);
+}
+.shop-scope a.shop-btn-outline-light {
+	color: #ffffff;
 }
 .shop-scope a.shop-btn-outline {
 	color: var(--shop-text);
@@ -1544,7 +1666,7 @@ html.shop-is-loading * {
 	cursor: pointer;
 }
 .shop-account-signout:hover {
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 }
 @media (max-width: 800px) {
 	.shop-account-signout {
@@ -1564,7 +1686,7 @@ html.shop-is-loading * {
 	font-family: var(--shop-font-display);
 	font-size: clamp(96px, 18vw, 180px);
 	line-height: 1;
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 	margin: 0 0 8px;
 }
 .shop-error .shop-page-lead {
@@ -1583,8 +1705,8 @@ html.shop-is-loading * {
 /* =========================================================
    FX — smooth scroll, progression, rubans, titres mot à mot
    (blocs "FX" de la maquette, voir src/lib/shop/fx.ts).
-   L'orange de la maquette est remplacé par l'ambre AS7
-   (--shop-orange) partout, y compris dans les halos rgba.
+   L'orange du logo (--shop-orange) sert partout d'accent, y
+   compris dans les halos rgba.
    ========================================================= */
 html.lenis,
 html.lenis body {
@@ -1603,7 +1725,7 @@ html.lenis body {
 	left: 0;
 	right: 0;
 	height: 3px;
-	background: var(--shop-acid);
+	background: var(--shop-orange);
 	transform-origin: 0 50%;
 	transform: scaleX(0);
 	z-index: 9998;
@@ -1619,10 +1741,10 @@ html.lenis body {
 /* Cartes enveloppées (transition `in:fly` du listing) : mêmes couleurs
    alternées que des cartes posées directement dans la grille. */
 .shop-grid > :nth-child(3n + 2) > .shop-card {
-	--shop-shadow-c: var(--shop-acid);
+	--shop-shadow-c: var(--shop-paper);
 }
 .shop-grid > :nth-child(3n) > .shop-card {
-	--shop-shadow-c: var(--shop-rust);
+	--shop-shadow-c: var(--shop-steel);
 }
 
 /* Titres découpés mot à mot (SplitTitle) : chaque mot monte depuis un masque. */
@@ -1643,44 +1765,6 @@ html.lenis body {
 		top: 24px;
 		align-self: start;
 	}
-}
-
-/* ---------- Rubans (Tape) ---------- */
-.shop-tape {
-	position: absolute;
-	left: 0;
-	right: 0;
-	height: 54px;
-	display: flex;
-	align-items: center;
-	overflow: hidden;
-	border-top: 3px solid var(--shop-ink);
-	border-bottom: 3px solid var(--shop-ink);
-}
-.shop-tape-a {
-	background: var(--shop-orange);
-}
-.shop-tape-b {
-	background: var(--shop-acid);
-}
-.shop-tape-paper {
-	background: var(--shop-paper);
-}
-.shop-tape-track {
-	display: flex;
-	flex: none;
-	white-space: nowrap;
-	font-family: var(--shop-font-display);
-	font-size: 1.7rem;
-	letter-spacing: 0.06em;
-	color: var(--shop-ink);
-	text-transform: uppercase;
-	will-change: transform;
-}
-.shop-tape-track span,
-.shop-tape-track i {
-	padding: 0 1.1rem;
-	font-style: normal;
 }
 
 @keyframes shop-hero-drift {
@@ -1732,7 +1816,7 @@ html.lenis body {
 }
 .shop-hero-title-light em {
 	font-style: normal;
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 }
 .shop-eyebrow-light {
 	display: inline-flex;
@@ -1764,20 +1848,20 @@ html.lenis body {
 	gap: 2.2rem;
 	margin-top: 0.9rem;
 	padding-top: 1.1rem;
-	border-top: 1px solid rgba(242, 239, 228, 0.18);
+	border-top: 1px solid rgba(255, 255, 255, 0.18);
 }
 .shop-hero-stat b {
 	display: block;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-weight: 400;
 	font-size: 1.9rem;
 	line-height: 1;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 }
 .shop-hero-stat span {
 	font-size: 0.72rem;
 	letter-spacing: 0.06em;
-	color: rgba(242, 239, 228, 0.5);
+	color: rgba(255, 255, 255, 0.5);
 }
 
 .shop-hero-speed {
@@ -1787,8 +1871,8 @@ html.lenis body {
 	pointer-events: none;
 	background-image: repeating-linear-gradient(
 		100deg,
-		rgba(242, 239, 228, 0.03) 0,
-		rgba(242, 239, 228, 0.03) 2px,
+		rgba(255, 255, 255, 0.03) 0,
+		rgba(255, 255, 255, 0.03) 2px,
 		transparent 2px,
 		transparent 68px
 	);
@@ -1801,8 +1885,8 @@ html.lenis body {
 	pointer-events: none;
 	mix-blend-mode: screen;
 	background:
-		radial-gradient(ellipse 55% 50% at 82% 105%, rgba(255, 178, 0, 0.3), transparent 65%),
-		radial-gradient(ellipse 40% 35% at 8% 0%, rgba(201, 240, 77, 0.1), transparent 70%);
+		radial-gradient(ellipse 55% 50% at 82% 105%, rgba(255, 174, 0, 0.3), transparent 65%),
+		radial-gradient(ellipse 40% 35% at 8% 0%, rgba(255, 255, 255, 0.1), transparent 70%);
 }
 .shop-hero-beam {
 	position: absolute;
@@ -1824,8 +1908,8 @@ html.lenis body {
 	height: 100%;
 	background: linear-gradient(
 		180deg,
-		rgba(255, 226, 190, 0.28) 0%,
-		rgba(255, 226, 190, 0.08) 55%,
+		rgba(255, 255, 255, 0.28) 0%,
+		rgba(255, 255, 255, 0.08) 55%,
 		transparent 85%
 	);
 	clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
@@ -1839,10 +1923,10 @@ html.lenis body {
 	white-space: nowrap;
 	line-height: 0.8;
 	will-change: transform;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: clamp(9rem, 24vw, 24rem);
 	color: transparent;
-	-webkit-text-stroke: 1.5px rgba(242, 239, 228, 0.07);
+	-webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.07);
 }
 
 .shop-hero-plates {
@@ -1869,14 +1953,14 @@ html.lenis body {
 	left: 0;
 	top: 16%;
 	rotate: -8deg;
-	--shop-shadow-c: var(--shop-rust);
+	--shop-shadow-c: var(--shop-steel);
 	z-index: 1;
 }
 .shop-hero-plate.is-p2 {
 	right: 0;
 	top: 0;
 	rotate: 7deg;
-	--shop-shadow-c: var(--shop-acid);
+	--shop-shadow-c: var(--shop-paper);
 	z-index: 2;
 }
 .shop-hero-plate.is-p3 {
@@ -1888,7 +1972,7 @@ html.lenis body {
 	width: clamp(210px, 19vw, 290px);
 }
 .shop-hero-plate:focus-visible .shop-hero-plate-body {
-	outline: 3px solid var(--shop-acid);
+	outline: 3px solid var(--shop-orange);
 	outline-offset: 3px;
 }
 .shop-hero-plate-body {
@@ -1931,7 +2015,7 @@ html.lenis body {
 }
 .shop-hero-plate-category {
 	font-size: 0.68rem;
-	color: var(--shop-dust);
+	color: var(--shop-grey);
 }
 .shop-hero-plate-bib {
 	flex: none;
@@ -1941,7 +2025,7 @@ html.lenis body {
 	border: 2px solid var(--shop-ink);
 	background: var(--shop-shadow-c, var(--shop-orange));
 	color: var(--shop-ink);
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 0.9rem;
 	display: flex;
 	align-items: center;
@@ -1951,10 +2035,10 @@ html.lenis body {
 .shop-hero-plate-art {
 	height: clamp(120px, 14vw, 180px);
 	margin-bottom: 0.7rem;
-	border: 1.5px dashed rgba(242, 239, 228, 0.25);
+	border: 1.5px dashed rgba(255, 255, 255, 0.25);
 	background:
-		radial-gradient(circle, rgba(242, 239, 228, 0.16) 1px, transparent 1.3px) 0 0 / 10px 10px,
-		#17140f;
+		radial-gradient(circle, rgba(255, 255, 255, 0.16) 1px, transparent 1.3px) 0 0 / 10px 10px,
+		#141414;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1987,11 +2071,11 @@ html.lenis body {
 .shop-hero-plate-price {
 	display: inline-block;
 	padding: 0.26rem 0.6rem;
-	border: 1.5px dashed var(--shop-dust);
+	border: 1.5px dashed var(--shop-grey);
 	border-radius: 3px;
 	font-weight: 700;
 	font-size: 0.85rem;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 	transform: rotate(2deg);
 }
 .shop-hero-burst {
@@ -2001,7 +2085,7 @@ html.lenis body {
 	width: 96px;
 	height: 96px;
 	z-index: 4;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2016,7 +2100,7 @@ html.lenis body {
 }
 .shop-hero-burst span {
 	position: relative;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 1.15rem;
 	color: var(--shop-ink);
 	transform: rotate(-8deg);
@@ -2031,10 +2115,10 @@ html.lenis body {
 	position: absolute;
 	top: 18px;
 	z-index: 3;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 0.8rem;
 	letter-spacing: 0.16em;
-	color: rgba(242, 239, 228, 0.5);
+	color: rgba(255, 255, 255, 0.5);
 }
 .shop-hero-hud.is-tl {
 	left: var(--shop-gap);
@@ -2055,7 +2139,7 @@ html.lenis body {
 	content: '';
 	width: 1px;
 	height: 56px;
-	background: linear-gradient(var(--shop-acid), transparent);
+	background: linear-gradient(var(--shop-orange), transparent);
 	animation: shop-cue-pulse 2s ease-in-out infinite;
 }
 @keyframes shop-cue-pulse {
@@ -2068,29 +2152,11 @@ html.lenis body {
 	}
 }
 
-.shop-hero-tape {
-	position: absolute;
-	left: -4%;
-	right: -4%;
-	bottom: 0;
-	height: 150px;
-	z-index: 3;
-	pointer-events: none;
-}
-.shop-hero-tape .shop-tape-a {
-	bottom: 44px;
-	rotate: -2.2deg;
-}
-.shop-hero-tape .shop-tape-b {
-	bottom: 20px;
-	rotate: 1.4deg;
-}
-
 @media (max-width: 900px) {
 	.shop-hero-dark {
 		/* Dégage le HUD du haut (N°01 / année), qui chevauchait l'accroche. */
 		padding-top: 3.6rem;
-		padding-bottom: 140px;
+		padding-bottom: 48px;
 	}
 	.shop-hero-dark-inner {
 		grid-template-columns: 1fr;
@@ -2131,7 +2197,7 @@ html.lenis body {
 	min-height: 560px;
 	overflow: hidden;
 	background:
-		radial-gradient(ellipse 900px 520px at 80% 110%, rgba(255, 178, 0, 0.16), transparent 60%),
+		radial-gradient(ellipse 900px 520px at 80% 110%, rgba(255, 174, 0, 0.16), transparent 60%),
 		var(--shop-ink);
 	border-top: 2px solid var(--shop-border);
 	border-bottom: 2px solid var(--shop-border);
@@ -2155,62 +2221,15 @@ html.lenis body {
 	top: 50%;
 	transform: translateY(-50%);
 	white-space: nowrap;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: clamp(9rem, 26vw, 26rem);
 	line-height: 0.8;
 	text-transform: uppercase;
 	color: transparent;
-	-webkit-text-stroke: 1.5px rgba(242, 239, 228, 0.12);
+	-webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.12);
 	will-change: transform;
 	pointer-events: none;
 	z-index: 0;
-}
-.shop-cube-band {
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: 50%;
-	height: clamp(200px, 38vh, 400px);
-	transform: translateY(-50%);
-	background: var(--shop-orange);
-	border-top: 3px solid var(--shop-paper);
-	border-bottom: 3px solid var(--shop-paper);
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	gap: 0.2rem;
-	overflow: hidden;
-	z-index: 1;
-}
-.shop-cube-row {
-	white-space: nowrap;
-	will-change: transform;
-}
-.shop-cube-track {
-	display: inline-block;
-	font-family: var(--shop-font-display);
-	font-size: clamp(3.2rem, 9vw, 8.5rem);
-	line-height: 0.95;
-	letter-spacing: 1px;
-	text-transform: uppercase;
-	color: var(--shop-ink);
-	will-change: transform;
-}
-.shop-cube-row.is-outline .shop-cube-track {
-	color: transparent;
-	-webkit-text-stroke: 2px var(--shop-ink);
-}
-.shop-cube-track span {
-	margin-right: 0.5em;
-}
-.shop-cube-track i {
-	font-style: normal;
-	color: var(--shop-paper);
-	margin-right: 0.5em;
-}
-.shop-cube-row.is-outline .shop-cube-track i {
-	-webkit-text-stroke: 0;
-	color: var(--shop-paper);
 }
 .shop-cube-canvas {
 	position: absolute;
@@ -2248,12 +2267,12 @@ html.lenis body {
 .shop-cube-caption.is-c2 {
 	right: 5%;
 	top: 9%;
-	box-shadow: 7px 7px 0 var(--shop-acid);
+	box-shadow: 7px 7px 0 var(--shop-paper);
 }
 .shop-cube-caption.is-c3 {
 	left: 5%;
 	top: 9%;
-	box-shadow: 7px 7px 0 var(--shop-rust);
+	box-shadow: 7px 7px 0 var(--shop-steel);
 }
 .shop-cube-bib {
 	width: 30px;
@@ -2262,7 +2281,7 @@ html.lenis body {
 	border: 2px solid var(--shop-ink);
 	background: var(--shop-orange);
 	color: var(--shop-ink);
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 0.9rem;
 	display: flex;
 	align-items: center;
@@ -2280,7 +2299,7 @@ html.lenis body {
 .shop-cube-caption p {
 	margin: 0;
 	font-size: 0.9rem;
-	color: var(--shop-dust);
+	color: var(--shop-grey);
 	line-height: 1.45;
 }
 .shop-cube-hud {
@@ -2288,10 +2307,10 @@ html.lenis body {
 	inset: 0;
 	pointer-events: none;
 	z-index: 3;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	letter-spacing: 0.14em;
 	font-size: 0.85rem;
-	color: rgba(242, 239, 228, 0.55);
+	color: rgba(255, 255, 255, 0.55);
 }
 .shop-cube-hud .is-tl {
 	position: absolute;
@@ -2303,7 +2322,7 @@ html.lenis body {
 	right: 5%;
 	bottom: 7%;
 	font-size: 2.4rem;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 	letter-spacing: 0.06em;
 }
 .shop-cube-progress {
@@ -2313,13 +2332,13 @@ html.lenis body {
 	bottom: 3.4%;
 	height: 8px;
 	z-index: 3;
-	border-top: 2px solid rgba(242, 239, 228, 0.25);
-	border-bottom: 2px solid rgba(242, 239, 228, 0.25);
+	border-top: 2px solid rgba(255, 255, 255, 0.25);
+	border-bottom: 2px solid rgba(255, 255, 255, 0.25);
 }
 .shop-cube-progress i {
 	display: block;
 	height: 100%;
-	background: var(--shop-acid);
+	background: var(--shop-orange);
 	transform-origin: 0 50%;
 	transform: scaleX(0);
 }
@@ -2364,20 +2383,20 @@ html.lenis body {
 	z-index: 0;
 	opacity: 0;
 	background:
-		radial-gradient(ellipse 60% 55% at 85% 100%, rgba(255, 178, 0, 0.3), transparent 65%),
-		radial-gradient(ellipse 45% 40% at 5% 0%, rgba(201, 240, 77, 0.09), transparent 70%);
+		radial-gradient(ellipse 60% 55% at 85% 100%, rgba(255, 174, 0, 0.3), transparent 65%),
+		radial-gradient(ellipse 45% 40% at 5% 0%, rgba(255, 255, 255, 0.09), transparent 70%);
 }
 .shop-hscroll-bgtext {
 	position: absolute;
 	left: 0;
 	bottom: -4vh;
 	white-space: nowrap;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: clamp(10rem, 30vw, 30rem);
 	line-height: 0.8;
 	text-transform: uppercase;
 	color: transparent;
-	-webkit-text-stroke: 1.5px rgba(242, 239, 228, 0.09);
+	-webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.09);
 	pointer-events: none;
 	z-index: 0;
 	will-change: transform;
@@ -2460,13 +2479,13 @@ html.lenis body {
 	bottom: 3vh;
 	height: 8px;
 	z-index: 2;
-	border-top: 2px solid rgba(242, 239, 228, 0.25);
-	border-bottom: 2px solid rgba(242, 239, 228, 0.25);
+	border-top: 2px solid rgba(255, 255, 255, 0.25);
+	border-bottom: 2px solid rgba(255, 255, 255, 0.25);
 }
 .shop-hscroll-progress i {
 	display: block;
 	height: 100%;
-	background: var(--shop-acid);
+	background: var(--shop-orange);
 	transform-origin: 0 50%;
 	transform: scaleX(0);
 }
@@ -2501,7 +2520,7 @@ html.lenis body {
 
 /* =========================================================
    BANDEAU DE PAGE + DÉCLINAISON DU STYLE (pages intérieures)
-   (PageBanner, PageDivider) : poussière canvas, faisceau, mot
+   (PageBanner) : poussière canvas, faisceau, mot
    géant en contour, rubans, HUD ; dalles dures.
    ========================================================= */
 .shop-pbanner {
@@ -2511,13 +2530,13 @@ html.lenis body {
 	min-height: clamp(380px, 54vh, 520px);
 	display: flex;
 	align-items: center;
-	padding: 3.4rem 0 7.2rem;
-	background: radial-gradient(120% 90% at 78% 8%, #2a1d10 0%, #14100c 55%, #0a0806 100%);
+	padding: 3.4rem 0;
+	background: radial-gradient(120% 90% at 78% 8%, #1d1d1b 0%, #0a0a0a 55%, #000000 100%);
 	border-bottom: 1px solid var(--shop-border);
 }
 .shop-pbanner.is-slim {
 	min-height: 270px;
-	padding: 2.6rem 0 6.2rem;
+	padding: 2.6rem 0;
 }
 .shop-pb-dust {
 	position: absolute;
@@ -2532,7 +2551,7 @@ html.lenis body {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	background: radial-gradient(90% 80% at 50% 30%, transparent 40%, rgba(10, 8, 6, 0.75) 100%);
+	background: radial-gradient(90% 80% at 50% 30%, transparent 40%, rgba(0, 0, 0, 0.75) 100%);
 }
 .shop-pb-speed {
 	position: absolute;
@@ -2541,8 +2560,8 @@ html.lenis body {
 	pointer-events: none;
 	background-image: repeating-linear-gradient(
 		100deg,
-		rgba(242, 239, 228, 0.03) 0,
-		rgba(242, 239, 228, 0.03) 2px,
+		rgba(255, 255, 255, 0.03) 0,
+		rgba(255, 255, 255, 0.03) 2px,
 		transparent 2px,
 		transparent 68px
 	);
@@ -2561,8 +2580,8 @@ html.lenis body {
 	border-radius: 50%;
 	background: radial-gradient(
 		circle,
-		rgba(255, 178, 0, 0.28) 0%,
-		rgba(255, 178, 0, 0.08) 45%,
+		rgba(255, 174, 0, 0.28) 0%,
+		rgba(255, 174, 0, 0.08) 45%,
 		transparent 70%
 	);
 }
@@ -2584,8 +2603,8 @@ html.lenis body {
 	background: linear-gradient(
 		90deg,
 		transparent,
-		rgba(255, 214, 160, 0.09) 45%,
-		rgba(255, 214, 160, 0.02) 70%,
+		rgba(255, 255, 255, 0.09) 45%,
+		rgba(255, 255, 255, 0.02) 70%,
 		transparent
 	);
 	clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
@@ -2600,11 +2619,11 @@ html.lenis body {
 	white-space: nowrap;
 	line-height: 0.8;
 	will-change: transform;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: clamp(8rem, 22vw, 22rem);
 	text-transform: uppercase;
 	color: transparent;
-	-webkit-text-stroke: 1.5px rgba(242, 239, 228, 0.08);
+	-webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.08);
 }
 .shop-pb-num {
 	position: absolute;
@@ -2612,11 +2631,11 @@ html.lenis body {
 	top: 12%;
 	z-index: 1;
 	pointer-events: none;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: clamp(7rem, 17vw, 17rem);
 	line-height: 0.8;
 	color: transparent;
-	-webkit-text-stroke: 2px rgba(255, 178, 0, 0.55);
+	-webkit-text-stroke: 2px rgba(255, 174, 0, 0.55);
 	rotate: 6deg;
 	will-change: transform;
 }
@@ -2628,10 +2647,10 @@ html.lenis body {
 	position: absolute;
 	top: 16px;
 	z-index: 4;
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	font-size: 0.8rem;
 	letter-spacing: 0.16em;
-	color: rgba(242, 239, 228, 0.55);
+	color: rgba(255, 255, 255, 0.55);
 }
 .shop-pb-hud.is-tl {
 	left: max(var(--shop-gap), calc((100vw - var(--shop-container)) / 2 + var(--shop-gap)));
@@ -2643,17 +2662,17 @@ html.lenis body {
 	font-family: var(--shop-font-body);
 	font-size: 12px;
 	letter-spacing: 0.02em;
-	color: rgba(242, 239, 228, 0.6);
+	color: rgba(255, 255, 255, 0.6);
 }
 .shop-pb-crumbs a {
-	border-bottom: 1px solid rgba(242, 239, 228, 0.35);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.35);
 	transition:
 		color 0.2s ease,
 		border-color 0.2s ease;
 }
 .shop-pb-crumbs a:hover {
-	color: var(--shop-acid);
-	border-color: var(--shop-acid);
+	color: var(--shop-accent-text);
+	border-color: var(--shop-orange);
 }
 .shop-pb-inner {
 	position: relative;
@@ -2667,7 +2686,7 @@ html.lenis body {
 	margin: 0 0 0.8rem;
 	font-size: 12px;
 	letter-spacing: 0.08em;
-	color: var(--shop-acid);
+	color: var(--shop-accent-text);
 }
 .shop-pb-eyebrow::before {
 	content: '';
@@ -2691,7 +2710,7 @@ html.lenis body {
 }
 .shop-pb-title em {
 	font-style: normal;
-	color: var(--shop-orange);
+	color: var(--shop-accent-text);
 }
 .shop-pb-title .shop-w {
 	padding-bottom: 0.06em;
@@ -2699,7 +2718,7 @@ html.lenis body {
 .shop-pb-lead {
 	margin: 1.1rem 0 0;
 	max-width: 46ch;
-	color: rgba(242, 239, 228, 0.62);
+	color: rgba(255, 255, 255, 0.62);
 	font-size: 1rem;
 }
 .shop-pb-chips {
@@ -2709,12 +2728,12 @@ html.lenis body {
 	margin-top: 1.2rem;
 }
 .shop-pb-chip {
-	font-family: var(--shop-font-display);
+	font-family: var(--shop-font-label);
 	letter-spacing: 0.08em;
 	font-size: 0.9rem;
 	text-transform: uppercase;
 	padding: 0.35rem 0.8rem;
-	border: 1px solid rgba(242, 239, 228, 0.35);
+	border: 1px solid rgba(255, 255, 255, 0.35);
 	color: var(--shop-paper);
 	transition:
 		background 0.2s ease,
@@ -2723,69 +2742,22 @@ html.lenis body {
 		box-shadow 0.2s ease;
 }
 .shop-pb-chip.is-hot {
-	background: var(--shop-acid);
+	background: var(--shop-orange);
 	color: var(--shop-ink);
-	border-color: var(--shop-acid);
+	border-color: var(--shop-orange);
 	box-shadow: 3px 3px 0 var(--shop-orange);
 }
 a.shop-pb-chip:hover {
 	translate: -2px -2px;
 	box-shadow: 5px 5px 0 var(--shop-orange);
 }
-
-.shop-pb-tape {
-	position: absolute;
-	left: -4%;
-	right: -4%;
-	bottom: 0;
-	height: 120px;
-	z-index: 5;
-	pointer-events: none;
-}
-.shop-pb-tape .shop-tape {
-	height: 44px;
-}
-.shop-pb-tape .shop-tape-track {
-	font-size: 1.4rem;
-}
-.shop-pb-tape .shop-tape-track span,
-.shop-pb-tape .shop-tape-track i {
-	padding: 0 1rem;
-}
-.shop-pb-tape .shop-tape-a {
-	bottom: 36px;
-	rotate: -1.8deg;
-}
-.shop-pb-tape .shop-tape-b {
-	bottom: 14px;
-	rotate: 1.2deg;
-}
-
 /* Ruban séparateur avant le pied de page */
-.shop-pb-divider {
-	position: relative;
-	height: 150px;
-	overflow: hidden;
-	margin-top: 3.5rem;
-}
-.shop-pb-divider .shop-tape {
-	left: -4%;
-	right: -4%;
-}
-.shop-pb-divider .shop-tape-a {
-	top: 34px;
-	rotate: -1.6deg;
-}
-.shop-pb-divider .shop-tape-paper {
-	top: 70px;
-	rotate: 1.1deg;
-}
 
 /* ---------- Dalles dures : panier / contact / produit ---------- */
 .shop-order-summary {
 	border: 2px solid var(--shop-paper);
 	box-shadow: 9px 9px 0 var(--shop-orange);
-	background: rgba(29, 26, 21, 0.75);
+	background: rgba(29, 29, 27, 0.75);
 	position: relative;
 }
 .shop-order-summary::before {
@@ -2794,7 +2766,7 @@ a.shop-pb-chip:hover {
 	inset: 0;
 	pointer-events: none;
 	opacity: 0.5;
-	background-image: radial-gradient(rgba(242, 239, 228, 0.09) 1.2px, transparent 1.4px);
+	background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1.2px, transparent 1.4px);
 	background-size: 14px 14px;
 }
 .shop-order-summary > * {
@@ -2806,7 +2778,7 @@ a.shop-pb-chip:hover {
 		translate 0.25s ease;
 }
 .shop-cart-table tbody tr:hover {
-	background: rgba(255, 178, 0, 0.07);
+	background: rgba(255, 174, 0, 0.07);
 	translate: 6px 0;
 }
 .shop-form-field input,
@@ -2821,26 +2793,26 @@ a.shop-pb-chip:hover {
 .shop-form-field select:focus,
 .shop-form-field textarea:focus {
 	outline: none;
-	border-color: var(--shop-acid);
-	box-shadow: 5px 5px 0 var(--shop-acid);
+	border-color: var(--shop-orange);
+	box-shadow: 5px 5px 0 var(--shop-orange);
 	translate: -2px -2px;
 }
 .shop-contact-info > div {
 	position: relative;
 	padding: 14px 16px 14px 20px;
 	border-left: 4px solid var(--shop-orange);
-	background: rgba(29, 26, 21, 0.6);
+	background: var(--shop-bg-muted);
 	transition:
 		translate 0.25s ease,
 		border-color 0.25s ease,
 		box-shadow 0.25s ease;
 }
 .shop-contact-info > div:nth-child(even) {
-	border-left-color: var(--shop-acid);
+	border-left-color: var(--shop-orange);
 }
 .shop-contact-info > div:hover {
 	translate: 6px -2px;
-	box-shadow: 6px 6px 0 rgba(255, 178, 0, 0.65);
+	box-shadow: 6px 6px 0 rgba(255, 174, 0, 0.65);
 }
 .shop-btn-block:not(.shop-btn-outline) {
 	box-shadow: 6px 6px 0 var(--shop-orange);
@@ -2863,7 +2835,7 @@ a.shop-pb-chip:hover {
 }
 @media (max-width: 900px) {
 	.shop-pbanner {
-		padding: 3.2rem 0 6.6rem;
+		padding: 3.2rem 0;
 		min-height: 360px;
 	}
 	.shop-pb-num {

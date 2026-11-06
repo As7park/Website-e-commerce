@@ -4,9 +4,32 @@
 
 <footer class="shop-site-footer">
 	<div class="shop-container">
+		<img
+			class="shop-footer-roundel"
+			src="/brand/roundel-white.svg"
+			alt=""
+			width="120"
+			height="110"
+			loading="lazy"
+		/>
 		<div class="shop-footer-grid">
 			<div class="shop-footer-col">
-				<div class="shop-logo" style="margin-bottom:12px;">AS7 PARK</div>
+				<img
+					class="shop-footer-wordmark"
+					src="/brand/wordmark-white.svg"
+					alt="AS7 Park"
+					width="186"
+					height="42"
+					loading="lazy"
+				/>
+				<img
+					class="shop-footer-tagline"
+					src="/brand/tagline-white.svg"
+					alt="Made by riders for riders"
+					width="180"
+					height="25"
+					loading="lazy"
+				/>
 				<p>Boutique moto en ligne — équipement pilote, pièces et accessoires.</p>
 			</div>
 			<div class="shop-footer-col">
@@ -35,6 +58,7 @@
 		</div>
 		<div class="shop-footer-bottom">
 			<p>© {new Date().getFullYear()} AS7 Park</p>
+			<p class="shop-footer-designed">Designed in France</p>
 			<div class="shop-social-row">
 				<a
 					class="shop-icon-ph"

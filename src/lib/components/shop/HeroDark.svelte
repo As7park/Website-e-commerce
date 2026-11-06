@@ -17,7 +17,6 @@
 	import { toTTC } from '#lib/utils/price';
 	import { optimizedImageUrl } from '#lib/utils/cloudinaryUrl';
 	import SplitTitle from '#lib/components/shop/fx/SplitTitle.svelte';
-	import Tape from '#lib/components/shop/fx/Tape.svelte';
 
 	type PlateProduct = {
 		id: string;
@@ -37,8 +36,7 @@
 		stats = [],
 		plates = [],
 		bgWord,
-		hud = ['', ''],
-		tapes
+		hud = ['', '']
 	}: {
 		eyebrow: string;
 		title: string;
@@ -50,7 +48,6 @@
 		plates?: PlateProduct[];
 		bgWord: string;
 		hud?: [string, string];
-		tapes: [string[], string[]];
 	} = $props();
 
 	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
@@ -75,7 +72,7 @@
 
 		if (!canvasEl) return;
 
-		const FOG_COLOR = 0x030302;
+		const FOG_COLOR = 0x000000;
 
 		const scene = new THREE.Scene();
 		scene.background = new THREE.Color(FOG_COLOR);
@@ -204,7 +201,7 @@
 		const material = new THREE.ShaderMaterial({
 			uniforms: {
 				uTexture: { value: dustTexture },
-				uColor: { value: new THREE.Color(0xdcdcd8) },
+				uColor: { value: new THREE.Color(0xffffff) },
 				uFogColor: { value: new THREE.Color(FOG_COLOR) },
 				uFogNear: { value: 6.0 },
 				uFogFar: { value: 20.0 }
@@ -253,7 +250,7 @@
 		const particles = new THREE.Points(geometry, material);
 		scene.add(particles);
 
-		scene.add(new THREE.AmbientLight(0x10120f, 1));
+		scene.add(new THREE.AmbientLight(0x101010, 1));
 
 		let mouseX = 0;
 		let mouseY = 0;
@@ -528,6 +525,13 @@
 		<div class="shop-hero-content" bind:this={contentEl}>
 			<p class="shop-eyebrow shop-eyebrow-light">{eyebrow}</p>
 			<h1 class="shop-hero-title-light"><SplitTitle text={title} {accent} /></h1>
+			<img
+				class="shop-hero-tagline"
+				src="/brand/tagline-white.svg"
+				alt="Made by riders for riders"
+				width="260"
+				height="36"
+			/>
 			<p class="shop-hero-text-light">{text}</p>
 			<div class="shop-hero-ctas">{@render ctas()}</div>
 			{#if stats.length}
@@ -577,9 +581,5 @@
 	</div>
 	<div class="shop-hero-hud is-tl" aria-hidden="true">{hud[0]}</div>
 	<div class="shop-hero-hud is-tr" aria-hidden="true">{hud[1]}</div>
-	<div class="shop-hero-tape">
-		<Tape items={tapes[0]} variant="a" duration={30} />
-		<Tape items={tapes[1]} variant="b" reverse duration={38} />
-	</div>
 	<div class="shop-hero-scroll-cue" aria-hidden="true">Scroll</div>
 </section>

@@ -233,16 +233,16 @@
 	// composant (aucune classe ne fuit vers le reste de l'application).
 	// =========================================================================
 
-	$ink: #14120f;
-	$panel: #1d1a15;
-	$paper: #f2efe4;
-	$orange: #ffb200;
-	$acid: #c9f04d;
-	$dust: #8a6f52;
-	$rust: #7a2e12;
+	$ink: #000000;
+	$panel: #1d1d1b;
+	$paper: #ffffff;
+	$orange: #ffae00;
+	$acid: #ffffff;
+	$dust: #a3a3a3;
+	$rust: #4a4a48;
 
-	$font-display: 'Staatliches', sans-serif;
-	$font-body: 'Space Grotesk', sans-serif;
+	$font-display: 'AS7 Display', 'Arial Narrow', sans-serif;
+	$font-body: 'Source Sans 3 Variable', 'Myriad Pro', sans-serif;
 
 	.stage {
 		--ink: #{$ink};
@@ -259,7 +259,7 @@
 		min-height: max(100vh, 760px);
 		padding: 0;
 		background:
-			radial-gradient(ellipse 900px 500px at 12% -10%, rgba(255, 178, 0, 0.14), transparent 60%),
+			radial-gradient(ellipse 900px 500px at 12% -10%, rgba(255, 174, 0, 0.14), transparent 60%),
 			var(--ink);
 		overflow: hidden;
 		color: var(--paper);
@@ -282,8 +282,8 @@
 		inset: -20% -10%;
 		background-image: repeating-linear-gradient(
 			100deg,
-			rgba(242, 239, 228, 0.035) 0px,
-			rgba(242, 239, 228, 0.035) 2px,
+			rgba(255, 255, 255, 0.035) 0px,
+			rgba(255, 255, 255, 0.035) 2px,
 			transparent 2px,
 			transparent 68px
 		);
@@ -517,10 +517,10 @@
 		position: absolute;
 		background:
 			radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.07), transparent 42%),
-			radial-gradient(circle at 60% 70%, #0a0806 0%, #030202 75%);
+			radial-gradient(circle at 60% 70%, #000000 0%, #000000 75%);
 		border-radius: 58% 42% 63% 37% / 55% 40% 60% 45%;
 		box-shadow:
-			0 0 0 1px rgba(138, 111, 82, 0.22),
+			0 0 0 1px rgba(163, 163, 163, 0.22),
 			0 3px 6px rgba(0, 0, 0, 0.45);
 		transform: scale(0) rotate(var(--rot, 0deg));
 		opacity: 0;
@@ -534,9 +534,9 @@
 			top: 90%;
 			width: 26%;
 			height: 0;
-			background: #040302;
+			background: #000000;
 			border-radius: 0 0 50% 50%;
-			box-shadow: 0 0 0 1px rgba(138, 111, 82, 0.18);
+			box-shadow: 0 0 0 1px rgba(163, 163, 163, 0.18);
 			transform: translateX(-50%);
 			animation: dripGrow 0.5s ease forwards;
 			animation-delay: calc(var(--d, 0s) + 0.14s);
@@ -545,9 +545,9 @@
 
 	.splat-drop {
 		position: absolute;
-		background: #040302;
+		background: #000000;
 		border-radius: 50%;
-		box-shadow: 0 0 0 1px rgba(138, 111, 82, 0.18);
+		box-shadow: 0 0 0 1px rgba(163, 163, 163, 0.18);
 		transform: scale(0) rotate(var(--rot, 0deg));
 		opacity: 0;
 		animation: splatPop 0.3s cubic-bezier(0.22, 1.4, 0.4, 1) forwards;
@@ -612,10 +612,10 @@
 	.art {
 		position: relative;
 		height: 148px;
-		border: 1.5px dashed rgba(242, 239, 228, 0.25);
+		border: 1.5px dashed rgba(255, 255, 255, 0.25);
 		background:
-			radial-gradient(circle, rgba(242, 239, 228, 0.16) 1px, transparent 1.3px) 0 0 / 10px 10px,
-			#17140f;
+			radial-gradient(circle, rgba(255, 255, 255, 0.16) 1px, transparent 1.3px) 0 0 / 10px 10px,
+			#141414;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -684,7 +684,7 @@
 		border: 1.5px dashed var(--dust);
 		border-radius: 3px;
 		transform: rotate(2.5deg);
-		background: rgba(242, 239, 228, 0.03);
+		background: rgba(255, 255, 255, 0.03);
 
 		&::before {
 			content: '';
@@ -720,12 +720,12 @@
 
 	.rail-bar {
 		height: 10px;
-		border-top: 2px solid rgba(242, 239, 228, 0.2);
-		border-bottom: 2px solid rgba(242, 239, 228, 0.2);
+		border-top: 2px solid rgba(255, 255, 255, 0.2);
+		border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 		background-image: repeating-linear-gradient(
 			90deg,
-			rgba(242, 239, 228, 0.35) 0,
-			rgba(242, 239, 228, 0.35) 2px,
+			rgba(255, 255, 255, 0.35) 0,
+			rgba(255, 255, 255, 0.35) 2px,
 			transparent 2px,
 			transparent 34px
 		);
