@@ -3,8 +3,6 @@
 	   IMPORTS
 	------------------------------------------------------------------ */
 	import SmoothScrollBar from './../smoothScrollBar/SmoothScrollBar.svelte';
-	import '@fontsource-variable/open-sans';
-	import '@fontsource-variable/raleway';
 
 	import {
 		cart,
@@ -595,13 +593,13 @@
 										<a
 											href="/auth/login"
 											onclick={() => (sidebarOpen = false)}
-											class="text-blue-500 underline">connecter</a
+											class="text-[#ffae00] underline">connecter</a
 										>
 										ou
 										<a
 											href="/auth/signup"
 											onclick={() => (sidebarOpen = false)}
-											class="text-blue-500 underline">vous inscrire</a
+											class="text-[#ffae00] underline">vous inscrire</a
 										>
 										pour finaliser votre commande.
 									</p>

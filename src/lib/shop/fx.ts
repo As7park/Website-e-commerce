@@ -27,15 +27,6 @@ export function onWindow<T extends ScrollTrigger.Vars>(vars: T): T {
 	return { scroller: window, ...(vars.pin ? { pinType: 'fixed' as const } : {}), ...vars };
 }
 
-/* ---------- Vitesse de scroll partagée (rubans, textes inclinés) ---------- */
-let lastScrollY = 0;
-let scrollDelta = 0;
-
-/** Déplacement vertical (px) depuis la frame précédente, lissé. */
-export function getScrollDelta(): number {
-	return scrollDelta;
-}
-
 /* ---------- Smooth scroll + barre de progression ---------- */
 let lenis: Lenis | null = null;
 
@@ -60,8 +51,6 @@ export function startShopScroll(progressBar: HTMLElement | null): () => void {
 	const tick = (time: number) => {
 		lenis?.raf(time * 1000);
 		const y = window.scrollY;
-		scrollDelta += (y - lastScrollY - scrollDelta) * 0.25;
-		lastScrollY = y;
 		if (progressBar) {
 			const max = document.documentElement.scrollHeight - window.innerHeight;
 			progressBar.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
@@ -91,8 +80,6 @@ export function startShopScroll(progressBar: HTMLElement | null): () => void {
 /** À appeler après chaque navigation SvelteKit : coupe l'inertie en cours. */
 export function syncShopScroll() {
 	lenis?.scrollTo(window.scrollY, { immediate: true, force: true });
-	lastScrollY = window.scrollY;
-	scrollDelta = 0;
 	ScrollTrigger.refresh();
 }
 

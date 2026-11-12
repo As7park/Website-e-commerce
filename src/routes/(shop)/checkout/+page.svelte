@@ -7,7 +7,6 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
 	import AddressSelector from '$lib/components/checkout/AddressSelector.svelte';
 	import ShippingOptions from '$lib/components/checkout/ShippingOptions.svelte';
 	import ServicePointMap from '$lib/components/checkout/ServicePointMap.svelte';
@@ -572,10 +571,6 @@
 		},
 		{ label: 'Code promo' }
 	]}
-	tapes={[
-		['Retours sous 14 jours', 'Paiement sécurisé'],
-		['Livraison offerte dès 50 €', 'AS7 Park']
-	]}
 />
 
 <!-- SHOP-DESIGN : le bandeau reprend la maquette `panier.html` ; le tunnel lui-même
@@ -795,5 +790,3 @@
 		</div>
 	</div>
 </div>
-
-<PageDivider />

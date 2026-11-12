@@ -7,9 +7,7 @@
 	import SEO from '$lib/components/SEO.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	import PageBanner from '$lib/components/shop/fx/PageBanner.svelte';
-	import PageDivider from '$lib/components/shop/fx/PageDivider.svelte';
-	import CubeBand from '$lib/components/shop/fx/CubeBand.svelte';
-	import { gridParallax, sectionBg } from '$lib/shop/fx';
+	import { gridParallax } from '$lib/shop/fx';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
@@ -135,164 +133,160 @@
 		{ label: 'En stock', href: '/products?dispo=1' },
 		{ label: 'Petits prix', href: '/products?tri=prix-asc' }
 	]}
-	tapes={[
-		['Nouveautés', 'Cross', 'Enduro', 'Route'],
-		['Livraison offerte dès 50 €', 'Retours sous 14 jours']
-	]}
 />
 
-<CubeBand bgText="Collection" rowItems={['AS7 Park', 'Cross · Enduro · Route']} />
+<div class="shop-light">
+	<main class="shop-container">
+		<form
+			method="GET"
+			action="/products"
+			class="shop-search-bar"
+			onsubmit={(e) => {
+				e.preventDefault();
+				const q = new FormData(e.currentTarget).get('q');
+				updateFilters({ q: typeof q === 'string' ? q : null });
+			}}
+		>
+			<input type="search" name="q" value={search} placeholder="Rechercher un produit" />
+			<button type="submit" class="shop-btn">
+				<Search size={14} />
+			</button>
+			{#if search}
+				<a href={clearSearchHref} class="shop-icon-ph" aria-label="Effacer la recherche">
+					<X size={13} />
+				</a>
+			{/if}
+		</form>
 
-<main class="shop-container" use:sectionBg={'#1b1409'}>
-	<form
-		method="GET"
-		action="/products"
-		class="shop-search-bar"
-		onsubmit={(e) => {
-			e.preventDefault();
-			const q = new FormData(e.currentTarget).get('q');
-			updateFilters({ q: typeof q === 'string' ? q : null });
-		}}
-	>
-		<input type="search" name="q" value={search} placeholder="Rechercher un produit" />
-		<button type="submit" class="shop-btn">
-			<Search size={14} />
-		</button>
-		{#if search}
-			<a href={clearSearchHref} class="shop-icon-ph" aria-label="Effacer la recherche">
-				<X size={13} />
-			</a>
-		{/if}
-	</form>
-
-	<div class="shop-listing-layout">
-		<aside class="shop-filters" use:reveal>
-			<div class="shop-filter-group">
-				<h4>Prix</h4>
-				<div class="shop-price-range">
-					<input
-						type="number"
-						min="0"
-						placeholder="Min"
-						bind:value={minPriceInput}
-						onchange={commitPriceRange}
-						aria-label="Prix minimum"
-					/>
-					<span>—</span>
-					<input
-						type="number"
-						min="0"
-						placeholder="Max"
-						bind:value={maxPriceInput}
-						onchange={commitPriceRange}
-						aria-label="Prix maximum"
-					/>
-				</div>
-			</div>
-
-			{#each facets.taxonomies as taxonomy (taxonomy.slug)}
+		<div class="shop-listing-layout">
+			<aside class="shop-filters" use:reveal>
 				<div class="shop-filter-group">
-					<h4>{taxonomy.name}</h4>
-					<ul>
-						{#each taxonomy.values as value (value.value)}
-							<li>
-								<label>
-									<input
-										type="checkbox"
-										checked={(data.taxonomyFilters[taxonomy.slug] ?? []).includes(value.value)}
-										onchange={() => toggleTaxonomyValue(taxonomy.slug, value.value)}
-									/>
-									{#if taxonomy.type === 'COLOR' && value.code}
-										<span
-											class="shop-swatch"
-											style={`width:16px;height:16px;background:${value.code};`}
-										></span>
-									{/if}
-									{value.label}
-									<span style="color:var(--shop-text-muted); font-size:11px;">({value.count})</span>
-								</label>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/each}
-
-			<div class="shop-filter-group">
-				<h4>Disponibilité</h4>
-				<label>
-					<input
-						type="checkbox"
-						checked={data.inStockOnly}
-						onchange={(e) => updateFilters({ dispo: e.currentTarget.checked ? '1' : null })}
-					/>
-					En stock uniquement
-				</label>
-			</div>
-
-			{#if activeFilterCount > 0}
-				<button type="button" class="shop-reset-filters" onclick={resetFilters}>
-					Réinitialiser les filtres ({activeFilterCount})
-				</button>
-			{/if}
-		</aside>
-
-		<div class="shop-listing-main">
-			<div class="shop-listing-head">
-				<div>
-					<p class="shop-section-title" style="margin-bottom:4px;">Résultats</p>
-					<p class="shop-result-count">
-						{data.total} produit{data.total > 1 ? 's' : ''}
-					</p>
-				</div>
-				<select
-					class="shop-sort-select"
-					value={data.sort}
-					onchange={(e) =>
-						updateFilters({
-							tri: e.currentTarget.value === 'pertinence' ? null : e.currentTarget.value
-						})}
-				>
-					{#each Object.entries(SORT_LABELS) as [value, label] (value)}
-						<option {value}>{label}</option>
-					{/each}
-				</select>
-			</div>
-
-			{#if products.length === 0}
-				<p class="shop-empty-results">
-					{#if search}
-						Aucun produit ne correspond à « {search} ».
-					{:else}
-						Aucun produit ne correspond à ces filtres.
-					{/if}
-				</p>
-			{:else}
-				<div class="shop-grid shop-grid-4" use:gridParallax={products}>
-					{#each products as product, i (product.id)}
-						<div in:fly={{ y: 18, duration: 400, delay: i * 45, easing: quintOut }}>
-							<ProductCard
-								{product}
-								revealOnScroll={false}
-								flashSaleEnabled={data.flashSaleEnabled}
-							/>
-						</div>
-					{/each}
+					<h4>Prix</h4>
+					<div class="shop-price-range">
+						<input
+							type="number"
+							min="0"
+							placeholder="Min"
+							bind:value={minPriceInput}
+							onchange={commitPriceRange}
+							aria-label="Prix minimum"
+						/>
+						<span>—</span>
+						<input
+							type="number"
+							min="0"
+							placeholder="Max"
+							bind:value={maxPriceInput}
+							onchange={commitPriceRange}
+							aria-label="Prix maximum"
+						/>
+					</div>
 				</div>
 
-				{#if totalPages > 1}
-					<nav class="shop-pagination shop-pagination-text" aria-label="Pagination">
-						{#if page > 1}
-							<a href={pageHref(page - 1)} class="shop-btn shop-btn-outline">Précédent</a>
-						{/if}
-						<span class="shop-result-count">Page {page} / {totalPages}</span>
-						{#if page < totalPages}
-							<a href={pageHref(page + 1)} class="shop-btn shop-btn-outline">Suivant</a>
-						{/if}
-					</nav>
+				{#each facets.taxonomies as taxonomy (taxonomy.slug)}
+					<div class="shop-filter-group">
+						<h4>{taxonomy.name}</h4>
+						<ul>
+							{#each taxonomy.values as value (value.value)}
+								<li>
+									<label>
+										<input
+											type="checkbox"
+											checked={(data.taxonomyFilters[taxonomy.slug] ?? []).includes(value.value)}
+											onchange={() => toggleTaxonomyValue(taxonomy.slug, value.value)}
+										/>
+										{#if taxonomy.type === 'COLOR' && value.code}
+											<span
+												class="shop-swatch"
+												style={`width:16px;height:16px;background:${value.code};`}
+											></span>
+										{/if}
+										{value.label}
+										<span style="color:var(--shop-text-muted); font-size:11px;"
+											>({value.count})</span
+										>
+									</label>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/each}
+
+				<div class="shop-filter-group">
+					<h4>Disponibilité</h4>
+					<label>
+						<input
+							type="checkbox"
+							checked={data.inStockOnly}
+							onchange={(e) => updateFilters({ dispo: e.currentTarget.checked ? '1' : null })}
+						/>
+						En stock uniquement
+					</label>
+				</div>
+
+				{#if activeFilterCount > 0}
+					<button type="button" class="shop-reset-filters" onclick={resetFilters}>
+						Réinitialiser les filtres ({activeFilterCount})
+					</button>
 				{/if}
-			{/if}
-		</div>
-	</div>
-</main>
+			</aside>
 
-<PageDivider />
+			<div class="shop-listing-main">
+				<div class="shop-listing-head">
+					<div>
+						<p class="shop-section-title" style="margin-bottom:4px;">Résultats</p>
+						<p class="shop-result-count">
+							{data.total} produit{data.total > 1 ? 's' : ''}
+						</p>
+					</div>
+					<select
+						class="shop-sort-select"
+						value={data.sort}
+						onchange={(e) =>
+							updateFilters({
+								tri: e.currentTarget.value === 'pertinence' ? null : e.currentTarget.value
+							})}
+					>
+						{#each Object.entries(SORT_LABELS) as [value, label] (value)}
+							<option {value}>{label}</option>
+						{/each}
+					</select>
+				</div>
+
+				{#if products.length === 0}
+					<p class="shop-empty-results">
+						{#if search}
+							Aucun produit ne correspond à « {search} ».
+						{:else}
+							Aucun produit ne correspond à ces filtres.
+						{/if}
+					</p>
+				{:else}
+					<div class="shop-grid shop-grid-4" use:gridParallax={products}>
+						{#each products as product, i (product.id)}
+							<div in:fly={{ y: 18, duration: 400, delay: i * 45, easing: quintOut }}>
+								<ProductCard
+									{product}
+									revealOnScroll={false}
+									flashSaleEnabled={data.flashSaleEnabled}
+								/>
+							</div>
+						{/each}
+					</div>
+
+					{#if totalPages > 1}
+						<nav class="shop-pagination shop-pagination-text" aria-label="Pagination">
+							{#if page > 1}
+								<a href={pageHref(page - 1)} class="shop-btn shop-btn-outline">Précédent</a>
+							{/if}
+							<span class="shop-result-count">Page {page} / {totalPages}</span>
+							{#if page < totalPages}
+								<a href={pageHref(page + 1)} class="shop-btn shop-btn-outline">Suivant</a>
+							{/if}
+						</nav>
+					{/if}
+				{/if}
+			</div>
+		</div>
+	</main>
+</div>

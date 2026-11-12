@@ -91,7 +91,7 @@
 		top: 8px;
 		left: 8px;
 		background: var(--shop-orange);
-		color: var(--shop-ink);
+		color: #000000;
 	}
 	.shop-badge-outofstock {
 		top: 8px;
