@@ -36,7 +36,8 @@
 		stats = [],
 		plates = [],
 		bgWord,
-		hud = ['', '']
+		hud = ['', ''],
+		staged = false
 	}: {
 		eyebrow: string;
 		title: string;
@@ -48,7 +49,21 @@
 		plates?: PlateProduct[];
 		bgWord: string;
 		hud?: [string, string];
+		/**
+		 * Hero mis en scène par la page (accueil, voir HomeOpening) : l'intro
+		 * attend `stage().intro.play()` et les animations liées au scroll
+		 * (fondu du contenu, montée des plaques, mot de fond) sont laissées
+		 * à la page.
+		 */
+		staged?: boolean;
 	} = $props();
+
+	let introTl: gsap.core.Timeline | null = null;
+
+	/** Accès pour la page qui met le hero en scène (`staged`). */
+	export function stage() {
+		return { intro: introTl, section: sectionEl };
+	}
 
 	// Prix stockés HT : affichage TTC (taux global fourni par le layout racine).
 	const ttc = (priceHT: number) => toTTC(priceHT, page.data.vatRate ?? 0);
@@ -269,6 +284,7 @@
 		cleanups.push(() => window.removeEventListener('mousemove', onWindowMouseMove));
 
 		function onWindowScroll() {
+			if (staged) return;
 			scrollY = window.scrollY;
 			if (sectionEl && scrollY < window.innerHeight * 1.2) {
 				canvasEl.style.transform = `translateY(${scrollY * 0.28}px)`;
@@ -315,8 +331,17 @@
 
 		const clock = new THREE.Clock();
 
+		// Hors écran (sous l'intro de l'accueil, ou plus bas dans la page) : pas de rendu.
+		let onScreen = true;
+		const visibility = new IntersectionObserver(([entry]) => {
+			onScreen = entry.isIntersecting;
+		});
+		visibility.observe(sectionEl);
+		cleanups.push(() => visibility.disconnect());
+
 		function animate() {
 			rafId = requestAnimationFrame(animate);
+			if (!onScreen) return;
 			const t = clock.getElapsedTime();
 
 			raycaster.setFromCamera(mouseNDC, camera);
@@ -439,7 +464,14 @@
 
 		const ctx = gsap.context(() => {
 			const q = gsap.utils.selector(sectionEl);
-			const intro = gsap.timeline({ defaults: { ease: 'power4.out' } });
+			const intro = gsap.timeline({ paused: staged, defaults: { ease: 'power4.out' } });
+			introTl = intro;
+			// Mis en scène : tout passe par la même timeline, jouée par la page.
+			const from = (targets: gsap.TweenTarget, vars: gsap.TweenVars) => {
+				const { delay = 0, ...rest } = vars;
+				if (staged) intro.from(targets, rest, delay as number);
+				else gsap.from(targets, vars);
+			};
 			intro
 				.from(q('.shop-hero-content .shop-eyebrow'), { y: 24, opacity: 0, duration: 0.7 }, 0.1)
 				.from(
@@ -449,29 +481,31 @@
 				)
 				.from(q('.shop-hero-text-light'), { y: 28, opacity: 0, duration: 0.8 }, 0.7)
 				.from(q('.shop-hero-ctas > *'), { y: 28, opacity: 0, duration: 0.7, stagger: 0.1 }, 0.85);
-			gsap.from(plateEls, {
-				'--iy': '170px',
-				opacity: 0,
-				duration: 1.3,
-				ease: 'power4.out',
-				stagger: 0.15,
-				delay: 0.5
-			});
-			gsap.from(q('.shop-hero-burst'), {
+			// Mis en scène, les plaques arrivent avec le scroll (HomeOpening).
+			if (!staged)
+				gsap.from(plateEls, {
+					'--iy': '170px',
+					opacity: 0,
+					duration: 1.3,
+					ease: 'power4.out',
+					stagger: 0.15,
+					delay: 0.5
+				});
+			from(q('.shop-hero-burst'), {
 				scale: 0,
 				rotation: -40,
 				duration: 0.9,
 				ease: 'back.out(2)',
 				delay: 1.3
 			});
-			gsap.from(q('.shop-hero-tape .shop-tape'), {
+			from(q('.shop-hero-tape .shop-tape'), {
 				yPercent: 130,
 				duration: 1,
 				ease: 'power4.out',
 				stagger: 0.12,
 				delay: 0.9
 			});
-			gsap.from(q('.shop-hero-stat'), {
+			from(q('.shop-hero-stat'), {
 				y: 24,
 				opacity: 0,
 				duration: 0.8,
@@ -479,12 +513,13 @@
 				stagger: 0.1,
 				delay: 1.1
 			});
-			gsap.from(q('.shop-hero-hud, .shop-hero-scroll-cue'), {
+			from(q('.shop-hero-hud, .shop-hero-scroll-cue'), {
 				opacity: 0,
 				duration: 1,
 				delay: 1.3
 			});
 
+			if (staged) return;
 			const scrub = () =>
 				onWindow({ trigger: sectionEl, start: 'top top', end: 'bottom top', scrub: true });
 			gsap.to(contentEl, {
@@ -503,7 +538,10 @@
 			});
 			gsap.to(q('.shop-hero-bgword'), { xPercent: -25, ease: 'none', scrollTrigger: scrub() });
 		}, sectionEl);
-		cleanups.push(() => ctx.revert());
+		cleanups.push(() => {
+			ctx.revert();
+			introTl = null;
+		});
 	}
 
 	onDestroy(() => {

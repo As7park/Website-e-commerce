@@ -82,7 +82,7 @@
 					anticipatePin: 1,
 					animation: tween,
 					invalidateOnRefresh: true,
-					refreshPriority: 1,
+					refreshPriority: 2,
 					onUpdate: (self) => update(self.progress),
 					onRefresh: (self) => update(self.progress)
 				})

@@ -755,6 +755,216 @@ a.shop-card.shop-is-splatting .shop-splat-mark {
 	font: inherit;
 }
 
+/* ---------- Accueil — sections blanches habillées ---------- */
+/* Section bloquée à l'écran (action `pinHold`). */
+.shop-hold {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+}
+.shop-hold > * {
+	width: 100%;
+	flex: 1 1 100%;
+}
+
+/* Habillage (ShopDeco) : mot géant, lignes de vitesse, trame, logo rond, compteur. */
+.shop-decorated {
+	position: relative;
+	overflow: hidden;
+}
+.shop-decorated > :not(.shop-deco) {
+	position: relative;
+	z-index: 1;
+}
+.shop-decorated > .shop-deco {
+	position: absolute;
+	inset: 0;
+	width: auto;
+	flex: none;
+	pointer-events: none;
+	overflow: hidden;
+}
+.shop-deco-lines {
+	position: absolute;
+	inset: -20% -10%;
+	background-image: repeating-linear-gradient(
+		100deg,
+		rgba(0, 0, 0, 0.055) 0,
+		rgba(0, 0, 0, 0.055) 2px,
+		transparent 2px,
+		transparent 68px
+	);
+}
+.shop-deco-dots {
+	position: absolute;
+	right: -4%;
+	top: -8%;
+	width: 54%;
+	height: 130%;
+	background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 1.5px, transparent 1.9px) 0 0 / 15px 15px;
+	-webkit-mask-image: radial-gradient(ellipse 70% 60% at 82% 24%, #000 0, transparent 72%);
+	mask-image: radial-gradient(ellipse 70% 60% at 82% 24%, #000 0, transparent 72%);
+}
+.shop-deco-glow {
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(ellipse 46% 42% at 8% 104%, rgba(255, 174, 0, 0.34), transparent 70%);
+}
+.shop-deco-word {
+	position: absolute;
+	left: 2%;
+	bottom: 3.5%;
+	white-space: nowrap;
+	font: 400 clamp(9rem, 25vw, 26rem) / 0.8 var(--shop-font-label);
+	color: transparent;
+	-webkit-text-stroke: 1.6px rgba(0, 0, 0, 0.14);
+	will-change: transform;
+}
+.shop-deco-round {
+	position: absolute;
+	right: -9vw;
+	bottom: -14vw;
+	width: 36vw;
+	max-width: none;
+	height: auto;
+	opacity: 0.09;
+	will-change: transform;
+}
+.shop-deco-hud {
+	position: absolute;
+	left: clamp(20px, 3vw, 44px);
+	top: 26px;
+	font: 400 0.95rem/1 var(--shop-font-label);
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: rgba(0, 0, 0, 0.62);
+}
+.shop-deco-tag {
+	position: absolute;
+	left: clamp(20px, 3vw, 44px);
+	bottom: 54px;
+	width: 200px;
+	height: auto;
+}
+.shop-deco-count {
+	position: absolute;
+	right: clamp(20px, 3vw, 44px);
+	bottom: 50px;
+	font: 400 1.5rem/1 var(--shop-font-label);
+	letter-spacing: 0.06em;
+	color: #000;
+}
+.shop-deco-count b {
+	font-weight: 400;
+	font-size: 3.4rem;
+}
+.shop-deco-bar {
+	position: absolute;
+	left: clamp(20px, 3vw, 44px);
+	right: clamp(20px, 3vw, 44px);
+	bottom: 26px;
+	height: 3px;
+	background: rgba(0, 0, 0, 0.14);
+}
+.shop-deco-bar i {
+	display: block;
+	height: 100%;
+	background: var(--shop-orange);
+	transform: scaleX(0);
+	transform-origin: 0 0;
+}
+/* Catégories : le titre et les photos prennent la place. */
+.shop-home-cats .shop-container {
+	max-width: min(1500px, 92vw);
+}
+.shop-home-cats .shop-section {
+	padding-block: 58px 90px;
+}
+.shop-home-cats .shop-section-title,
+.shop-home-newsletter .shop-section-title {
+	font-size: clamp(3rem, 6vw, 6.4rem);
+	line-height: 0.9;
+	text-transform: uppercase;
+}
+.shop-home-cats .shop-section-head {
+	margin-bottom: 26px;
+	padding-right: 0;
+}
+.shop-home-cats .shop-card-title {
+	font-size: clamp(1.5rem, 2.3vw, 2.5rem);
+	text-transform: uppercase;
+}
+
+/* Réassurance : quatre colonnes, chiffre géant, texte fort. */
+.shop-container.shop-home-values {
+	max-width: none;
+	padding-inline: max(4vw, 24px);
+}
+.shop-home-values > .shop-section {
+	max-width: 1500px;
+	margin-inline: auto;
+	padding-block: 58px 90px;
+}
+.shop-home-values .shop-value-props {
+	gap: clamp(20px, 3vw, 48px);
+	text-align: left;
+	align-items: start;
+}
+.shop-home-values .shop-value-prop {
+	align-items: flex-start;
+	text-align: left;
+	border-left: 2px solid #000;
+	padding-left: 18px;
+}
+.shop-value-n {
+	display: block;
+	font: 400 clamp(4rem, 8vw, 9rem) / 0.86 var(--shop-font-label);
+	color: transparent;
+	-webkit-text-stroke: 2px #000;
+}
+.shop-home-values .shop-value-prop p {
+	font: 400 clamp(1.7rem, 3vw, 3.2rem) / 1 var(--shop-font-display);
+	text-transform: uppercase;
+	color: #000;
+	text-align: left;
+}
+.shop-home-values .shop-value-prop .shop-icon-ph {
+	width: 48px;
+	height: 48px;
+	margin-bottom: 14px;
+	background: #000;
+	color: var(--shop-orange);
+	border-color: #000;
+}
+.shop-home-values .shop-value-prop .shop-icon-ph svg {
+	width: 22px;
+	height: 22px;
+}
+
+/* Newsletter */
+.shop-home-newsletter {
+	padding-block: 92px;
+}
+.shop-home-newsletter > .shop-deco .shop-deco-word {
+	bottom: -2%;
+	font-size: clamp(7rem, 17vw, 18rem);
+}
+.shop-home-newsletter > .shop-deco .shop-deco-round {
+	width: 26vw;
+	right: -5vw;
+	bottom: -9vw;
+}
+
+@media (max-width: 760px) {
+	.shop-home-values .shop-value-props {
+		grid-template-columns: 1fr 1fr;
+	}
+	.shop-deco-tag,
+	.shop-deco-count {
+		display: none;
+	}
+}
+
 /* ---------- Footer ---------- */
 .shop-site-footer {
 	position: relative;

@@ -28,7 +28,10 @@
 <div id="shop-scope" class="shop-scope">
 	<div class="shop-scroll-progress" bind:this={progressEl} aria-hidden="true"></div>
 	<a href="#main-content" class="shop-skip-link">Aller au contenu</a>
-	<ShopHeader {data} />
+	<!-- L'accueil rend son header lui-même, épinglé avec le hero (HomeOpening). -->
+	{#if !$page.data.ownHeader}
+		<ShopHeader {data} />
+	{/if}
 	{#key $page.url.pathname}
 		<div id="main-content" class="shop-page-body" in:fade={{ duration: 280, delay: 60 }}>
 			{@render children()}

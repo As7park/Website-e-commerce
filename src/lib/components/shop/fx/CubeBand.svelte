@@ -192,7 +192,7 @@
 										pin: true,
 										scrub: 1,
 										anticipatePin: 1,
-										refreshPriority: 1,
+										refreshPriority: 5,
 										invalidateOnRefresh: true,
 										onUpdate: (self) => {
 											pct = String(Math.round(self.progress * 100)).padStart(3, '0');

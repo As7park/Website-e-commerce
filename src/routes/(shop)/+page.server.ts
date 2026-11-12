@@ -33,6 +33,8 @@ export const load: PageServerLoad = async () => {
 		featuredProducts: latest.products.slice(0, 6),
 		selectionProducts: selection.products.slice(0, 8),
 		stats: { products: latest.total, categories: categoryValues.length },
-		flashSaleEnabled
+		flashSaleEnabled,
+		// Le header est rendu par HomeOpening, avec le hero, après l'intro.
+		ownHeader: true
 	};
 };
