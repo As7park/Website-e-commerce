@@ -77,6 +77,13 @@ export function startShopScroll(progressBar: HTMLElement | null): () => void {
 	};
 }
 
+/** Saut immédiat à une position de scroll, sans inertie. */
+export function jumpTo(y: number) {
+	if (lenis) lenis.scrollTo(y, { immediate: true, force: true });
+	else window.scrollTo(0, y);
+	ScrollTrigger.update();
+}
+
 /** À appeler après chaque navigation SvelteKit : coupe l'inertie en cours. */
 export function syncShopScroll() {
 	lenis?.scrollTo(window.scrollY, { immediate: true, force: true });
@@ -119,6 +126,49 @@ export function sectionBg(node: HTMLElement, color: string) {
 		destroy() {
 			trigger.kill();
 			paintScope(null);
+		}
+	};
+}
+
+/* ---------- Sections bloquées à l'écran ---------- */
+export type HoldOptions = {
+	/** Durée du blocage, en vh de scroll. */
+	length: number;
+	/** Ordre de rafraîchissement : plus haut dans la page = priorité plus forte. */
+	priority: number;
+	/** Remplit la timeline ; ses durées sont aussi en vh. */
+	build: (tl: gsap.core.Timeline, node: HTMLElement) => void;
+};
+
+/**
+ * Action : bloque la section à l'écran pendant `length` vh de scroll et
+ * pilote une timeline scrubée. Sans effet si l'utilisateur réduit les
+ * animations.
+ */
+export function pinHold(node: HTMLElement, opts: HoldOptions) {
+	if (prefersReducedMotion()) return {};
+	node.classList.add('shop-hold');
+	const ctx = gsap.context(() => {
+		const tl = gsap.timeline({
+			defaults: { ease: 'none' },
+			scrollTrigger: onWindow({
+				trigger: node,
+				start: 'top top',
+				end: () => '+=' + (window.innerHeight * opts.length) / 100,
+				pin: true,
+				scrub: 0.6,
+				anticipatePin: 1,
+				refreshPriority: opts.priority,
+				invalidateOnRefresh: true
+			})
+		});
+		opts.build(tl, node);
+		tl.to({}, { duration: 0 }, opts.length);
+	}, node);
+	return {
+		destroy() {
+			ctx.revert();
+			node.classList.remove('shop-hold');
 		}
 	};
 }
