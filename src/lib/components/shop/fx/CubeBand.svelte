@@ -9,7 +9,7 @@
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
-	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
+	import { gsap, isCompact, onWindow, prefersReducedMotion } from '#lib/shop/fx';
 
 	let {
 		pinned = false,
@@ -188,7 +188,8 @@
 								? {
 										trigger: stageEl,
 										start: 'top top',
-										end: '+=320%',
+										// Plus court en format compact : on y scrolle au doigt.
+										end: () => (isCompact() ? '+=170%' : '+=320%'),
 										pin: true,
 										scrub: 1,
 										anticipatePin: 1,

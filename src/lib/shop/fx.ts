@@ -22,6 +22,17 @@ export function prefersReducedMotion(): boolean {
 	);
 }
 
+/**
+ * Format compact : petit écran ou écran tactile. Au doigt, un geste parcourt
+ * un à deux écrans : les passages bloqués au scroll y sont raccourcis.
+ * ⚠ Recopiée dans les `@media` de MaskIntro, RouteBands et HomeOpening.
+ */
+export const COMPACT_MQ = '(max-width: 760px), (pointer: coarse)';
+
+export function isCompact(): boolean {
+	return typeof window !== 'undefined' && window.matchMedia(COMPACT_MQ).matches;
+}
+
 /** Options ScrollTrigger ancrées sur la fenêtre (voir l'avertissement en tête). */
 export function onWindow<T extends ScrollTrigger.Vars>(vars: T): T {
 	return { scroller: window, ...(vars.pin ? { pinType: 'fixed' as const } : {}), ...vars };
@@ -134,6 +145,8 @@ export function sectionBg(node: HTMLElement, color: string) {
 export type HoldOptions = {
 	/** Durée du blocage, en vh de scroll. */
 	length: number;
+	/** Durée en format compact (même timeline, parcourue plus vite). Par défaut `length`. */
+	compact?: number;
 	/** Ordre de rafraîchissement : plus haut dans la page = priorité plus forte. */
 	priority: number;
 	/** Remplit la timeline ; ses durées sont aussi en vh. */
@@ -141,8 +154,8 @@ export type HoldOptions = {
 };
 
 /**
- * Action : bloque la section à l'écran pendant `length` vh de scroll et
- * pilote une timeline scrubée. Sans effet si l'utilisateur réduit les
+ * Action : bloque la section à l'écran pendant `length` vh de scroll
+ * (`compact` vh sur mobile) et pilote une timeline scrubée. Sans effet si l'utilisateur réduit les
  * animations.
  */
 export function pinHold(node: HTMLElement, opts: HoldOptions) {
@@ -154,7 +167,9 @@ export function pinHold(node: HTMLElement, opts: HoldOptions) {
 			scrollTrigger: onWindow({
 				trigger: node,
 				start: 'top top',
-				end: () => '+=' + (window.innerHeight * opts.length) / 100,
+				end: () =>
+					'+=' +
+					(window.innerHeight * (isCompact() ? (opts.compact ?? opts.length) : opts.length)) / 100,
 				pin: true,
 				scrub: 0.6,
 				anticipatePin: 1,

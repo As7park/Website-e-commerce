@@ -19,15 +19,12 @@
 	import RouteBands, { type RouteAct } from '#lib/components/shop/fx/RouteBands.svelte';
 	import { gsap, ScrollTrigger, jumpTo, onWindow, prefersReducedMotion } from '#lib/shop/fx';
 	import {
-		EXIT,
-		HERO_OVERLAP,
-		HERO_SPAN,
-		LEAVE,
-		PLATE,
-		REST,
 		introSeen,
+		introTimings,
 		markIntroSeen,
-		vh
+		spanVars,
+		vh,
+		withTimings
 	} from '#lib/shop/intro';
 
 	type HeroProps = Omit<ComponentProps<typeof HeroDark>, 'ctas' | 'staged'>;
@@ -49,7 +46,7 @@
 	let heroTrigger: ScrollTrigger | undefined;
 
 	/** Position de scroll où les bandes sont ouvertes : header et hero en plein écran. */
-	const heroPoint = () => (heroTrigger ? heroTrigger.start + vh(EXIT) : 0);
+	const heroPoint = () => (heroTrigger ? heroTrigger.start + vh(introTimings().EXIT) : 0);
 
 	function skip() {
 		markIntroSeen();
@@ -62,55 +59,57 @@
 		const hero = topEl.querySelector<HTMLElement>('.shop-hero-dark')!;
 		const plates = [...hero.querySelectorAll<HTMLElement>('.shop-hero-plate')];
 
-		const ctx = gsap.context(() => {
-			gsap.set(plates, { '--iy': '170px', opacity: 0 });
-			// L'intro du hero se lance pendant l'ouverture des bandes.
-			const introAt = (EXIT * 0.45) / HERO_SPAN;
-			let playing = false;
-			const h = gsap.timeline({
-				defaults: { ease: 'none' },
-				scrollTrigger: onWindow({
-					trigger: topEl,
-					start: 'top top',
-					end: () => '+=' + vh(HERO_SPAN),
-					pin: true,
-					scrub: 0.6,
-					anticipatePin: 1,
-					refreshPriority: 6,
-					invalidateOnRefresh: true,
-					onUpdate(self) {
-						if (!intro) return;
-						if (self.progress > introAt && !playing) {
-							playing = true;
-							intro.play();
-						} else if (self.progress < introAt * 0.5 && playing) {
-							playing = false;
-							intro.reverse();
+		return withTimings(({ EXIT, HERO_SPAN, LEAVE, PLATE, REST }) => {
+			const ctx = gsap.context(() => {
+				gsap.set(plates, { '--iy': '170px', opacity: 0 });
+				// L'intro du hero se lance pendant l'ouverture des bandes.
+				const introAt = (EXIT * 0.45) / HERO_SPAN;
+				let playing = false;
+				const h = gsap.timeline({
+					defaults: { ease: 'none' },
+					scrollTrigger: onWindow({
+						trigger: topEl,
+						start: 'top top',
+						end: () => '+=' + vh(HERO_SPAN),
+						pin: true,
+						scrub: 0.6,
+						anticipatePin: 1,
+						refreshPriority: 6,
+						invalidateOnRefresh: true,
+						onUpdate(self) {
+							if (!intro) return;
+							if (self.progress > introAt && !playing) {
+								playing = true;
+								intro.play();
+							} else if (self.progress < introAt * 0.5 && playing) {
+								playing = false;
+								intro.reverse();
+							}
 						}
-					}
-				})
-			});
-			heroTrigger = h.scrollTrigger;
-			plates.forEach((pl, i) =>
-				h.to(
-					pl,
-					{ '--iy': '0px', opacity: 1, duration: PLATE * 0.8, ease: 'power3.out' },
-					EXIT + i * PLATE
-				)
-			);
-			const out = EXIT + PLATE * 3 + REST;
-			h.to(hero.querySelector('.shop-hero-content'), { opacity: 0, duration: LEAVE }, out);
-			[-40, -90, -150].forEach((y, i) => {
-				if (plates[i]) h.to(plates[i], { '--py': y + 'px', duration: LEAVE }, out);
-			});
-			h.to(hero.querySelector('.shop-hero-bgword'), { xPercent: -25, duration: LEAVE }, out);
-			h.to({}, { duration: 0 }, HERO_SPAN);
-		}, topEl);
+					})
+				});
+				heroTrigger = h.scrollTrigger;
+				plates.forEach((pl, i) =>
+					h.to(
+						pl,
+						{ '--iy': '0px', opacity: 1, duration: PLATE * 0.8, ease: 'power3.out' },
+						EXIT + i * PLATE
+					)
+				);
+				const out = EXIT + PLATE * 3 + REST;
+				h.to(hero.querySelector('.shop-hero-content'), { opacity: 0, duration: LEAVE }, out);
+				[-40, -90, -150].forEach((y, i) => {
+					if (plates[i]) h.to(plates[i], { '--py': y + 'px', duration: LEAVE }, out);
+				});
+				h.to(hero.querySelector('.shop-hero-bgword'), { xPercent: -25, duration: LEAVE }, out);
+				h.to({}, { duration: 0 }, HERO_SPAN);
+			}, topEl);
 
-		return () => {
-			heroTrigger = undefined;
-			ctx.revert();
-		};
+			return () => {
+				heroTrigger = undefined;
+				ctx.revert();
+			};
+		});
 	});
 
 	/**
@@ -151,7 +150,7 @@
 
 <MaskIntro photo={mask.photo} photoAlt={mask.alt} onskip={skip} />
 <RouteBands acts={bands} oncomplete={markIntroSeen} />
-<div class="shop-home-site" style={`--overlap:${HERO_OVERLAP}vh`}>
+<div class="shop-home-site" style={spanVars('overlap', (t) => t.HERO_OVERLAP)}>
 	<div class="shop-home-top" bind:this={topEl}>
 		<ShopHeader data={page.data} />
 		<HeroDark bind:this={heroRef} {...hero} {ctas} staged />
@@ -163,6 +162,12 @@
 		position: relative;
 		z-index: 1;
 		margin-top: calc(-1 * var(--overlap));
+	}
+	/* Format compact : voir COMPACT_MQ (#lib/shop/fx). */
+	@media (max-width: 760px), (pointer: coarse) {
+		.shop-home-site {
+			margin-top: calc(-1 * var(--overlap-c));
+		}
 	}
 	.shop-home-top {
 		position: relative;

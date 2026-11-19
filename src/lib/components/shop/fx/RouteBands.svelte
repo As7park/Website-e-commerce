@@ -21,7 +21,7 @@
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import { gsap, onWindow, prefersReducedMotion } from '#lib/shop/fx';
-	import { BANDS_SPAN, DISSOLVE, EXIT, HOLD, INTRO, MOVE } from '#lib/shop/intro';
+	import { spanVars, withTimings } from '#lib/shop/intro';
 
 	let {
 		acts,
@@ -55,91 +55,101 @@
 		const tall = matchMedia('(max-aspect-ratio: 4/5)').matches;
 		const shift = (v: number) => (tall ? { xPercent: v } : { yPercent: v });
 
-		const ctx = gsap.context(() => {
-			acts.forEach((_, i) => {
-				gsap.set(bands[i], { ...shift(DIR[i] * OFF), flexGrow: 1 });
-				gsap.set(colors[i], { clipPath: clipOf(i) });
-				gsap.set(titles[i], { scale: 0.62, transformOrigin: '0 100%' });
-				gsap.set(mores[i], { autoAlpha: 0, y: 24 });
-			});
-
-			const tl = gsap.timeline({
-				defaults: { ease: 'none' },
-				scrollTrigger: onWindow({
-					trigger: wrapEl,
-					start: () => 'top+=' + (innerHeight * DISSOLVE) / 100 + ' top',
-					end: () => '+=' + (innerHeight * BANDS_SPAN) / 100,
-					scrub: 0.6,
-					invalidateOnRefresh: true,
-					onLeave: () => oncomplete?.()
-				})
-			});
-
-			// Dérive continue des photos, en sens opposé selon la bande.
-			acts.forEach((_, i) => {
-				tl.fromTo(
-					photos[i],
-					{ yPercent: DIR[i] * 5 },
-					{ yPercent: -DIR[i] * 5, duration: BANDS_SPAN },
-					0
-				);
-			});
-
-			let at = INTRO;
-			tl.to(headEl, { autoAlpha: 0, y: -40, duration: MOVE * 0.6, ease: 'power2.in' }, at);
-			acts.forEach((_, active) => {
-				const prev = active - 1;
-				const ease = 'power3.inOut';
-				tl.to(bands[active], { flexGrow: 2.7, ...shift(0), duration: MOVE, ease }, at);
-				tl.to(colors[active], { clipPath: OPEN, duration: MOVE, ease }, at);
-				tl.to(titles[active], { scale: 1, duration: MOVE, ease }, at);
-				tl.to(
-					mores[active],
-					{ autoAlpha: 1, y: 0, duration: MOVE * 0.5, ease: 'power2.out' },
-					at + MOVE * 0.5
-				);
-				if (prev >= 0) {
-					tl.to(bands[prev], { flexGrow: 1, ...shift(-DIR[prev] * OFF), duration: MOVE, ease }, at);
-					tl.to(
-						colors[prev],
-						{
-							clipPath: DIR[prev] < 0 ? 'inset(0 0 100% 0)' : 'inset(100% 0 0 0)',
-							duration: MOVE,
-							ease
-						},
-						at
-					);
-					tl.to(titles[prev], { scale: 0.62, duration: MOVE, ease }, at);
-					tl.to(
-						mores[prev],
-						{ autoAlpha: 0, y: -18, duration: MOVE * 0.35, ease: 'power2.in' },
-						at
-					);
-				}
-				// Les bandes qui attendent changent de hauteur, à contresens.
+		return withTimings(({ BANDS_SPAN, DISSOLVE, EXIT, HOLD, INTRO, MOVE }) => {
+			const ctx = gsap.context(() => {
 				acts.forEach((_, i) => {
-					if (i !== active && i !== prev)
-						tl.to(bands[i], { ...shift(-DIR[i] * OFF), duration: MOVE, ease }, at);
+					gsap.set(bands[i], { ...shift(DIR[i] * OFF), flexGrow: 1 });
+					gsap.set(colors[i], { clipPath: clipOf(i) });
+					gsap.set(titles[i], { scale: 0.62, transformOrigin: '0 100%' });
+					gsap.set(mores[i], { autoAlpha: 0, y: 24 });
 				});
-				at += MOVE + HOLD;
-			});
 
-			// Ouverture sur le hero : deux bandes montent, une descend.
-			acts.forEach((_, i) => {
-				tl.to(mores[i], { autoAlpha: 0, duration: EXIT * 0.2 }, at);
-				tl.to(bands[i], { ...shift(DIR[i] * 112), duration: EXIT, ease: 'power3.in' }, at + i * 3);
-			});
-			tl.to({}, { duration: 0 }, BANDS_SPAN);
-		}, wrapEl);
+				const tl = gsap.timeline({
+					defaults: { ease: 'none' },
+					scrollTrigger: onWindow({
+						trigger: wrapEl,
+						start: () => 'top+=' + (innerHeight * DISSOLVE) / 100 + ' top',
+						end: () => '+=' + (innerHeight * BANDS_SPAN) / 100,
+						scrub: 0.6,
+						invalidateOnRefresh: true,
+						onLeave: () => oncomplete?.()
+					})
+				});
 
-		return () => ctx.revert();
+				// Dérive continue des photos, en sens opposé selon la bande.
+				acts.forEach((_, i) => {
+					tl.fromTo(
+						photos[i],
+						{ yPercent: DIR[i] * 5 },
+						{ yPercent: -DIR[i] * 5, duration: BANDS_SPAN },
+						0
+					);
+				});
+
+				let at = INTRO;
+				tl.to(headEl, { autoAlpha: 0, y: -40, duration: MOVE * 0.6, ease: 'power2.in' }, at);
+				acts.forEach((_, active) => {
+					const prev = active - 1;
+					const ease = 'power3.inOut';
+					tl.to(bands[active], { flexGrow: 2.7, ...shift(0), duration: MOVE, ease }, at);
+					tl.to(colors[active], { clipPath: OPEN, duration: MOVE, ease }, at);
+					tl.to(titles[active], { scale: 1, duration: MOVE, ease }, at);
+					tl.to(
+						mores[active],
+						{ autoAlpha: 1, y: 0, duration: MOVE * 0.5, ease: 'power2.out' },
+						at + MOVE * 0.5
+					);
+					if (prev >= 0) {
+						tl.to(
+							bands[prev],
+							{ flexGrow: 1, ...shift(-DIR[prev] * OFF), duration: MOVE, ease },
+							at
+						);
+						tl.to(
+							colors[prev],
+							{
+								clipPath: DIR[prev] < 0 ? 'inset(0 0 100% 0)' : 'inset(100% 0 0 0)',
+								duration: MOVE,
+								ease
+							},
+							at
+						);
+						tl.to(titles[prev], { scale: 0.62, duration: MOVE, ease }, at);
+						tl.to(
+							mores[prev],
+							{ autoAlpha: 0, y: -18, duration: MOVE * 0.35, ease: 'power2.in' },
+							at
+						);
+					}
+					// Les bandes qui attendent changent de hauteur, à contresens.
+					acts.forEach((_, i) => {
+						if (i !== active && i !== prev)
+							tl.to(bands[i], { ...shift(-DIR[i] * OFF), duration: MOVE, ease }, at);
+					});
+					at += MOVE + HOLD;
+				});
+
+				// Ouverture sur le hero : deux bandes montent, une descend.
+				acts.forEach((_, i) => {
+					tl.to(mores[i], { autoAlpha: 0, duration: EXIT * 0.2 }, at);
+					tl.to(
+						bands[i],
+						{ ...shift(DIR[i] * 112), duration: EXIT, ease: 'power3.in' },
+						at + i * 3
+					);
+				});
+				tl.to({}, { duration: 0 }, BANDS_SPAN);
+			}, wrapEl);
+
+			return () => ctx.revert();
+		});
 	});
 </script>
 
 <div
 	class="shop-route-bands"
 	bind:this={wrapEl}
-	style={`height:${100 + DISSOLVE + BANDS_SPAN}vh;margin-top:-${100 + DISSOLVE}vh`}
+	style={`${spanVars('run', (t) => 100 + t.DISSOLVE + t.BANDS_SPAN)};${spanVars('lift', (t) => 100 + t.DISSOLVE)}`}
 >
 	<section class="screen" aria-label={title}>
 		<div class="row">
@@ -176,7 +186,16 @@
 	.shop-route-bands {
 		position: relative;
 		z-index: 2;
+		height: var(--run);
+		margin-top: calc(-1 * var(--lift));
 		pointer-events: none;
+	}
+	/* Format compact : voir COMPACT_MQ (#lib/shop/fx). */
+	@media (max-width: 760px), (pointer: coarse) {
+		.shop-route-bands {
+			height: var(--run-c);
+			margin-top: calc(-1 * var(--lift-c));
+		}
 	}
 	.screen {
 		position: sticky;

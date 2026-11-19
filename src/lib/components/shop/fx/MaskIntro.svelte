@@ -10,7 +10,7 @@
 	   ========================================================= */
 	import { onMount } from 'svelte';
 	import { gsap, ScrollTrigger, onWindow, prefersReducedMotion } from '#lib/shop/fx';
-	import { DISSOLVE, MASK_RUN } from '#lib/shop/intro';
+	import { introTimings, spanVars } from '#lib/shop/intro';
 
 	let {
 		photo,
@@ -457,8 +457,9 @@
 		const mark = () => {
 			dirty = true;
 		};
-		/* Plan-séquence, puis dissolution sur les bandes pendant DISSOLVE vh. */
-		const D = () => (stageEl.clientHeight * DISSOLVE) / 100;
+		/* Plan-séquence, puis dissolution sur les bandes pendant DISSOLVE vh.
+		   Relu à chaque refresh : suit le passage ordinateur ↔ compact. */
+		const D = () => (stageEl.clientHeight * introTimings().DISSOLVE) / 100;
 		const seq = () => runEl.offsetHeight - stageEl.clientHeight - D();
 		const tw1 = gsap.to(state, {
 			p: 1,
@@ -510,7 +511,7 @@
 	});
 </script>
 
-<div class="shop-mask-intro" style={`height:${MASK_RUN}vh`} bind:this={runEl}>
+<div class="shop-mask-intro" style={spanVars('run', (t) => t.MASK_RUN)} bind:this={runEl}>
 	<div class="stage" bind:this={stageEl}>
 		<img class="fallback" src={photo} alt={photoAlt} />
 		<canvas bind:this={canvasEl} aria-hidden="true"></canvas>
@@ -532,7 +533,14 @@
 	.shop-mask-intro {
 		position: relative;
 		z-index: 3;
+		height: var(--run);
 		pointer-events: none;
+	}
+	/* Format compact : voir COMPACT_MQ (#lib/shop/fx). */
+	@media (max-width: 760px), (pointer: coarse) {
+		.shop-mask-intro {
+			height: var(--run-c);
+		}
 	}
 	.stage {
 		position: sticky;

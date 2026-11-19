@@ -74,7 +74,8 @@
 		}
 	]);
 
-	/* Sections bloquées : durées en vh de scroll. Priorités dans l'ordre de la page
+	/* Sections bloquées : durées en vh de scroll, raccourcies d'environ moitié en
+	   format compact (mobile, tablette). Priorités dans l'ordre de la page
 	   (hero 6, cube 5, catégories 4, nouveautés 3, galerie 2, réassurance 1). */
 	const shut = 'inset(0 0 100% 0)';
 	const open = 'inset(0 0 0% 0)';
@@ -82,6 +83,7 @@
 	/** Catégories : elles se dévoilent une à une, puis restent à l'écran. */
 	const catsHold = {
 		length: 280,
+		compact: 150,
 		priority: 4,
 		build(tl: gsap.core.Timeline, node: HTMLElement) {
 			dressDeco(tl, node, { length: 280, from: 10, step: 30 });
@@ -103,6 +105,7 @@
 	/** Nouveautés : le bloc reste en place et les plaques défilent. */
 	const newsHold = {
 		length: 300,
+		compact: 170,
 		priority: 3,
 		build(tl: gsap.core.Timeline, node: HTMLElement) {
 			const runner = node.querySelector<HTMLElement>('.runner');
@@ -120,6 +123,7 @@
 	/** Réassurance : les engagements arrivent l'un après l'autre. */
 	const valuesHold = {
 		length: 220,
+		compact: 120,
 		priority: 1,
 		build(tl: gsap.core.Timeline, node: HTMLElement) {
 			dressDeco(tl, node, { length: 220, from: 10, step: 30 });
